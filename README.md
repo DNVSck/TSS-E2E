@@ -8,7 +8,7 @@ We use **Node.js** to run our tests. On Windows, we recommend managing Node vers
 
 ### 1. Install Tools (PowerShell)
 
-Open PowerShell as Administrator and run the following commands.
+Open PowerShell (non-admin) and run the following commands.
 
 *   **[Winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/)**: The Windows Package Manager (installs software).
 *   **[NVM (Node Version Manager)](https://github.com/coreybutler/nvm-windows)**: Allows you to switch between different Node.js versions easily.
@@ -62,8 +62,30 @@ pnpm exec playwright install
 Here is a quick overview of where things are:
 
 *   **`tests/`**: 👈 **Start here!** This is where our actual test files live (e.g., `example.spec.ts`).
-*   **`playwright-examples/`**: A reference folder cloned from the official repo. Check this if you need inspiration or code snippets (look inside `playwright-examples/tests/`).
+*   **`playwright-examples/`**: A reference folder cloned from the official repo. Check this if you need inspiration or code snippets.
 *   **`playwright.config.ts`**: Global configuration for browsers, timeouts, and reporting.
+
+---
+
+## Handling Multiple Environments
+
+We use `.env` files to manage settings for different environments (Local, DEV, STAGING, etc.).
+
+1.  **Create config files:** Create files named `.env.qa` or `.env.staging` in the root folder.
+    ```ini
+    # Example .env.qa content
+    BASE_URL=https://qa.nc-tss.uk
+    TEST_USER=qa_user
+    ```
+2.  **Run tests targeting an environment:**
+    We use `cross-env` to pass variables easily on Windows.
+
+    ```powershell
+    # Run against QA
+    pnpm exec cross-env ENV=qa playwright test
+    ```
+
+*See `playwright.config.ts` to see how these variables are loaded.*
 
 ---
 
@@ -74,7 +96,7 @@ Here is a quick overview of where things are:
 pnpm exec playwright test
 ```
 
-### Run tests with UI Mode (Recommended for Dev )
+### Run tests with UI Mode (Recommended for Dev)
 Great for debugging and watching tests run step-by-step.
 ```powershell
 pnpm exec playwright test --ui
@@ -90,5 +112,6 @@ pnpm exec playwright codegen
 
 ## Resources
 
-*   **Official Docs**: [playwright.dev](https://playwright.dev/docs/intro) - The best place to learn.
+*   **Official Docs**: [playwright.dev](https://playwright.dev/docs/intro)
+*   **Environment Variables Guide**: [Playwright Parameterize](https://playwright.dev/docs/test-parameterize#env-variables)
 *   **Netcompany Deliverables**: For specific internal guidelines on code style and policy.
