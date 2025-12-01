@@ -32,13 +32,25 @@ nvm install lts
 nvm use lts
 ```
 
-### 3. Configure Package Mirror (JFrog)
+### 3. Configure Package Mirror (NC JFrog)
 
-To ensure we can download all necessary packages, configure npm to use our NC JFrog mirror. Create or edit the `.npmrc` file in your user profile (usually `C:\Users\YourName\.npmrc`) and add:
+We use a private JFrog Artifactory mirror for security and caching.
 
-```ini
-registry=https://repo.netcompany.com/artifactory/api/npm/tss-dev-npm/
+**Step A**: If you are waiting for access (**Temporary**)
+
+If you do not have JFrog access yet, you can use the public npm registry to get started. Ensure you have no .npmrc file overriding your registry, or set it to public:
+```powershell
+npm config set registry https://registry.npmjs.org/
 ```
+
+**Step B**: Once you have JFrog access (Required)
+
+1. Request access to the project's artifact repository (IT Services Case: "Access - Artifactory" - `tss-dev-npm`).
+2. Log in to the Netcompany JFrog Artifactory.
+3. Click the "Set Me Up" button in the top right corner.
+4. Select the npm repository and enter your password to generate your auth token/snippet.
+5. Copy the configuration provided into your user-level .npmrc file (usually located at C:\Users\YourName\.npmrc).
+
 
 ### 4. Install Dependencies
 
