@@ -7,7 +7,7 @@ dotenv.config();
 // Access environment variables via process.env
 const tssUrl = process.env.BASE_URL!;
 
-test('test', async ({ page }) => {
+test('Navigation from Front Page to Sign In', async ({ page }) => {
   await page.goto(tssUrl);
   await expect(page.locator('h1')).toContainText('Trader Support Service');
   await page.getByRole('button', { name: 'Sign in' }).click();
