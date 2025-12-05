@@ -1,11 +1,12 @@
 import { getBaseUrl, logInfo, logPass, test, testStep } from '../test-hooks';
+import { GB_TO_NI_RORO_SIMPLE_ACCO } from '../../test-data/gb-ni-roro-simple-acco';
 
 // Set viewport for all tests
 test.beforeEach(async ({ basePage }) => {
   await basePage.setViewport(1920, 1080);
 });
 
-test('Navigation from Front Page to Sign In @smoke @navigation @ui', async ({ t, portalPage, basePage, signInPage }, testInfo) => {
+test('Navigation from Front Page to Sign In @smoke @ui', async ({ t, portalPage, basePage, signInPage, routeDeclarePage }, testInfo) => {
   logInfo(`Starting navigation test from ${getBaseUrl()} with locale: ${process.env.LOCALE}`);
   
   // Step 1: Universal portal navigation (goto + clear storage + language switch)
@@ -42,5 +43,13 @@ test('Navigation from Front Page to Sign In @smoke @navigation @ui', async ({ t,
     logInfo('Clicked on "Start Now" button');
   });
 
- 
+  await testStep('Route declaration', async () => {
+    const route = GB_TO_NI_RORO_SIMPLE_ACCO.route;
+    const goodsMovementProcess = GB_TO_NI_RORO_SIMPLE_ACCO.goodMovementProcess;
+    const process = GB_TO_NI_RORO_SIMPLE_ACCO.process;
+    await routeDeclarePage.completeRouteDeclaration(route, goodsMovementProcess, process);
+    logInfo(`Route "${route}" selected and continued successfully`);
+  });
+  
+  console.log('Navigation test completed successfully');
 });

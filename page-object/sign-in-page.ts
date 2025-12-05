@@ -28,5 +28,5 @@ export class SignInPage extends BasePage {
         await this.signIn(adminEmail, adminPassword);
     }
 
-
+    
 }

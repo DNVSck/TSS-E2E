@@ -9,8 +9,15 @@ import { PlaywrightUtils } from '../core/util/playwright-utils';
 
 export class BasePage {
 
-    element(locator: string): Element {
-        return new Element(locator);
+     // Declare properties - Using stable locators (NOT text-based)
+    commonButton: Element;
+    commonContinueButton: Element;
+    commonFinishButton: Element;
+    
+    constructor() {
+        this.commonButton = new Element("//button[contains(@class, 'govuk-button')]");
+        this.commonContinueButton = new Element("//button[contains(@class, 'govuk-button') and @value='next']");
+        this.commonFinishButton = new Element("//button[contains(@class, 'govuk-button') and @value='finish']");
     }
     
     /**

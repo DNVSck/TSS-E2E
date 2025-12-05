@@ -33,6 +33,9 @@ importers:
       allure-playwright:
         specifier: ^3.4.3
         version: 3.4.3(@playwright/test@1.57.0)
+      axe-core:
+        specifier: ^4.11.0
+        version: 4.11.0
 
 packages:
 
