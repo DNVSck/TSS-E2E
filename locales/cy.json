@@ -1,0 +1,12 @@
+{
+  "portal": {
+    "title": "Gwasanaeth Cymorth Masnachwyr",
+    "button": "Mewngofnodi"
+  },
+  "signIn": {
+    "pageTitle": "Mewngofnodwch i'ch cyfrif",
+    "emailLabel": "Cyfeiriad E-bost",
+    "passwordLabel": "Cyfrinair",
+    "submitButton": "Mewngofnodi"
+  }
+}

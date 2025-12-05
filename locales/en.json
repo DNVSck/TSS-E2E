@@ -1,0 +1,12 @@
+{
+  "portal": {
+    "title": "Trader Support Service",
+    "button": "Sign in"
+  },
+  "signIn": {
+    "pageTitle": "Sign in to your account",
+    "emailLabel": "Email Address",
+    "passwordLabel": "Password",
+    "submitButton": "Sign in"
+  }
+}
