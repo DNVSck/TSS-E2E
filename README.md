@@ -97,6 +97,7 @@ pnpm exec playwright install
 ```
 
 ### Step 4: Environment Configuration
+## Environment Variables
 
 Create environment files for different test environments:
 
@@ -108,12 +109,16 @@ cp .env.poc .env.local
 Edit `.env.local` with your settings:
 ```ini
 BASE_URL=https://nc-tss.uk/portal/
-USER_NAME=your.email@domain.com
-PASSWORD=your_password
+USER_NAME=
+PASSWORD=
 LOCALE=en                       # Language: en | cy | all
 HEADLESS=false                  # Show browser: true | false
 BROWSER=chromium               # Browser: chromium | firefox | webkit
 ```
+
+**Note:**
+- Forị `USER_NAME` and `PASSWORD`, please contact your team lead to get the login credentials.
+- Do not commit the `.env` file to the repository.
 
 ## 🎮 Running Tests
 
