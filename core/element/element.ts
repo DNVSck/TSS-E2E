@@ -1,5 +1,7 @@
 import {BrowserManagement} from '../browser/browser-management';
 import { PlaywrightUtils } from '../util/playwright-utils';
+import { PageUtils } from '../page/page-utils';
+import { DEFAULT_TIMEOUT } from '../../config/environment';
 
 export class Element {
     locator: string;
@@ -7,176 +9,179 @@ export class Element {
     constructor(locator: string) {
         this.locator = locator;
     }
-
-    async click(): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).click();
+    
+    private get locatorElement() {
+        return BrowserManagement.page.locator(this.locator);
     }
 
-    async clickWithRetry(timeout = 5000): Promise<void> {
+    async click(): Promise<void> {
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.click();
+    }
+
+    async clickWithRetry(timeout = DEFAULT_TIMEOUT): Promise<void> {
         await PlaywrightUtils.retry(() => this.click(), timeout);
     }
 
     async enter(text: string): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).type(text);
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.type(text);
     }
 
     async waitForElement(options?: { state?: 'attached' | 'detached' | 'visible' | 'hidden'; timeout?: number }): Promise<void> {
-        await BrowserManagement.page.locator(this.locator).waitFor(options);
+        await this.locatorElement.waitFor(options);
     }
 
     async waitForElementToBeVisible(): Promise<void> {
-        await this.waitForElement({ state: 'visible', timeout: 5000 });
+        await this.waitForElement({ state: 'visible', timeout: DEFAULT_TIMEOUT });
     }
 
     async waitForElementToBeHidden(): Promise<void> {
-        await this.waitForElement({ state: 'hidden', timeout: 5000 });
+        await this.waitForElement({ state: 'hidden', timeout: DEFAULT_TIMEOUT });
     }
 
     async fillText(text: string): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).fill(text);
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.fill(text);
     }
 
     async hover(): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).hover();
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.hover();
     }
 
     async clearText(): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).clear();
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.clear();
     }
 
     async getText(): Promise<string | null> {
-        return await BrowserManagement.page.locator(this.locator).textContent();
+        return await this.locatorElement.textContent();
     }
 
     async isVisible(): Promise<boolean> {
-        return await BrowserManagement.page.locator(this.locator).isVisible();
+        return await this.locatorElement.isVisible();
     }
 
     async scrollToView(): Promise<void> {
-        await BrowserManagement.page.locator(this.locator).scrollIntoViewIfNeeded();
+        await this.locatorElement.scrollIntoViewIfNeeded();
     }
 
     async getAttribute(attributeName: string): Promise<string | null> {
-        return await BrowserManagement.page.locator(this.locator).getAttribute(attributeName);
+        return await this.locatorElement.getAttribute(attributeName);
     }
 
     // Missing methods from element.ts
     async rightClick(): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).click({ button: 'right' });
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.click({ button: 'right' });
     }
 
     async middleClick(): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).click({ button: 'middle' });
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.click({ button: 'middle' });
     }
 
     async doubleClick(): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).dblclick();
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.dblclick();
     }
 
     async holdKeyAndClick(options?: {
         modifiers?: ('Alt' | 'Control' | 'Meta' | 'Shift')[];
         timeout?: number;
     }): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).click(options);
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.click(options);
     }
 
     async pressKey(key: string): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).press(key);
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.press(key);
     }
 
     async isEnabled(): Promise<boolean> {
-        return await BrowserManagement.page.locator(this.locator).isEnabled();
+        return await this.locatorElement.isEnabled();
     }
 
     async isDisabled(): Promise<boolean> {
-        return await BrowserManagement.page.locator(this.locator).isDisabled();
+        return await this.locatorElement.isDisabled();
     }
 
     async isHidden(): Promise<boolean> {
-        return await BrowserManagement.page.locator(this.locator).isHidden();
+        return await this.locatorElement.isHidden();
     }
 
     async getElementCount(): Promise<number> {
-        return await BrowserManagement.page.locator(this.locator).count();
+        return await this.locatorElement.count();
     }
 
     static async findElements(locator: string) {
-        return await BrowserManagement.page.locator(locator).all();
+        const locators = await BrowserManagement.page.locator(locator).all();
+        return locators.map((_, i) => new Element(`${locator} >> nth=${i}`));
     }
 
     // Additional useful methods
     async focus(): Promise<void> {
         await this.waitForElement({ state: 'attached' });
-        await BrowserManagement.page.locator(this.locator).focus();
+        await this.locatorElement.focus();
     }
 
     async blur(): Promise<void> {
         await this.waitForElement({ state: 'attached' });
-        await BrowserManagement.page.locator(this.locator).blur();
+        await this.locatorElement.blur();
     }
 
     async selectOption(values: string | string[]): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).selectOption(values);
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.selectOption(values);
     }
 
     async check(): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).check();
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.check();
     }
 
     async uncheck(): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).uncheck();
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.uncheck();
     }
 
     async isChecked(): Promise<boolean> {
-        return await BrowserManagement.page.locator(this.locator).isChecked();
+        return await this.locatorElement.isChecked();
     }
 
     async getValue(): Promise<string> {
-        return await BrowserManagement.page.locator(this.locator).inputValue();
+        return await this.locatorElement.inputValue();
     }
 
     async getInnerHTML(): Promise<string> {
-        return await BrowserManagement.page.locator(this.locator).innerHTML();
+        return await this.locatorElement.innerHTML();
     }
 
     async uploadFiles(files: string | string[]): Promise<void> {
         await this.waitForElement({ state: 'attached' });
-        await BrowserManagement.page.locator(this.locator).setInputFiles(files);
+        await this.locatorElement.setInputFiles(files);
     }
 
-    async dragTo(targetLocator: string): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).dragTo(BrowserManagement.page.locator(targetLocator));
+    async dragTo(target: Element): Promise<void> {
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.dragTo(target.locatorElement);
     }
 
     async screenshot(options?: { path?: string; type?: 'png' | 'jpeg' }): Promise<Buffer> {
-        return await BrowserManagement.page.locator(this.locator).screenshot(options);
+        return await this.locatorElement.screenshot(options);
     }
 
     async highlight(): Promise<void> {
-        await BrowserManagement.page.locator(this.locator).highlight();
+        await this.locatorElement.highlight();
     }
 
-    async getChildElement(childSelector: string, index: number = 0): Promise<Element> {
-        const childLocator = `${this.locator} ${childSelector}`;
-        const elements = await BrowserManagement.page.locator(childLocator).all();
-        if (elements[index]) {
-            return new Element(`(${childLocator})[${index + 1}]`);
-        }
-        throw new Error(`Child element at index ${index} not found`);
+    async getChildElement(childSelector: string, index = 0): Promise<Element> {
+        const child = this.locatorElement.locator(childSelector).nth(index);
+        await child.waitFor({ state: 'visible', timeout: DEFAULT_TIMEOUT });
+
+        return new Element(`${this.locator} >> ${childSelector} >> nth=${index}`);
     }
 
     async getParentElement(): Promise<Element> {
@@ -184,7 +189,7 @@ export class Element {
         return new Element(parentLocator);
     }
 
-    async waitForCount(count: number, timeout: number = 5000): Promise<boolean> {
+    async waitForCount(count: number, timeout: number = DEFAULT_TIMEOUT): Promise<boolean> {
         try {
             const startTime = Date.now();
             while (Date.now() - startTime < timeout) {
@@ -200,12 +205,9 @@ export class Element {
         }
     }
 
-    async waitForText(text: string, timeout: number = 5000): Promise<boolean> {
+    async waitForText(text: string, timeout: number = DEFAULT_TIMEOUT): Promise<boolean> {
         try {
-            await BrowserManagement.page.locator(this.locator).waitFor({
-                state: 'visible',
-                timeout
-            });
+            await this.waitForElementToBeVisible();
             const actualText = await this.getText();
             return actualText?.includes(text) || false;
         } catch {
@@ -223,26 +225,30 @@ export class Element {
         return attr !== null;
     }
 
-    async clickIfVisible(timeout: number = 5000): Promise<boolean> {
+    async clickIfVisible(timeout: number = DEFAULT_TIMEOUT): Promise<boolean> {
         try {
             await this.waitForElementToBeVisible();
             if (await this.isVisible()) {
                 await this.click();
                 return true;
             }
-        } catch {
+        } catch (error) {
             // Element not visible within timeout
+            console.warn(`Element not visible for click within timeout (${timeout}ms):`, error);
         }
         return false;
     }
 
     async typeSlowly(text: string, delay: number = 100): Promise<void> {
-        await this.waitForElement({ state: 'visible' });
-        await BrowserManagement.page.locator(this.locator).type(text, { delay });
+        await this.waitForElementToBeVisible();
+        await this.locatorElement.type(text, { delay });
     }
 
     async clearAndType(text: string): Promise<void> {
         await this.clearText();
         await this.fillText(text);
     }
+
+    //Iframe related methods
+    
 }

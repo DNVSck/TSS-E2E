@@ -1,4 +1,5 @@
 import { test as base, TestInfo } from '@playwright/test';
+import { LOCALES_CONSTANT } from '../constant/locales-constant';
 import fs from 'fs';
 import path from 'path';
 
@@ -29,13 +30,13 @@ export const localeFixture = {
   ) =>  {
 
     const projectName = testInfo.project.name;
-    const currentLocale = projectName.includes('cy') ? 'cy' : 'en';
+    const currentLocale = projectName.includes(LOCALES_CONSTANT.CY_GB) ? LOCALES_CONSTANT.CY_GB : LOCALES_CONSTANT.EN_GB;
 
     console.log(`Locale fixture loading for project: ${projectName}, locale: ${currentLocale}`);
 
     let messages: Record<string, any> = {};
 
-    if (currentLocale === 'cy') {
+    if (currentLocale === LOCALES_CONSTANT.CY_GB) {
       const messagesPath = path.resolve(process.cwd(), localeCyPath);
       messages = require(messagesPath);
       console.log(`Loaded Welsh locale for t() function`);

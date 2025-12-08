@@ -1,5 +1,6 @@
 import { TestInfo } from '@playwright/test';
 import { ReportLog } from '../../core/report/ReportLog';
+import { ENVIRONMENT_INFO } from '../../config/environment';
 
 /**
  * Before accessibility test - setup common configuration
@@ -27,5 +28,14 @@ export function afterAccessibilityTest(testInfo: TestInfo): void {
       }, null, 2),
       'application/json'
     );
+  }
+
+  if (testInfo.attachments) {
+    // attach screenshot automatically
+    testInfo.attachments.push({
+      name: 'failed-screenshot',
+      path: testInfo.outputPath('screenshot.png'),
+      contentType: 'image/png'
+    });
   }
 }

@@ -1,7 +1,11 @@
 import { attachViolationDetailsToReport, fingerprintsFromScanResults, createFingerprint } from '../../fixtures/axe-fixture';
+import { ACCESSIBILITY_RULES } from '../../constant/accessibility-rules';
+import { ACCESSIBILITY_TARGETS } from '../../constant/accessibility-targets';
 import { expectMain as expect, testMain as test } from '../../fixtures/main-fixture';
+import { runAccessibilityCheck } from  '../../core/util/accessibility-scanner';
 import { getBaseUrl, logInfo, logPass, testStep } from '../test-hooks';
 import { afterAccessibilityTest, beforeAccessibilityTest } from './accessibility-test-hooks';
+import { ENVIRONMENT_INFO } from '../../config/environment';
 
 // Set viewport for all tests
 test.beforeEach(async ({ basePage }) => {
@@ -25,17 +29,14 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for image accessibility testing');
         });
 
-        await testStep('Check Image Alt Text Compliance (WCAG 1.1.1)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .withRules(['image-alt', 'image-redundant-alt', 'object-alt', 'input-image-alt'])
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Image Alt Text Compliance (WCAG 1.1.1)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('All images have appropriate alternative text (WCAG 1.1.1)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Image Alt Text (WCAG 1.1.1)',
+          rules: ACCESSIBILITY_RULES.IMAGE_ALT
         });
+
+        logPass('All images have proper alternative text (WCAG 1.1.1)');
       });
     });
 
@@ -47,17 +48,14 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for heading structure testing');
         });
 
-        await testStep('Check Heading Hierarchy (WCAG 1.3.1)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .withRules(['heading-order', 'page-has-heading-one', 'empty-heading'])
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Heading Hierarchy (WCAG 1.3.1)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('Heading structure follows proper hierarchy H1→H2→H3 (WCAG 1.3.1)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Heading Hierarchy (WCAG 1.3.1)',
+          rules: ACCESSIBILITY_RULES.HEADING_STRUCTURE
         });
+
+        logPass('Heading structure follows proper hierarchy H1→H2→H3 (WCAG 1.3.1)');
       });
 
       test('Page should have proper document structure @accessibility', async ({ basePage, makeAxeBuilder }, testInfo) => {
@@ -66,21 +64,13 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for document structure testing');
         });
 
-        await testStep('Check Document Structure (WCAG 1.3.1, 3.1.1)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .withRules([
-              'page-has-heading-one', 'landmark-one-main', 'region', 'html-has-lang',
-              'valid-lang', 'document-title', 'landmark-unique',
-              'landmark-no-duplicate-main', 'landmark-banner-is-top-level'
-            ])
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Document Structure (WCAG 1.3.1, 3.1.1)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('Document has proper structure with landmarks and language (WCAG 1.3.1, 3.1.1)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Check Document Structure (WCAG 1.3.1, 3.1.1)',
+          rules: ACCESSIBILITY_RULES.DOCUMENT_STRUCTURE
         });
+        logPass('Document has proper structure with landmarks and language (WCAG 1.3.1, 3.1.1)');
       });
     });
 
@@ -92,17 +82,14 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for color contrast testing');
         });
 
-        await testStep('Check Color Contrast (WCAG 1.4.3)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .withRules(['color-contrast'])
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Color Contrast (WCAG 1.4.3)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('All color contrasts meet WCAG 2.2 AA standards 4.5:1 ratio (WCAG 1.4.3)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Check Color Contrast (WCAG 1.4.3)',
+          rules: ACCESSIBILITY_RULES.COLOR_CONTRAST
         });
+        logPass('All color contrasts meet WCAG 2.2 AA standards 4.5:1 ratio (WCAG 1.4.3)');
+        
       });
 
       test('Text content should be readable and properly structured @accessibility', async ({ basePage, makeAxeBuilder }, testInfo) => {
@@ -111,20 +98,14 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for text readability testing');
         });
 
-        await testStep('Check Text Readability (WCAG 1.4.3, 1.4.4)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .withRules([
-              'color-contrast', 'empty-heading', 'p-as-heading'
-              // Loại bỏ 'reading-order' - rule này không tồn tại trong axe-core
-            ])
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Text Readability (WCAG 1.4.3, 1.4.4)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('All text content is readable and properly structured (WCAG 1.4.3, 1.4.4)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Check Text Readability (WCAG 1.4.3, 1.4.4)',
+          rules: ACCESSIBILITY_RULES.TEXT_READABILITY
         });
+        logPass('All text content is readable and properly structured (WCAG 1.4.3, 1.4.4)');
+
       });
     });
   });
@@ -139,17 +120,14 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for keyboard navigation testing');
         });
 
-        await testStep('Check Keyboard Navigation (WCAG 2.1.1, 2.1.2)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .withRules(['tabindex', 'accesskeys'])
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Keyboard Navigation (WCAG 2.1.1, 2.1.2)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('All interactive elements are keyboard accessible (WCAG 2.1.1, 2.1.2)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Check Keyboard Navigation (WCAG 2.1.1, 2.1.2)',
+          rules: ACCESSIBILITY_RULES.KEYBOARD_NAV
         });
+        logPass('All interactive elements are keyboard accessible (WCAG 2.1.1, 2.1.2)');
+
       });
     });
 
@@ -161,17 +139,15 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for navigation testing');
         });
 
-        await testStep('Check Navigation Accessibility (WCAG 2.4.1, 2.4.3)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .include('header, nav, [role="navigation"], [role="banner"]')
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Navigation Accessibility (WCAG 2.4.1, 2.4.3)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('Navigation area is fully accessible (WCAG 2.4.1, 2.4.3)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Check Navigation Accessibility (WCAG 2.4.1, 2.4.3)',
+          rules: ACCESSIBILITY_RULES.NAVIGATION_ACCESSIBILITY,
+          include: ACCESSIBILITY_TARGETS.NAVIGATION
         });
+        logPass('Navigation area is fully accessible (WCAG 2.4.1, 2.4.3)');
+
       });
 
       test('Links should have descriptive text and proper context @accessibility', async ({ basePage, makeAxeBuilder }, testInfo) => {
@@ -180,17 +156,14 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for link accessibility testing');
         });
 
-        await testStep('Check Link Accessibility (WCAG 2.4.4, 2.4.9)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .withRules(['link-name', 'link-in-text-block'])
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Link Accessibility (WCAG 2.4.4, 2.4.9)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('All links have descriptive text and proper context (WCAG 2.4.4, 2.4.9)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Check Link Accessibility (WCAG 2.4.4, 2.4.9)',
+          rules: ACCESSIBILITY_RULES.LINK_ACCESSIBILITY,
         });
+        logPass('All links have descriptive text and proper context (WCAG 2.4.4, 2.4.9)');
+
       });
     });
 
@@ -202,17 +175,14 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for interactive element testing');
         });
 
-        await testStep('Check Interactive Element Size (WCAG 2.5.8)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .withRules(['target-size'])
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Interactive Element Size (WCAG 2.5.8)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('All interactive elements meet minimum size 24x24px (WCAG 2.5.8)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Check Interactive Element Size (WCAG 2.5.8)',
+          rules: ACCESSIBILITY_RULES.INTERACTIVE_SIZE,
         });
+        logPass('All interactive elements meet minimum size 24x24px (WCAG 2.5.8)');
+
       });
     });
   });
@@ -227,18 +197,15 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for language switching testing');
         });
 
-        await testStep('Check Language Switching (WCAG 3.1.1, 3.1.2)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .include('[href*="change-language"], [role="button"]')
-            .withRules(['link-name', 'button-name', 'aria-valid-attr'])
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Language Switching (WCAG 3.1.1, 3.1.2)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('Language switching is accessible via keyboard and screen readers (WCAG 3.1.1, 3.1.2)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Check Language Switching (WCAG 3.1.1, 3.1.2)',
+          rules: ACCESSIBILITY_RULES.LANGUAGE_RULES,
+          include: ACCESSIBILITY_TARGETS.LANGUAGE_SWITCHER
         });
+        logPass('Language switching is accessible via keyboard and screen readers (WCAG 3.1.1, 3.1.2)');
+
       });
     });
 
@@ -250,24 +217,15 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for form accessibility testing');
         });
 
-        await testStep('Check Form Labels and ARIA (WCAG 3.2.2, 1.3.1)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .withRules([
-              'label',
-              'aria-required-attr',
-              'aria-valid-attr',
-              'aria-valid-attr-value',
-              'form-field-multiple-labels',
-              'label-title-only'
-            ])
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Form Labels and ARIA (WCAG 3.2.2, 1.3.1)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('All form elements have proper labels and ARIA attributes (WCAG 3.2.2, 1.3.1)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Check Form Labels and ARIA (WCAG 3.2.2, 1.3.1)',
+          rules: ACCESSIBILITY_RULES.FORM_LABELS,
+          include: ACCESSIBILITY_TARGETS.FORMS
         });
+        logPass('All form elements have proper labels and ARIA attributes (WCAG 3.2.2, 1.3.1)');
+
       });
     });
   });
@@ -282,21 +240,14 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for assistive technology testing');
         });
 
-        await testStep('Check Assistive Technology Support (WCAG 4.1.1, 4.1.2)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .withRules([
-              'aria-allowed-attr', 'aria-required-attr', 'aria-valid-attr',
-              'aria-valid-attr-value', 'role-img-alt', 'bypass',
-              'aria-dialog-name', 'aria-text', 'aria-treeitem-name'
-            ])
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Assistive Technology Support (WCAG 4.1.1, 4.1.2)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('Page supports assistive technologies - screen readers, etc. (WCAG 4.1.1, 4.1.2)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Check Assistive Technology Support (WCAG 4.1.1, 4.1.2)',
+          rules: ACCESSIBILITY_RULES.ASSISTIVE_TECH
         });
+        logPass('Page supports assistive technologies - screen readers, etc. (WCAG 4.1.1, 4.1.2)');
+
       });
 
       test('Main content area should be accessible @accessibility', async ({ basePage, makeAxeBuilder }, testInfo) => {
@@ -305,17 +256,14 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
           logPass('Portal page loaded for main content testing');
         });
 
-        await testStep('Check Main Content Structure (WCAG 4.1.1, 4.1.2)', async () => {
-          const accessibilityScanResults = await makeAxeBuilder()
-            .include('#main-content, main, [role="main"]')
-            .analyze();
-          
-          // Attach violation details if any
-          attachViolationDetailsToReport(accessibilityScanResults, 'Main Content Structure (WCAG 4.1.1, 4.1.2)');
-          
-          expect(accessibilityScanResults.violations).toEqual([]);
-          logPass('Main content area is fully accessible (WCAG 4.1.1, 4.1.2)');
+        await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Check Main Content Structure (WCAG 4.1.1, 4.1.2)',
+          include: ACCESSIBILITY_TARGETS.MAIN
         });
+        logPass('Main content area is fully accessible (WCAG 4.1.1, 4.1.2)');
+
       });
     });
   });
@@ -323,7 +271,7 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
   test.describe('WCAG 2.2 AA - Comprehensive Compliance Test', () => {
     
     test('Portal page should meet all WCAG 2.2 AA requirements @accessibility @smoke', async ({ t, portalPage, basePage, makeAxeBuilder }, testInfo) => {
-      logInfo(`Starting comprehensive WCAG 2.2 AA accessibility test with locale: ${process.env.LOCALE}`);
+      logInfo(`Starting comprehensive WCAG 2.2 AA accessibility test with locale: ${ENVIRONMENT_INFO.currentLocale}`);
       
       await testStep('Navigate to Portal Page', async () => {
         await basePage.navigateToPortal(getBaseUrl(), testInfo);
@@ -332,20 +280,13 @@ test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
         logPass('Portal page loaded successfully');
       });
 
-      await testStep('Comprehensive WCAG 2.2 AA Scan (All Guidelines)', async () => {
-        const accessibilityScanResults = await makeAxeBuilder()
-          .analyze();
-        
-        // Attach violation details if any
-        attachViolationDetailsToReport(accessibilityScanResults, 'Comprehensive WCAG 2.2 AA Scan');
-        
-        if (accessibilityScanResults.violations.length > 0) {
-          console.error('WCAG 2.2 AA Violations Found:', JSON.stringify(accessibilityScanResults.violations, null, 2));
-        }
-        
-        expect(accessibilityScanResults.violations).toEqual([]);
+      await runAccessibilityCheck({
+          makeAxeBuilder,
+          testInfo,
+          step: 'Comprehensive WCAG 2.2 AA Scan (All Guidelines)',
+        });
         logPass('Portal page meets all WCAG 2.2 AA requirements - full compliance achieved');
-      });
+
     });
   });
 

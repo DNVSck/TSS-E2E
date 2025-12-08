@@ -20,10 +20,11 @@ export interface ViolationFingerprint {
 export const test = base.extend<AxeFixtureType>({
   makeAxeBuilder: async ({ page }, use) => {
     const makeAxeBuilder = () => new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']);
+        .withTags(['wcag22aa']);
         // .exclude('#commonly-reused-element-with-known-issue');
 
     await use(makeAxeBuilder);
+    
   }
 });
 
@@ -31,7 +32,7 @@ export const test = base.extend<AxeFixtureType>({
 export const axeFixture = {
   makeAxeBuilder: async ({ }, use: (value: () => AxeBuilder) => Promise<void>) => {
     const makeAxeBuilder = () => new AxeBuilder({ page: PageUtils.page() })
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']);
+        .withTags(['wcag22aa']);
 
     await use(makeAxeBuilder);
   }

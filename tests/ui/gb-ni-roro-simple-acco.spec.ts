@@ -1,13 +1,15 @@
-import { getBaseUrl, logInfo, logPass, test, testStep } from '../test-hooks';
+import { ENVIRONMENT_INFO } from '../../config/environment';
 import { GB_TO_NI_RORO_SIMPLE_ACCO } from '../../test-data/gb-ni-roro-simple-acco';
+import { getBaseUrl, logInfo, test, testStep } from '../test-hooks';
 
 // Set viewport for all tests
 test.beforeEach(async ({ basePage }) => {
-  await basePage.setViewport(1920, 1080);
+  await basePage.setViewport(ENVIRONMENT_INFO.viewport.width, ENVIRONMENT_INFO.viewport.height);
 });
 
+
 test('Navigation from Front Page to Sign In @smoke @ui', async ({ t, portalPage, basePage, signInPage, routeDeclarePage }, testInfo) => {
-  logInfo(`Starting navigation test from ${getBaseUrl()} with locale: ${process.env.LOCALE}`);
+  logInfo(`Starting navigation test from ${getBaseUrl()} with locale: ${ENVIRONMENT_INFO.currentLocale}`);
   
   // Step 1: Universal portal navigation (goto + clear storage + language switch)
   await basePage.navigateToPortal(getBaseUrl(), testInfo);
@@ -44,9 +46,12 @@ test('Navigation from Front Page to Sign In @smoke @ui', async ({ t, portalPage,
   });
 
   await testStep('Route declaration', async () => {
+    // Complete route declaration using test data
     const route = GB_TO_NI_RORO_SIMPLE_ACCO.route;
     const goodsMovementProcess = GB_TO_NI_RORO_SIMPLE_ACCO.goodMovementProcess;
     const process = GB_TO_NI_RORO_SIMPLE_ACCO.process;
+
+    // Use RouteDeclarePage to complete the declaration
     await routeDeclarePage.completeRouteDeclaration(route, goodsMovementProcess, process);
     logInfo(`Route "${route}" selected and continued successfully`);
   });
