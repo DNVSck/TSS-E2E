@@ -56,7 +56,7 @@ Create test in `tests/ui/test-name.spec.ts`:
 import { test } from '../test-hooks';
 
 test.beforeEach(async ({ basePage }) => {
-  await basePage.setViewport(1920, 1080);
+  await basePage.setViewport(ENVIRONMENT_INFO.viewport.width, ENVIRONMENT_INFO.viewport.height);
 });
 
 test('Edit profile @smoke', async ({ t, basePage, userProfilePage }, testInfo) => {

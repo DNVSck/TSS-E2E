@@ -240,7 +240,7 @@ import { test } from '../test-hooks';
 
 // Setup (if needed)
 test.beforeEach(async ({ basePage }) => {
-    await basePage.setViewport(1920, 1080);
+    await basePage.setViewport(ENVIRONMENT_INFO.viewport.width, ENVIRONMENT_INFO.viewport.height);
 });
 
 // Main test

@@ -8,27 +8,20 @@ export type AxeFixtureType = {
   makeAxeBuilder: () => AxeBuilder;
 };
 
-// Violation fingerprint để track known issues
 export interface ViolationFingerprint {
   ruleId: string;
   target: string;
 }
 
-// Extend base test by providing "makeAxeBuilder"
-// This new "test" can be used in multiple test files, and each of them will get
-// a consistently configured AxeBuilder instance.
 export const test = base.extend<AxeFixtureType>({
   makeAxeBuilder: async ({ page }, use) => {
     const makeAxeBuilder = () => new AxeBuilder({ page })
         .withTags(['wcag22aa']);
-        // .exclude('#commonly-reused-element-with-known-issue');
-
     await use(makeAxeBuilder);
     
   }
 });
 
-// Export axeFixture object để sử dụng trong main-fixture  
 export const axeFixture = {
   makeAxeBuilder: async ({ }, use: (value: () => AxeBuilder) => Promise<void>) => {
     const makeAxeBuilder = () => new AxeBuilder({ page: PageUtils.page() })
@@ -38,17 +31,14 @@ export const axeFixture = {
   }
 };
 
-/**
- * Tạo violation fingerprints từ AxeResults
- * Fingerprint bao gồm ruleId và target selector
- */
+
 export function fingerprintsFromScanResults(results: AxeResults): ViolationFingerprint[] {
   return results.violations
     .flatMap(violation => 
       violation.nodes.map(node => {
         const target = Array.isArray(node.target)
           ? node.target.join(' ')
-          : String(node.target); // <-- dùng String() thay vì .toString()
+          : String(node.target);
         return {
           ruleId: violation.id,
           target
@@ -58,20 +48,15 @@ export function fingerprintsFromScanResults(results: AxeResults): ViolationFinge
     .sort((a, b) => a.ruleId.localeCompare(b.ruleId) || a.target.localeCompare(b.target));
 }
 
-/**
- * Helper để tạo expected fingerprints dễ dàng
- */
+
 export function createFingerprint(ruleId: string, target: string): ViolationFingerprint {
   return { ruleId, target };
 }
 
-/**
- * Attach violation details to Allure report khi có lỗi
- */
+
 export function attachViolationDetailsToReport(results: AxeResults, stepName: string): void {
   if (results.violations.length === 0) return;
 
-  // Tạo fingerprints text đơn giản để đọc lỗi
   const fingerprints = fingerprintsFromScanResults(results);
   const fingerprintText = fingerprints
     .map(fp => `${fp.ruleId} → ${fp.target}`)
@@ -85,10 +70,8 @@ ${fingerprintText}
 💡 Each fingerprint shows: [rule] → [CSS selector]
 Use these to identify specific elements causing accessibility issues.`;
 
-  // Attach fingerprint text vào Allure report
   ReportLog.addAttachment('violation-fingerprints.txt', errorMessage, 'text/plain');
   
-  // Attach detailed JSON nếu cần debug
   const violationDetails = {
     stepName,
     timestamp: new Date().toISOString(),
@@ -109,7 +92,7 @@ Use these to identify specific elements causing accessibility issues.`;
   
   ReportLog.addAttachment('accessibility-violations-details.json', JSON.stringify(violationDetails, null, 2), 'application/json');
   
-  // Console log fingerprints để debug nhanh
+  console.error('Accessibility violations detected:');
   console.error(errorMessage);
 }
 
