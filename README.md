@@ -97,28 +97,31 @@ pnpm exec playwright install
 ```
 
 ### Step 4: Environment Configuration
-## Environment Variables
 
-Create environment files for different test environments:
+Create environment file for local testing:
 
 ```powershell
-# Copy example environment file
-cp .env.poc .env.local
+# 1. Create .env.poc file
+New-Item -Path .env.poc -ItemType File
+
+# 2. Copy content from .env.example
+Get-Content .env.example | Set-Content .env.poc
 ```
 
-Edit `.env.local` with your settings:
+Edit `.env.poc` with your credentials:
 ```ini
-BASE_URL=https://nc-tss.uk/portal/
-USER_NAME=
-PASSWORD=
+BASE_URL=https://nc-tss.uk/portal
+
+USER_NAME=your_username_here    # Get from Team Lead
+PASSWORD=your_password_here     # Get from Team Lead
+
 LOCALE=en                       # Language: en | cy | all
-HEADLESS=false                  # Show browser: true | false
-BROWSER=chromium               # Browser: chromium | firefox | webkit
 ```
 
-**Note:**
-- Forị `USER_NAME` and `PASSWORD`, please contact your team lead to get the login credentials.
-- Do not commit the `.env` file to the repository.
+**Important:**
+- Contact your **Team Lead** to get `USER_NAME` and `PASSWORD`
+- Do **NOT** commit `.env.poc` to the repository (already in .gitignore)
+- For other environments, create `.env.staging`, `.env.uat`, etc.
 
 ## 🎮 Running Tests
 

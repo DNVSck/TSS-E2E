@@ -2,6 +2,33 @@
 
 Quick guide to work with the Playwright E2E Testing framework.
 
+## 🔧 Initial Setup
+
+Before writing tests, set up your environment:
+
+```powershell
+# 1. Create .env.poc file
+New-Item -Path .env.poc -ItemType File
+
+# 2. Copy values from .env.example
+Get-Content .env.example | Set-Content .env.poc
+
+# 3. Edit .env.poc and fill in credentials
+# Contact your Team Lead to get USER_NAME and PASSWORD
+```
+
+Your `.env.poc` should look like:
+```ini
+BASE_URL=https://nc-tss.uk/portal
+
+USER_NAME=your_username_here
+PASSWORD=your_password_here
+
+LOCALE=en
+```
+
+**Note:** Never commit `.env.poc` to Git (already ignored).
+
 ## 🎯 Creating Page Objects
 
 Create file in `page-object/page-name.ts`:
@@ -56,7 +83,7 @@ Create test in `tests/ui/test-name.spec.ts`:
 import { test } from '../test-hooks';
 
 test.beforeEach(async ({ basePage }) => {
-  await basePage.setViewport(1920, 1080);
+  await basePage.setViewport(ENVIRONMENT_INFO.viewport.width, ENVIRONMENT_INFO.viewport.height);
 });
 
 test('Edit profile @smoke', async ({ t, basePage, userProfilePage }, testInfo) => {
@@ -129,6 +156,7 @@ await this.button.click();  // ✅ Auto-waits
 
 **Environment Variables:**
 ```typescript
+// Values loaded from .env.poc (or .env.staging, etc.)
 const email = process.env.USER_NAME || 'fallback@email.com';
 const url = process.env.BASE_URL || 'default-url.com';
 ```

@@ -16,7 +16,7 @@ node_modules/
 /allure-report/
 
 # Environment Files
-.env*
+.env.poc
 
 # Logs
 *.log

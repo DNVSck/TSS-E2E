@@ -9,7 +9,7 @@ import { ENVIRONMENT_INFO } from '../../config/environment';
 
 // Set viewport for all tests
 test.beforeEach(async ({ basePage }) => {
-  await basePage.setViewport(1920, 1080);
+  await basePage.setViewport(ENVIRONMENT_INFO.viewport.width, ENVIRONMENT_INFO.viewport.height);
   beforeAccessibilityTest();
 });
 
