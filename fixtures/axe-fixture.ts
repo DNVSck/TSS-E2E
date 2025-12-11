@@ -13,11 +13,14 @@ export interface ViolationFingerprint {
   target: string;
 }
 
-
+// Extend base test by providing "makeAxeBuilder"
+// This new "test" can be used in multiple test files, and each of them will get
+// a consistently configured AxeBuilder instance.
 export const test = base.extend<AxeFixtureType>({
   makeAxeBuilder: async ({ page }, use) => {
     const makeAxeBuilder = () => new AxeBuilder({ page })
         .withTags(['wcag22aa']);
+        // .exclude('#commonly-reused-element-with-known-issue');
 
     await use(makeAxeBuilder);
     
@@ -73,7 +76,8 @@ ${fingerprintText}
 Use these to identify specific elements causing accessibility issues.`;
 
   ReportLog.addAttachment('violation-fingerprints.txt', errorMessage, 'text/plain');
-
+  
+  // Attach detailed JSON nếu cần debug
   const violationDetails = {
     stepName,
     timestamp: new Date().toISOString(),
@@ -94,7 +98,8 @@ Use these to identify specific elements causing accessibility issues.`;
   
   ReportLog.addAttachment('accessibility-violations-details.json', JSON.stringify(violationDetails, null, 2), 'application/json');
   
-  console.error('Accessibility violations detected: ',errorMessage);
+  // Console log fingerprints để debug nhanh
+  console.error(errorMessage);
 }
 
 export { expect } from '@playwright/test';
