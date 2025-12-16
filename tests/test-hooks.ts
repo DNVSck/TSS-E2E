@@ -18,12 +18,7 @@ export const getBaseUrl = (): string => BASE_URL;
 test.beforeEach(async ({ }, testInfo) => {
     ReportLog.info(`Starting test: ${testInfo.title}`);
 
-    AllureTestManager.setCurrentTestInfo(testInfo);
-
-    AllureTestManager.createParentTest(
-        testInfo.title,
-        `Test: ${testInfo.title} | File: ${testInfo.file}`
-    );
+    AllureTestManager.createParentTest(testInfo);
 
     AllureTestManager.addParameter('Test File', testInfo.file);
     AllureTestManager.addParameter('Project', testInfo.project.name);
@@ -89,5 +84,4 @@ test.afterEach(async ({ page }, testInfo) => {
     }
 
     AllureTestManager.updateTestReport(testInfo);
-    AllureTestManager.cleanup();
 });

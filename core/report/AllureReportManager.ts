@@ -1,15 +1,14 @@
-import { allure } from 'allure-playwright';
 import * as fs from 'fs';
 import * as path from 'path';
 
 export class AllureReportManager {
     private static instance: AllureReportManager;
     private reportPath: string;
-    private initialized = false;
 
     private constructor() {
         this.reportPath = path.resolve(process.cwd(), 'test-results');
-        this.initializeReport();
+        this.createReportDirectories();
+        this.writeEnvironmentInfo();
     }
 
     public static getInstance(): AllureReportManager {
@@ -17,13 +16,6 @@ export class AllureReportManager {
             this.instance = new AllureReportManager();
         }
         return this.instance;
-    }
-
-    private initializeReport(): void {
-        if (this.initialized) return;
-        this.createReportDirectories();
-        this.setEnvironmentInfo();
-        this.initialized = true;
     }
 
     private createReportDirectories(): void {
@@ -39,11 +31,11 @@ export class AllureReportManager {
         });
     }
 
-    private setEnvironmentInfo(): void {
+    private writeEnvironmentInfo(): void {
         const env = {
-            'Test Environment': process.env.ENV || 'default',
-            'Base URL': process.env.BASE_URL || 'N/A',
-            Browser: process.env.BROWSER || 'chromium',
+            'Test Environment': process.env.ENV ?? 'default',
+            'Base URL': process.env.BASE_URL ?? 'N/A',
+            Browser: process.env.BROWSER ?? 'chromium',
             'Node Version': process.version,
             OS: process.platform,
             Framework: 'Playwright + TypeScript'
@@ -60,14 +52,7 @@ export class AllureReportManager {
         );
     }
 
-    public static generateReport(): void {
-        console.log('Allure report generation completed');
-        console.log('Results location: allure-results/');
-    }
-
     public getReportPath(): string {
         return this.reportPath;
     }
-
 }
-

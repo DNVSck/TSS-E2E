@@ -2,17 +2,12 @@ import { attachment, label, description, parameter, link } from 'allure-js-commo
 import { TestInfo } from '@playwright/test';
 
 export class AllureTestManager {
-    private static currentTestInfo: TestInfo | null = null;
 
-    public static setCurrentTestInfo(testInfo: TestInfo): void {
-        this.currentTestInfo = testInfo;
-    }
-
-    public static createParentTest(name: string, desc?: string): void {
+    public static createParentTest(testInfo: TestInfo): void {
         try {
-            label('testName', name);
-            if (desc) description(desc);
-            this.addMetadata();
+            label('testName', testInfo.title);
+            description(`Test: ${testInfo.title} | File: ${testInfo.file}`);
+            this.addMetadata(testInfo);
         } catch {
             /* ignore allure failures */
         }
@@ -31,10 +26,14 @@ export class AllureTestManager {
         }
     }
 
-    private static addMetadata(): void {
+    private static addMetadata(testInfo: TestInfo): void {
         parameter('Environment', process.env.ENV ?? 'default');
         parameter('Base URL', process.env.BASE_URL ?? 'N/A');
-        parameter('Browser', process.env.BROWSER ?? 'chromium');
+        parameter(
+            'Browser',
+            testInfo.project.use?.browserName ?? process.env.BROWSER ?? 'unknown'
+        );
+        parameter('Project', testInfo.project.name);
     }
 
     public static addParameter(name: string, value: string): void {
@@ -45,11 +44,11 @@ export class AllureTestManager {
         label(name, value);
     }
 
-    public static addTestLink(url: string, name?: string, type?: 'issue' | 'tms'): void {
+    public static addTestLink(
+        url: string,
+        name?: string,
+        type?: 'issue' | 'tms'
+    ): void {
         name ? link(url, name, type) : link(url);
-    }
-
-    public static cleanup(): void {
-        this.currentTestInfo = null;
     }
 }
