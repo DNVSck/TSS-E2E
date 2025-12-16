@@ -1,16 +1,19 @@
-import {test} from '@playwright/test';
+import { test } from '@playwright/test';
 import { BrowserManagement } from '../browser/browser-management';
-import { BrowserUtils } from '../browser/browser-utils';
 
 export type BrowserFixtureType = {
-	browserManagement: BrowserManagement;
-}
+    browserManagement: typeof BrowserManagement;
+};
 
 type ExtendParams = Parameters<typeof test.extend<BrowserFixtureType>>;
 
 export const browserFixture: ExtendParams[0] = {
-    browserManagement: [async ({ browser, context, page }, use) => {
-        const browserManagement = BrowserManagement.initializeBrowser(browser, context, page)
-        await use(browserManagement);
-    }, {scope : 'test', auto: true}]
+    browserManagement: [
+        async ({ browser, context }, use) => {
+            const browserManagement =
+                BrowserManagement.initializeBrowser(browser, context);
+            await use(browserManagement);
+        },
+        { scope: 'test', auto: true }
+    ]
 };

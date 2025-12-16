@@ -1,52 +1,51 @@
-import { th } from "@faker-js/faker";
-import { Element } from "../core/element/element";
 import { BasePage } from "./base-page";
+import { Page, Locator, expect } from '@playwright/test';
 
 
 export class RouteDeclarePage extends BasePage {
-    gbToNIRoRoOption: Element;
-    niToGBRoRoOption: Element;
-    gbToNIIrelandOption: Element;
-    niToGBIrelandOption: Element;
-    inventoryToNIOption: Element;
+    gbToNIRoRoOption: Locator;
+    niToGBRoRoOption: Locator;
+    gbToNIIrelandOption: Locator;
+    niToGBIrelandOption: Locator;
+    inventoryToNIOption: Locator;
 
-    simplifiedCustomsDeclarationProcessOption: Element;
-    fullFrontierOption: Element;
-    entrySummaryDeclarationOnlyOption: Element;
+    simplifiedCustomsDeclarationProcessOption: Locator;
+    fullFrontierOption: Locator;
+    entrySummaryDeclarationOnlyOption: Locator;
 
-    standardProcessOption: Element;
-    consignmentFirstProcessOption: Element;
+    standardProcessOption: Locator;
+    consignmentFirstProcessOption: Locator;
 
-    constructor() {
-        super();
+    constructor(page: Page) {
+        super(page);
         //"Select the direction of goods movement you want to start" screen
-        this.gbToNIRoRoOption = new Element("input#directionOfDeclaration-directionOptions-gb-ni-process");
-        this.niToGBRoRoOption = new Element("input#directionOfDeclaration-directionOptions-ni-gb-process");
-        this.gbToNIIrelandOption = new Element("input#directionOfDeclaration-directionOptions-import-transit-declaration");
-        this.niToGBIrelandOption = new Element("input#directionOfDeclaration-directionOptions-export-transit-declaration");
-        this.inventoryToNIOption = new Element("input#directionOfDeclaration-directionOptions-ni-arrival-mode");
+        this.gbToNIRoRoOption = page.locator("input#directionOfDeclaration-directionOptions-gb-ni-process");
+        this.niToGBRoRoOption = page.locator("input#directionOfDeclaration-directionOptions-ni-gb-process");
+        this.gbToNIIrelandOption = page.locator("input#directionOfDeclaration-directionOptions-import-transit-declaration");
+        this.niToGBIrelandOption = page.locator("input#directionOfDeclaration-directionOptions-export-transit-declaration");
+        this.inventoryToNIOption = page.locator("input#directionOfDeclaration-directionOptions-ni-arrival-mode");
         //"Select the goods movement process" screen
-        this.simplifiedCustomsDeclarationProcessOption = new Element("input#process-gbNiProcessOptions-goods-movement");
-        this.fullFrontierOption = new Element("input#process-gbNiProcessOptions-full-frontier");
-        this.entrySummaryDeclarationOnlyOption = new Element("input#process-gbNiProcessOptions-ens");
+        this.simplifiedCustomsDeclarationProcessOption = page.locator("input#process-gbNiProcessOptions-goods-movement");
+        this.fullFrontierOption = page.locator("input#process-gbNiProcessOptions-full-frontier");
+        this.entrySummaryDeclarationOnlyOption = page.locator("input#process-gbNiProcessOptions-ens");
         //"Select a process" screen
-        this.standardProcessOption = new Element("input#processGoodsMovement-goodsMovementOptions-ens");
-        this.consignmentFirstProcessOption = new Element("input#processGoodsMovement-goodsMovementOptions-consignment-declaration");
+        this.standardProcessOption = page.locator("input#processGoodsMovement-goodsMovementOptions-ens");
+        this.consignmentFirstProcessOption = page.locator("input#processGoodsMovement-goodsMovementOptions-consignment-declaration");
 
     }
 
     async selectRoute(route: string): Promise<void> {
-           if (route.includes("GB to NI") && route.includes("RoRo")) {
+        if (route.includes("GB to NI") && route.includes("RoRo")) {
             await this.gbToNIRoRoOption.click();
-           } else if (route.includes("NI to GB") && route.includes("RoRo")) {
+        } else if (route.includes("NI to GB") && route.includes("RoRo")) {
             await this.niToGBRoRoOption.click();
-           } else if (route.includes("GB to NI") && route.includes("Ireland")) {
+        } else if (route.includes("GB to NI") && route.includes("Ireland")) {
             await this.gbToNIIrelandOption.click();
-           } else if (route.includes("NI to GB") && route.includes("Ireland")) {
+        } else if (route.includes("NI to GB") && route.includes("Ireland")) {
             await this.niToGBIrelandOption.click();
-           } else if (route.includes("Inventory to NI") && route.includes("Air and Sea")) {
+        } else if (route.includes("Inventory to NI") && route.includes("Air and Sea")) {
             await this.inventoryToNIOption.click();
-           }
+        }
     }
 
     async selectRouteAndContinue(route: string): Promise<void> {

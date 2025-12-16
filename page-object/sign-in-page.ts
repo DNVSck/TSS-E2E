@@ -1,24 +1,23 @@
 import { BasePage } from "./base-page";
-import { Element } from "../core/element/element";
-
+import { Page, Locator } from '@playwright/test';
 
 export class SignInPage extends BasePage {
 
-    emailAddressInput: Element;
-    passwordInput: Element;
-    signInButton: Element;
+    readonly emailAddressInput: Locator;
+    readonly passwordInput: Locator;
+    readonly signInButton: Locator;
 
-    constructor() {
-        super();
-        this.emailAddressInput = new Element("input#email");
-        this.passwordInput = new Element("input#password");
-        this.signInButton = new Element("//form[contains(@action, 'sign-in')]//button[@type='submit']");
+    constructor(page: Page) {
+        super(page);
+        this.emailAddressInput = page.locator("input#email");
+        this.passwordInput = page.locator("input#password");
+        this.signInButton = page.locator("//form[contains(@action, 'sign-in')]//button[@type='submit']");
     }
 
 
     async signIn(email: string, password: string): Promise<void> {
-        await this.emailAddressInput.fillText(email);
-        await this.passwordInput.fillText(password);
+        await this.emailAddressInput.fill(email);
+        await this.passwordInput.fill(password);
         await this.signInButton.click();
     }
 
@@ -28,5 +27,5 @@ export class SignInPage extends BasePage {
         await this.signIn(adminEmail, adminPassword);
     }
 
-    
+
 }

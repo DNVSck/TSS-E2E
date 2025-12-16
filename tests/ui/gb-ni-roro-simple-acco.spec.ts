@@ -2,6 +2,7 @@ import { ENVIRONMENT_INFO } from '../../config/environment';
 import { ReportLog } from '../../core/report/ReportLog';
 import { GB_TO_NI_RORO_SIMPLE_ACCO } from '../../test-data/gb-ni-roro-simple-acco';
 import { getBaseUrl, test } from '../test-hooks';
+import { expect } from '@playwright/test';
 
 // Set viewport for all tests
 test.beforeEach(async ({ basePage }) => {
@@ -18,7 +19,7 @@ test('Navigation from Front Page to Sign In @smoke @ui', async ({ t, portalPage,
   // Step 2: Verify homepage content using localized text via t function
   await ReportLog.step('Verify Portal Page Title', async () => {
     const expectedTitle = t('portal.title');
-    await portalPage.verifyPortalTitle(expectedTitle);
+    await expect(portalPage.portalTitleLocator).toHaveText(expectedTitle);
   });
 
   // Step 3: Click Sign In button using localized text via t function
