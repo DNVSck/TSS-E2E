@@ -1,13 +1,12 @@
-import { 
-    Locator, 
-    Page, 
+import {
+    Locator,
+    Page,
     PageScreenshotOptions
 } from '@playwright/test';
 
-import { PlaywrightUtils } from '../util/playwright-utils';
-import {BrowserManagement} from '../browser/browser-management';
+import { BrowserManagement } from '../browser/browser-management';
 
-export class PageUtils{
+export class PageUtils {
     static page(): Page {
         return BrowserManagement.page;
     }
