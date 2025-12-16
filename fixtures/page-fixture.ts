@@ -1,4 +1,4 @@
-import {test} from '@playwright/test';
+import { test } from '@playwright/test';
 import { PortalPage } from '../page-object/portal-page'
 import { BasePage } from '../page-object/base-page';
 import { SignInPage } from '../page-object/sign-in-page';
@@ -15,19 +15,19 @@ export type PageFixtureType = {
 type ExtendParams = Parameters<typeof test.extend<PageFixtureType>>;
 
 export const pageFixture: ExtendParams[0] = {
-    basePage: async ({}, use) => {
-        await use(new BasePage());
+    basePage: async ({ page }, use) => {
+        await use(new BasePage(page));
     },
 
-    portalPage: async ({}, use) => {
-        await use(new PortalPage());
+    portalPage: async ({ page }, use) => {
+        await use(new PortalPage(page));
     },
 
-    signInPage: async ({}, use) => {
-        await use(new SignInPage());
+    signInPage: async ({ page }, use) => {
+        await use(new SignInPage(page));
     },
 
-    routeDeclarePage: async ({}, use) => {
-        await use(new RouteDeclarePage());
+    routeDeclarePage: async ({ page }, use) => {
+        await use(new RouteDeclarePage(page));
     },
 };
