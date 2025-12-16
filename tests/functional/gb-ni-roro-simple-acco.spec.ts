@@ -1,10 +1,10 @@
-import { ENVIRONMENT_INFO } from '../../../config/environment';
-import { ReportLog } from '../../../src/core/report/ReportLog';
-import { GB_TO_NI_RORO_SIMPLE_ACCO } from '../../../src/test-data/gb-ni-roro-simple-acco';
-import { getBaseUrl, test, expect } from '../test-hooks';
+import { ENVIRONMENT_INFO } from '../../config/environment';
+import { ReportLog } from '../../src/core/report/ReportLog';
+import { GB_TO_NI_RORO_SIMPLE_ACCO } from '../../src/test-data/gb-ni-roro-simple-acco';
+import { getBaseUrl, test, expect } from '../ui/test-hooks';
 
-import { PortalAccessFlow } from '../flows/portal-access-flow';
-import { RouteDeclarationFlow } from '../flows/route-declaration-flow';
+import { PortalAccessFlow } from '../../src/flows/portal-access-flow';
+import { RouteDeclarationFlow } from '../../src/flows/route-declaration-flow';
 
 // Set viewport for all tests
 test.beforeEach(async ({ basePage }) => {

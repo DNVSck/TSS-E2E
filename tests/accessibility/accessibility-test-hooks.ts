@@ -1,6 +1,6 @@
 import { TestInfo } from '@playwright/test';
-import { ReportLog } from '../../../src/core/report/ReportLog';
-import { ENVIRONMENT_INFO } from '../../../config/environment';
+import { ReportLog } from '../../src/core/report/ReportLog';
+import { ENVIRONMENT_INFO } from '../../config/environment';
 
 /**
  * Before accessibility test - setup common configuration

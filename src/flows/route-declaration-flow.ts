@@ -1,5 +1,5 @@
-import { RouteDeclarePage } from '../../../src/page-object/route-declare-page';
-import { ReportLog } from '../../../src/core/report/ReportLog';
+import { RouteDeclarePage } from '../page-object/route-declare-page';
+import { ReportLog } from '../core/report/ReportLog';
 
 export class RouteDeclarationFlow {
     constructor(
