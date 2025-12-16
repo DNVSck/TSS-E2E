@@ -1,19 +1,21 @@
 import { BASE_URL } from '../config/environment';
 import { AllureTestManager } from '../core/report/AllureTestManager';
 import { ReportLog } from '../core/report/ReportLog';
-import { testMain } from '../fixtures/main-fixture';
+import { testMain as test } from '../fixtures/main-fixture';
 import { expect } from '@playwright/test';
 
 // Re-export test for consumers
-export const test = testMain;
+export { test, expect };
+
+// Base URL helper
+export const getBaseUrl = (): string => BASE_URL;
 
 /**
  * Before each test
  * - Initialise Allure metadata
  * - Log test start
- * - Clear browser storage
  */
-testMain.beforeEach(async ({ page }, testInfo) => {
+test.beforeEach(async ({ }, testInfo) => {
     ReportLog.info(`Starting test: ${testInfo.title}`);
 
     AllureTestManager.setCurrentTestInfo(testInfo);
@@ -26,36 +28,15 @@ testMain.beforeEach(async ({ page }, testInfo) => {
     AllureTestManager.addParameter('Test File', testInfo.file);
     AllureTestManager.addParameter('Project', testInfo.project.name);
     AllureTestManager.addParameter('Expected Status', testInfo.expectedStatus);
-
-    ReportLog.info(`Test started: ${testInfo.title}`);
-
-    await ReportLog.step('Clear Browser Storage', async () => {
-        const url = page.url();
-        if (!url || url === 'about:blank') {
-            ReportLog.info('Page not loaded yet, skipping storage clear');
-            return;
-        }
-
-        await page.evaluate(() => {
-            try {
-                localStorage.clear();
-                sessionStorage.clear();
-            } catch {
-                // ignore
-            }
-        });
-    }, page);
 });
 
 /**
  * After each test
  * - Log result
- * - Attach screenshots on failure
+ * - Attach screenshot on failure
  * - Update Allure metadata
  */
-testMain.afterEach(async ({ page }, testInfo) => {
-    ReportLog.info(`Finishing test: ${testInfo.title}`);
-
+test.afterEach(async ({ page }, testInfo) => {
     switch (testInfo.status) {
         case 'passed':
             ReportLog.pass(`Test passed: ${testInfo.title}`);
@@ -66,7 +47,6 @@ testMain.afterEach(async ({ page }, testInfo) => {
                 testInfo.error?.message ?? 'Test failed without error message';
 
             await ReportLog.attachScreenshot(page);
-
             await ReportLog.fail(
                 `Test failed: ${testInfo.title} - ${message}`,
                 page
@@ -76,7 +56,6 @@ testMain.afterEach(async ({ page }, testInfo) => {
 
         case 'timedOut':
             await ReportLog.attachScreenshot(page);
-
             ReportLog.fail(
                 `Test timed out after ${testInfo.timeout}ms`,
                 page
@@ -112,9 +91,3 @@ testMain.afterEach(async ({ page }, testInfo) => {
     AllureTestManager.updateTestReport(testInfo);
     AllureTestManager.cleanup();
 });
-
-// Base URL helper
-export const getBaseUrl = (): string => BASE_URL;
-
-// Re-export expect
-export { expect };
