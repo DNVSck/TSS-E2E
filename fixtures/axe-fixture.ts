@@ -1,7 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test as base } from '@playwright/test';
 import type { AxeResults } from 'axe-core';
-import { PageUtils } from '../core/page/page-utils';
 import { ReportLog } from '../core/report/ReportLog';
 
 export type AxeFixtureType = {
@@ -16,17 +15,17 @@ export interface ViolationFingerprint {
 export const test = base.extend<AxeFixtureType>({
   makeAxeBuilder: async ({ page }, use) => {
     const makeAxeBuilder = () => new AxeBuilder({ page })
-        .withTags(['wcag22aa']);
+      .withTags(['wcag22aa']);
 
     await use(makeAxeBuilder);
-    
+
   }
 });
 
 export const axeFixture = {
   makeAxeBuilder: async ({ }, use: (value: () => AxeBuilder) => Promise<void>) => {
     const makeAxeBuilder = () => new AxeBuilder({ page: PageUtils.page() })
-        .withTags(['wcag22aa']);
+      .withTags(['wcag22aa']);
 
     await use(makeAxeBuilder);
   }
@@ -35,7 +34,7 @@ export const axeFixture = {
 
 export function fingerprintsFromScanResults(results: AxeResults): ViolationFingerprint[] {
   return results.violations
-    .flatMap(violation => 
+    .flatMap(violation =>
       violation.nodes.map(node => {
         const target = Array.isArray(node.target)
           ? node.target.join(' ')
@@ -62,7 +61,7 @@ export function attachViolationDetailsToReport(results: AxeResults, stepName: st
   const fingerprintText = fingerprints
     .map(fp => `${fp.ruleId} → ${fp.target}`)
     .join('\n');
-  
+
   const errorMessage = `🔴 ACCESSIBILITY VIOLATIONS in "${stepName}":
 
 📍 VIOLATION FINGERPRINTS:
@@ -72,7 +71,7 @@ ${fingerprintText}
 Use these to identify specific elements causing accessibility issues.`;
 
   ReportLog.addAttachment('violation-fingerprints.txt', errorMessage, 'text/plain');
-  
+
   const violationDetails = {
     stepName,
     timestamp: new Date().toISOString(),
@@ -90,10 +89,10 @@ Use these to identify specific elements causing accessibility issues.`;
       }))
     }))
   };
-  
+
   ReportLog.addAttachment('accessibility-violations-details.json', JSON.stringify(violationDetails, null, 2), 'application/json');
-  
-  console.error('Accessibility violations detected: ',errorMessage);
+
+  console.error('Accessibility violations detected: ', errorMessage);
 }
 
 export { expect } from '@playwright/test';

@@ -1,7 +1,8 @@
 import { BASE_URL } from '../config/environment';
 import { AllureTestManager } from '../core/report/AllureTestManager';
 import { ReportLog } from '../core/report/ReportLog';
-import { expectMain as expect, testMain } from '../fixtures/main-fixture';
+import { testMain } from '../fixtures/main-fixture';
+import { expect } from '@playwright/test';
 
 // Re-export test for consumers
 export const test = testMain;
