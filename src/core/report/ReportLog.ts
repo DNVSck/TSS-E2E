@@ -25,6 +25,15 @@ export class ReportLog {
         console.error(message);
     }
 
+    public static addAttachment(
+        name: string,
+        content: string | Buffer,
+        type: string
+    ): void {
+        attachment(name, content, type);
+    }
+
+
     public static async step<T>(
         name: string,
         fn: () => Promise<T> | T,
@@ -33,7 +42,6 @@ export class ReportLog {
         return step(name, async () => {
             try {
                 const result = await fn();
-                this.pass(`Step passed: ${name}`);
                 return result;
             } catch (err) {
                 await this.fail(`Step failed: ${name}`, page);

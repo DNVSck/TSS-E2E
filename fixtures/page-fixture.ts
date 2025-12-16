@@ -1,8 +1,8 @@
 import { test } from '@playwright/test';
-import { PortalPage } from '../page-object/portal-page'
-import { BasePage } from '../page-object/base-page';
-import { SignInPage } from '../page-object/sign-in-page';
-import { RouteDeclarePage } from '../page-object/route-declare-page';
+import { PortalPage } from '../src/page-object/portal-page'
+import { BasePage } from '../src/page-object/base-page';
+import { SignInPage } from '../src/page-object/sign-in-page';
+import { RouteDeclarePage } from '../src/page-object/route-declare-page';
 
 
 export type PageFixtureType = {

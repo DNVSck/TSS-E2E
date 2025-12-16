@@ -1,4 +1,4 @@
-import { LOCALES_CONSTANT } from '../constant/locales-constant';
+import { LOCALES_CONSTANT } from '../src/constant/locales-constant';
 
 export type Locale = 'all' | 'en' | 'cy';
 

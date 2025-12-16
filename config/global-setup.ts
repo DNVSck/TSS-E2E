@@ -2,7 +2,7 @@
 import { FullConfig } from '@playwright/test';
 import * as fs from 'fs';
 import path from 'path';
-import { AllureReportManager } from '../core/report/AllureReportManager';
+import { AllureReportManager } from '../src/core/report/AllureReportManager';
 import { bootstrapEnv } from './bootstrap-env';
 import { LOCALE } from './environment';
 
@@ -26,6 +26,9 @@ async function globalSetup(config: FullConfig) {
   // Init Allure
   const reportManager = AllureReportManager.getInstance();
   console.log(`Allure initialized at: ${reportManager.getReportPath()}`);
+
+
+
 }
 
 export default globalSetup;
