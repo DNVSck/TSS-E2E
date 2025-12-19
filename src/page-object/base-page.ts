@@ -67,10 +67,7 @@ export class BasePage {
             cy: 'Gwasanaeth Cymorth Masnachwyr'
         };
 
-        await expect(portalPage.portalTitle).toHaveText(
-            expectedTitles[lang],
-            { timeout: 60_000 }
-        );
+        await expect(portalPage.portalTitle).toHaveText(expectedTitles[lang]);
     }
 
     /**
