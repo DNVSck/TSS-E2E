@@ -10,21 +10,12 @@
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:report": "pnpm test && pnpm report:open",
-    "test:poc": "powershell -Command \"$env:ENV='poc'; playwright test\"",
-    "test:staging": "powershell -Command \"$env:ENV='staging'; playwright test\"",
-    "test:production": "powershell -Command \"$env:ENV='production'; playwright test\"",
-    "test:qa": "powershell -Command \"$env:ENV='qa'; playwright test\"",
-    "test:uat": "powershell -Command \"$env:ENV='uat'; playwright test\"",
-    "test:poc:headed": "powershell -Command \"$env:ENV='poc'; playwright test --headed\"",
-    "test:staging:headed": "powershell -Command \"$env:ENV='staging'; playwright test --headed\"",
-    "test:uat:headed": "powershell -Command \"$env:ENV='uat'; playwright test --headed\"",
-    "test:production:headed": "powershell -Command \"$env:ENV='production'; playwright test --headed\"",
-    "test:ui-demo" : "pnpm test tests/ui/gb-ni-roro-simple-acco.spec.ts --headed",
-    "test:accessibility-demo" : "pnpm test tests/accessibility/accessibility-portalpage.spec.ts",
-    "report:generate": "npx allure generate allure-results -o test-results --clean && move test-results\\index.html test-results\\result.html",
+    "test:ui:poc:cy": "powershell -Command \"$env:ENV='poc'; $env:LOCALE='cy'; playwright test tests/ui --project=chromium-cy\"",
+    "test:ui:poc:en": "powershell -Command \"$env:ENV='poc'; $env:LOCALE='en'; playwright test tests/ui --project=chromium-en\"",
     "report:open": "powershell -Command \"Start-Process 'test-results/result.html'\"",
     "report:serve": "npx allure serve allure-results",
-    "report:manual": "node -e \"require('./global-teardown.js').default()\""
+    "report:manual": "node -e \"require('./global-teardown.js').default()\"",
+    "lint": "eslint . --ext .ts"
   },
   "keywords": [],
   "author": "",
@@ -35,10 +26,15 @@
     "@faker-js/faker": "^10.1.0",
     "@playwright/test": "^1.57.0",
     "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
+    "@typescript-eslint/parser": "^8.49.0",
     "allure-commandline": "^2.34.1",
     "allure-js-commons": "^3.4.3",
     "allure-playwright": "^3.4.3",
-    "axe-core": "^4.11.0"
+    "axe-core": "^4.11.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-playwright": "^2.4.0"
   },
   "dependencies": {
     "dotenv": "^17.2.3"

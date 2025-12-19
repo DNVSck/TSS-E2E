@@ -1,11 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
-import { LOCALE } from './config/environment';
 
-/**
- * Import centralized environment configuration
- * This will auto-load the environment based on ENV setting in config/environment.ts
- */
-import './config/environment';
+const LOCALE = process.env.LOCALE ?? 'all';
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -22,13 +17,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry strategy - number of retries */
   retries: process.env.CI ? 2 : 1,
-  
+
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['allure-playwright', {
-      //outputFolder: 'allure-results', // Allure raw results
       suiteTitle: true
     }]
   ],
@@ -36,26 +30,18 @@ export default defineConfig({
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
     baseURL: process.env.BASE_URL,
-    
+
     /* Screenshots and traces for failure debugging */
-    screenshot: 'only-on-failure',  // Auto screenshot on failure
-    video: { mode: 'on', size: { width: 640, height: 480 } }, // Always record video
-    trace: 'retain-on-failure',     // Collect trace only when failed
-    
-    viewport: null, // Use browser's natural size
+    screenshot: 'only-on-failure',
+    video: { mode: 'on', size: { width: 640, height: 480 } },
+    trace: 'retain-on-failure',
+
+    viewport: null,
   },
 
-  /* Configure projects for major browsers */
+  /* Projects must be static. Selection is done via CLI. */
   projects: [
-    {
-      name: 'chromium-en',
-      use: { ...devices['Desktop Chrome']},
-    },
-    {
-      name: 'chromium-cy',
-      use: { ...devices['Desktop Chrome']},
-    },
-  ].filter(project => LOCALE === 'all' || project.name.includes(LOCALE)),
-
-
+    { name: 'chromium-en', use: { browserName: 'chromium' as const } },
+    { name: 'chromium-cy', use: { browserName: 'chromium' as const } },
+  ],
 });

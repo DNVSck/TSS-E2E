@@ -1,5 +1,5 @@
 import { TestInfo } from '@playwright/test';
-import { ReportLog } from '../../core/report/ReportLog';
+import { ReportLog } from '../../src/core/report/ReportLog';
 import { ENVIRONMENT_INFO } from '../../config/environment';
 
 /**
@@ -7,7 +7,7 @@ import { ENVIRONMENT_INFO } from '../../config/environment';
  */
 export function beforeAccessibilityTest(): void {
   console.log('Setting up accessibility test environment...');
-  
+
 }
 
 /**
@@ -15,11 +15,11 @@ export function beforeAccessibilityTest(): void {
  */
 export function afterAccessibilityTest(testInfo: TestInfo): void {
   console.log('Cleaning up accessibility test environment...');
-  
+
   // Add test result to report if needed
   if (testInfo.status === 'failed') {
     ReportLog.addAttachment(
-      'test-failure-info.json', 
+      'test-failure-info.json',
       JSON.stringify({
         title: testInfo.title,
         status: testInfo.status,
