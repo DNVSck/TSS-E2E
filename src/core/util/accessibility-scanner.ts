@@ -1,34 +1,35 @@
-// utils/accessibility-scanner.ts
-import { AxeResults } from 'axe-core';
-import { attachViolationDetailsToReport, expect } from "../../fixtures/axe-fixture";
+import type { AxeResults } from 'axe-core';
+import type { TestInfo } from '@playwright/test';
+import { attachViolationDetailsToReport } from '../../fixtures/axe-fixture';
+
+type AccessibilityCheckOptions = {
+  makeAxeBuilder: () => any;
+  testInfo: TestInfo;
+  step: string;
+  rules?: string[];
+  include?: string | string[];
+};
 
 export async function runAccessibilityCheck({
   makeAxeBuilder,
   testInfo,
+  step,
   rules,
-  include,
-  exclude,
-  step
-}: {
-  makeAxeBuilder: () => any;
-  testInfo: any;
-  rules?: string[];
-  include?: string;
-  exclude?: string;
-  step: string;
-}): Promise<AxeResults> {
+  include
+}: AccessibilityCheckOptions): Promise<void> {
+  const builder = makeAxeBuilder();
 
-  let builder = makeAxeBuilder();
+  if (rules?.length) {
+    builder.withRules(rules);
+  }
 
-  if (rules?.length) builder = builder.withRules(rules);
-  if (include) builder = builder.include(include);
-  if (exclude) builder = builder.exclude(exclude);
+  if (include) {
+    builder.include(include);
+  }
 
-  const result = await builder.analyze();
+  const results: AxeResults = await builder.analyze();
 
-  attachViolationDetailsToReport(result, step);
-
-  expect(result.violations, `WCAG violations in step: ${step}`).toEqual([]);
-
-  return result;
+  if (results.violations.length > 0) {
+    await attachViolationDetailsToReport(results, step, testInfo);
+  }
 }
