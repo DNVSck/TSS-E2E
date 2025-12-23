@@ -3,6 +3,7 @@ import { Page, Locator, expect } from '@playwright/test';
 
 
 export class RouteDeclarePage extends BasePage {
+    startDeclarationButton: Locator;
     gbToNIRoRoOption: Locator;
     niToGBRoRoOption: Locator;
     gbToNIIrelandOption: Locator;
@@ -18,6 +19,7 @@ export class RouteDeclarePage extends BasePage {
 
     constructor(page: Page) {
         super(page);
+        this.startDeclarationButton = page.locator("//a[contains(@class,'govuk-button') and contains(@class,'govuk-button--start')]");
         //"Select the direction of goods movement you want to start" screen
         this.gbToNIRoRoOption = page.locator("input#directionOfDeclaration-directionOptions-gb-ni-process");
         this.niToGBRoRoOption = page.locator("input#directionOfDeclaration-directionOptions-ni-gb-process");
@@ -32,6 +34,16 @@ export class RouteDeclarePage extends BasePage {
         this.standardProcessOption = page.locator("input#processGoodsMovement-goodsMovementOptions-ens");
         this.consignmentFirstProcessOption = page.locator("input#processGoodsMovement-goodsMovementOptions-consignment-declaration");
 
+    }
+
+
+    async startDeclareRouteJourney(): Promise<void> {
+        await expect(this.startDeclarationButton).toBeVisible();
+        await expect(this.startDeclarationButton).toBeEnabled();
+        await expect(this.startDeclarationButton).toBeInViewport
+        await this.startDeclarationButton.scrollIntoViewIfNeeded();
+        await this.startDeclarationButton.click({ trial: true });
+        await this.startDeclarationButton.click();
     }
 
     async selectRoute(route: string): Promise<void> {
@@ -83,6 +95,7 @@ export class RouteDeclarePage extends BasePage {
     }
 
     async completeRouteDeclaration(route: string, goodsMovementProcess: string, process: string): Promise<void> {
+        console.log(route, goodsMovementProcess, process);
         await this.selectRouteAndContinue(route);
         await this.selectGoodsMovementProcessAndContinue(goodsMovementProcess);
         await this.selectProcessAndContinue(process);

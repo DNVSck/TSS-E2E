@@ -25,10 +25,14 @@ export class PortalAccessFlow {
 
         await ReportLog.step('Sign in as admin', async () => {
             await this.signInPage.signInAsAdmin();
+            console.log('Signed in as admin');
         });
 
         await ReportLog.step('Start service journey', async () => {
-            await this.portalPage.clickOnStartNow();
+            await this.portalPage.startTssJourney();
+            console.log('Clicked on Start Now button');
         });
+
+
     }
 }
