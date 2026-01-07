@@ -3,6 +3,21 @@
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 # Added dev branch for PR trigger
+#Added  manual trigger parameters
+
+parameters:
+- name: runUITests
+  displayName: 'Run UI Tests'
+  type: boolean
+  default: true
+- name: runAccessibilityTests
+  displayName: 'Run Accessibility Tests'
+  type: boolean
+  default: true
+- name: runAll
+  displayName: 'Run All Tests (overrides above options)'
+  type: boolean
+  default: false
 
 trigger:
 - main
