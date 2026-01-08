@@ -3,10 +3,10 @@
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 # Added dev branch for PR trigger
-#Added  manual trigger 
-#Added Variables to handle parameter logic
-#Added Accessibility Tests Job to run in parallel with SonarQube and UI Tests
-#Allowed UI Tests Job to runs in parallel with SonarQube
+# Added manual trigger 
+# Added Variables to handle parameter logic
+# Added Accessibility Tests Job to run in parallel with SonarQube and UI Tests
+# Allowed UI Tests Job to runs in parallel with SonarQube
   
 parameters:
 - name: runUITests
@@ -23,10 +23,10 @@ parameters:
   default: false
 
 variables:
-  - name: shouldRunUI
-    value: ${{ or(parameters.runAll, parameters.runUITests) }}
-  - name: shouldRunA11y
-    value: ${{ or(parameters.runAll, parameters.runAccessibilityTests) }}
+- name: shouldRunUI
+  value: ${{ or(parameters.runAll, parameters.runUITests) }}
+- name: shouldRunA11y
+  value: ${{ or(parameters.runAll, parameters.runAccessibilityTests) }}
   
 trigger:
 - main
@@ -37,66 +37,67 @@ pr:
   
 pool:
   name: Linux
+
 jobs:
-  - job: SonarQube
-    displayName: 'SonarQube'
-    steps:
-    - task: JavaToolInstaller@0
-      inputs:
-        versionSpec: '21'
-        jdkArchitectureOption: 'x64'
-        jdkSourceOption: 'PreInstalled'
-    - task: NodeTool@0
-      inputs:
-        versionSpec: '24.x'
-      displayName: 'Install Node.js 24.x'
-    - task: SonarQubePrepare@7
-      displayName: 'Prepare analysis on SonarQube'
-      inputs:
-        SonarQube: 'NC_SonarQube_E2E'
-        scannerMode: CLI
-        configMode: 'file'
-      timeoutInMinutes: 300    
-    - task: SonarQubeAnalyze@7
-      displayName: 'Run code analysis on SonarQube'
-      env:
-        JAVA_HOME: $(JAVA_HOME_21_X64)
-        PATH: $(JAVA_HOME_21_X64)/bin:$(PATH)
-    - task: SonarQubePublish@7
-      displayName: 'Publish analysis results to quality gate on SonarQube'
-      inputs:
-        pollingTimeoutSec: '600'
-      continueOnError: true
-      timeoutInMinutes: 300
-  
-  - job: UITests
-    displayName: 'UI Tests'
-    condition: eq(variables.shouldRunUI, 'true')
-    steps:
-    - task: NodeTool@0
-      inputs:
-        versionSpec: '24.x'
-      displayName: 'Install Node.js 24.x'
-    - script: npm ci
-      displayName: 'Install Dependencies'
-    - script: npx playwright install --with-deps
-      displayName: 'Install Playwright Browsers'
-    - script: |
-        echo "Running UI Tests..."
-      displayName: 'Execute UI Tests'
-  
-  - job: AccessibilityTests
-    displayName: 'Accessibility Tests'
-    condition: eq(variables.shouldRunA11y, 'true')
-    steps:
-    - task: NodeTool@0
-      inputs:
-        versionSpec: '24.x'
-      displayName: 'Install Node.js 24.x'
-    - script: npm ci
-      displayName: 'Install Dependencies'
-    - script: npx playwright install --with-deps
-      displayName: 'Install Playwright Browsers'
-    - script: |
-        echo "Running Accessibility Tests..."
-      displayName: 'Execute Accessibility Tests'
+- job: SonarQube
+  displayName: 'SonarQube'
+  steps:
+  - task: JavaToolInstaller@0
+    inputs:
+      versionSpec: '21'
+      jdkArchitectureOption: 'x64'
+      jdkSourceOption: 'PreInstalled'
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '24.x'
+    displayName: 'Install Node.js 24.x'
+  - task: SonarQubePrepare@7
+    displayName: 'Prepare analysis on SonarQube'
+    inputs:
+      SonarQube: 'NC_SonarQube_E2E'
+      scannerMode: CLI
+      configMode: 'file'
+    timeoutInMinutes: 300    
+  - task: SonarQubeAnalyze@7
+    displayName: 'Run code analysis on SonarQube'
+    env:
+      JAVA_HOME: $(JAVA_HOME_21_X64)
+      PATH: $(JAVA_HOME_21_X64)/bin:$(PATH)
+  - task: SonarQubePublish@7
+    displayName: 'Publish analysis results to quality gate on SonarQube'
+    inputs:
+      pollingTimeoutSec: '600'
+    continueOnError: true
+    timeoutInMinutes: 300
+
+- job: UITests
+  displayName: 'UI Tests'
+  condition: eq(variables.shouldRunUI, 'true')
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '24.x'
+    displayName: 'Install Node.js 24.x'
+  - script: npm ci
+    displayName: 'Install Dependencies'
+  - script: npx playwright install --with-deps
+    displayName: 'Install Playwright Browsers'
+  - script: |
+      echo "Running UI Tests..."
+    displayName: 'Execute UI Tests'
+
+- job: AccessibilityTests
+  displayName: 'Accessibility Tests'
+  condition: eq(variables.shouldRunA11y, 'true')
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '24.x'
+    displayName: 'Install Node.js 24.x'
+  - script: npm ci
+    displayName: 'Install Dependencies'
+  - script: npx playwright install --with-deps
+    displayName: 'Install Playwright Browsers'
+  - script: |
+      echo "Running Accessibility Tests..."
+    displayName: 'Execute Accessibility Tests'
