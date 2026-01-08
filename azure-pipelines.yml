@@ -22,7 +22,7 @@ parameters:
   type: boolean
   default: false
 
- variables:
+  variables:
   - name: shouldRunUI
     value: ${{ or(parameters.runAll, parameters.runUITests) }}
   - name: shouldRunA11y
