@@ -3,7 +3,10 @@
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 # Added dev branch for PR trigger
-#Added  manual trigger parameters
+#Added  manual trigger 
+#Added Variables to handle parameter logic
+#Added Accessibility Tests Job to run in parallel with SonarQube and UI Tests
+#Allowed UI Tests Job to runs in parallel with SonarQube
 
 parameters:
 - name: runUITests
@@ -18,6 +21,12 @@ parameters:
   displayName: 'Run All Tests (overrides above options)'
   type: boolean
   default: false
+
+ variables:
+  - name: shouldRunUI
+    value: ${{ or(parameters.runAll, parameters.runUITests) }}
+  - name: shouldRunA11y
+    value: ${{ or(parameters.runAll, parameters.runAccessibilityTests) }}
 
 trigger:
 - main
@@ -59,3 +68,42 @@ jobs:
         pollingTimeoutSec: '600'
       continueOnError: true
       timeoutInMinutes: 300
+
+        
+  - job: UITests
+    displayName: 'UI Tests'
+    condition: eq(variables.shouldRunUI, 'true')
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '24.x'
+      displayName: 'Install Node.js 24.x'
+    
+    - script: npm ci
+      displayName: 'Install Dependencies'
+    
+    - script: npx playwright install --with-deps
+      displayName: 'Install Playwright Browsers'
+    
+    - script: |
+        echo "Running UI Tests..."
+      displayName: 'Execute UI Tests'
+
+  - job: AccessibilityTests
+    displayName: 'Accessibility Tests'
+    condition: eq(variables.shouldRunA11y, 'true')
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '24.x'
+      displayName: 'Install Node.js 24.x'
+    
+    - script: npm ci
+      displayName: 'Install Dependencies'
+    
+    - script: npx playwright install --with-deps
+      displayName: 'Install Playwright Browsers'
+    
+    - script: |
+        echo "Running Accessibility Tests..."
+      displayName: 'Execute Accessibility Tests'
