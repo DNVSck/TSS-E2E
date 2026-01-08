@@ -42,6 +42,6 @@ test.describe('GB to NI RoRo Simple Acco',
           );
         });
 
-        ReportLog.info('Navigation test completed successfully');
+        ReportLog.info('Started Simple Acco declaration successfully');
       })
   });

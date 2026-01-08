@@ -15,7 +15,6 @@ export class RouteDeclarationFlow {
 
         await ReportLog.step('Start declaration journey', async () => {
             await this.routeDeclarePage.startDeclareRouteJourney();
-            console.log('Clicked on Start Now button 2');
         });
 
         await ReportLog.step('Complete route declaration', async () => {
