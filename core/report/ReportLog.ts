@@ -25,7 +25,7 @@ export class ReportLog {
                 contentType: 'text/plain'
             });
         }
-        console.log(`ℹ️ INFO: ${message}`);
+        console.log(`INFO: ${message}`);
     }
 
     /**
@@ -42,7 +42,7 @@ export class ReportLog {
                 contentType: 'text/plain'
             });
         }
-        console.log(`✅ PASS: ${message}`);
+        console.log(`PASS: ${message}`);
     }
 
     /**
@@ -79,7 +79,7 @@ export class ReportLog {
             playwrightTest.info().attachments.push(...attachments);
         }
         
-        console.error(`❌ FAIL: ${message}`);
+        console.error(`FAIL: ${message}`);
     }
 
     /**
@@ -95,7 +95,7 @@ export class ReportLog {
                 contentType: 'text/plain'
             });
         }
-        console.log(`⏭️ SKIP: ${message}`);
+        console.log(`SKIP: ${message}`);
     }
 
     /**
@@ -111,7 +111,7 @@ export class ReportLog {
                 contentType: 'text/plain'
             });
         }
-        console.warn(`⚠️ WARN: ${message}`);
+        console.warn(`WARN: ${message}`);
     }
 
     /**
@@ -140,7 +140,7 @@ export class ReportLog {
                 path: videoPath,
                 contentType: 'video/webm'
             });
-            console.log(`📹 Video attached for Allure display: ${videoPath}`);
+            console.log(`Video attached for Allure display: ${videoPath}`);
         } catch (error) {
             console.warn('Failed to attach video for Allure display:', error);
             

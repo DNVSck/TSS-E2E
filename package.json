@@ -19,8 +19,8 @@
     "test:staging:headed": "powershell -Command \"$env:ENV='staging'; playwright test --headed\"",
     "test:uat:headed": "powershell -Command \"$env:ENV='uat'; playwright test --headed\"",
     "test:production:headed": "powershell -Command \"$env:ENV='production'; playwright test --headed\"",
-    "test:ui-demo" : "pnpm test tests/ui/gb-ni-roro-simple-acco.spec.ts --headed",
-    "test:accessibility-demo" : "pnpm test tests/accessibility/accessibility-portalpage.spec.ts",
+    "test:ui-demo": "pnpm test tests/ui/gb-ni-roro-simple-acco.spec.ts --headed",
+    "test:accessibility-demo": "pnpm test tests/accessibility/accessibility-portalpage.spec.ts",
     "report:generate": "npx allure generate allure-results -o test-results --clean && move test-results\\index.html test-results\\result.html",
     "report:open": "powershell -Command \"Start-Process 'test-results/result.html'\"",
     "report:serve": "npx allure serve allure-results",
@@ -41,6 +41,9 @@
     "axe-core": "^4.11.0"
   },
   "dependencies": {
-    "dotenv": "^17.2.3"
+    "@huggingface/inference": "^4.13.10",
+    "dotenv": "^17.2.3",
+    "langfuse": "^3.38.6",
+    "openai": "^6.16.0"
   }
 }
