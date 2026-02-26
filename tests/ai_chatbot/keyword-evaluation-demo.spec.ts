@@ -173,7 +173,7 @@ test.describe('Keyword-based Evaluation Demo', () => {
         );
       }
 
-      console.log('✅ Test PASSED - Real chatbot response meets keyword criteria');
+      console.log('Test PASSED - Real chatbot response meets keyword criteria');
     });
   });
 

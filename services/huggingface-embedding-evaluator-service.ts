@@ -19,7 +19,7 @@ dotenv.config();
 // ==================== CONSTANTS ====================
 // Using sentence-transformers - available on Inference API
 const DEFAULT_MODEL = 'sentence-transformers/all-MiniLM-L6-v2';
-const DEFAULT_SIMILARITY_THRESHOLD = 0.7;
+const DEFAULT_SIMILARITY_THRESHOLD = 0.85;
 const DEFAULT_BATCH_DELAY_MS = 100; // Much lower than OpenAI since it's free
 const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_RETRY_DELAY_MS = 1000;
@@ -295,7 +295,7 @@ export class HuggingFaceEmbeddingEvaluator {
     
 Semantic Similarity: ${percentage}%
 
-⚠️  Note: This metric measures semantic similarity only.
+Note: This metric measures semantic similarity only.
 It does NOT directly measure:
 - Factual accuracy (could be semantically similar but factually wrong)
 - Completeness (missing information)

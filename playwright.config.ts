@@ -24,7 +24,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 1,
   
   /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Limit workers to 2 to avoid HuggingFace API rate limiting (free tier: ~100 req/hour) */
+  workers: process.env.WORKERS ? parseInt(process.env.WORKERS) : 2,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['allure-playwright', {
@@ -39,7 +40,10 @@ export default defineConfig({
     
     /* Screenshots and traces for failure debugging */
     screenshot: 'only-on-failure',  // Auto screenshot on failure
-    video: { mode: 'on', size: { width: 640, height: 480 } }, // Always record video
+    video: { 
+      mode: 'on', 
+      size: { width: 1920, height: 1080 } // Full HD for better quality
+    },
     trace: 'retain-on-failure',     // Collect trace only when failed
     
     viewport: null, // Use browser's natural size
