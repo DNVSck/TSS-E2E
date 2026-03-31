@@ -28,7 +28,9 @@ export class PortalAccessFlow {
         });
 
         await ReportLog.step('Start service journey', async () => {
-            await this.portalPage.clickOnStartNow();
+            await this.portalPage.startTssJourney();
         });
+
+
     }
 }

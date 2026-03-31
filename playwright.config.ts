@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import { bootstrapEnv } from './config/bootstrap-env';
 
+bootstrapEnv();
 const LOCALE = process.env.LOCALE ?? 'all';
 
 /**
@@ -7,35 +9,37 @@ const LOCALE = process.env.LOCALE ?? 'all';
  */
 export default defineConfig({
   testDir: './tests',
-  /* Global setup to clean allure-results before tests */
-  globalSetup: './config/global-setup.ts',
-  /* Global teardown to generate Allure report after tests */
-  globalTeardown: './config/global-teardown.ts',
-  /* Run tests in files in parallel */
-  fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
-  /* Retry strategy - number of retries */
-  retries: process.env.CI ? 2 : 1,
+  globalSetup: './config/global-setup.ts', /* Global setup to clean allure-results before tests */
+  globalTeardown: './config/global-teardown.ts', /* Global teardown to generate Allure report after tests */
+  fullyParallel: true, /* Run tests in files in parallel */
+  forbidOnly: !!process.env.CI, /* Fail the build on CI if you accidentally left test.only in the source code. */
+  retries: process.env.CI ? 2 : Number(process.env.RETRY_COUNT ?? 0), /* Retry strategy - number of retries */
 
-  /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+  timeout: Number(process.env.TEST_BASE_TIMEOUT ?? 30000),
+  expect: {
+    timeout: Number(process.env.TEST_BASE_TIMEOUT ?? 5000),
+  },
   reporter: [
     ['allure-playwright', {
       suiteTitle: true
-    }]
+    }],
+    ['line'],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
     baseURL: process.env.BASE_URL,
-
+    headless: process.env.HEADLESS === 'true',
+    launchOptions: {
+      slowMo: Number(process.env.SLOW_MO ?? 0),
+    },
     /* Screenshots and traces for failure debugging */
+    actionTimeout: Number(process.env.DEFAULT_TIMEOUT ?? 5000),
+    navigationTimeout: Number(process.env.PAGE_TIMEOUT ?? 10000),
     screenshot: 'only-on-failure',
     video: { mode: 'on', size: { width: 640, height: 480 } },
     trace: 'retain-on-failure',
-
     viewport: null,
   },
 

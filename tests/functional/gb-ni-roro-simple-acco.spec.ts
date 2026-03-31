@@ -1,7 +1,7 @@
 import { ENVIRONMENT_INFO } from '../../config/environment';
 import { ReportLog } from '../../src/core/report/ReportLog';
 import { GB_TO_NI_RORO_SIMPLE_ACCO } from '../../src/test-data/gb-ni-roro-simple-acco';
-import { getBaseUrl, test, expect } from '../ui/test-hooks';
+import { getBaseUrl, test, expect } from '../test-hooks';
 
 import { PortalAccessFlow } from '../../src/flows/portal-access-flow';
 import { RouteDeclarationFlow } from '../../src/flows/route-declaration-flow';
@@ -33,12 +33,15 @@ test.describe('GB to NI RoRo Simple Acco',
         });
 
         //-------Complete Route Declaration--------
-        await routeFlow.completeRouteDeclaration(
-          GB_TO_NI_RORO_SIMPLE_ACCO.route,
-          GB_TO_NI_RORO_SIMPLE_ACCO.goodsMovementProcess,
-          GB_TO_NI_RORO_SIMPLE_ACCO.process
-        );
 
-        ReportLog.info('Navigation test completed successfully');
+        await ReportLog.step('Complete route declaration for GB to NI RoRo Simple Acco', async () => {
+          await routeFlow.completeRouteDeclaration(
+            GB_TO_NI_RORO_SIMPLE_ACCO.route,
+            GB_TO_NI_RORO_SIMPLE_ACCO.goodsMovementProcess,
+            GB_TO_NI_RORO_SIMPLE_ACCO.process
+          );
+        });
+
+        ReportLog.info('Started Simple Acco declaration successfully');
       })
   });

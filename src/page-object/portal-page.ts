@@ -8,14 +8,16 @@ export class PortalPage extends BasePage {
     signInBtn: Locator;
     languageSwitcher: Locator;
     portalTitle: Locator;
-    startNowButton: Locator;
+    startNowTssButton: Locator;
+
 
     constructor(page: Page) {
         super(page);
         this.signInBtn = page.locator("a[href='/portal/sign-in']");
         this.languageSwitcher = page.locator("//a[contains(@href, '/portal/change-language')]");
         this.portalTitle = page.locator("//h1[contains(@class,'govuk-heading')]");
-        this.startNowButton = page.locator("//a[contains(@data-module, 'govuk-button')]");
+        this.startNowTssButton = page.locator("//a[contains(@class,'govuk-button') and contains(@class,'govuk-button--start')]");
+
     }
 
     /**
@@ -33,7 +35,9 @@ export class PortalPage extends BasePage {
         return this.portalTitle;
     }
 
-    async clickOnStartNow(): Promise<void> {
-        await this.startNowButton.click();
+    async startTssJourney(): Promise<void> {
+        await this.startNowTssButton.click();
     }
+
+
 }

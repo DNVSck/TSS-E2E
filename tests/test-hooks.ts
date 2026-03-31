@@ -1,11 +1,10 @@
-import { BASE_URL } from '../../config/environment';
-import { AllureTestManager } from '../../src/core/report/AllureTestManager';
-import { ReportLog } from '../../src/core/report/ReportLog';
-import { testMain as test } from '../../src/fixtures/main-fixture';
-import { expect } from '@playwright/test';
+import { BASE_URL } from '../config/environment';
+import { AllureTestManager } from '../src/core/report/AllureTestManager';
+import { ReportLog } from '../src/core/report/ReportLog';
+import { testMain as test } from '../src/fixtures/main-fixture';
 
-// Re-export test for consumers
-export { test, expect };
+export { testMain as test } from '../src/fixtures/main-fixture';
+export { expect } from '@playwright/test';
 
 // Base URL helper
 export const getBaseUrl = (): string => BASE_URL;
@@ -15,7 +14,7 @@ export const getBaseUrl = (): string => BASE_URL;
  * - Initialise Allure metadata
  * - Log test start
  */
-test.beforeEach(async ({ }, testInfo) => {
+test.beforeEach(async ({ page: _page }, testInfo) => {
     ReportLog.info(`Starting test: ${testInfo.title}`);
 
     AllureTestManager.createParentTest(testInfo);

@@ -7,8 +7,6 @@ import { bootstrapEnv } from './bootstrap-env';
 import { LOCALE } from './environment';
 
 async function globalSetup(config: FullConfig) {
-  // Load envs ONCE
-  bootstrapEnv();
 
   // Log effective configuration
   console.log(`LOCALE: ${LOCALE}`);
@@ -26,8 +24,6 @@ async function globalSetup(config: FullConfig) {
   // Init Allure
   const reportManager = AllureReportManager.getInstance();
   console.log(`Allure initialized at: ${reportManager.getReportPath()}`);
-
-
 
 }
 
