@@ -5,6 +5,8 @@ export class BasePage {
     readonly commonButton: Locator;
     readonly commonContinueButton: Locator;
     readonly commonFinishButton: Locator;
+    readonly backLink: Locator;
+    readonly commonSubmitConsignmentButton: Locator;
 
     constructor(protected readonly page: Page) {
         this.commonButton = page.locator(
@@ -12,11 +14,17 @@ export class BasePage {
         );
 
         this.commonContinueButton = page.locator(
-            "//button[contains(@class, 'govuk-button') and @value='next']"
+            "button.govuk-button[value='next']"
         );
 
         this.commonFinishButton = page.locator(
-            "//button[contains(@class, 'govuk-button') and @value='finish']"
+            "button.govuk-button[value='finish']"
+        );
+
+        this.backLink = page.locator("a.govuk-back-link");
+
+        this.commonSubmitConsignmentButton = page.locator(
+            "button[value='submit-consignment']"
         );
     }
 
@@ -70,13 +78,4 @@ export class BasePage {
         await expect(portalPage.portalTitle).toHaveText(expectedTitles[lang]);
     }
 
-    /**
-     * Set viewport size
-     */
-    async setViewport(
-        width: number = 1920,
-        height: number = 1080
-    ): Promise<void> {
-        await this.page.setViewportSize({ width, height });
-    }
 }

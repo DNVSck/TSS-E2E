@@ -6,23 +6,17 @@ import { getBaseUrl, test, expect } from '../test-hooks';
 import { PortalAccessFlow } from '../../src/flows/portal-access-flow';
 import { RouteDeclarationFlow } from '../../src/flows/route-declaration-flow';
 
-// Set viewport for all tests
-test.beforeEach(async ({ basePage }) => {
-  await basePage.setViewport(
-    ENVIRONMENT_INFO.viewport.width,
-    ENVIRONMENT_INFO.viewport.height);
-});
 
 test.describe('GB to NI RoRo Simple Acco',
   { tag: ['@smoke'] },
   () => {
 
     test('Sign in as admin and complete route declaration',
-      async ({ t, portalPage, basePage, signInPage, routeDeclarePage }, testInfo) => {
+      async ({ t, portalPage, basePage, signInPage, movementHeaderDeclarePage, newGoodsMovementDeclarePage,  goodsMovementTaskListPage}, testInfo) => {
         ReportLog.info(`Starting navigation test from ${getBaseUrl()} with locale: ${ENVIRONMENT_INFO.currentLocale}`);
 
         const accessFlow = new PortalAccessFlow(basePage, portalPage, signInPage);
-        const routeFlow = new RouteDeclarationFlow(routeDeclarePage);
+        const routeFlow = new RouteDeclarationFlow(movementHeaderDeclarePage);
 
         //-------Access Service as Admin--------
         await accessFlow.accessServiceAsAdmin(getBaseUrl(), testInfo);
@@ -33,12 +27,12 @@ test.describe('GB to NI RoRo Simple Acco',
         });
 
         //-------Complete Route Declaration--------
-
         await ReportLog.step('Complete route declaration for GB to NI RoRo Simple Acco', async () => {
           await routeFlow.completeRouteDeclaration(
             GB_TO_NI_RORO_SIMPLE_ACCO.route,
             GB_TO_NI_RORO_SIMPLE_ACCO.goodsMovementProcess,
-            GB_TO_NI_RORO_SIMPLE_ACCO.process
+            GB_TO_NI_RORO_SIMPLE_ACCO.process,
+            GB_TO_NI_RORO_SIMPLE_ACCO.howToStart
           );
         });
 

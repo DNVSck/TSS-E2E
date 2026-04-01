@@ -7,15 +7,6 @@ import {
 } from '../test-hooks';
 
 import { runAccessibilityCheck } from '../../src/core/util/accessibility-scanner';
-import { ENVIRONMENT_INFO } from '../../config/environment';
-
-// Set viewport for all tests
-test.beforeEach(async ({ basePage }) => {
-  await basePage.setViewport(
-    ENVIRONMENT_INFO.viewport.width,
-    ENVIRONMENT_INFO.viewport.height
-  );
-});
 
 test.describe('TSS Portal Page - WCAG 2.2 AA Compliance Tests', () => {
 
