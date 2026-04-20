@@ -1,9 +1,14 @@
-import { test as pwTest, type Page } from '@playwright/test';
+import { type Page } from '@playwright/test';
 import { attachment, step } from 'allure-js-commons';
-import * as fs from 'fs';
-import * as path from 'path';
+
 
 export class ReportLog {
+    private static currentPage?: Page;
+
+    public static setCurrentPage(page?: Page): void {
+        this.currentPage = page;
+    }
+
     public static info(message: string): void {
         attachment('Info', message, 'text/plain');
         console.log(message);
@@ -44,14 +49,20 @@ export class ReportLog {
                 const result = await fn();
                 return result;
             } catch (err) {
-                await this.fail(`Step failed: ${name}`, page);
+                await this.fail(`Step failed: ${name}`, page ?? this.currentPage);
                 throw err;
             }
         });
     }
 
     public static async attachScreenshot(page: Page): Promise<void> {
-        const buffer = await page.screenshot({ fullPage: true });
-        attachment('Screenshot', buffer, 'image/png');
+        try {
+            const buffer = await page.screenshot({ fullPage: true });
+            attachment('Screenshot', buffer, 'image/png');
+        } catch (error) {
+            const message =
+                error instanceof Error ? error.message : String(error);
+            attachment('Screenshot Capture Error', message, 'text/plain');
+        }
     }
 }

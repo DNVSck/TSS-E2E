@@ -39,7 +39,7 @@ export default defineConfig({
     actionTimeout: Number(process.env.DEFAULT_TIMEOUT ?? 5000),
     navigationTimeout: Number(process.env.PAGE_TIMEOUT ?? 10000),
     screenshot: 'only-on-failure',
-    video: { mode: 'on', size: { width: 640, height: 480 } },
+    video: { mode: 'on', size: { width: 1920, height: 1080 } },
     trace: 'retain-on-failure',
     viewport: null,
   },

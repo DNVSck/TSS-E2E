@@ -1,5 +1,5 @@
 import { BasePage } from "./base-page";
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator} from '@playwright/test';
 
 export class GoodsMovementTaskListPage extends BasePage {
 
@@ -14,5 +14,5 @@ export class GoodsMovementTaskListPage extends BasePage {
     async clickTransportDetails(): Promise<void> {
         await this.transportDetailsBtn.click();
     }
-    
+
 }

@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import path from 'path';
+import path from 'node:path';
 
 export function bootstrapEnv(): void {
     const envName = process.env.ENV;

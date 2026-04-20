@@ -15,6 +15,7 @@ export const getBaseUrl = (): string => BASE_URL;
  * - Log test start
  */
 test.beforeEach(async ({ page: _page }, testInfo) => {
+    ReportLog.setCurrentPage(_page);
     ReportLog.info(`Starting test: ${testInfo.title}`);
 
     AllureTestManager.createParentTest(testInfo);
@@ -40,7 +41,6 @@ test.afterEach(async ({ page }, testInfo) => {
             const message =
                 testInfo.error?.message ?? 'Test failed without error message';
 
-            await ReportLog.attachScreenshot(page);
             await ReportLog.fail(
                 `Test failed: ${testInfo.title} - ${message}`,
                 page
@@ -49,8 +49,7 @@ test.afterEach(async ({ page }, testInfo) => {
         }
 
         case 'timedOut':
-            await ReportLog.attachScreenshot(page);
-            ReportLog.fail(
+            await ReportLog.fail(
                 `Test timed out after ${testInfo.timeout}ms`,
                 page
             );
@@ -83,4 +82,5 @@ test.afterEach(async ({ page }, testInfo) => {
     }
 
     AllureTestManager.updateTestReport(testInfo);
+    ReportLog.setCurrentPage();
 });

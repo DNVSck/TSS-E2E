@@ -55,7 +55,7 @@ export class DateTimeUtil {
     static generateRandomDate(startDate: Date, endDate: Date): Date {
         const start = startDate.getTime();
         const end = endDate.getTime();
-        const randomTime = start + Math.random() * (end - start);
+        const randomTime = faker.number.int({ min: start, max: end });
         return new Date(randomTime);
     }
 
