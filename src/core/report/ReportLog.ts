@@ -1,5 +1,5 @@
 import { type Page } from '@playwright/test';
-import { attachment, step } from 'allure-js-commons';
+import { attachment, epic, feature, step, story, tags } from 'allure-js-commons';
 
 
 export class ReportLog {
@@ -36,6 +36,22 @@ export class ReportLog {
         type: string
     ): void {
         attachment(name, content, type);
+    }
+
+    public static async setEpic(name: string): Promise<void> {
+        await epic(name);
+    }
+
+    public static async setFeature(name: string): Promise<void> {
+        await feature(name);
+    }
+
+    public static async setStory(name: string): Promise<void> {
+        await story(name);
+    }
+
+    public static async setTags(...tagList: string[]): Promise<void> {
+        await tags(...tagList);
     }
 
 

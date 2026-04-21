@@ -4,7 +4,7 @@ import { ROUTE_DECLARATION } from '../constant/route-declaration-constants';
 import { ROUTES } from '../constant/endpoints-constant';
 
 
-export class MovementHeaderDeclarePage extends BasePage {
+export class InitialFormDeclaraPage extends BasePage {
     startDeclarationButton: Locator;
 
     gbToNIRoRoOption: Locator;
@@ -38,7 +38,7 @@ export class MovementHeaderDeclarePage extends BasePage {
 
     constructor(page: Page) {
         super(page);
-        this.startDeclarationButton = page.locator("//a[contains(@class,'govuk-button--start')]");
+        this.startDeclarationButton = page.locator("//button[@data-govuk-button-init]");
         //"Select the direction of goods movement you want to start" screen
         this.gbToNIRoRoOption = page.locator("input#directionOfDeclaration-directionOptions-gb-ni-process");
         this.niToGBRoRoOption = page.locator("input#directionOfDeclaration-directionOptions-ni-gb-process");
@@ -167,7 +167,7 @@ export class MovementHeaderDeclarePage extends BasePage {
         await this.commonContinueButton.click();
     }
 
-    async completeRouteDeclaration(route: string, goodsMovementProcess: string, process: string, howToStart: string): Promise<void> {
+    async routeDeclaration(route: string, goodsMovementProcess: string, process: string, howToStart: string): Promise<void> {
         console.log(route, goodsMovementProcess, process, howToStart);
         await this.selectRouteAndContinue(route);
         await this.selectGoodsMovementProcessAndContinue(goodsMovementProcess);

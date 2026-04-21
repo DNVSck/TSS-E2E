@@ -1,25 +1,28 @@
-import { MovementHeaderDeclarePage } from '../page-object/initial-form-declare-page';
+import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
 import { ReportLog } from '../core/report/ReportLog';
 
 export class RouteDeclarationFlow {
     constructor(
-        private readonly MovementHeaderDeclarePage: MovementHeaderDeclarePage
+        private readonly initialFormDeclaraPage: InitialFormDeclaraPage
     ) { }
 
-
+    
     async completeRouteDeclaration(
-        route: string,
-        goodsMovementProcess: string,
-        process: string,
-        howToStart: string
+        input: {
+            route: string;
+            goodsMovementProcess: string;
+            process: string;
+            howToStart: string;
+        }
     ): Promise<void> {
 
         await ReportLog.step('Start declaration journey', async () => {
-            await this.MovementHeaderDeclarePage.startDeclareRouteJourney();
+            await this.initialFormDeclaraPage.startDeclareRouteJourney();
         });
 
-        await ReportLog.step('Complete route declaration', async () => {
-            await this.MovementHeaderDeclarePage.completeRouteDeclaration(
+        await ReportLog.step('Complete Initial form', async () => {
+            const { route, goodsMovementProcess, process, howToStart } = input;
+            await this.initialFormDeclaraPage.routeDeclaration(
                 route,
                 goodsMovementProcess,
                 process,

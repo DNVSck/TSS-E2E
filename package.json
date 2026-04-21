@@ -37,6 +37,7 @@
     "eslint-plugin-playwright": "^2.4.0"
   },
   "dependencies": {
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "puppeteer": "^24.42.0"
   }
 }
