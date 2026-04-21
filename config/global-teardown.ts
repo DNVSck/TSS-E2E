@@ -2,7 +2,7 @@ import { FullConfig } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
-import { exportAllurePDF } from '../src/core/report/exportAllurePDF';
+import { exportAllurePDF } from '../src/core/report/export-allure-pdf';
 
 async function globalTeardown(config: FullConfig) {
   const allureResultsPath = path.resolve('allure-results');

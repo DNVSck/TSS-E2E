@@ -1,5 +1,5 @@
 import { ENVIRONMENT_INFO } from '../../config/environment';
-import { ReportLog } from '../../src/core/report/ReportLog';
+import { ReportLog } from '../../src/core/report/report-log';
 import { GB_TO_NI_RORO_SIMPLE_ACCO } from '../../src/test-data/gb-ni-roro-simple-acco';
 import { getBaseUrl, test, expect } from '../test-hooks';
 

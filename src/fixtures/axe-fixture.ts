@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { AxeResults } from 'axe-core';
 import { Page, TestInfo } from '@playwright/test';
-import { ReportLog } from '../core/report/ReportLog';
+import { ReportLog } from '../core/report/report-log';
 
 export type AxeFixtureType = {
   makeAxeBuilder: () => AxeBuilder;

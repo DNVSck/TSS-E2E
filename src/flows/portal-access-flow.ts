@@ -1,7 +1,7 @@
 import { BasePage } from '../page-object/base-page.ts';
 import { PortalPage } from '../page-object/portal-page.ts';
 import { SignInPage } from '../page-object/sign-in-page.ts';
-import { ReportLog } from '../core/report/ReportLog.ts';
+import { ReportLog } from '../core/report/report-log.ts';
 
 export class PortalAccessFlow {
     constructor(

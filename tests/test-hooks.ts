@@ -1,6 +1,6 @@
 import { BASE_URL } from '../config/environment';
-import { AllureTestManager } from '../src/core/report/AllureTestManager';
-import { ReportLog } from '../src/core/report/ReportLog';
+import { AllureTestManager } from '../src/core/report/allure-test-manager';
+import { ReportLog } from '../src/core/report/report-log';
 import { testMain as test } from '../src/fixtures/main-fixture';
 
 export { testMain as test } from '../src/fixtures/main-fixture';

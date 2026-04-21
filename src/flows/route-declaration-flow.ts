@@ -1,5 +1,5 @@
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
-import { ReportLog } from '../core/report/ReportLog';
+import { ReportLog } from '../core/report/report-log';
 
 export class RouteDeclarationFlow {
     constructor(
