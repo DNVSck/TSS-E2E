@@ -1,6 +1,5 @@
 import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
 import { NewGoodsMovementDeclarePage } from '../page-object/new-goods-movement-declare-page';
-import { ReportLog } from '../core/report/report-log';
 
 export class MovementHeaderDeclarationFlow {
     constructor(

@@ -1,9 +1,8 @@
 // config/global-setup.ts
 import { FullConfig } from '@playwright/test';
-import * as fs from 'fs';
-import path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { AllureReportManager } from '../src/core/report/allure-report-manager';
-import { bootstrapEnv } from './bootstrap-env';
 import { LOCALE } from './environment';
 
 async function globalSetup(config: FullConfig) {
