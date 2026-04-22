@@ -15,7 +15,7 @@
     "report:open": "powershell -Command \"Start-Process 'test-results/result.html'\"",
     "report:serve": "npx allure serve allure-results",
     "report:manual": "node -e \"require('./global-teardown.js').default()\"",
-    "report:pdf": "tsx --tsconfig tsconfig.json src/core/report/export-allure-pdf.ts",
+    "report:pdf": "tsx --tsconfig tsconfig.json src/core/report/export-allure-pdf.mts",
     "lint": "eslint . --ext .ts"
   },
   "keywords": [],

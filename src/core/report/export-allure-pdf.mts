@@ -2,6 +2,7 @@ import puppeteer from 'puppeteer';
 import dotenv from 'dotenv';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 dotenv.config();
 
@@ -292,9 +293,14 @@ export async function exportAllurePDF(options: ExportAllurePdfOptions = {}): Pro
   }
 }
 
-if (require.main === module) {
-  exportAllurePDF().catch((error) => {
+const currentFilePath = fileURLToPath(import.meta.url);
+const entryFilePath = process.argv[1] ? path.resolve(process.argv[1]) : null;
+
+if (entryFilePath === currentFilePath) {
+  try {
+    await exportAllurePDF();
+  } catch (error) {
     console.error('Failed to export Allure PDF:', error);
     process.exit(1);
-  });
+  }
 }
