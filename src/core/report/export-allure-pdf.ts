@@ -293,12 +293,8 @@ export async function exportAllurePDF(options: ExportAllurePdfOptions = {}): Pro
 }
 
 if (require.main === module) {
-  void (async () => {
-    try {
-      await exportAllurePDF();
-    } catch (error) {
-      console.error('Failed to export Allure PDF:', error);
-      process.exit(1);
-    }
-  })();
+  exportAllurePDF().catch((error) => {
+    console.error('Failed to export Allure PDF:', error);
+    process.exit(1);
+  });
 }

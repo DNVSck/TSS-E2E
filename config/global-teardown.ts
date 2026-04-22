@@ -2,7 +2,6 @@ import { FullConfig } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
-import { exportAllurePDF } from '../src/core/report/export-allure-pdf';
 
 async function globalTeardown(config: FullConfig) {
   const allureResultsPath = path.resolve('allure-results');
@@ -23,10 +22,6 @@ async function globalTeardown(config: FullConfig) {
         fs.unlinkSync(indexPath);
       }
 
-      await exportAllurePDF({
-        resultsDir: allureResultsPath,
-        outputPath: path.join(testResultsPath, 'allure-report.pdf'),
-      });
     } catch (error) {
       console.warn('Allure report generation failed:', String(error));
     }
