@@ -254,7 +254,7 @@ function buildHtml(
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-export async function exportAllurePDF(options: ExportAllurePdfOptions = {}): Promise<void> {
+(async (options: ExportAllurePdfOptions = {}): Promise<void> => {
   const resultsDir = options.resultsDir ?? path.resolve('allure-results');
   const outputPath = options.outputPath ?? path.resolve('test-results', 'allure-report.pdf');
 
@@ -290,11 +290,5 @@ export async function exportAllurePDF(options: ExportAllurePdfOptions = {}): Pro
   } finally {
     await browser.close();
   }
-}
+})();
 
-if (require.main === module) {
-  exportAllurePDF().catch((error) => {
-    console.error('Failed to export Allure PDF:', error);
-    process.exit(1);
-  });
-}
