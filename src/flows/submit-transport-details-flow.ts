@@ -1,5 +1,5 @@
 import { TransportDetailsPage } from "../page-object/transport-details-page";
-import { ReportLog } from '../core/report/ReportLog';
+import { ReportLog } from '../core/report/report-log';
 
 export class SubmitTransportDetailsFlow {
     constructor(

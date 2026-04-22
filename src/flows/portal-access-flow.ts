@@ -1,7 +1,8 @@
-import { BasePage } from '../page-object/base-page.ts';
-import { PortalPage } from '../page-object/portal-page.ts';
-import { SignInPage } from '../page-object/sign-in-page.ts';
-import { ReportLog } from '../core/report/ReportLog.ts';
+import { BasePage } from '../page-object/base-page';
+import { PortalPage } from '../page-object/portal-page';
+import { SignInPage } from '../page-object/sign-in-page';
+import { ReportLog } from '../core/report/report-log';
+import { expect } from '../../tests/test-hooks';
 
 export class PortalAccessFlow {
     constructor(
@@ -12,7 +13,8 @@ export class PortalAccessFlow {
 
     async accessServiceAsAdmin(
         baseUrl: string,
-        testInfo: any
+        testInfo: any,
+        expectedTitle: string,
     ): Promise<void> {
 
         await ReportLog.step('Open portal', async () => {
@@ -25,6 +27,10 @@ export class PortalAccessFlow {
 
         await ReportLog.step('Sign in as admin', async () => {
             await this.signInPage.signInAsAdmin();
+        });
+
+        await ReportLog.step('Verify portal title', async () => {
+            await expect(this.portalPage.portalTitleLocator).toHaveText(expectedTitle);
         });
 
         await ReportLog.step('Start service journey', async () => {

@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
 import { bootstrapEnv } from './config/bootstrap-env';
 
 bootstrapEnv();
@@ -32,13 +32,14 @@ export default defineConfig({
     baseURL: process.env.BASE_URL,
     headless: process.env.HEADLESS === 'true',
     launchOptions: {
+      args: ['--start-maximized'],
       slowMo: Number(process.env.SLOW_MO ?? 0),
     },
     /* Screenshots and traces for failure debugging */
     actionTimeout: Number(process.env.DEFAULT_TIMEOUT ?? 5000),
     navigationTimeout: Number(process.env.PAGE_TIMEOUT ?? 10000),
     screenshot: 'only-on-failure',
-    video: { mode: 'on', size: { width: 640, height: 480 } },
+    video: { mode: 'on', size: { width: 1920, height: 1080 } },
     trace: 'retain-on-failure',
     viewport: null,
   },

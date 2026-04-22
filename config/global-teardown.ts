@@ -1,6 +1,7 @@
 import { FullConfig } from '@playwright/test';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { execSync } from 'node:child_process';
 
 async function globalTeardown(config: FullConfig) {
   const allureResultsPath = path.resolve('allure-results');
@@ -8,8 +9,6 @@ async function globalTeardown(config: FullConfig) {
 
   if (fs.existsSync(allureResultsPath)) {
     try {
-      const { execSync } = require('child_process');
-
       execSync(
         `npx allure generate ${allureResultsPath} -o ${testResultsPath} --clean`,
         { stdio: 'inherit' }
@@ -22,6 +21,7 @@ async function globalTeardown(config: FullConfig) {
         fs.copyFileSync(indexPath, resultPath);
         fs.unlinkSync(indexPath);
       }
+
     } catch (error) {
       console.warn('Allure report generation failed:', String(error));
     }

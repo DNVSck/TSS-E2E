@@ -1,31 +1,46 @@
-import { test as base, Page } from '@playwright/test';
+import { test } from '@playwright/test';
 import { PortalPage } from '../page-object/portal-page'
 import { BasePage } from '../page-object/base-page';
 import { SignInPage } from '../page-object/sign-in-page';
-import { RouteDeclarePage } from '../page-object/route-declare-page';
+import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
+import {NewGoodsMovementDeclarePage} from '../page-object/new-goods-movement-declare-page';
+import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
 
 
 export type PageFixtureType = {
     basePage: BasePage;
     portalPage: PortalPage;
     signInPage: SignInPage;
-    routeDeclarePage: RouteDeclarePage;
-};
+    initialFormDeclaraPage: InitialFormDeclaraPage;
+    newGoodsMovementDeclarePage: NewGoodsMovementDeclarePage;
+    goodsMovementTaskListPage: GoodsMovementTaskListPage;
+}
 
-export const pageFixture = {
-    basePage: async ({ page }: { page: Page }, use: (p: BasePage) => Promise<void>) => {
+type ExtendParams = Parameters<typeof test.extend<PageFixtureType>>;
+
+export const pageFixture: ExtendParams[0] = {
+    basePage: async ({ page }, use) => {
         await use(new BasePage(page));
     },
 
-    portalPage: async ({ page }: { page: Page }, use: (p: PortalPage) => Promise<void>) => {
+    portalPage: async ({ page }, use) => {
         await use(new PortalPage(page));
     },
 
-    signInPage: async ({ page }: { page: Page }, use: (p: SignInPage) => Promise<void>) => {
+    signInPage: async ({ page }, use) => {
         await use(new SignInPage(page));
     },
 
-    routeDeclarePage: async ({ page }: { page: Page }, use: (p: RouteDeclarePage) => Promise<void>) => {
-        await use(new RouteDeclarePage(page));
+    initialFormDeclaraPage: async ({ page }, use) => {
+        await use(new InitialFormDeclaraPage(page));
     },
+
+    newGoodsMovementDeclarePage: async ({ page }, use) => {
+        await use(new NewGoodsMovementDeclarePage(page));
+    },
+
+    goodsMovementTaskListPage: async ({ page }, use) => {
+        await use(new GoodsMovementTaskListPage(page));
+    }
+    
 };

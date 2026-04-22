@@ -9,9 +9,9 @@ export class SignInPage extends BasePage {
 
     constructor(page: Page) {
         super(page);
-        this.emailAddressInput = page.locator("input#email");
+        this.emailAddressInput = page.locator("input#username");
         this.passwordInput = page.locator("input#password");
-        this.signInButton = page.locator("//form[contains(@action, 'sign-in')]//button[@type='submit']");
+        this.signInButton = page.locator("button#kc-login");
     }
 
 

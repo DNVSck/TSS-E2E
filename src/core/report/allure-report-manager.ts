@@ -3,7 +3,7 @@ import * as path from 'path';
 
 export class AllureReportManager {
     private static instance: AllureReportManager;
-    private reportPath: string;
+    private readonly reportPath: string;
 
     private constructor() {
         this.reportPath = path.resolve(process.cwd(), 'test-results');

@@ -1,6 +1,8 @@
 import { faker } from '@faker-js/faker';
 
 export class DateTimeUtil {
+    private static readonly UK_TIMEZONE = 'Europe/London';
+
     /**
      * Get current timestamp in various formats
      */
@@ -53,7 +55,7 @@ export class DateTimeUtil {
     static generateRandomDate(startDate: Date, endDate: Date): Date {
         const start = startDate.getTime();
         const end = endDate.getTime();
-        const randomTime = start + Math.random() * (end - start);
+        const randomTime = faker.number.int({ min: start, max: end });
         return new Date(randomTime);
     }
 
@@ -144,7 +146,7 @@ export class DateTimeUtil {
         for (const format of formats) {
             if (format.test(dateString)) {
                 const parsed = new Date(dateString);
-                if (!isNaN(parsed.getTime())) {
+                if (!Number.isNaN(parsed.getTime())) {
                     return parsed;
                 }
             }
@@ -172,7 +174,7 @@ export class DateTimeUtil {
      * Check if date is valid
      */
     static isValidDate(date: any): boolean {
-        return date instanceof Date && !isNaN(date.getTime());
+        return date instanceof Date && !Number.isNaN(date.getTime());
     }
 
     /**
@@ -245,5 +247,46 @@ export class DateTimeUtil {
      */
     static randomMonth(): string {
         return faker.date.month();
+    }
+
+    /**
+     * Generate a valid arrival date/time for TSS forms.
+     * Constraint-safe: generate within the next 14 days to avoid edge failures
+     */
+    static generateValidArrivalDate(): string {
+        const now = new Date();
+        const minMinutesAhead = 30;
+        const maxDaysAhead = 13;
+
+        const minTimestamp = now.getTime() + minMinutesAhead * 60 * 1000;
+        const maxTimestamp =
+            now.getTime() + maxDaysAhead * 24 * 60 * 60 * 1000 - 60 * 1000;
+
+        const randomTimestamp = faker.number.int({
+            min: minTimestamp,
+            max: maxTimestamp
+        });
+
+        return this.formatUkDateTimeLocal(new Date(randomTimestamp));
+    }
+
+    private static formatUkDateTimeLocal(date: Date): string {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: this.UK_TIMEZONE,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).formatToParts(date);
+
+        const lookup = Object.fromEntries(
+            parts
+                .filter(part => part.type !== 'literal')
+                .map(part => [part.type, part.value])
+        ) as Record<string, string>;
+
+        return `${lookup.year}-${lookup.month}-${lookup.day}T${lookup.hour}:${lookup.minute}`;
     }
 }
