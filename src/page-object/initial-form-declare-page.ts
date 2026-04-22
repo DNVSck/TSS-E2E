@@ -63,12 +63,12 @@ export class InitialFormDeclaraPage extends BasePage {
         this.standaloneFFDOption = page.locator("input#ensFfdChoice-ensFfdOptions-ffd-standalone");
 
         //"Why do you only need an Entry Summary Declaration?" screen
-        this.immiOrSfdOutsideTssOption = page.locator("input#ensOnlyReason-ensOnlyReasons-My trader is due to submit an Internal Market Movement Information (IMMI) or a Simplified Frontier Declaration (SFD) using a system outside of TSS");
-        this.eidrOutsideTssOption = page.locator("input#ensOnlyReason-ensOnlyReasons-My goods will be declared by EIDR using a customs system outside of TSS");
-        this.emptyVehicleEnsForGvmsOption = page.locator("input#ensOnlyReason-ensOnlyReasons-I am transporting an empty container/trailer/van/lorry under a contract of carriage, which requires an Entry Summary Declaration for GVMS");
-        this.transitOrTransshipmentNoImportTssOption = page.locator("input#ensOnlyReason-ensOnlyReasons-My goods are the subject of a Transit declaration or are using the transshipment arrangements that do not require an import declaration through TSS into NI");
-        this.temporaryStorageOutsideTssOption = page.locator("input#ensOnlyReason-ensOnlyReasons-My goods are entering Temporary storage and the customs declaration (if required) will be made outside of TSS");
-        this.standaloneImmiOrFfdWithinTssOption = page.locator("input#ensOnlyReason-ensOnlyReasons-I am submitting a separate/stand alone Internal Market Movement Information (IMMI) or a Full Frontier Declaration (FFD) within TSS");
+        this.immiOrSfdOutsideTssOption = page.locator("input[id='ensOnlyReason-ensOnlyReasons-My trader is due to submit an Internal Market Movement Information (IMMI) or a Simplified Frontier Declaration (SFD) using a system outside of TSS']");
+        this.eidrOutsideTssOption = page.locator("input[id='ensOnlyReason-ensOnlyReasons-My goods will be declared by EIDR using a customs system outside of TSS']");
+        this.emptyVehicleEnsForGvmsOption = page.locator("input[id='ensOnlyReason-ensOnlyReasons-I am transporting an empty container/trailer/van/lorry under a contract of carriage, which requires an Entry Summary Declaration for GVMS']");
+        this.transitOrTransshipmentNoImportTssOption = page.locator("input[id='ensOnlyReason-ensOnlyReasons-My goods are the subject of a Transit declaration or are using the transshipment arrangements that do not require an import declaration through TSS into NI']");
+        this.temporaryStorageOutsideTssOption = page.locator("input[id='ensOnlyReason-ensOnlyReasons-My goods are entering Temporary storage and the customs declaration (if required) will be made outside of TSS']");
+        this.standaloneImmiOrFfdWithinTssOption = page.locator("input[id='ensOnlyReason-ensOnlyReasons-I am submitting a separate/stand alone Internal Market Movement Information (IMMI) or a Full Frontier Declaration (FFD) within TSS']");
 
     }
 
