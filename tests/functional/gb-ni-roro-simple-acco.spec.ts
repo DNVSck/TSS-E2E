@@ -1,7 +1,7 @@
 import { ENVIRONMENT_INFO } from '../../config/environment';
 import { ReportLog } from '../../src/core/report/report-log';
 import { GB_TO_NI_RORO_SIMPLE_ACCO } from '../../src/test-data/gb-ni-roro-simple-acco';
-import { getBaseUrl, test, expect } from '../test-hooks';
+import { getBaseUrl, test } from '../test-hooks';
 
 import { PortalAccessFlow } from '../../src/flows/portal-access-flow';
 import { RouteDeclarationFlow } from '../../src/flows/route-declaration-flow';
@@ -25,12 +25,8 @@ test.describe('GB to NI RoRo Simple Acco',
         const routeFlow = new RouteDeclarationFlow(initialFormDeclaraPage);
 
         //-------Access Service as Admin--------
-        await accessFlow.accessServiceAsAdmin(getBaseUrl(), testInfo);
-
-        await ReportLog.step('Verify portal title', async () => {
-          const expectedTitle = t('portal.title');
-          await expect(portalPage.portalTitleLocator).toHaveText(expectedTitle);
-        });
+        const expectedTitle = t('portal.title');
+        await accessFlow.accessServiceAsAdmin(getBaseUrl(), testInfo, expectedTitle);
 
         //-------Complete Route Declaration--------
         await ReportLog.step('Complete route declaration for GB to NI RoRo Simple Acco', async () => {
