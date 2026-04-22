@@ -15,7 +15,7 @@
     "report:open": "powershell -Command \"Start-Process 'test-results/result.html'\"",
     "report:serve": "npx allure serve allure-results",
     "report:manual": "node -e \"require('./global-teardown.js').default()\"",
-    "report:pdf": "npx tsx src/core/report/export-allure-pdf.ts",
+    "report:pdf": "tsx --tsconfig tsconfig.json src/core/report/export-allure-pdf.ts",
     "lint": "eslint . --ext .ts"
   },
   "keywords": [],
@@ -35,7 +35,9 @@
     "axe-core": "^4.11.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-playwright": "^2.4.0"
+    "eslint-plugin-playwright": "^2.4.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "dotenv": "^17.2.3",

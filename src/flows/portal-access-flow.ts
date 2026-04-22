@@ -1,8 +1,8 @@
-import { BasePage } from '../page-object/base-page.ts';
-import { PortalPage } from '../page-object/portal-page.ts';
-import { SignInPage } from '../page-object/sign-in-page.ts';
-import { ReportLog } from '../core/report/report-log.ts';
-import { expect } from '../../tests/test-hooks.ts';
+import { BasePage } from '../page-object/base-page';
+import { PortalPage } from '../page-object/portal-page';
+import { SignInPage } from '../page-object/sign-in-page';
+import { ReportLog } from '../core/report/report-log';
+import { expect } from '../../tests/test-hooks';
 
 export class PortalAccessFlow {
     constructor(
