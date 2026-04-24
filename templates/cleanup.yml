@@ -1,0 +1,23 @@
+steps:
+  - script: |
+      set -e
+      echo "Cleaning up agent workspace..."
+      
+      dirs=(
+        "$(Build.SourcesDirectory)/node_modules"
+        "$(Build.SourcesDirectory)/test-results"
+        "$(Build.SourcesDirectory)/playwright-report"
+        "$(Build.SourcesDirectory)/allure-results"
+        "$(Build.SourcesDirectory)/.videos"
+      )
+      
+      for dir in "${dirs[@]}"; do
+        if [ -d "$dir" ]; then
+          rm -rf "$dir"
+          echo "Removed: $dir"
+        fi
+      done
+      
+      echo "Cleanup complete"
+    displayName: 'Cleanup agent workspace'
+    condition: always()

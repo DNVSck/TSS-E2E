@@ -1,0 +1,31 @@
+parameters:
+  - name: testType
+    type: string
+  - name: environment
+    type: string
+
+steps:
+  - task: PublishTestResults@2
+    condition: always()
+    continueOnError: true
+    displayName: 'Publish test results'
+    inputs:
+      testResultsFiles: '$(Build.SourcesDirectory)/test-results/junit.xml'
+      testRunTitle: '${{ parameters.testType }} tests (${{ parameters.environment }})'
+      failTaskOnFailedTests: false
+
+  - task: PublishBuildArtifacts@1
+    condition: always()
+    continueOnError: true
+    displayName: 'Publish Playwright report'
+    inputs:
+      pathToPublish: '$(Build.SourcesDirectory)/playwright-report'
+      artifactName: '${{ parameters.testType }}-playwright-report-$(Build.BuildId)'
+
+  - task: PublishBuildArtifacts@1
+    condition: always()
+    continueOnError: true
+    displayName: 'Publish Allure results'
+    inputs:
+      pathToPublish: '$(Build.SourcesDirectory)/allure-results'
+      artifactName: '${{ parameters.testType }}-allure-results-$(Build.BuildId)'

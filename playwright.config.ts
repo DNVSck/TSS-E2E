@@ -22,9 +22,9 @@ export default defineConfig({
     timeout: Number(process.env.TEST_BASE_TIMEOUT ?? 5000),
   },
   reporter: [
-    ['allure-playwright', {
-      suiteTitle: true
-    }],
+    ['allure-playwright', { suiteTitle: true }],
+    ['junit', { outputFile: 'test-results/junit.xml' }],
+    ['html', { outputFolder: 'playwright-report' }],
     ['line'],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
