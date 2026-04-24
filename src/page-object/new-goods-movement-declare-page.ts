@@ -136,9 +136,8 @@ export class NewGoodsMovementDeclarePage extends BasePage {
         await this.conveyanceReferenceNumberInput.fill(conveyanceReferenceNumber);
     }
 
-    async selectTypeOfPassiveTransport(typeOfPassiveTransport: string, vehicleRegistrationNumber: string): Promise<void> {
+    async selectTypeOfPassiveTransport(typeOfPassiveTransport: string): Promise<void> {
         await this.page.locator(`input[name="typeOfPassiveTransport"][value="${typeOfPassiveTransport}"]`).click();
-        await this.vehicleRegistrationNumberInput.fill(vehicleRegistrationNumber);
     }
 
     async inputVehicleRegistrationNumber(vehicleRegistrationNumber?: string): Promise<void> {

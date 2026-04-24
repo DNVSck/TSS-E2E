@@ -48,12 +48,7 @@ test.describe('GB to NI RoRo Simple Acco',
 
         //-------Submit Transport Details--------
         await newGoodsMovementTransportDetailsFlow.NewGoodsMovementTransportDetails(
-          movement().typeOfMovement,
-          movement().imoNumber,
-          movement().nationalityOfMeanOfTransport,
-          movement().typeOfPassiveTransport,
-          movement().vehicleRegistrationNumber,
-          movement().sealNumber
+          movement()
         );
 
         const newGoodsMovementMovementDetailsFlow = new NewGoodsMovementMovementDetailsFlow(newGoodsMovementDeclarePage);
@@ -61,10 +56,7 @@ test.describe('GB to NI RoRo Simple Acco',
         //-------Submit Movement Details--------
 
         await newGoodsMovementMovementDetailsFlow.NewGoodsMovementMovementDetails(
-          movement().roleInThisMovement,
-          movement().haulierSeparateThisMovement,
-          movement().arrivalDateTime,
-          movement().portOfArrival
+          movement()
         );
 
         const newGoodsMovementLoadingDetailsFlow = new NewGoodsMovementLoadingDetailsFlow(newGoodsMovementDeclarePage);
@@ -72,11 +64,7 @@ test.describe('GB to NI RoRo Simple Acco',
         //-------Submit Loading Details--------
 
         await newGoodsMovementLoadingDetailsFlow.NewGoodsMovementLoadingDetails(
-          movement().placeOfLoading,
-          movement().placeOfUnloading,
-          movement().isSamePlaceOfLoading,
-          movement().isSamePlaceOfUnloading,
-          movement().transportCharges
+          movement()
         );
 
       });
