@@ -3,7 +3,7 @@ import { PortalPage } from '../page-object/portal-page'
 import { BasePage } from '../page-object/base-page';
 import { SignInPage } from '../page-object/sign-in-page';
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
-import {NewGoodsMovementDeclarePage} from '../page-object/new-goods-movement-declare-page';
+import { NewGoodsMovementDeclarePage } from '../page-object/new-goods-movement-declare-page';
 import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
 
 
@@ -42,5 +42,5 @@ export const pageFixture: ExtendParams[0] = {
     goodsMovementTaskListPage: async ({ page }, use) => {
         await use(new GoodsMovementTaskListPage(page));
     }
-    
+
 };

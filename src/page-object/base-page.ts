@@ -78,4 +78,8 @@ export class BasePage {
         await expect(portalPage.portalTitle).toHaveText(expectedTitles[lang]);
     }
 
+    async clickContinueButton(): Promise<void> {
+        await this.commonContinueButton.click();
+    }
+
 }

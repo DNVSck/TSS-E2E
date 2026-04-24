@@ -66,11 +66,11 @@ export class DateTimeUtil {
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
-        
+
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
             age--;
         }
-        
+
         return age;
     }
 
@@ -88,14 +88,14 @@ export class DateTimeUtil {
     static getBusinessDaysBetween(startDate: Date, endDate: Date): number {
         let count = 0;
         const current = new Date(startDate);
-        
+
         while (current <= endDate) {
             if (!this.isWeekend(current)) {
                 count++;
             }
             current.setDate(current.getDate() + 1);
         }
-        
+
         return count;
     }
 
@@ -105,14 +105,14 @@ export class DateTimeUtil {
     static addBusinessDays(date: Date, days: number): Date {
         const result = new Date(date);
         let addedDays = 0;
-        
+
         while (addedDays < days) {
             result.setDate(result.getDate() + 1);
             if (!this.isWeekend(result)) {
                 addedDays++;
             }
         }
-        
+
         return result;
     }
 
@@ -192,7 +192,7 @@ export class DateTimeUtil {
     }
 
     // ===== FAKER.JS METHODS =====
-    
+
     /**
      * Generate random past date using Faker
      */
@@ -289,4 +289,5 @@ export class DateTimeUtil {
 
         return `${lookup.year}-${lookup.month}-${lookup.day}T${lookup.hour}:${lookup.minute}`;
     }
+
 }
