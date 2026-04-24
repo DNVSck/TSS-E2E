@@ -194,10 +194,6 @@ export class NewGoodsMovementDeclarePage extends BasePage {
         await this.nationalityOfMeanOfTransportInput.selectOption({ value: nationalityOfMeanOfTransport });
     }
 
-    async clickContinueButton(): Promise<void> {
-        await this.commonContinueButton.click();
-    }
-
     async selectAcceptanceSameAsLoading(): Promise<void> {
         await this.isAcceptanceSameYesOption.check();
     }

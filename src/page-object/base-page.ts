@@ -82,4 +82,16 @@ export class BasePage {
         await this.commonContinueButton.click();
     }
 
+    async clickBackLink(): Promise<void> {
+        await this.backLink.click();
+    }
+
+    async clickSubmitButton(): Promise<void> {
+        await this.commonSubmitConsignmentButton.click();
+    }
+
+    async clickFinishButton(): Promise<void> {
+        await this.commonFinishButton.click();
+    }
+
 }
