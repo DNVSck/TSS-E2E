@@ -12,7 +12,6 @@ import { movement } from '../../src/test-data/movements';
 import { consignment } from '../../src/test-data/consignment';
 import { NewGoodsMovementLoadingDetailsFlow } from '../../src/flows/new-goods-movement-loading-details-flow';
 import { AddNewConsignmentFlow } from '../../src/flows/add-new-consignment-flow';
-import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../src/constant/goods-movement-declaration-constants';
 
 
 test.describe('Create IMMI Pre-movement GB - NI RoRo Accompanied with TGP',
