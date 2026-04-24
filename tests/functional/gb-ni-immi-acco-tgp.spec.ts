@@ -52,7 +52,7 @@ test.describe('Create IMMI Pre-movement GB - NI RoRo Accompanied with TGP',
         //-------Submit Transport Details--------
         // RoRo Accompanied movement
         await newGoodsMovementTransportDetailsFlow.NewGoodsMovementTransportDetails(
-          movement({typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED})
+          movement()
         );
 
         const newGoodsMovementMovementDetailsFlow = new NewGoodsMovementMovementDetailsFlow(newGoodsMovementDeclarePage);
