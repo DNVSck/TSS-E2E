@@ -176,7 +176,7 @@ export class ConsignmentDeclarePage extends BasePage {
 
     async inputImporterEORI(importerEORI: string): Promise<void> {
         await this.importerEORIInput.fill(importerEORI);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     //NOTE - this method can be called when EORI is not recognized by TSS
@@ -186,7 +186,7 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.importerCityInput.fill(city);
         await this.importerPostCodeInput.fill(postCode);
         await this.importerCountryDropdown.selectOption({ value: country });
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
 
@@ -200,7 +200,7 @@ export class ConsignmentDeclarePage extends BasePage {
             await this.inputBuyerEORI(buyerEORI);
             await this.inputBuyerAddress(buyerName, buyerStreetAndNumber, buyerCity, buyerPostCode, buyerCountry);
         }
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async inputBuyerEORI(buyerEORI: string): Promise<void> {
@@ -220,10 +220,10 @@ export class ConsignmentDeclarePage extends BasePage {
         const value = isGoodsAtRisk.trim().toLowerCase();
         if (value === 'yes') {
             await this.areGoodsAtRiskYesOption.check();
-            await this.commonContinueButton.click();
+            await this.clickContinueButton();
         } else{
             await this.areGoodsAtRiskNoOption.check();
-            await this.commonContinueButton.click();
+            await this.clickContinueButton();
             await this.chooseToUseIMMI(useIMMI);
         }
     }
@@ -235,7 +235,7 @@ export class ConsignmentDeclarePage extends BasePage {
         } else{
             await this.useIMMINoOption.check();
         }
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async defineControlledGoods(isControlledGoods: string): Promise<void> {
@@ -245,14 +245,14 @@ export class ConsignmentDeclarePage extends BasePage {
         } else{
             await this.controlledGoodsNoOption.check();
         }
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async fillTransportAndDestinationDetails(transportDocumentNumber: string, goodsDomesticStatus: string, destinationCountry: string): Promise<void> {
         await this.inputTransportDocumentNumber(transportDocumentNumber);
         await this.defineGoodsDomesticStatus(goodsDomesticStatus);
         await this.selectDestinationCountry(destinationCountry);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async inputTransportDocumentNumber(transportDocumentNumber: string): Promise<void> {
@@ -273,7 +273,7 @@ export class ConsignmentDeclarePage extends BasePage {
 
     async inputWarehouseIdentifier(warehouseIdentifier: string): Promise<void> {
         await this.warehouseIdentifierInput.fill(warehouseIdentifier);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     // If EORI is not supplied, then the following consignor fields are ALL mandatory
@@ -285,7 +285,7 @@ export class ConsignmentDeclarePage extends BasePage {
 
     async inputConsignorEORI(consignorEORI: string): Promise<void> {
         await this.consignorEORIInput.fill(consignorEORI);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async inputConsignorAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
@@ -294,7 +294,7 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.consignorCityInput.fill(city);
         await this.consignorPostCodeInput.fill(postCode);
         await this.consignorCountryDropdown.selectOption({ value: country });
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     // If EORI is not supplied, then the following consignee fields are ALL mandatory
@@ -306,7 +306,7 @@ export class ConsignmentDeclarePage extends BasePage {
 
     async inputConsigneeEORI(consigneeEORI: string): Promise<void> {
         await this.consigneeEORIInput.fill(consigneeEORI);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async inputConsigneeAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
@@ -315,7 +315,7 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.consigneeCityInput.fill(city);
         await this.consigneePostCodeInput.fill(postCode);
         await this.consigneeCountryDropdown.selectOption({ value: country });
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     // If EORI is not supplied, then the following exporter fields are ALL mandatory
@@ -326,7 +326,7 @@ export class ConsignmentDeclarePage extends BasePage {
 
     async inputExporterEORI(exporterEORI: string): Promise<void> {
         await this.exporterEORIInput.fill(exporterEORI);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async inputExporterAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
@@ -335,7 +335,7 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.exporterCityInput.fill(city);
         await this.exporterPostCodeInput.fill(postCode);
         await this.exporterCountryDropdown.selectOption({ value: country });
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async chooseSellerInvolvement(isSellerInvolvement: string, sellerEORI: string, sellerName: string, sellerStreetAndNumber: string, sellerCity: string, 
@@ -348,12 +348,12 @@ export class ConsignmentDeclarePage extends BasePage {
             await this.inputSellerEORI(sellerEORI);
             await this.inputSellerAddress(sellerName, sellerStreetAndNumber, sellerCity, sellerPostCode, sellerCountryCode);
         }
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async inputSellerEORI(sellerEORI: string): Promise<void> {
         await this.sellerEORIInput.fill(sellerEORI);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
     
     async inputSellerAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
@@ -362,13 +362,13 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.sellerCityInput.fill(city);
         await this.sellerPostCodeInput.fill(postCode);
         await this.sellerCountryDropdown.selectOption({ value: country });
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async inputConsignmentReference(consignmentDescription: string, traderReference: string): Promise<void> {
         await this.inputConsignmentDescription(consignmentDescription);
         await this.inputTraderReference(traderReference);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async inputConsignmentDescription(consignmentDescription: string): Promise<void> {
@@ -383,12 +383,12 @@ export class ConsignmentDeclarePage extends BasePage {
         const value = isGoodsCrossEUBorder.trim().toLowerCase();    
         if (value === 'yes') {
             await this.goodsCrossEUBorderYesOption.check();
-            await this.commonContinueButton.click();
+            await this.clickContinueButton();
             await this.chooseAllGoodsInSameContainers(isSameContainer, containerIdentifierNumber);
         }
         else{
             await this.goodsCrossEUBorderNoOption.check();
-            await this.commonContinueButton.click();
+            await this.clickContinueButton();
         }
     }
 
@@ -396,18 +396,18 @@ export class ConsignmentDeclarePage extends BasePage {
         const value = isSameContainer.trim().toLowerCase();
         if (value === 'yes') {
             await this.allGoodsInSameContainersYesOption.check();
-            await this.commonContinueButton.click();
+            await this.clickContinueButton();
             await this.inputContainerIdentificationNumber(containerIdentifierNumber);
         }
         else{
             await this.allGoodsInSameContainersNoOption.check();
-            await this.commonContinueButton.click();
+            await this.clickContinueButton();
         }
     }
 
     async inputContainerIdentificationNumber(containerIdentifierNumber: string): Promise<void> {
         await this.containerIdentificationNumberInput.fill(containerIdentifierNumber);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
 }
