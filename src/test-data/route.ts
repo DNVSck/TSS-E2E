@@ -1,6 +1,6 @@
 import { ROUTE_DECLARATION } from '../constant/route-declaration-constants';
 
-interface RouteData {
+export interface RouteData {
   route: string;
   goodsMovementProcess: string;
   process: string;

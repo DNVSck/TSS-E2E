@@ -23,6 +23,7 @@ export interface MovementData {
     typeOfPassiveTransport: string;
     transportCharges: string;
     trailerRegistrationNumber?: string;
+    carrierEori?: string;
 }
 
 const defaults: MovementData = {
@@ -45,6 +46,7 @@ const defaults: MovementData = {
     typeOfPassiveTransport: NEW_GOODS_MOVEMENT_DECLARATION.TYPE_OF_PASSIVE_TRANSPORT.TRUCK,
     transportCharges: TRANSPORT_CHARGES_OPTION_CODE.PAYMENT_IN_CASH,
     trailerRegistrationNumber: 'TR12LER',
+    carrierEori: 'GB123456789000'
 };
 
 

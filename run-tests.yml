@@ -1,0 +1,91 @@
+parameters:
+  - name: environment
+    displayName: 'Environment'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - test
+      - sit
+
+  - name: runUITests
+    displayName: 'Run UI Tests'
+    type: boolean
+    default: true
+
+  - name: runAccessibilityTests
+    displayName: 'Run Accessibility Tests'
+    type: boolean
+    default: true
+
+  - name: runFunctionalTests
+    displayName: 'Run Functional Tests'
+    type: boolean
+    default: true
+
+  - name: runAll
+    displayName: 'Run All Tests (overrides above)'
+    type: boolean
+    default: false
+
+variables:
+  - group: TSS-Secrets
+  - group: TSS-${{ parameters.environment }}
+
+trigger: none
+pr:
+  branches:
+    include:
+      - dev
+
+pool:
+  name: Linux
+
+jobs:
+  - job: UITests
+    displayName: 'Run UI tests'
+    timeoutInMinutes: 30
+    dependsOn: []
+    condition: |
+      or(
+        eq('${{ parameters.runAll }}', 'True'),
+        eq('${{ parameters.runUITests }}', 'True'),
+        eq(variables['Build.Reason'], 'PullRequest')
+      )
+    steps:
+      - template: templates/run-group-of-tests.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+          testType: 'ui'
+
+  - job: AccessibilityTests
+    displayName: 'Run Accessibility tests'
+    timeoutInMinutes: 30
+    dependsOn: []
+    condition: |
+      or(
+        eq('${{ parameters.runAll }}', 'True'),
+        eq('${{ parameters.runAccessibilityTests }}', 'True'),
+        eq(variables['Build.Reason'], 'PullRequest')
+      )
+    steps:
+      - template: templates/run-group-of-tests.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+          testType: 'accessibility'
+
+  - job: FunctionalTests
+    displayName: 'Run Functional tests'
+    timeoutInMinutes: 30
+    dependsOn: []
+    condition: |
+      or(
+        eq('${{ parameters.runAll }}', 'True'),
+        eq('${{ parameters.runFunctionalTests }}', 'True'),
+        eq(variables['Build.Reason'], 'PullRequest')
+      )
+    steps:
+      - template: templates/run-group-of-tests.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+          testType: 'functional'

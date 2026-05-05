@@ -67,10 +67,10 @@ export class ConsignmentDeclarePage extends BasePage {
 
     constructor(page: Page) {
         super(page);
-        
+
         // "Who is the importer?" section
         this.importerEORIInput = page.locator("input#importerEORI");
-        
+
         // "Enter the importer's address" section
         this.importerNameInput = page.locator("input#importerName");
         this.importerStreetAndNumberInput = page.locator("input#importerStreetAndNumber");

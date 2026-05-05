@@ -1,0 +1,36 @@
+parameters:
+  - name: environment
+    type: string
+  - name: testType
+    type: string
+
+steps:
+  - template: test-env-prepare.yml
+    parameters:
+      environment: ${{ parameters.environment }}
+
+  - script: |
+      cd "$(Build.SourcesDirectory)"
+      set -e
+      
+      RUN_ARGS="${{ parameters.testType }} --pass-with-no-tests"
+      if [ "$(Build.Reason)" = "PullRequest" ]; then
+        RUN_ARGS="$RUN_ARGS --grep @smoke"
+      fi
+
+      echo "Running: pnpm test $RUN_ARGS"
+      pnpm test $RUN_ARGS
+    displayName: 'Run ${{ parameters.testType }} tests'
+    env:
+      ENV: ${{ parameters.environment }}
+      CI: true
+      PWDEBUG: 0
+      PLAYWRIGHT_HTML_OPEN: never
+      JAVA_HOME: $(JAVA_HOME_21_X64)
+
+  - template: publish-test-artifacts.yml
+    parameters:
+      testType: ${{ parameters.testType }}
+      environment: ${{ parameters.environment }}
+
+  - template: cleanup.yml
