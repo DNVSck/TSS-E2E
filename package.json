@@ -10,8 +10,7 @@
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:report": "pnpm test && pnpm report:open",
-    "test:ui:poc:cy": "powershell -Command \"$env:ENV='poc'; $env:LOCALE='cy'; playwright test tests/ui --project=chromium-cy\"",
-    "test:ui:poc:en": "powershell -Command \"$env:ENV='poc'; $env:LOCALE='en'; playwright test tests/ui --project=chromium-en\"",
+    "test:smoke": "cross-env ENV=dev npx playwright test --grep '@smoke' --project=chromium-en",
     "report:open": "powershell -Command \"Start-Process 'test-results/result.html'\"",
     "report:serve": "npx allure serve allure-results",
     "report:manual": "node -e \"require('./global-teardown.js').default()\"",
@@ -37,7 +36,8 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-playwright": "^2.4.0",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "cross-env": "10.1.0"
   },
   "dependencies": {
     "dotenv": "^17.2.3",

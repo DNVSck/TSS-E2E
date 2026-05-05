@@ -32,8 +32,14 @@ export class NewGoodsMovementDeclarePage extends BasePage {
     carrierEoriInput: Locator;
     haulierEoriInput: Locator;
 
-    arrivalDateTimeInput: Locator;
-    portOfArrivalDropdown: Locator;
+    arrivalDayInput: Locator;
+    arrivalMonthInput: Locator;
+
+    arrivalTimeHourInput: Locator;
+    arrivalTimeMinuteInput: Locator;
+
+
+    portOfArrivalOption: Locator;
 
     placeOfLoadingInput: Locator;
 
@@ -88,10 +94,13 @@ export class NewGoodsMovementDeclarePage extends BasePage {
         this.haulierEoriInput = page.locator("input#haulierEori");
 
         //"Enter arrival date and time"
-        this.arrivalDateTimeInput = page.locator("input#arrivalDateTime");
+        this.arrivalDayInput = page.locator("input#arrivalDate-day");
+        this.arrivalMonthInput = page.locator("input#arrivalDate-month");
+        this.arrivalTimeHourInput = page.locator("input#arrivalTime-hour");
+        this.arrivalTimeMinuteInput = page.locator("input#arrivalTime-minute");
 
         //"Select port of arrival"
-        this.portOfArrivalDropdown = page.locator("select#portOfArrival");
+        this.portOfArrivalOption = page.locator('input[name="portOfArrival"]');
 
         //"Enter place of loading place details" screen
         this.placeOfLoadingInput = page.locator("input#placeOfLoading");
@@ -176,17 +185,19 @@ export class NewGoodsMovementDeclarePage extends BasePage {
         await this.placeOfUnloadingInput.fill(placeOfUnloading);
     }
 
-    async selectPortOfArrival(portOfArrivalKey: string): Promise<void> {
-        await selectDropdownValue(this.portOfArrivalDropdown, portOfArrivalKey);
-    }
-
-    async clearPortOfArrival(): Promise<void> {
-        await selectDropdownValue(this.portOfArrivalDropdown, '');
+    async selectPortOfArrival(value: string): Promise<void> {
+        await this.page.locator(`input[name="portOfArrival"][value="${value}"]`).click();
     }
 
     async inputArrivalDateTime(arrivalDateTime?: string): Promise<void> {
         const value = arrivalDateTime ?? DateTimeUtil.generateValidArrivalDate();
-        await this.arrivalDateTimeInput.fill(value);
+
+        const [year, month, day, hour, minute] = value.split(/[-T:]/);
+
+        await this.arrivalDayInput.fill(day);
+        await this.arrivalMonthInput.fill(month);
+        await this.arrivalTimeHourInput.fill(hour);
+        await this.arrivalTimeMinuteInput.fill(minute);
     }
 
     async submitTransportDetails(imoNumber: string, nationalityOfMeanOfTransport: string): Promise<void> {
@@ -220,5 +231,9 @@ export class NewGoodsMovementDeclarePage extends BasePage {
 
     async clickFinishButton(): Promise<void> {
         await this.commonFinishButton.click();
+    }
+
+    async inputCarrierEori(carrierEori: string): Promise<void> {
+        await this.carrierEoriInput.fill(carrierEori);
     }
 }

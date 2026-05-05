@@ -5,6 +5,7 @@ import { SignInPage } from '../page-object/sign-in-page';
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
 import { NewGoodsMovementDeclarePage } from '../page-object/new-goods-movement-declare-page';
 import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
+import { DeclarationOverviewPage } from '../page-object/declaration-overview-page';
 
 
 export type PageFixtureType = {
@@ -14,6 +15,7 @@ export type PageFixtureType = {
     initialFormDeclaraPage: InitialFormDeclaraPage;
     newGoodsMovementDeclarePage: NewGoodsMovementDeclarePage;
     goodsMovementTaskListPage: GoodsMovementTaskListPage;
+    declarationOverviewPage: DeclarationOverviewPage;
 }
 
 type ExtendParams = Parameters<typeof test.extend<PageFixtureType>>;
@@ -41,6 +43,10 @@ export const pageFixture: ExtendParams[0] = {
 
     goodsMovementTaskListPage: async ({ page }, use) => {
         await use(new GoodsMovementTaskListPage(page));
+    },
+
+    declarationOverviewPage: async ({ page }, use) => {
+        await use(new DeclarationOverviewPage(page));
     }
 
 };

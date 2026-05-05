@@ -2,7 +2,7 @@ import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { COUNTRY_CODE, CountryCodeKey } from "../constant/country-code-dropdown-constant";
 
-import { selectDropdownValue} from '../core/util/element-helper';
+import { selectDropdownValue } from '../core/util/element-helper';
 
 
 
@@ -63,10 +63,10 @@ export class ConsignmentDeclarePage extends BasePage {
 
     constructor(page: Page) {
         super(page);
-        
+
         // "Who is the importer?" section
         this.importerEORIInput = page.locator("input#importerEORI");
-        
+
         // "Enter the importer's address" section
         this.importerNameInput = page.locator("input#importerName");
         this.importerStreetAndNumberInput = page.locator("input#importerStreetAndNumber");
@@ -165,5 +165,76 @@ export class ConsignmentDeclarePage extends BasePage {
         await selectDropdownValue(this.importerCountryDropdown, importerCountryCode);
     }
 
-    
+    async inputImporterEORI(importerEORI: string): Promise<void> {
+        await this.importerEORIInput.fill(importerEORI);
+    }
+
+    async clickContinueButton(): Promise<void> {
+        await this.commonContinueButton.click();
+    }
+
+    async inputImporterAddress(name: string, streetAndNumber: string, city: string, postCode: string, countryCode: string): Promise<void> {
+        await this.importerNameInput.fill(name);
+        await this.importerStreetAndNumberInput.fill(streetAndNumber);
+        await this.importerCityInput.fill(city);
+        await this.importerPostCodeInput.fill(postCode);
+        await selectDropdownValue(this.importerCountryDropdown, countryCode);
+    }
+
+    async isBuyerTheSameAsImporter(isSame: boolean): Promise<void> {
+        if (isSame) {
+            await this.theSameEORIYesOption.click();
+        } else {
+            await this.theSameEORINoOption.click();
+        }
+    }
+
+    async isGoodsAtRisk(isAtRisk: boolean): Promise<void> {
+        if (isAtRisk) {
+            await this.areGoodsAtRiskYesOption.click();
+        } else {
+            await this.areGoodsAtRiskNoOption.click();
+        }
+    }
+
+    async isUsingIMMI(useIMMI: boolean): Promise<void> {
+        if (useIMMI) {
+            await this.useIMMIYesOption.click();
+        } else {
+            await this.useIMMINoOption.click();
+        }
+    }
+
+    async isControlledGoods(controlledGoods: boolean): Promise<void> {
+        if (controlledGoods) {
+            await this.controlledGoodsYesOption.click();
+        } else {
+            await this.controlledGoodsNoOption.click();
+        }
+    }
+
+    async inputTransportDocumentNumber(transportDocumentNumber: string): Promise<void> {
+        await this.transportDocumentNumberInput.fill(transportDocumentNumber);
+    }
+
+    async selectGoodsDomesticStatus(isNIDOM: boolean): Promise<void> {
+        if (isNIDOM) {
+            await this.nidomOption.click();
+        } else {
+            await this.niimpOption.click();
+        }
+    }
+
+    async selectDestinationCountry(value: string): Promise<void> {
+        await selectDropdownValue(this.destinationCountryDropdown, value);
+    }
+
+    async inputWarehouseIdentifier(warehouseIdentifier: string): Promise<void> {
+        await this.warehouseIdentifierInput.fill(warehouseIdentifier);
+    }
+
+    async inputConsignorEORI(consignorEORI: string): Promise<void> {
+        await this.consignorEORIInput.fill(consignorEORI);
+    }
+
 }
