@@ -1,5 +1,4 @@
 import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
-import { NewGoodsMovementDeclarePage } from '../page-object/new-goods-movement-declare-page';
 
 import { MovementData } from '../test-data/movements';
 
