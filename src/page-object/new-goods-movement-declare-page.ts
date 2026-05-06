@@ -129,7 +129,7 @@ export class NewGoodsMovementDeclarePage extends BasePage {
 
     async chooseTypeOfMovement(typeOfMovement: string): Promise<void> {
         await this.page.locator(`input[name="typeOfMovement"][value="${typeOfMovement}"]`).click();
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async inputImoNumber(imoNumber: string): Promise<void> {
@@ -223,10 +223,6 @@ export class NewGoodsMovementDeclarePage extends BasePage {
 
     async selectTransportCharges(transportChargesKey: string): Promise<void> {
         await this.transportCharges.and(this.page.locator(`[value="${transportChargesKey}"]`)).click();
-    }
-
-    async clickFinishButton(): Promise<void> {
-        await this.commonFinishButton.click();
     }
 
     async inputCarrierEori(carrierEori: string): Promise<void> {

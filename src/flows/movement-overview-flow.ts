@@ -1,6 +1,6 @@
 import { NewGoodsMovementDeclarePage } from "../page-object/new-goods-movement-declare-page";
 import { ReportLog } from '../core/report/report-log';
-import { MovementData } from "../test-data/movements";
+import { MovementData } from "../test-data/movements-data";
 import { DeclarationOverviewPage } from "../page-object/declaration-overview-page";
 import { expect } from "../../tests/test-hooks";
 

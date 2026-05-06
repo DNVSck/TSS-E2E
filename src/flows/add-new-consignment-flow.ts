@@ -1,7 +1,7 @@
 import { DeclarationOverviewPage } from "../page-object/declaration-overview-page";
 import { ConsignmentDeclarePage } from "../page-object/consignment-declare-page";
 import { ReportLog } from '../core/report/report-log';
-import { ConsignmentData } from "../test-data/consignment";
+import { ConsignmentData } from "../test-data/consignment-data";
 
 export class AddNewConsignmentFlow {
     constructor(

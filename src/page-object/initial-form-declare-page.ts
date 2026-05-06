@@ -2,6 +2,7 @@ import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import { ROUTE_DECLARATION } from '../constant/route-declaration-constants';
 import { ROUTES } from '../constant/endpoints-constant';
+import { InitialFormData } from '../test-data/initial-form-data';
 
 
 export class InitialFormDeclaraPage extends BasePage {
@@ -101,7 +102,7 @@ export class InitialFormDeclaraPage extends BasePage {
 
     async selectRouteAndContinue(route: string): Promise<void> {
         await this.selectRoute(route);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async selectGoodsMovementProcess(process: string): Promise<void> {
@@ -129,7 +130,7 @@ export class InitialFormDeclaraPage extends BasePage {
 
     async selectGoodsMovementProcessAndContinue(process: string): Promise<void> {
         await this.selectGoodsMovementProcess(process);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
 
@@ -147,7 +148,7 @@ export class InitialFormDeclaraPage extends BasePage {
 
     async selectProcessAndContinue(process: string): Promise<void> {
         await this.selectProcess(process);
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async selectHowToStartOptionAndContinue(option: string): Promise<void> {
@@ -164,11 +165,11 @@ export class InitialFormDeclaraPage extends BasePage {
         ) {
             await this.createFromTemplateOption.click();
         }
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
-    async routeDeclaration(route: string, goodsMovementProcess: string, process: string, howToStart: string): Promise<void> {
-        console.log(route, goodsMovementProcess, process, howToStart);
+    async selectRouteAndProcess(input: InitialFormData): Promise<void> {
+        const { route, goodsMovementProcess, process, howToStart } = input;
         await this.selectRouteAndContinue(route);
         await this.selectGoodsMovementProcessAndContinue(goodsMovementProcess);
         await this.selectProcessAndContinue(process);

@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect, TestInfo } from '@playwright/test';
 import { PortalPage } from './portal-page';
 
 export class BasePage {
@@ -31,7 +31,7 @@ export class BasePage {
     /**
      * Universal portal navigation with language switching
      */
-    async navigateToPortal(url: string, testInfo: any): Promise<void> {
+    async navigateToPortal(url: string, testInfo: TestInfo): Promise<void> {
         await this.page.goto(url);
         await this.clearBrowserStorage();
         await this.switchToWelshIfNeeded(testInfo);
@@ -53,7 +53,7 @@ export class BasePage {
     /**
      * Switch to Welsh language if cy project
      */
-    private async switchToWelshIfNeeded(testInfo: any): Promise<void> {
+    private async switchToWelshIfNeeded(testInfo: TestInfo): Promise<void> {
         const portalPage = new PortalPage(this.page);
         const isCyProject = testInfo.project.name.includes('cy');
 
