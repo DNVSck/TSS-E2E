@@ -1,0 +1,82 @@
+trigger: none
+
+pool:
+  name: Linux
+
+parameters:
+  - name: environment
+    type: string
+    default: dev
+    values:
+      - dev
+      - test
+
+variables:
+  - group: TSS-Secrets
+  - group: TSS-Dev
+
+resources:
+  repositories:
+    - repository: tssGitOps
+      type: git
+      name: TSS/TSS-GitOps
+      ref: refs/heads/main
+
+stages:
+  - stage: Smoke_${{ parameters.environment }}
+    displayName: Smoke Tests (${{ parameters.environment }})
+    jobs:
+      - job: playwright
+        displayName: Playwright Smoke Tests
+        steps:
+          - task: NodeTool@0
+            displayName: Setup Node 24
+            inputs:
+              versionSpec: '24.x'
+
+          - checkout: self
+            persistCredentials: true
+
+          - script: |
+              set -e
+              cp .env.example .env
+              corepack enable
+              pnpm install --frozen-lockfile
+              npx playwright install
+            displayName: Install Dependencies
+
+          - script: |
+              set -e
+              echo "Waiting for deployment to stabilise..."
+              sleep 300
+            displayName: Wait for Deployment (5 min)
+
+          - script: |
+              set -e
+              HEADLESS=true \
+              ENV=${{ parameters.environment }} \
+              BASE_URL=https://${{ parameters.environment }}.nc-tss.uk/portal/ \
+              npx playwright test \
+                --grep "@smoke" \
+                --project=chromium-en
+            displayName: Run Smoke Tests (${{ parameters.environment }})
+            env:
+              BASE_URL: $(BASE_URL)
+              USER_NAME: $(USER_NAME)
+              PASSWORD: $(PASSWORD)
+              JAVA_HOME: $(JAVA_HOME_21_X64)
+
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            condition: always()
+            inputs:
+              testResultsFormat: JUnit
+              testResultsFiles: test-results/*.xml
+              testRunTitle: Smoke Tests - ${{ parameters.environment }}
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Playwright Report
+            condition: always()
+            inputs:
+              pathToPublish: playwright-report
+              artifactName: playwright-report-${{ parameters.environment }}
