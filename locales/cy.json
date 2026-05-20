@@ -12,5 +12,8 @@
   "movementHeaderOverview": {
     "localReferenceNumber": "Rhif cyfeirnod lleol",
     "declarationStatus": "Status y datganiad"
+  },
+  "status": {
+    "draft": "Drafft"
   }
 }

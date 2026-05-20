@@ -47,12 +47,14 @@ export const flowFixture: ExtendParams[0] = {
         initialFormDeclarationFlow,
         movementHeaderDeclarationFlow,
         movementOverviewFlow,
+        addNewConsignmentFlow
     }, use) => {
         await use(new CreateAndSubmitEnsDeclarationFlow(
             portalAccessFlow,
             initialFormDeclarationFlow,
             movementHeaderDeclarationFlow,
             movementOverviewFlow,
+            addNewConsignmentFlow
         ));
     },
 };

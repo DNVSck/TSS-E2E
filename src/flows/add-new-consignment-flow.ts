@@ -60,7 +60,7 @@ export class AddNewConsignmentFlow {
 
     private async fillTransportAndDestinationDetails(input: ConsignmentData): Promise<void> {
         await ReportLog.step('Fill Transport and destination details', async () => {
-            await this.consignmentDeclarePage.fillTransportAndDestinationDetails(input.transportDocumentNumber, input.GoodsDomesticStatus, input.destinationCountryCode);
+            await this.consignmentDeclarePage.fillTransportAndDestinationDetails(input.transportDocumentNumber, input.goodsDomesticStatus, input.destinationCountryCode);
         });
     }
 

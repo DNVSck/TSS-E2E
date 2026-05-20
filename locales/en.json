@@ -12,5 +12,8 @@
   "movementHeaderOverview": {
     "localReferenceNumber": "Local reference number",
     "declarationStatus": "Declaration status"
+  },
+  "status": {
+    "draft": "Draft"
   }
 }

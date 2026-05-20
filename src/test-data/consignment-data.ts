@@ -20,7 +20,7 @@ export interface ConsignmentData {
     useIMMI: string;
     isControlledGoods: string;
     transportDocumentNumber: string;
-    GoodsDomesticStatus: string;
+    goodsDomesticStatus: string;
     destinationCountryCode: string;
     warehouseIdentifier: string;
     consignorEORI: string;
@@ -56,6 +56,7 @@ export interface ConsignmentData {
 }
 
 const defaults: ConsignmentData = {
+    
     //Importer profile
     importerEORI: 'XI021111238000',
     importerName: 'John Doe',
@@ -80,7 +81,7 @@ const defaults: ConsignmentData = {
 
     //Transport and destination details
     transportDocumentNumber: 'Test transport document number',
-    GoodsDomesticStatus: NEW_CONSIGNMENT_DECLARATION.GOODS_DOMESTIC_STATUS.NIDOM,
+    goodsDomesticStatus: NEW_CONSIGNMENT_DECLARATION.GOODS_DOMESTIC_STATUS.NIDOM,
     destinationCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
     warehouseIdentifier: 'Test warehouse identifier',
 

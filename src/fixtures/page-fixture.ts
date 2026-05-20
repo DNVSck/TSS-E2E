@@ -7,6 +7,7 @@ import { NewGoodsMovementDeclarePage } from '../page-object/new-goods-movement-d
 import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
 import { DeclarationOverviewPage } from '../page-object/declaration-overview-page';
 import { ConsignmentDeclarePage } from '../page-object/consignment-declare-page';
+import { LocaleFixtureType } from './locale-fixture';
 
 
 export type PageFixtureType = {
@@ -21,7 +22,7 @@ export type PageFixtureType = {
 
 }
 
-type ExtendParams = Parameters<typeof test.extend<PageFixtureType>>;
+type ExtendParams = Parameters<typeof test.extend<PageFixtureType & LocaleFixtureType>>;
 
 export const pageFixture: ExtendParams[0] = {
     basePage: async ({ page }, use) => {
@@ -48,8 +49,8 @@ export const pageFixture: ExtendParams[0] = {
         await use(new GoodsMovementTaskListPage(page));
     },
 
-    declarationOverviewPage: async ({ page }, use) => {
-        await use(new DeclarationOverviewPage(page));
+    declarationOverviewPage: async ({ page, t }, use) => {
+        await use(new DeclarationOverviewPage(page, t));
     },
 
     consignmentDeclarePage: async ({ page }, use) => {

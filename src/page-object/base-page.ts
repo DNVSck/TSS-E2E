@@ -1,4 +1,5 @@
 import { Page, Locator, expect, TestInfo } from '@playwright/test';
+import { TFunction } from '../fixtures/locale-fixture';
 import { PortalPage } from './portal-page';
 
 export class BasePage {
@@ -8,7 +9,10 @@ export class BasePage {
     readonly backLink: Locator;
     readonly commonSubmitConsignmentButton: Locator;
 
-    constructor(protected readonly page: Page) {
+    protected readonly t?: TFunction;
+
+    constructor(protected readonly page: Page, t?: TFunction) {
+        this.t = t;
         this.commonButton = page.locator(
             "//button[contains(@class, 'govuk-button')]"
         );

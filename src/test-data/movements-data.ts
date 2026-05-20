@@ -8,10 +8,10 @@ export interface MovementData {
     roleInThisMovement: string;
     haulierSeparateThisMovement: string;
     imoNumber: string;
-    vehicleRegistrationNumber?: string;
-    conveyanceReferenceNumber: string;
+    vehicleRegistrationNumber: string;
+    conveyanceReferenceNumber?: string;
     nationalityOfMeanOfTransport: string;
-    sealNumber: string;
+    sealNumber?: string;
     arrivalDateTime: string;
     portOfArrival: PortOfArrivalCode;
     placeOfLoading: string;

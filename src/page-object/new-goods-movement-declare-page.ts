@@ -192,7 +192,7 @@ export class NewGoodsMovementDeclarePage extends BasePage {
     async inputArrivalDateTime(arrivalDateTime?: string): Promise<void> {
         const value = arrivalDateTime ?? DateTimeUtil.generateValidArrivalDate();
 
-        const [year, month, day, hour, minute] = value.split(/[-T:]/);
+        const [, month, day, hour, minute] = value.split(/[-T:]/);
 
         await this.arrivalDayInput.fill(day);
         await this.arrivalMonthInput.fill(month);
