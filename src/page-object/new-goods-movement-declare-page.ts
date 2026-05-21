@@ -38,7 +38,7 @@ export class NewGoodsMovementDeclarePage extends BasePage {
     arrivalTimeHourInput: Locator;
     arrivalTimeMinuteInput: Locator;
 
-
+    portOfArrivalInput: Locator;
     portOfArrivalOption: Locator;
 
     placeOfLoadingInput: Locator;
@@ -68,7 +68,7 @@ export class NewGoodsMovementDeclarePage extends BasePage {
 
         // "Enter transport details" screen
         this.imoNumberInput = page.locator("input#imoNumber");
-        this.nationalityOfMeanOfTransportInput = page.locator("select#nationalityMeansOfTransport ");
+        this.nationalityOfMeanOfTransportInput = page.locator("select#nationalityMeansOfTransport");
         this.conveyanceReferenceNumberInput = page.locator("input#conveyanceReferenceNumber");
 
         this.trailerRegistrationNumberInput = page.locator("input#trailerRegistrationNumber");
@@ -100,6 +100,7 @@ export class NewGoodsMovementDeclarePage extends BasePage {
         this.arrivalTimeMinuteInput = page.locator("input#arrivalTime-minute");
 
         //"Select port of arrival"
+        this.portOfArrivalInput = page.locator('select#portOfArrival');
         this.portOfArrivalOption = page.locator('input[name="portOfArrival"]');
 
         //"Enter place of loading place details" screen
@@ -134,11 +135,6 @@ export class NewGoodsMovementDeclarePage extends BasePage {
 
     async inputImoNumber(imoNumber: string): Promise<void> {
         await this.imoNumberInput.fill(imoNumber);
-    }
-
-    async selectNationalityOfMeanOfTransport(countryCode: CountryCodeKey): Promise<void> {
-        const nationalityOfMeanOfTransportCode = COUNTRY_CODE[countryCode];
-        await selectDropdownValue(this.nationalityOfMeanOfTransportInput, nationalityOfMeanOfTransportCode);
     }
 
     async inputConveyanceReferenceNumber(conveyanceReferenceNumber: string): Promise<void> {
@@ -185,8 +181,8 @@ export class NewGoodsMovementDeclarePage extends BasePage {
         await this.placeOfUnloadingInput.fill(placeOfUnloading);
     }
 
-    async selectPortOfArrival(value: string): Promise<void> {
-        await this.page.locator(`input[name="portOfArrival"][value="${value}"]`).click();
+    async selectPortOfArrival(portCode: string): Promise<void> {
+        await this.portOfArrivalInput.selectOption({ value: portCode });
     }
 
     async inputArrivalDateTime(arrivalDateTime?: string): Promise<void> {

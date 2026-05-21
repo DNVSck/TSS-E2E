@@ -1,6 +1,6 @@
 import { NEW_GOODS_MOVEMENT_DECLARATION, TYPE_OF_MOVEMENT_OPTION_CODE, TRANSPORT_CHARGES_OPTION_CODE } from '../constant/goods-movement-declaration-constants';
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
-import { PortOfArrivalCode, PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
+import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { DateTimeUtil } from '../core/util/date-time-util';
 
 export interface MovementData {
@@ -13,7 +13,7 @@ export interface MovementData {
     nationalityOfMeanOfTransport: string;
     sealNumber?: string;
     arrivalDateTime: string;
-    portOfArrival: PortOfArrivalCode;
+    portOfArrival: string;
     placeOfLoading: string;
     placeOfUnloading: string;
     isSamePlaceOfLoading: boolean;
@@ -36,7 +36,7 @@ const defaults: MovementData = {
     nationalityOfMeanOfTransport: COUNTRY_CODE.UNITED_KINGDOM,
     sealNumber: '',
     arrivalDateTime: DateTimeUtil.generateValidArrivalDate(),
-    portOfArrival: PORT_OF_ARRIVAL.BELFAST_AIRPORT,
+    portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
     placeOfLoading: 'London',
     placeOfUnloading: 'Belfast',
     isSamePlaceOfLoading: true,
