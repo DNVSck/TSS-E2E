@@ -30,16 +30,16 @@ export const flowFixture: ExtendParams[0] = {
         await use(new InitialFormDeclarationFlow(initialFormDeclaraPage));
     },
 
-    movementHeaderDeclarationFlow: async ({ goodsMovementTaskListPage, newGoodsMovementDeclarePage }, use) => {
-        await use(new MovementHeaderDeclarationFlow(goodsMovementTaskListPage, newGoodsMovementDeclarePage));
+    movementHeaderDeclarationFlow: async ({ goodsMovementTaskListPage, movementDeclarePage }, use) => {
+        await use(new MovementHeaderDeclarationFlow(goodsMovementTaskListPage, movementDeclarePage));
     },
 
-    movementOverviewFlow: async ({ declarationOverviewPage }, use) => {
-        await use(new MovementOverviewFlow(declarationOverviewPage));
+    movementOverviewFlow: async ({ movementOverviewPage }, use) => {
+        await use(new MovementOverviewFlow(movementOverviewPage));
     },
 
-    addNewConsignmentFlow: async ({ declarationOverviewPage, consignmentDeclarePage }, use) => {
-        await use(new AddNewConsignmentFlow(declarationOverviewPage, consignmentDeclarePage));
+    addNewConsignmentFlow: async ({ movementOverviewPage, consignmentDeclarePage }, use) => {
+        await use(new AddNewConsignmentFlow(movementOverviewPage, consignmentDeclarePage));
     },
 
     createAndSubmitEnsDeclarationFlow: async ({

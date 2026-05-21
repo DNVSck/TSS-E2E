@@ -1,16 +1,11 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { PASSIVE_TRANSPORT_TYPE, PassiveTransportTypeKey } from '../constant/passive-transport-type-constant';
-import { PORT_OF_ARRIVAL, PortOfArrivalKey } from '../constant/port-of-arrival-constant';
-import { NEW_GOODS_MOVEMENT_DECLARATION, TypeOfMovementKey, TYPE_OF_MOVEMENT_OPTION_CODE } from "../constant/goods-movement-declaration-constants";
-import { COUNTRY_CODE, CountryCodeKey } from "../constant/country-code-dropdown-constant";
-
-import { selectDropdownValue } from '../core/util/element-helper';
+import { NEW_GOODS_MOVEMENT_DECLARATION } from "../constant/goods-movement-declaration-constants";
 import { DateTimeUtil } from '../core/util/date-time-util.js';
 
 
 
-export class NewGoodsMovementDeclarePage extends BasePage {
+export class MovementDeclarePage extends BasePage {
 
     typeOfMovementOption: string;
 

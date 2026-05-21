@@ -6,7 +6,7 @@ import { StringUtil } from '../core/util/string-util';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 
 
-export class DeclarationOverviewPage extends BasePage {
+export class MovementOverviewPage extends BasePage {
 
     // Declare properties - Using stable locators (NOT text-based)
     ensConsignmentsTab: Locator;

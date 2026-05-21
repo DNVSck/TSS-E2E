@@ -1,17 +1,17 @@
 import { ReportLog } from '../core/report/report-log';
 import { MovementData } from "../test-data/movements-data";
-import { DeclarationOverviewPage } from "../page-object/declaration-overview-page";
+import { MovementOverviewPage } from "../page-object/movement-overview-page";
 
 export class MovementOverviewFlow {
     constructor(
-        private readonly declarationOverviewPage: DeclarationOverviewPage,
+        private readonly movementOverviewPage: MovementOverviewPage,
     ) { }
 
     async MovementOverview(input: MovementData
     ): Promise<void> {
 
         await ReportLog.step('Validate goods movement overview', async () => {
-            await this.declarationOverviewPage.assertDraftMovementOverview();
+            await this.movementOverviewPage.assertDraftMovementOverview();
         });
     }
 

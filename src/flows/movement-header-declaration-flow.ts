@@ -1,5 +1,5 @@
 import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
-import { NewGoodsMovementDeclarePage } from '../page-object/new-goods-movement-declare-page';
+import { MovementDeclarePage } from '../page-object/movement-declare-page';
 import { ReportLog } from '../core/report/report-log';
 import { NEW_GOODS_MOVEMENT_DECLARATION, TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/goods-movement-declaration-constants';
 import { MovementData } from '../test-data/movements-data';
@@ -7,7 +7,7 @@ import { MovementData } from '../test-data/movements-data';
 export class MovementHeaderDeclarationFlow {
     constructor(
         private readonly goodsMovementTaskListPage: GoodsMovementTaskListPage,
-        private readonly newGoodsMovementDeclarePage: NewGoodsMovementDeclarePage,
+        private readonly movementDeclarePage: MovementDeclarePage,
     ) { }
 
     async completeNewGoodsMovementDeclaration(input: MovementData): Promise<void> {
@@ -27,68 +27,68 @@ export class MovementHeaderDeclarationFlow {
 
     private async submitTransportDetails(input: MovementData): Promise<void> {
         await ReportLog.step('Submit transport details', async () => {
-            await this.newGoodsMovementDeclarePage.chooseTypeOfMovement(input.typeOfMovement);
-            await this.newGoodsMovementDeclarePage.clickContinueButton();
+            await this.movementDeclarePage.chooseTypeOfMovement(input.typeOfMovement);
+            await this.movementDeclarePage.clickContinueButton();
 
-            await this.newGoodsMovementDeclarePage.submitTransportDetails(input.imoNumber, input.nationalityOfMeanOfTransport);
-            await this.newGoodsMovementDeclarePage.clickContinueButton();
+            await this.movementDeclarePage.submitTransportDetails(input.imoNumber, input.nationalityOfMeanOfTransport);
+            await this.movementDeclarePage.clickContinueButton();
 
             if (input.typeOfMovement === TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED) {
-                await this.newGoodsMovementDeclarePage.inputTrailerRegistrationNumber(input.trailerRegistrationNumber);
-                await this.newGoodsMovementDeclarePage.clickContinueButton();
+                await this.movementDeclarePage.inputTrailerRegistrationNumber(input.trailerRegistrationNumber);
+                await this.movementDeclarePage.clickContinueButton();
             } else if (input.typeOfMovement === TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED) {
-                await this.newGoodsMovementDeclarePage.selectTypeOfPassiveTransport(input.typeOfPassiveTransport);
-                await this.newGoodsMovementDeclarePage.inputVehicleRegistrationNumber(input.vehicleRegistrationNumber);
-                await this.newGoodsMovementDeclarePage.clickContinueButton();
+                await this.movementDeclarePage.selectTypeOfPassiveTransport(input.typeOfPassiveTransport);
+                await this.movementDeclarePage.inputVehicleRegistrationNumber(input.vehicleRegistrationNumber);
+                await this.movementDeclarePage.clickContinueButton();
             }
 
-            await this.newGoodsMovementDeclarePage.inputSealNumber(input.sealNumber);
-            await this.newGoodsMovementDeclarePage.clickContinueButton();
+            await this.movementDeclarePage.inputSealNumber(input.sealNumber);
+            await this.movementDeclarePage.clickContinueButton();
         });
     }
 
     private async submitMovementDetails(input: MovementData): Promise<void> {
         await ReportLog.step('Submit movement details', async () => {
-            await this.newGoodsMovementDeclarePage.chooseYourRoleInThisMovement(input.roleInThisMovement);
-            await this.newGoodsMovementDeclarePage.chooseHaulierInvolvement(input.haulierSeparateThisMovement);
-            await this.newGoodsMovementDeclarePage.clickContinueButton();
+            await this.movementDeclarePage.chooseYourRoleInThisMovement(input.roleInThisMovement);
+            await this.movementDeclarePage.chooseHaulierInvolvement(input.haulierSeparateThisMovement);
+            await this.movementDeclarePage.clickContinueButton();
 
             if (input.roleInThisMovement === NEW_GOODS_MOVEMENT_DECLARATION.ROLE_IN_THIS_MOVEMENT.ON_BEHALF_OF_CARRIER) {
-                await this.newGoodsMovementDeclarePage.inputCarrierEori(input.carrierEori!);
-                await this.newGoodsMovementDeclarePage.clickContinueButton();
+                await this.movementDeclarePage.inputCarrierEori(input.carrierEori!);
+                await this.movementDeclarePage.clickContinueButton();
             }
 
-            await this.newGoodsMovementDeclarePage.inputArrivalDateTime(input.arrivalDateTime);
-            await this.newGoodsMovementDeclarePage.selectPortOfArrival(input.portOfArrival);
-            await this.newGoodsMovementDeclarePage.clickContinueButton();
+            await this.movementDeclarePage.inputArrivalDateTime(input.arrivalDateTime);
+            await this.movementDeclarePage.selectPortOfArrival(input.portOfArrival);
+            await this.movementDeclarePage.clickContinueButton();
         });
     }
 
     private async submitLoadingDetails(input: MovementData): Promise<void> {
         await ReportLog.step('Submit loading details', async () => {
-            await this.newGoodsMovementDeclarePage.inputPlaceOfLoading(input.placeOfLoading);
-            await this.newGoodsMovementDeclarePage.clickContinueButton();
+            await this.movementDeclarePage.inputPlaceOfLoading(input.placeOfLoading);
+            await this.movementDeclarePage.clickContinueButton();
 
-            await this.newGoodsMovementDeclarePage.inputPlaceOfUnloading(input.placeOfUnloading);
-            await this.newGoodsMovementDeclarePage.clickContinueButton();
+            await this.movementDeclarePage.inputPlaceOfUnloading(input.placeOfUnloading);
+            await this.movementDeclarePage.clickContinueButton();
 
             if (input.isSamePlaceOfLoading) {
-                await this.newGoodsMovementDeclarePage.selectAcceptanceSameAsLoading();
+                await this.movementDeclarePage.selectAcceptanceSameAsLoading();
             } else {
-                await this.newGoodsMovementDeclarePage.selectAcceptanceNotSameAsLoading();
+                await this.movementDeclarePage.selectAcceptanceNotSameAsLoading();
             }
 
             if (input.isSamePlaceOfUnloading) {
-                await this.newGoodsMovementDeclarePage.selectDeliverySameAsUnloading();
+                await this.movementDeclarePage.selectDeliverySameAsUnloading();
             } else {
-                await this.newGoodsMovementDeclarePage.selectDeliveryNotSameAsUnloading();
+                await this.movementDeclarePage.selectDeliveryNotSameAsUnloading();
             }
-            await this.newGoodsMovementDeclarePage.clickContinueButton();
+            await this.movementDeclarePage.clickContinueButton();
 
-            await this.newGoodsMovementDeclarePage.selectTransportCharges(input.transportCharges);
-            await this.newGoodsMovementDeclarePage.clickContinueButton();
+            await this.movementDeclarePage.selectTransportCharges(input.transportCharges);
+            await this.movementDeclarePage.clickContinueButton();
 
-            await this.newGoodsMovementDeclarePage.clickFinishButton();
+            await this.movementDeclarePage.clickFinishButton();
         });
     }
 }
