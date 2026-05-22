@@ -11,7 +11,7 @@ export class SignInPage extends BasePage {
         super(page);
         this.emailAddressInput = page.locator("input#username");
         this.passwordInput = page.locator("input#password");
-        this.signInButton = page.locator("button#kc-login");
+        this.signInButton = page.locator("input#kc-login");
     }
 
 

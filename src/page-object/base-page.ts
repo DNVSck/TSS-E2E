@@ -1,4 +1,5 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect, TestInfo } from '@playwright/test';
+import { TFunction } from '../fixtures/locale-fixture';
 import { PortalPage } from './portal-page';
 
 export class BasePage {
@@ -8,7 +9,10 @@ export class BasePage {
     readonly backLink: Locator;
     readonly commonSubmitConsignmentButton: Locator;
 
-    constructor(protected readonly page: Page) {
+    protected readonly t?: TFunction;
+
+    constructor(protected readonly page: Page, t?: TFunction) {
+        this.t = t;
         this.commonButton = page.locator(
             "//button[contains(@class, 'govuk-button')]"
         );
@@ -31,7 +35,7 @@ export class BasePage {
     /**
      * Universal portal navigation with language switching
      */
-    async navigateToPortal(url: string, testInfo: any): Promise<void> {
+    async navigateToPortal(url: string, testInfo: TestInfo): Promise<void> {
         await this.page.goto(url);
         await this.clearBrowserStorage();
         await this.switchToWelshIfNeeded(testInfo);
@@ -53,7 +57,7 @@ export class BasePage {
     /**
      * Switch to Welsh language if cy project
      */
-    private async switchToWelshIfNeeded(testInfo: any): Promise<void> {
+    private async switchToWelshIfNeeded(testInfo: TestInfo): Promise<void> {
         const portalPage = new PortalPage(this.page);
         const isCyProject = testInfo.project.name.includes('cy');
 
@@ -80,6 +84,18 @@ export class BasePage {
 
     async clickContinueButton(): Promise<void> {
         await this.commonContinueButton.click();
+    }
+
+    async clickBackLink(): Promise<void> {
+        await this.backLink.click();
+    }
+
+    async clickSubmitButton(): Promise<void> {
+        await this.commonSubmitConsignmentButton.click();
+    }
+
+    async clickFinishButton(): Promise<void> {
+        await this.commonFinishButton.click();
     }
 
 }

@@ -25,6 +25,13 @@ export class StringUtil {
     }
 
     /**
+     * Check if a value matches a regex
+     */
+    static verifyRegex(value: string, regex: RegExp): boolean {
+        return regex.test(value);
+    }
+
+    /**
      * Extract numbers from string
      */
     static extractNumbers(str: string): string {

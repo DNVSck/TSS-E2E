@@ -2,7 +2,13 @@ import { BasePage } from '../page-object/base-page';
 import { PortalPage } from '../page-object/portal-page';
 import { SignInPage } from '../page-object/sign-in-page';
 import { ReportLog } from '../core/report/report-log';
-import { expect } from '../../tests/test-hooks';
+import { expect, TestInfo } from '@playwright/test';
+
+export interface PortalAccessInput {
+    baseUrl: string;
+    testInfo: TestInfo;
+    expectedTitle: string;
+}
 
 export class PortalAccessFlow {
     constructor(
@@ -11,11 +17,8 @@ export class PortalAccessFlow {
         private readonly signInPage: SignInPage
     ) { }
 
-    async accessServiceAsAdmin(
-        baseUrl: string,
-        testInfo: any,
-        expectedTitle: string,
-    ): Promise<void> {
+    async accessServiceAsAdmin(input: PortalAccessInput): Promise<void> {
+        const { baseUrl, testInfo, expectedTitle } = input;
 
         await ReportLog.step('Open portal', async () => {
             await this.basePage.navigateToPortal(baseUrl, testInfo);
@@ -36,7 +39,5 @@ export class PortalAccessFlow {
         await ReportLog.step('Start service journey', async () => {
             await this.portalPage.startTssJourney();
         });
-
-
     }
 }

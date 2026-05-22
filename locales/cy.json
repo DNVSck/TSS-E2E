@@ -8,5 +8,12 @@
     "emailLabel": "Cyfeiriad E-bost",
     "passwordLabel": "Cyfrinair",
     "submitButton": "Mewngofnodi"
+  },
+  "movementHeaderOverview": {
+    "localReferenceNumber": "Rhif cyfeirnod lleol",
+    "declarationStatus": "Status y datganiad"
+  },
+  "status": {
+    "draft": "Drafft"
   }
 }

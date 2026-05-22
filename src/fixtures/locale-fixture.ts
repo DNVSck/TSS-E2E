@@ -53,15 +53,17 @@ export const localeFixture = {
         if (value && typeof value === 'object' && k in value) {
           value = value[k];
         } else {
-          console.warn(`Translation key not found: ${key} for locale: ${currentLocale}, returning key`);
-          return key;
+          throw new TypeError(
+            `Translation key not found: ${key} for locale: ${currentLocale}`
+          );
         }
       }
       if (typeof value === 'string') {
         return value;
       } else {
-        console.warn(`Translation value is not a string: ${key} for locale: ${currentLocale}, returning key`);
-        return key;
+        throw new TypeError(
+          `Translation value is not a string: ${key} for locale: ${currentLocale}`
+        );
       }
     };
 

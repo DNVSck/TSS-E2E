@@ -1,16 +1,11 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { PASSIVE_TRANSPORT_TYPE, PassiveTransportTypeKey } from '../constant/passive-transport-type-constant';
-import { PORT_OF_ARRIVAL, PortOfArrivalKey } from '../constant/port-of-arrival-constant';
-import { NEW_GOODS_MOVEMENT_DECLARATION, TypeOfMovementKey, TYPE_OF_MOVEMENT_OPTION_CODE } from "../constant/goods-movement-declaration-constants";
-import { COUNTRY_CODE, CountryCodeKey } from "../constant/country-code-dropdown-constant";
-
-import { selectDropdownValue } from '../core/util/element-helper';
+import { NEW_GOODS_MOVEMENT_DECLARATION } from "../constant/goods-movement-declaration-constants";
 import { DateTimeUtil } from '../core/util/date-time-util.js';
 
 
 
-export class NewGoodsMovementDeclarePage extends BasePage {
+export class MovementDeclarePage extends BasePage {
 
     typeOfMovementOption: string;
 
@@ -38,7 +33,7 @@ export class NewGoodsMovementDeclarePage extends BasePage {
     arrivalTimeHourInput: Locator;
     arrivalTimeMinuteInput: Locator;
 
-
+    portOfArrivalInput: Locator;
     portOfArrivalOption: Locator;
 
     placeOfLoadingInput: Locator;
@@ -58,6 +53,8 @@ export class NewGoodsMovementDeclarePage extends BasePage {
     placeOfDeliveryPostcodeInput: Locator;
     placeOfDeliveryCityInput: Locator;
 
+    placeOfDeliveryInput: Locator;
+
     transportCharges: Locator;
 
     constructor(page: Page) {
@@ -68,7 +65,7 @@ export class NewGoodsMovementDeclarePage extends BasePage {
 
         // "Enter transport details" screen
         this.imoNumberInput = page.locator("input#imoNumber");
-        this.nationalityOfMeanOfTransportInput = page.locator("select#nationalityMeansOfTransport ");
+        this.nationalityOfMeanOfTransportInput = page.locator("select#nationalityMeansOfTransport");
         this.conveyanceReferenceNumberInput = page.locator("input#conveyanceReferenceNumber");
 
         this.trailerRegistrationNumberInput = page.locator("input#trailerRegistrationNumber");
@@ -100,6 +97,7 @@ export class NewGoodsMovementDeclarePage extends BasePage {
         this.arrivalTimeMinuteInput = page.locator("input#arrivalTime-minute");
 
         //"Select port of arrival"
+        this.portOfArrivalInput = page.locator('select#portOfArrival');
         this.portOfArrivalOption = page.locator('input[name="portOfArrival"]');
 
         //"Enter place of loading place details" screen
@@ -123,22 +121,19 @@ export class NewGoodsMovementDeclarePage extends BasePage {
         this.placeOfDeliveryCityInput = page.locator("input#placeOfDeliveryTownOrCity");
         this.placeOfDeliveryPostcodeInput = page.locator("input#placeOfDeliveryPostcode");
 
+        this.placeOfDeliveryInput = page.locator("input#placeOfDelivery");
+
         //"How will the transport charges be paid?" screen
         this.transportCharges = page.locator('input[name="transportCharges"]');
     }
 
     async chooseTypeOfMovement(typeOfMovement: string): Promise<void> {
         await this.page.locator(`input[name="typeOfMovement"][value="${typeOfMovement}"]`).click();
-        await this.commonContinueButton.click();
+        await this.clickContinueButton();
     }
 
     async inputImoNumber(imoNumber: string): Promise<void> {
         await this.imoNumberInput.fill(imoNumber);
-    }
-
-    async selectNationalityOfMeanOfTransport(countryCode: CountryCodeKey): Promise<void> {
-        const nationalityOfMeanOfTransportCode = COUNTRY_CODE[countryCode];
-        await selectDropdownValue(this.nationalityOfMeanOfTransportInput, nationalityOfMeanOfTransportCode);
     }
 
     async inputConveyanceReferenceNumber(conveyanceReferenceNumber: string): Promise<void> {
@@ -185,14 +180,14 @@ export class NewGoodsMovementDeclarePage extends BasePage {
         await this.placeOfUnloadingInput.fill(placeOfUnloading);
     }
 
-    async selectPortOfArrival(value: string): Promise<void> {
-        await this.page.locator(`input[name="portOfArrival"][value="${value}"]`).click();
+    async selectPortOfArrival(portCode: string): Promise<void> {
+        await this.portOfArrivalInput.selectOption({ value: portCode });
     }
 
     async inputArrivalDateTime(arrivalDateTime?: string): Promise<void> {
         const value = arrivalDateTime ?? DateTimeUtil.generateValidArrivalDate();
 
-        const [year, month, day, hour, minute] = value.split(/[-T:]/);
+        const [, month, day, hour, minute] = value.split(/[-T:]/);
 
         await this.arrivalDayInput.fill(day);
         await this.arrivalMonthInput.fill(month);
@@ -200,13 +195,9 @@ export class NewGoodsMovementDeclarePage extends BasePage {
         await this.arrivalTimeMinuteInput.fill(minute);
     }
 
-    async submitTransportDetails(imoNumber: string, nationalityOfMeanOfTransport: string): Promise<void> {
+    async inputImoAndNationalityOfMeanOfTransport(imoNumber: string, nationalityOfMeanOfTransport: string): Promise<void> {
         await this.imoNumberInput.fill(imoNumber);
         await this.nationalityOfMeanOfTransportInput.selectOption({ value: nationalityOfMeanOfTransport });
-    }
-
-    async clickContinueButton(): Promise<void> {
-        await this.commonContinueButton.click();
     }
 
     async selectAcceptanceSameAsLoading(): Promise<void> {
@@ -219,21 +210,28 @@ export class NewGoodsMovementDeclarePage extends BasePage {
 
     async selectDeliverySameAsUnloading(): Promise<void> {
         await this.isDeliverySameYesOption.check();
+        await this.clickContinueButton();
     }
 
     async selectDeliveryNotSameAsUnloading(): Promise<void> {
         await this.isDeliverySameNoOption.check();
+        await this.clickContinueButton();
     }
 
     async selectTransportCharges(transportChargesKey: string): Promise<void> {
         await this.transportCharges.and(this.page.locator(`[value="${transportChargesKey}"]`)).click();
     }
 
-    async clickFinishButton(): Promise<void> {
-        await this.commonFinishButton.click();
-    }
-
     async inputCarrierEori(carrierEori: string): Promise<void> {
         await this.carrierEoriInput.fill(carrierEori);
+    }
+
+    async inputHaulierEori(haulierEori: string): Promise<void> {
+        await this.haulierEoriInput.fill(haulierEori);
+    }
+
+    async inputPlaceOfDelivery(placeOfDelivery: string): Promise<void> {
+        await this.placeOfDeliveryInput.fill(placeOfDelivery);
+        await this.clickContinueButton();
     }
 }

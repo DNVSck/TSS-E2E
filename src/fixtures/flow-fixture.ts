@@ -1,30 +1,60 @@
 import { test } from '@playwright/test';
 import { PortalAccessFlow } from '../flows/portal-access-flow';
-import { RouteDeclarationFlow } from '../flows/route-declaration-flow';
+import { InitialFormDeclarationFlow } from '../flows/initial-form-declaration-flow';
 import { MovementHeaderDeclarationFlow } from '../flows/movement-header-declaration-flow';
-import { NewGoodsMovementTransportDetailsFlow } from '../flows/new-goods-movement-transport-details-flow';
-import { NewGoodsMovementMovementDetailsFlow } from '../flows/new-goods-movement-movement-details-flow';
-import { NewGoodsMovementLoadingDetailsFlow } from '../flows/new-goods-movement-loading-details-flow';
 import { MovementOverviewFlow } from '../flows/movement-overview-flow';
 import { PageFixtureType } from './page-fixture';
-import { GBNiRoRoSimpleAccoFlow } from '../flows/common-flows/gb-ni-roro-simplified-flow';
+import { CreateAndSubmitEnsDeclarationFlow } from '../flows/common-flows/createAndSubmitDeclarationFlow';
+import { AddNewConsignmentFlow } from '../flows/add-new-consignment-flow';
 
 export type FlowFixtureType = {
-    gbNiRoRoSimpleAccoFlow: GBNiRoRoSimpleAccoFlow;
+    // Business Flows
+    portalAccessFlow: PortalAccessFlow;
+    initialFormDeclarationFlow: InitialFormDeclarationFlow;
+    movementHeaderDeclarationFlow: MovementHeaderDeclarationFlow;
+    movementOverviewFlow: MovementOverviewFlow;
+    addNewConsignmentFlow: AddNewConsignmentFlow;
+
+    // Common Flows
+    createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow;
 }
 
 type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType>>;
 
 export const flowFixture: ExtendParams[0] = {
-    gbNiRoRoSimpleAccoFlow: async ({ basePage, portalPage, signInPage, initialFormDeclaraPage, goodsMovementTaskListPage, newGoodsMovementDeclarePage, declarationOverviewPage }, use) => {
-        await use(new GBNiRoRoSimpleAccoFlow(
-            new PortalAccessFlow(basePage, portalPage, signInPage),
-            new RouteDeclarationFlow(initialFormDeclaraPage),
-            new MovementHeaderDeclarationFlow(goodsMovementTaskListPage),
-            new NewGoodsMovementTransportDetailsFlow(newGoodsMovementDeclarePage),
-            new NewGoodsMovementMovementDetailsFlow(newGoodsMovementDeclarePage),
-            new NewGoodsMovementLoadingDetailsFlow(newGoodsMovementDeclarePage),
-            new MovementOverviewFlow(declarationOverviewPage),
+    portalAccessFlow: async ({ basePage, portalPage, signInPage }, use) => {
+        await use(new PortalAccessFlow(basePage, portalPage, signInPage));
+    },
+
+    initialFormDeclarationFlow: async ({ initialFormDeclaraPage }, use) => {
+        await use(new InitialFormDeclarationFlow(initialFormDeclaraPage));
+    },
+
+    movementHeaderDeclarationFlow: async ({ goodsMovementTaskListPage, movementDeclarePage }, use) => {
+        await use(new MovementHeaderDeclarationFlow(goodsMovementTaskListPage, movementDeclarePage));
+    },
+
+    movementOverviewFlow: async ({ movementOverviewPage }, use) => {
+        await use(new MovementOverviewFlow(movementOverviewPage));
+    },
+
+    addNewConsignmentFlow: async ({ movementOverviewPage, consignmentDeclarePage }, use) => {
+        await use(new AddNewConsignmentFlow(movementOverviewPage, consignmentDeclarePage));
+    },
+
+    createAndSubmitEnsDeclarationFlow: async ({
+        portalAccessFlow,
+        initialFormDeclarationFlow,
+        movementHeaderDeclarationFlow,
+        movementOverviewFlow,
+        addNewConsignmentFlow
+    }, use) => {
+        await use(new CreateAndSubmitEnsDeclarationFlow(
+            portalAccessFlow,
+            initialFormDeclarationFlow,
+            movementHeaderDeclarationFlow,
+            movementOverviewFlow,
+            addNewConsignmentFlow
         ));
     },
 };

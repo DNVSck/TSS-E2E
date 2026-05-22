@@ -1,6 +1,6 @@
 import { NEW_GOODS_MOVEMENT_DECLARATION, TYPE_OF_MOVEMENT_OPTION_CODE, TRANSPORT_CHARGES_OPTION_CODE } from '../constant/goods-movement-declaration-constants';
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
-import { PortOfArrivalCode, PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
+import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { DateTimeUtil } from '../core/util/date-time-util';
 
 export interface MovementData {
@@ -8,12 +8,12 @@ export interface MovementData {
     roleInThisMovement: string;
     haulierSeparateThisMovement: string;
     imoNumber: string;
-    vehicleRegistrationNumber?: string;
-    conveyanceReferenceNumber: string;
+    vehicleRegistrationNumber: string;
+    conveyanceReferenceNumber?: string;
     nationalityOfMeanOfTransport: string;
-    sealNumber: string;
+    sealNumber?: string;
     arrivalDateTime: string;
-    portOfArrival: PortOfArrivalCode;
+    portOfArrival: string;
     placeOfLoading: string;
     placeOfUnloading: string;
     isSamePlaceOfLoading: boolean;
@@ -23,7 +23,8 @@ export interface MovementData {
     typeOfPassiveTransport: string;
     transportCharges: string;
     trailerRegistrationNumber?: string;
-    carrierEori?: string;
+    carrierEori: string;
+    haulierEori: string;
 }
 
 const defaults: MovementData = {
@@ -36,17 +37,18 @@ const defaults: MovementData = {
     nationalityOfMeanOfTransport: COUNTRY_CODE.UNITED_KINGDOM,
     sealNumber: '',
     arrivalDateTime: DateTimeUtil.generateValidArrivalDate(),
-    portOfArrival: PORT_OF_ARRIVAL.BELFAST_AIRPORT,
+    portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
     placeOfLoading: 'London',
     placeOfUnloading: 'Belfast',
     isSamePlaceOfLoading: true,
     isSamePlaceOfUnloading: true,
     placeOfacceptance: '',
-    placeOfDelivery: '',
+    placeOfDelivery: 'Belfast',
     typeOfPassiveTransport: NEW_GOODS_MOVEMENT_DECLARATION.TYPE_OF_PASSIVE_TRANSPORT.TRUCK,
     transportCharges: TRANSPORT_CHARGES_OPTION_CODE.PAYMENT_IN_CASH,
     trailerRegistrationNumber: 'TR12LER',
-    carrierEori: 'GB123456789000'
+    carrierEori: 'GB123456789000',
+    haulierEori: 'GB987654321000',
 };
 
 

@@ -8,5 +8,12 @@
     "emailLabel": "Email Address",
     "passwordLabel": "Password",
     "submitButton": "Sign in"
+  },
+  "movementHeaderOverview": {
+    "localReferenceNumber": "Local reference number",
+    "declarationStatus": "Declaration status"
+  },
+  "status": {
+    "draft": "Draft"
   }
 }

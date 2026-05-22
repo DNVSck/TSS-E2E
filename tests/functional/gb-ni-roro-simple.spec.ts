@@ -3,6 +3,9 @@ import { ReportLog } from '../../src/core/report/report-log';
 import { getBaseUrl, test } from '../test-hooks';
 import { TRANSPORT_CHARGES_OPTION_CODE, TYPE_OF_MOVEMENT_OPTION_CODE, NEW_GOODS_MOVEMENT_DECLARATION } from '../../src/constant/goods-movement-declaration-constants';
 import { AllureTestManager } from '../../src/core/report/allure-test-manager';
+import { TEST_LINK_CONFIG } from '../../src/constant/test-link.constant';
+
+const TEST_CASE_ID = '2423';
 
 test.describe('GB to NI RoRo Simplified Customs Declaration Process', () => {
 
@@ -10,23 +13,25 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process', () => {
     await ReportLog.setFeature('GB to NI RoRo Simplified Customs Declaration Process');
   });
 
-  test('Accompanied', { tag: ['@smoke', '@test'] }, async ({ t, gbNiRoRoSimpleAccoFlow }, testInfo) => {
+  test('Accompanied', { tag: ['@smoke', '@test'] }, async ({ t, createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS SFD - GB to NI RoRo Simplified Customs Declaration Accompanied');
-    AllureTestManager.addTestLink('https://goto-uk.netcompany.com/cases/GTE96/HMRCTSS/Lists/TestCases/DispForm.aspx?ID=2423');
+
+    AllureTestManager.addTestLink(`${TEST_LINK_CONFIG.TEST_CASES_URL}${TEST_CASE_ID}`);
+
     ReportLog.info(`Starting navigation test from ${getBaseUrl()} with locale: ${ENVIRONMENT_INFO.currentLocale}`);
 
-    await gbNiRoRoSimpleAccoFlow.completeGbToNiRoRoSimpleAcco(
+    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
       testInfo,
       getBaseUrl(),
       t('portal.title')
     );
   });
 
-  test('Unaccompanied', { tag: ['@smoke'] }, async ({ t, gbNiRoRoSimpleAccoFlow }, testInfo) => {
+  test('Unaccompanied', { tag: ['@smoke'] }, async ({ t, createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS SFD - GB to NI RoRo Simplified Customs Declaration UnAccompanied');
     ReportLog.info(`Starting navigation test from ${getBaseUrl()} with locale: ${ENVIRONMENT_INFO.currentLocale}`);
 
-    await gbNiRoRoSimpleAccoFlow.completeGbToNiRoRoSimpleAcco(
+    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
       testInfo,
       getBaseUrl(),
       t('portal.title'),
@@ -38,11 +43,11 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process', () => {
     );
   });
 
-  test('Accompanied - On Behalf of Carrier', { tag: ['@smoke'] }, async ({ t, gbNiRoRoSimpleAccoFlow }, testInfo) => {
+  test('Accompanied - On Behalf of Carrier', { tag: ['@smoke'] }, async ({ t, createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS SFD - GB to NI RoRo Simplified Declaration Accompanied On Behalf of Carrier');
     ReportLog.info(`Starting navigation test from ${getBaseUrl()} with locale: ${ENVIRONMENT_INFO.currentLocale}`);
 
-    await gbNiRoRoSimpleAccoFlow.completeGbToNiRoRoSimpleAcco(
+    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
       testInfo,
       getBaseUrl(),
       t('portal.title'),

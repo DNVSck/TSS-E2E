@@ -3,9 +3,11 @@ import { PortalPage } from '../page-object/portal-page'
 import { BasePage } from '../page-object/base-page';
 import { SignInPage } from '../page-object/sign-in-page';
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
-import { NewGoodsMovementDeclarePage } from '../page-object/new-goods-movement-declare-page';
+import { MovementDeclarePage } from '../page-object/movement-declare-page';
 import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
-import { DeclarationOverviewPage } from '../page-object/declaration-overview-page';
+import { MovementOverviewPage } from '../page-object/movement-overview-page';
+import { ConsignmentDeclarePage } from '../page-object/consignment-declare-page';
+import { LocaleFixtureType } from './locale-fixture';
 
 
 export type PageFixtureType = {
@@ -13,12 +15,14 @@ export type PageFixtureType = {
     portalPage: PortalPage;
     signInPage: SignInPage;
     initialFormDeclaraPage: InitialFormDeclaraPage;
-    newGoodsMovementDeclarePage: NewGoodsMovementDeclarePage;
+    movementDeclarePage: MovementDeclarePage;
     goodsMovementTaskListPage: GoodsMovementTaskListPage;
-    declarationOverviewPage: DeclarationOverviewPage;
+    movementOverviewPage: MovementOverviewPage;
+    consignmentDeclarePage: ConsignmentDeclarePage;
+
 }
 
-type ExtendParams = Parameters<typeof test.extend<PageFixtureType>>;
+type ExtendParams = Parameters<typeof test.extend<PageFixtureType & LocaleFixtureType>>;
 
 export const pageFixture: ExtendParams[0] = {
     basePage: async ({ page }, use) => {
@@ -37,16 +41,20 @@ export const pageFixture: ExtendParams[0] = {
         await use(new InitialFormDeclaraPage(page));
     },
 
-    newGoodsMovementDeclarePage: async ({ page }, use) => {
-        await use(new NewGoodsMovementDeclarePage(page));
+    movementDeclarePage: async ({ page }, use) => {
+        await use(new MovementDeclarePage(page));
     },
 
     goodsMovementTaskListPage: async ({ page }, use) => {
         await use(new GoodsMovementTaskListPage(page));
     },
 
-    declarationOverviewPage: async ({ page }, use) => {
-        await use(new DeclarationOverviewPage(page));
+    movementOverviewPage: async ({ page, t }, use) => {
+        await use(new MovementOverviewPage(page, t));
+    },
+
+    consignmentDeclarePage: async ({ page }, use) => {
+        await use(new ConsignmentDeclarePage(page));
     }
 
 };
