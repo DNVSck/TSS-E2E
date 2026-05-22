@@ -117,8 +117,8 @@ export class AddNewConsignmentFlow {
     }
 
     private async fillConsignmentReference(input: ConsignmentData): Promise<void> {
-        await ReportLog.step('Fill Consignment reference', async () => {
-            await this.consignmentDeclarePage.inputConsignmentReference(input.consignmentDescription, input.traderReference);
+        await ReportLog.step('Fill Consignment reference (Optional fields)', async () => {
+            await this.consignmentDeclarePage.inputConsignmentReference(input.consignmentDescription!, input.traderReference!);
         });
     }
 

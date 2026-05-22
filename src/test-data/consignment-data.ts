@@ -48,8 +48,8 @@ export interface ConsignmentData {
     sellerCity: string;
     sellerPostCode: string;
     sellerCountryCode: string;
-    consignmentDescription: string;
-    traderReference: string;
+    consignmentDescription?: string;
+    traderReference?: string;
     isGoodsCrossEUBorder: string;
     isSameContainer: string;
     containerIdentifierNumber: string;
@@ -80,10 +80,10 @@ const defaults: ConsignmentData = {
     isControlledGoods: 'yes',
 
     //Transport and destination details
-    transportDocumentNumber: 'Test transport document number',
+    transportDocumentNumber: '5583920174',
     goodsDomesticStatus: NEW_CONSIGNMENT_DECLARATION.GOODS_DOMESTIC_STATUS.NIDOM,
     destinationCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
-    warehouseIdentifier: 'Test warehouse identifier',
+    warehouseIdentifier: '',
 
     //Consignor profile
     consignorEORI: '',
@@ -119,11 +119,11 @@ const defaults: ConsignmentData = {
     sellerCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Consignment references
-    consignmentDescription: 'Test consignment description',
-    traderReference: 'Test trader reference',
+    consignmentDescription: '',
+    traderReference: '',
     isGoodsCrossEUBorder: 'yes',
     isSameContainer: 'yes',
-    containerIdentifierNumber: 'Test container identifier number',
+    containerIdentifierNumber: '1',
 };
 
 

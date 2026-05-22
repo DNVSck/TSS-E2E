@@ -106,8 +106,8 @@ export class ConsignmentDeclarePage extends BasePage {
 
         // "Enter transport and destination details" section
         this.transportDocumentNumberInput = page.locator("input#transportDocumentNumber");
-        this.nidomOption = page.locator("input#goodsDomesticStatus-goodsDomesticStatus-nidom");
-        this.niimpOption = page.locator("input#goodsDomesticStatus-goodsDomesticStatus-niimp");
+        this.nidomOption = page.locator("input#goodsDomesticStatus-goodsDomesticStatus-NIDOM");
+        this.niimpOption = page.locator("input#goodsDomesticStatus-goodsDomesticStatus-NIIMP");
         this.destinationCountryDropdown = page.locator("select#destinationCountry");
 
         // "Warehouse identifier" section
@@ -224,8 +224,8 @@ export class ConsignmentDeclarePage extends BasePage {
         } else{
             await this.areGoodsAtRiskNoOption.check();
             await this.clickContinueButton();
-            await this.chooseToUseIMMI(useIMMI);
         }
+        await this.chooseToUseIMMI(useIMMI);
     }
 
     async chooseToUseIMMI(useIMMI: string): Promise<void> {

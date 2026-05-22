@@ -53,6 +53,8 @@ export class MovementDeclarePage extends BasePage {
     placeOfDeliveryPostcodeInput: Locator;
     placeOfDeliveryCityInput: Locator;
 
+    placeOfDeliveryInput: Locator;
+
     transportCharges: Locator;
 
     constructor(page: Page) {
@@ -118,6 +120,8 @@ export class MovementDeclarePage extends BasePage {
         this.placeOfDeliveryAddressLineInput = page.locator("input#placeOfDeliveryAddressLine");
         this.placeOfDeliveryCityInput = page.locator("input#placeOfDeliveryTownOrCity");
         this.placeOfDeliveryPostcodeInput = page.locator("input#placeOfDeliveryPostcode");
+
+        this.placeOfDeliveryInput = page.locator("input#placeOfDelivery");
 
         //"How will the transport charges be paid?" screen
         this.transportCharges = page.locator('input[name="transportCharges"]');
@@ -191,7 +195,7 @@ export class MovementDeclarePage extends BasePage {
         await this.arrivalTimeMinuteInput.fill(minute);
     }
 
-    async submitTransportDetails(imoNumber: string, nationalityOfMeanOfTransport: string): Promise<void> {
+    async inputImoAndNationalityOfMeanOfTransport(imoNumber: string, nationalityOfMeanOfTransport: string): Promise<void> {
         await this.imoNumberInput.fill(imoNumber);
         await this.nationalityOfMeanOfTransportInput.selectOption({ value: nationalityOfMeanOfTransport });
     }
@@ -206,10 +210,12 @@ export class MovementDeclarePage extends BasePage {
 
     async selectDeliverySameAsUnloading(): Promise<void> {
         await this.isDeliverySameYesOption.check();
+        await this.clickContinueButton();
     }
 
     async selectDeliveryNotSameAsUnloading(): Promise<void> {
         await this.isDeliverySameNoOption.check();
+        await this.clickContinueButton();
     }
 
     async selectTransportCharges(transportChargesKey: string): Promise<void> {
@@ -218,5 +224,14 @@ export class MovementDeclarePage extends BasePage {
 
     async inputCarrierEori(carrierEori: string): Promise<void> {
         await this.carrierEoriInput.fill(carrierEori);
+    }
+
+    async inputHaulierEori(haulierEori: string): Promise<void> {
+        await this.haulierEoriInput.fill(haulierEori);
+    }
+
+    async inputPlaceOfDelivery(placeOfDelivery: string): Promise<void> {
+        await this.placeOfDeliveryInput.fill(placeOfDelivery);
+        await this.clickContinueButton();
     }
 }

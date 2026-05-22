@@ -12,9 +12,12 @@ export class MovementHeaderDeclarationFlow {
 
     async completeNewGoodsMovementDeclaration(input: MovementData): Promise<void> {
         await this.openTransportDetails();
-        await this.submitTransportDetails(input);
-        await this.submitMovementDetails(input);
-        await this.submitLoadingDetails(input);
+        await this.inputTransportDetails(input);
+        await this.chooseResponsibleForThisMovement(input);
+        await this.inputArrivalDateTimeAndPortOfArrival(input);
+        await this.inputLoadingDetails(input);
+        await this.chooseTransportCharges(input);
+        await this.movementDeclarePage.clickFinishButton();
     }
 
     async completeMovementHeaderDeclaration(): Promise<void> {
@@ -25,12 +28,12 @@ export class MovementHeaderDeclarationFlow {
         await this.goodsMovementTaskListPage.clickTransportDetails();
     }
 
-    private async submitTransportDetails(input: MovementData): Promise<void> {
+    private async inputTransportDetails(input: MovementData): Promise<void> {
         await ReportLog.step('Submit transport details', async () => {
             await this.movementDeclarePage.chooseTypeOfMovement(input.typeOfMovement);
             await this.movementDeclarePage.clickContinueButton();
 
-            await this.movementDeclarePage.submitTransportDetails(input.imoNumber, input.nationalityOfMeanOfTransport);
+            await this.movementDeclarePage.inputImoAndNationalityOfMeanOfTransport(input.imoNumber, input.nationalityOfMeanOfTransport);
             await this.movementDeclarePage.clickContinueButton();
 
             if (input.typeOfMovement === TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED) {
@@ -47,48 +50,57 @@ export class MovementHeaderDeclarationFlow {
         });
     }
 
-    private async submitMovementDetails(input: MovementData): Promise<void> {
-        await ReportLog.step('Submit movement details', async () => {
+    private async chooseResponsibleForThisMovement(input: MovementData): Promise<void> {
+        await ReportLog.step('Declare "Who is responsible for this movement?" ', async () => {
             await this.movementDeclarePage.chooseYourRoleInThisMovement(input.roleInThisMovement);
             await this.movementDeclarePage.chooseHaulierInvolvement(input.haulierSeparateThisMovement);
             await this.movementDeclarePage.clickContinueButton();
 
             if (input.roleInThisMovement === NEW_GOODS_MOVEMENT_DECLARATION.ROLE_IN_THIS_MOVEMENT.ON_BEHALF_OF_CARRIER) {
-                await this.movementDeclarePage.inputCarrierEori(input.carrierEori!);
+                await this.movementDeclarePage.inputCarrierEori(input.carrierEori);
                 await this.movementDeclarePage.clickContinueButton();
             }
+            if (input.haulierSeparateThisMovement === NEW_GOODS_MOVEMENT_DECLARATION.SEPARATE_HAULIER_THIS_MOVEMENT.SEPARATE_HAULIER) {
+                await this.movementDeclarePage.inputHaulierEori(input.haulierEori);
+                await this.movementDeclarePage.clickContinueButton();
+            }
+        });
+    }
 
+    private async inputArrivalDateTimeAndPortOfArrival(input: MovementData): Promise<void> {
+        await ReportLog.step('Input information for "When and where will the goods arrive?" ', async () => {
             await this.movementDeclarePage.inputArrivalDateTime(input.arrivalDateTime);
             await this.movementDeclarePage.selectPortOfArrival(input.portOfArrival);
             await this.movementDeclarePage.clickContinueButton();
         });
     }
 
-    private async submitLoadingDetails(input: MovementData): Promise<void> {
-        await ReportLog.step('Submit loading details', async () => {
+
+    private async inputLoadingDetails(input: MovementData): Promise<void> {
+        await ReportLog.step('Input loading details', async () => {
+            // Enter place of loading details
             await this.movementDeclarePage.inputPlaceOfLoading(input.placeOfLoading);
             await this.movementDeclarePage.clickContinueButton();
 
+            // Enter place of unloading details
             await this.movementDeclarePage.inputPlaceOfUnloading(input.placeOfUnloading);
             await this.movementDeclarePage.clickContinueButton();
 
-            if (input.isSamePlaceOfLoading) {
-                await this.movementDeclarePage.selectAcceptanceSameAsLoading();
-            } else {
-                await this.movementDeclarePage.selectAcceptanceNotSameAsLoading();
-            }
-
+            // Select Place of acceptance and delivery
+            // "Are the goods being delivered to the same place as they're unloaded?"
             if (input.isSamePlaceOfUnloading) {
                 await this.movementDeclarePage.selectDeliverySameAsUnloading();
             } else {
                 await this.movementDeclarePage.selectDeliveryNotSameAsUnloading();
+                await this.movementDeclarePage.inputPlaceOfDelivery(input.placeOfDelivery);
             }
-            await this.movementDeclarePage.clickContinueButton();
 
-            await this.movementDeclarePage.selectTransportCharges(input.transportCharges);
-            await this.movementDeclarePage.clickContinueButton();
-
-            await this.movementDeclarePage.clickFinishButton();
         });
     }
+
+    private async chooseTransportCharges(input: MovementData): Promise<void> {
+        await this.movementDeclarePage.selectTransportCharges(input.transportCharges);
+        await this.movementDeclarePage.clickContinueButton();
+    }
+
 }
