@@ -11,6 +11,8 @@ import { GoodsDeclarePage } from '../page-object/goods-declare-page';
 import { LocaleFixtureType } from './locale-fixture';
 import { ConsignmentOverviewPage } from '../page-object/consignment-overview-page';
 import { GoodsOverviewPage } from '../page-object/goods-overview-page';
+import { GmrDetailsPage } from '../page-object/gmr-details-page';
+import { GmrDeclarePage } from '../page-object/gmr-declare-page';
 
 
 export type PageFixtureType = {
@@ -25,6 +27,8 @@ export type PageFixtureType = {
     goodsItemDeclarePage: GoodsDeclarePage;
     consignmentOverviewPage: ConsignmentOverviewPage;
     goodsOverviewPage: GoodsOverviewPage;
+    gmrDeclarePage: GmrDeclarePage;
+    gmrDetailsPage: GmrDetailsPage;
 }
 
 type ExtendParams = Parameters<typeof test.extend<PageFixtureType & LocaleFixtureType>>;
@@ -72,5 +76,13 @@ export const pageFixture: ExtendParams[0] = {
 
     goodsOverviewPage: async ({ page }, use) => {
         await use(new GoodsOverviewPage(page));
+    },
+
+    gmrDeclarePage: async ({ page }, use) => {
+        await use(new GmrDeclarePage(page));
+    },
+
+    gmrDetailsPage: async ({ page }, use) => {
+        await use(new GmrDetailsPage(page));
     }
 };

@@ -7,6 +7,7 @@ import { PageFixtureType } from './page-fixture';
 import { CreateAndSubmitEnsDeclarationFlow } from '../flows/common-flows/createAndSubmitDeclarationFlow';
 import { AddNewConsignmentFlow } from '../flows/add-new-consignment-flow';
 import { AddNewGoodsItemFlow } from '../flows/add-new-goods-item-flow';
+import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
 
 export type FlowFixtureType = {
     // Business Flows
@@ -16,6 +17,7 @@ export type FlowFixtureType = {
     movementOverviewFlow: MovementOverviewFlow;
     addNewConsignmentFlow: AddNewConsignmentFlow;
     addNewGoodsItemFlow: AddNewGoodsItemFlow;
+    createAndSubmitGmrFlow: AddNewGMRFlow; // This flow is added here as it relies on multiple other flows, and it will be used in multiple places, so it makes sense to have it as a common flow
 
     // Common Flows
     createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow;
@@ -46,6 +48,10 @@ export const flowFixture: ExtendParams[0] = {
 
     addNewGoodsItemFlow: async ({ consignmentOverviewPage, goodsItemDeclarePage, goodsOverviewPage }, use) => {
         await use(new AddNewGoodsItemFlow(consignmentOverviewPage, goodsItemDeclarePage, goodsOverviewPage));
+    },
+
+    createAndSubmitGmrFlow: async ({ movementOverviewPage, gmrDeclarePage, gmrDetailsPage }, use) => {
+        await use(new AddNewGMRFlow(movementOverviewPage, gmrDeclarePage, gmrDetailsPage));
     },
 
     createAndSubmitEnsDeclarationFlow: async ({

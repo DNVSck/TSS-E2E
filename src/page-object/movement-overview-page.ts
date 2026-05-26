@@ -79,7 +79,7 @@ export class MovementOverviewPage extends BasePage {
         expect(declarationStatus).toBe(expectedStatus);
     }
 
-    async goToCreateNewGMR(): Promise<void> {
+    async navigateToGmrTabAndClickOnCreateGMR(): Promise<void> {
         await this.gmrDetailsTab.click();
         await this.createGMRButton.click();
     }
