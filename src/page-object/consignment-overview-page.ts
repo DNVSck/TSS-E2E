@@ -11,7 +11,7 @@ export class ConsignmentOverviewPage extends BasePage {
     holderOfAuthorisationTab: Locator;
     documentTab: Locator;
     newGoodsRecordBtn: Locator;
-
+    confirmAndSubmitButton: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -21,6 +21,7 @@ export class ConsignmentOverviewPage extends BasePage {
         this.holderOfAuthorisationTab = page.locator("//a[contains(@href, '/holder-of-authorisation#overview-tab')]");
         this.newGoodsRecordBtn = page.locator("button[value='new-record']");
         this.documentTab = page.locator("//a[contains(@href, '/documents#overview-tab')]");
+        this.confirmAndSubmitButton = page.locator("button[value='submit-consignment']");
     }
 
 
@@ -28,5 +29,8 @@ export class ConsignmentOverviewPage extends BasePage {
         await this.newGoodsRecordBtn.click();
     }
 
+    async clickConfirmAndSubmit(): Promise<void> {
+        await this.confirmAndSubmitButton.click();
+    }
 
 }

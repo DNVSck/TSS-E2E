@@ -2,15 +2,17 @@ import { MovementOverviewPage } from "../page-object/movement-overview-page";
 import { ConsignmentDeclarePage } from "../page-object/consignment-declare-page";
 import { ReportLog } from '../core/report/report-log';
 import { ConsignmentData } from "../test-data/consignment-data";
+import { ConsignmentOverviewPage } from "../page-object/consignment-overview-page";
 
 export class AddNewConsignmentFlow {
     constructor(
         private readonly movementOverviewPage: MovementOverviewPage,
-        private readonly consignmentDeclarePage: ConsignmentDeclarePage
+        private readonly consignmentDeclarePage: ConsignmentDeclarePage,
+        private readonly consignmentOverviewPage: ConsignmentOverviewPage
     ) { }
 
     async AddNewENSConsignment(input: ConsignmentData): Promise<void> {
-        await this.clickNewENSConsignment();
+        await this.clickNewENSConsignmentAtOverview();
         await this.fillImporterInformation(input);
         await this.fillBuyerInformation(input);
         await this.fillGoodsInformation(input);
@@ -25,7 +27,7 @@ export class AddNewConsignmentFlow {
         await this.finishConsignmentDeclaration();
     }
 
-    private async clickNewENSConsignment(): Promise<void> {
+    private async clickNewENSConsignmentAtOverview(): Promise<void> {
         await ReportLog.step('Click New ENS Consignment', async () => {
             await this.movementOverviewPage.clickNewENSConsignment();
         });
