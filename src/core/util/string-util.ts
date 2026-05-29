@@ -84,16 +84,6 @@ export class StringUtil {
         return start + masked + end;
     }
 
-    /**
-     * Generate random UUID
-     */
-    static generateUUID(): string {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
 
     /**
      * Compare two strings ignoring case and whitespace

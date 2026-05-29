@@ -16,6 +16,8 @@ export class MovementOverviewPage extends BasePage {
     uploadCSVBtn: Locator;
     associateConsignmentBtn: Locator;
 
+    createGMRButton: Locator;
+
     localReferenceNumber: Locator;
     declarationStatus: Locator;
 
@@ -26,13 +28,20 @@ export class MovementOverviewPage extends BasePage {
         const localReferenceLabel = this.t!('movementHeaderOverview.localReferenceNumber');
         const declarationStatusLabel = this.t!('movementHeaderOverview.declarationStatus');
         
+        //Tab list
         this.ensConsignmentsTab = page.locator("//a[contains(@href, '/overview/#overview-tab')]");
         this.sfdConsignmentsTab = page.locator("//a[contains(@href, '/overview/sfd-consignments#overview-tab')]");
         this.gmrDetailsTab = page.locator("//a[contains(@href, '/overview/gmr-details#overview-tab')]");
-        this.newENSConsignmentBtn = page.locator("button[value='new-record']");
-        this.uploadCSVBtn = page.locator("button[value='upload-csv']");
-        this.associateConsignmentBtn = page.locator("button[value='associate-consignment']");
 
+        // ENS Consignment actions
+        this.newENSConsignmentBtn = page.locator("//form[contains(@action,'?index')]//button[@value='new-record']");
+        this.uploadCSVBtn = page.locator("//form[contains(@action,'?index')]//button[@value='upload-csv']");
+        this.associateConsignmentBtn = page.locator("//form[contains(@action,'?index')]//button[@value='associate-consignment']");
+
+        //GMR actions
+        this.createGMRButton = page.locator("//form[contains(@action,'gmr-details')]//button[@value='new-record']");
+
+        // Summary list fields
         this.localReferenceNumber = page.locator(`.govuk-summary-list__row:has(dt:text("${localReferenceLabel}")) .govuk-summary-list__value p`);
         this.declarationStatus = page.locator(`.govuk-summary-list__row:has(dt:text("${declarationStatusLabel}")) .govuk-summary-list__value p`);
 
@@ -69,4 +78,10 @@ export class MovementOverviewPage extends BasePage {
 
         expect(declarationStatus).toBe(expectedStatus);
     }
+
+    async navigateToGmrTabAndClickOnCreateGMR(): Promise<void> {
+        await this.gmrDetailsTab.click();
+        await this.createGMRButton.click();
+    }
+
 }

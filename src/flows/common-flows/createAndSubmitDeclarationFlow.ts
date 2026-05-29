@@ -8,6 +8,8 @@ import { TestInfo } from '@playwright/test';
 import { AddNewConsignmentFlow } from '../add-new-consignment-flow';
 import { consignment, ConsignmentData } from '../../test-data/consignment-data';
 import { ReportLog } from '../../core/report/report-log';
+import { AddNewGoodsItemFlow } from '../add-new-goods-item-flow';
+import { goods, GoodsData } from '../../test-data/goods-data';
 
 export class CreateAndSubmitEnsDeclarationFlow {
     constructor(
@@ -16,6 +18,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
         private readonly movementHeaderFlow: MovementHeaderDeclarationFlow,
         private readonly movementOverviewFlow: MovementOverviewFlow,
         private readonly addNewConsignmentFlow: AddNewConsignmentFlow,
+        private readonly addNewGoodsItemFlow: AddNewGoodsItemFlow,
     ) { }
 
     async completeEnsDeclarationFlow(
@@ -24,10 +27,14 @@ export class CreateAndSubmitEnsDeclarationFlow {
         expectedTitle: string,
         routeOverrides?: Partial<InitialFormData>,
         movementOverrides?: Partial<MovementData>,
-        consignmentOverrides?: Partial<ConsignmentData>
+        consignmentOverrides?: Partial<ConsignmentData>,
+        goodsItemOverrides?: Partial<GoodsData>
+
     ): Promise<void> {
+        const routeData = route(routeOverrides);
         const movementData = movement(movementOverrides);
         const consignmentData = consignment(consignmentOverrides);
+        const goodsData = goods(goodsItemOverrides);
 
         await ReportLog.step('Start Login to Portal', async () => {
             await this.accessFlow.accessServiceAsAdmin({
@@ -38,7 +45,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
         });
 
         await ReportLog.step('Start Initial Form Declaration', async () => {
-            await this.routeFlow.completeInitialFormDeclaration(route(routeOverrides));
+            await this.routeFlow.completeInitialFormDeclaration(route(routeData));
         });
         await ReportLog.step('Start Movement Header Declaration', async () => {
             await this.movementHeaderFlow.completeNewGoodsMovementDeclaration(movementData);
@@ -48,6 +55,9 @@ export class CreateAndSubmitEnsDeclarationFlow {
         });
         await ReportLog.step('Start Add New Consignment', async () => {
             await this.addNewConsignmentFlow.AddNewENSConsignment(consignmentData);
+        });
+        await ReportLog.step('Start Add New Goods Item', async () => {
+            await this.addNewGoodsItemFlow.addNewGoodsItem(goodsData);
         });
     }
 }
