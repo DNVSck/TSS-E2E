@@ -28,21 +28,14 @@ stages:
     jobs:
       - job: playwright
         displayName: Playwright Smoke Tests
+        container: mcr.microsoft.com/playwright:v1.57.0-noble
         steps:
-          - task: NodeTool@0
-            displayName: Setup Node 24
-            inputs:
-              versionSpec: '24.x'
-
           - checkout: self
             persistCredentials: true
 
           - script: |
               set -e
-              cp .env.example .env
-              corepack enable
-              pnpm install --frozen-lockfile
-              npx playwright install
+              npx pnpm install --frozen-lockfile
             displayName: Install Dependencies
 
           - script: |

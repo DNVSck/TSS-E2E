@@ -5,29 +5,21 @@ parameters:
 steps:
   - checkout: self
 
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '24.x'
-
   - script: |
       cd "$(Build.SourcesDirectory)"
       set -e
-      
-      npm config set registry https://registry.npmjs.org/
-      corepack enable
-      
-      echo "Installing dependencies..."
-      pnpm install --frozen-lockfile
 
-      echo "Installing Playwright browsers..."
-      npx playwright install chromium
+      npm config set registry https://registry.npmjs.org/
+
+      echo "Installing dependencies..."
+      npx pnpm install --frozen-lockfile
 
       echo "Preparing environment files..."
       if [ ! -f ".env.example" ]; then
         echo "ERROR: .env.example not found"
         exit 1
       fi
-      
+
       # 1. Create the env-specific file (e.g., .env.dev)
       ENV_FILE=".env.${{ parameters.environment }}"
       cp .env.example "$ENV_FILE"
@@ -41,7 +33,7 @@ steps:
 
       cp "$ENV_FILE" .env
       echo "Environment: ${{ parameters.environment }} ready"
-    displayName: 'Install dependencies'
+    displayName: 'Install Dependencies'
     env:
       CI: true
       NPM_TOKEN: $(NPM_TOKEN)

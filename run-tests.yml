@@ -46,6 +46,7 @@ jobs:
     displayName: 'Run UI tests'
     timeoutInMinutes: 30
     dependsOn: []
+    container: mcr.microsoft.com/playwright:v1.57.0-noble
     condition: |
       or(
         eq('${{ parameters.runAll }}', 'True'),
@@ -62,6 +63,7 @@ jobs:
     displayName: 'Run Accessibility tests'
     timeoutInMinutes: 30
     dependsOn: []
+    container: mcr.microsoft.com/playwright:v1.57.0-noble
     condition: |
       or(
         eq('${{ parameters.runAll }}', 'True'),
@@ -78,6 +80,7 @@ jobs:
     displayName: 'Run Functional tests'
     timeoutInMinutes: 30
     dependsOn: []
+    container: mcr.microsoft.com/playwright:v1.57.0-noble
     condition: |
       or(
         eq('${{ parameters.runAll }}', 'True'),
