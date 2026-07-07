@@ -1,4 +1,4 @@
-import { Page, Locator, expect, TestInfo } from '@playwright/test';
+import { Page, Locator, TestInfo } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import { PortalPage } from './portal-page';
 
