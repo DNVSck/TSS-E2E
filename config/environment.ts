@@ -7,7 +7,15 @@ function numberOrDefault(value: string | undefined, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function boolOrDefault(value: string | undefined, fallback = false): boolean {
+  if (value === undefined) return fallback;
+  return value.trim().toLowerCase() === 'true';
+}
+
 export const ENV = process.env.ENV as string;
+
+/** Whether the environment requires the TOTP/OTP step during sign in. */
+export const OTP_ENABLED = boolOrDefault(process.env.OTP_ENABLED);
 
 export const LOCALE: Locale =
   (process.env.LOCALE as Locale) || LOCALES_CONSTANT.CY_GB;

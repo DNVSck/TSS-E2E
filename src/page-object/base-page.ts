@@ -23,7 +23,7 @@ export class BasePage {
 
         this.commonFinishButton = page.locator(
             "button.govuk-button[value='finish']"
-        );
+        )
 
         this.backLink = page.locator("a.govuk-back-link");
 
@@ -69,6 +69,7 @@ export class BasePage {
         }
     }
 
+     // TO DO: Update this method after enabling the language switcher on the portal page. Currently, the language switcher is not available on the portal page, so this method is a placeholder for future implementation.
     private async waitUntilLanguageSwitchSuccess(
         lang: 'en' | 'cy'
     ): Promise<void> {
@@ -79,7 +80,6 @@ export class BasePage {
             cy: 'Gwasanaeth Cymorth Masnachwyr'
         };
 
-        await expect(portalPage.portalTitle).toHaveText(expectedTitles[lang]);
     }
 
     async clickContinueButton(): Promise<void> {

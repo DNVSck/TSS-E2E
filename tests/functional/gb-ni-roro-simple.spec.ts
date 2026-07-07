@@ -4,6 +4,7 @@ import { getBaseUrl, test } from '../test-hooks';
 import { TRANSPORT_CHARGES_OPTION_CODE, TYPE_OF_MOVEMENT_OPTION_CODE, NEW_GOODS_MOVEMENT_DECLARATION } from '../../src/constant/goods-movement-declaration-constants';
 import { AllureTestManager } from '../../src/core/report/allure-test-manager';
 import { TEST_LINK_CONFIG } from '../../src/constant/test-link.constant';
+import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
 
 const TEST_CASE_ID = '2423';
 
@@ -23,7 +24,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process', () => {
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
       testInfo,
       getBaseUrl(),
-      t('portal.title')
+      COMPANY_PROFILE.AGENT,
     );
   });
 
@@ -34,7 +35,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process', () => {
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
       testInfo,
       getBaseUrl(),
-      t('portal.title'),
+      COMPANY_PROFILE.AGENT,
       undefined,
       {
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
@@ -50,7 +51,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process', () => {
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
       testInfo,
       getBaseUrl(),
-      t('portal.title'),
+      COMPANY_PROFILE.AGENT,
       undefined,
       {
         roleInThisMovement: NEW_GOODS_MOVEMENT_DECLARATION.ROLE_IN_THIS_MOVEMENT.ON_BEHALF_OF_CARRIER,

@@ -10,6 +10,7 @@ import { consignment, ConsignmentData } from '../../test-data/consignment-data';
 import { ReportLog } from '../../core/report/report-log';
 import { AddNewGoodsItemFlow } from '../add-new-goods-item-flow';
 import { goods, GoodsData } from '../../test-data/goods-data';
+import { CompanyProfile } from '../../core/auth/credentials';
 
 export class CreateAndSubmitEnsDeclarationFlow {
     constructor(
@@ -24,7 +25,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
     async completeEnsDeclarationFlow(
         testInfo: TestInfo,
         url: string,
-        expectedTitle: string,
+        profile: CompanyProfile,
         routeOverrides?: Partial<InitialFormData>,
         movementOverrides?: Partial<MovementData>,
         consignmentOverrides?: Partial<ConsignmentData>,
@@ -37,10 +38,10 @@ export class CreateAndSubmitEnsDeclarationFlow {
         const goodsData = goods(goodsItemOverrides);
 
         await ReportLog.step('Start Login to Portal', async () => {
-            await this.accessFlow.accessServiceAsAdmin({
+            await this.accessFlow.accessService({
                 baseUrl: url,
                 testInfo,
-                expectedTitle,
+                profile,
             })
         });
 
