@@ -3,6 +3,7 @@ import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { DateTimeUtil } from '../core/util/date-time-util';
 
+
 export interface MovementData {
     typeOfMovement: string;
     roleInThisMovement: string;
@@ -47,8 +48,8 @@ const defaults: MovementData = {
     typeOfPassiveTransport: NEW_GOODS_MOVEMENT_DECLARATION.TYPE_OF_PASSIVE_TRANSPORT.TRUCK,
     transportCharges: TRANSPORT_CHARGES_OPTION_CODE.PAYMENT_IN_CASH,
     trailerRegistrationNumber: 'TR12LER',
-    carrierEori: 'GB123456789000',
-    haulierEori: 'GB987654321000',
+    carrierEori: process.env.CARRIER_EORI ?? 'XI404517186000',
+    haulierEori: process.env.HAULIER_EORI ?? 'XI404517186000',
 };
 
 

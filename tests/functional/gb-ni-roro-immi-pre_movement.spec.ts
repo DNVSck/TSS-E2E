@@ -8,6 +8,7 @@ import { getBaseUrl, test } from '../test-hooks';
 import { AllureTestManager } from '../../src/core/report/allure-test-manager';
 import { TEST_LINK_CONFIG } from '../../src/constant/test-link.constant';
 import { goods } from '../../src/test-data/goods-data';
+import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
 
 const TGP_TC_ID = '2793';
 const NO_TGP_TC_ID = '2809';
@@ -29,7 +30,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement', () => {
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
       testInfo,
       getBaseUrl(),
-      t('portal.title'),
+      COMPANY_PROFILE.AGENT,
       route(),
       movement(),
       consignment({ isGoodsAtRisk: 'no', useIMMI: 'yes' }),
@@ -50,7 +51,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement', () => {
      await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
       testInfo,
       getBaseUrl(),
-      t('portal.title'),
+      COMPANY_PROFILE.AGENT,
       route(),
       movement({ typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED }),
       consignment({ isGoodsAtRisk: 'no', useIMMI: 'yes' }),
