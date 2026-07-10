@@ -26,7 +26,7 @@ export class AddNewGMRFlow {
     }
 
     private async chooseRouteId(input: GmrData): Promise<void> {
-        await ReportLog.step(`Select Route ID for GMR Details:`, async () => {
+        await ReportLog.step(`Select Route ID "${input.route_id}" for GMR Details`, async () => {
             await this.gmrDeclarePage.selectRouteId(input.route_id);
         });
     }

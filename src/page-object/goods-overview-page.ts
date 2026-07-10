@@ -3,19 +3,19 @@ import { Page, Locator } from '@playwright/test';
 
 export class GoodsOverviewPage extends BasePage {
     
-    documentTab: Locator;
-    newDocumentRefButton: Locator;
+    private readonly documentTab: Locator;
+    private readonly newDocumentRefButton: Locator;
 
-    attachmentsTab: Locator;
+    private readonly attachmentsTab: Locator;
 
-    additionalProcedureCodesTab: Locator;
-    newAdditionalProcedureCodeButton: Locator;
+    private readonly additionalProcedureCodesTab: Locator;
+    private readonly newAdditionalProcedureCodeButton: Locator;
 
-    previousDocumentsTab: Locator;
-    newPreviousDocumentButton: Locator;
+    private readonly previousDocumentsTab: Locator;
+    private readonly newPreviousDocumentButton: Locator;
 
-    additionalInformationTab: Locator;
-    newAdditionalInformationButton: Locator;
+    private readonly additionalInformationTab: Locator;
+    private readonly newAdditionalInformationButton: Locator;
 
     constructor(page: Page) {
         super(page);

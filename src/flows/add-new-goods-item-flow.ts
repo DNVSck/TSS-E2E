@@ -1,7 +1,6 @@
 import { ReportLog } from '../core/report/report-log';
 import {ConsignmentOverviewPage} from "../page-object/consignment-overview-page";
 import {GoodsDeclarePage} from "../page-object/goods-declare-page";
-import { GoodsOverviewPage } from '../page-object/goods-overview-page';
 import  {GoodsData} from  "../test-data/goods-data";
 
 
@@ -9,18 +8,19 @@ export class AddNewGoodsItemFlow {
     constructor(
         private readonly consignmentOverviewPage: ConsignmentOverviewPage,
         private readonly goodsDeclarePage: GoodsDeclarePage,
-        private readonly goodsOverviewPage: GoodsOverviewPage
-    ) { }   
+    ) { }
 
     async addNewGoodsItem(input: GoodsData): Promise<void> {
-        await this.clickNewGoodsRecordAtOverview();
-        await this.fillGoodsDomesticStatusFlow(input);
-        await this.fillControlledAndDangerousGoodsFlow(input);
-        await this.fillCommodityCodeAndAdditionalCommodityCodeFlow(input);
-        await this.fillPackageAndWeightInformationFlow(input);
-        await this.fillProcedureAndAdditionalProcedureCodeFlow(input);
-        await this.fillInvoiceDetailsFlow(input);
-        await this.finishGoodsItemDeclaration();
+        await ReportLog.step('Add new goods item', async () => {
+            await this.clickNewGoodsRecordAtOverview();
+            await this.fillGoodsDomesticStatusFlow(input);
+            await this.fillControlledAndDangerousGoodsFlow(input);
+            await this.fillCommodityCodeAndAdditionalCommodityCodeFlow(input);
+            await this.fillPackageAndWeightInformationFlow(input);
+            await this.fillProcedureAndAdditionalProcedureCodeFlow(input);
+            await this.fillInvoiceDetailsFlow(input);
+            await this.finishGoodsItemDeclaration();
+        });
     }
 
     private async clickNewGoodsRecordAtOverview(): Promise<void> {
@@ -38,8 +38,19 @@ export class AddNewGoodsItemFlow {
 
     private async fillControlledAndDangerousGoodsFlow(input: GoodsData): Promise<void> {
         await ReportLog.step('Define if the goods are controlled or dangerous', async () => {
-            await this.goodsDeclarePage.defineIfGoodsControlled(input.areGooodsControlled);
-            await this.goodsDeclarePage.defineIfDangerousGoods(input.isDangerousGoods, input.dangerousGoodsCodes);
+            if (input.areGooodsControlled) {
+                await this.goodsDeclarePage.selectGoodsControlledYes();
+            } else {
+                await this.goodsDeclarePage.selectGoodsControlledNo();
+            }
+
+            // The dangerous goods codes screen only appears on the "yes" answer.
+            if (input.isDangerousGoods) {
+                await this.goodsDeclarePage.selectDangerousGoodsYes();
+                await this.goodsDeclarePage.inputDangerousGoodsCodes(input.dangerousGoodsCodes);
+            } else {
+                await this.goodsDeclarePage.selectDangerousGoodsNo();
+            }
         });
     }
 

@@ -1,5 +1,4 @@
 import { ReportLog } from '../core/report/report-log';
-import { MovementData } from "../test-data/movements-data";
 import { MovementOverviewPage } from "../page-object/movement-overview-page";
 
 export class MovementOverviewFlow {
@@ -7,9 +6,7 @@ export class MovementOverviewFlow {
         private readonly movementOverviewPage: MovementOverviewPage,
     ) { }
 
-    async MovementOverview(input: MovementData
-    ): Promise<void> {
-
+    async verifyDraftMovementOverview(): Promise<void> {
         await ReportLog.step('Validate goods movement overview', async () => {
             await this.movementOverviewPage.assertDraftMovementOverview();
         });

@@ -3,16 +3,16 @@ import { Page, Locator} from '@playwright/test';
 
 export class GoodsMovementTaskListPage extends BasePage {
 
-    transportDetailsBtn: Locator;
+    private readonly transportDetailsLink: Locator;
 
     constructor(page: Page) {
         super(page);
-        this.transportDetailsBtn = page.locator('button[aria-describedby="transport-details-status"]');
+        this.transportDetailsLink = page.locator('a[aria-describedby="transport-details-status"]');
     }
 
 
     async clickTransportDetails(): Promise<void> {
-        await this.transportDetailsBtn.click();
+        await this.transportDetailsLink.click();
     }
 
 }

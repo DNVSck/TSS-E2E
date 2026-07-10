@@ -7,45 +7,45 @@ import { GOODS_DOMESTIC_STATUS } from "../constant/goods-domestic-status-constan
 
 export class GoodsDeclarePage extends BasePage {
 
-    nidomOption: Locator;
-    niimpOption: Locator;
+    private readonly nidomOption: Locator;
+    private readonly niimpOption: Locator;
 
-    niproOption: Locator;
-    niquoOption: Locator;
-    niremOption: Locator;
-    noAdditionalRiskStatusOption: Locator;
+    private readonly niproOption: Locator;
+    private readonly niquoOption: Locator;
+    private readonly niremOption: Locator;
+    private readonly noAdditionalRiskStatusOption: Locator;
 
-    noControlledGoodsOption: Locator;
-    yesControlledGoodsOption: Locator;
+    private readonly noControlledGoodsOption: Locator;
+    private readonly yesControlledGoodsOption: Locator;
 
-    yesDangerousGoodsOption: Locator;
-    noDangerousGoodsOption: Locator;
-    dangerousGoodsCodesInput: Locator;
+    private readonly yesDangerousGoodsOption: Locator;
+    private readonly noDangerousGoodsOption: Locator;
+    private readonly dangerousGoodsCodesInput: Locator;
 
-    commodityCodeInput: Locator;
-    goodsDescriptionTextArea: Locator;
-    countryOfOriginDropdown: Locator;
-    supplementaryUnitsInput: Locator;
+    private readonly commodityCodeInput: Locator;
+    private readonly goodsDescriptionTextArea: Locator;
+    private readonly countryOfOriginDropdown: Locator;
+    private readonly supplementaryUnitsInput: Locator;
 
-    cusCodeInput: Locator;
-    taricAdditionalCodeInput: Locator;
-    nationalAdditionalCodeDropdown: Locator;
+    private readonly cusCodeInput: Locator;
+    private readonly taricAdditionalCodeInput: Locator;
+    private readonly nationalAdditionalCodeDropdown: Locator;
 
-    shippingMarksInput: Locator;
-    typeOfPackagesDropdown: Locator;
-    numberOfPackagesInput: Locator;
-    numberOfPiecesInput: Locator;
+    private readonly shippingMarksInput: Locator;
+    private readonly typeOfPackagesDropdown: Locator;
+    private readonly numberOfPackagesInput: Locator;
+    private readonly numberOfPiecesInput: Locator;
 
-    grossMassInput: Locator;
-    netMassInput: Locator;
+    private readonly grossMassInput: Locator;
+    private readonly netMassInput: Locator;
 
-    goodsProcedureCodeDropdown: Locator;
+    private readonly goodsProcedureCodeDropdown: Locator;
 
-    additionalProcedureCodeDropdown: Locator;
+    private readonly additionalProcedureCodeDropdown: Locator;
 
-    invoiceNumberInput: Locator;
-    itemCurrencyDropdown: Locator;
-    itemPriceAmountInput: Locator;
+    private readonly invoiceNumberInput: Locator;
+    private readonly itemCurrencyDropdown: Locator;
+    private readonly itemPriceAmountInput: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -111,7 +111,7 @@ export class GoodsDeclarePage extends BasePage {
         } else if (status === GOODS_DOMESTIC_STATUS.NIIMP) {
             await this.niimpOption.check();
         }
-        this.clickContinueButton();
+        await this.clickContinueButton();
     }
 
     async selectAdditionalRiskStatus(status: string): Promise<void> {
@@ -124,35 +124,32 @@ export class GoodsDeclarePage extends BasePage {
         } else if (status === ADDITIONAL_RISK_STATUS.NO_ADDITIONAL_RISK_STATUS) {
             await this.noAdditionalRiskStatusOption.check();
         }
-        this.clickContinueButton();
+        await this.clickContinueButton();
     }
 
-    async defineIfGoodsControlled(isControlled: string): Promise<void> {
-        const value = isControlled.trim().toLowerCase();
-        if (value === 'yes') {
-            await this.yesControlledGoodsOption.check();
-        } else if (value === 'no') {
-            await this.noControlledGoodsOption.check();
-        }
-        this.clickContinueButton();
+    async selectGoodsControlledYes(): Promise<void> {
+        await this.yesControlledGoodsOption.check();
+        await this.clickContinueButton();
     }
 
-    async defineIfDangerousGoods(isDangerous: string, dangerousGoodsCodes: string): Promise<void> {
-        const value = isDangerous.trim().toLowerCase();
-        if (value === 'yes') {
-            await this.yesDangerousGoodsOption.check();
-            this.clickContinueButton();
-             await this.inputDangerousGoodsCodes(dangerousGoodsCodes); 
-        } else if (value === 'no') {
-            await this.noDangerousGoodsOption.check();
-            this.clickContinueButton();
-        }
-       
+    async selectGoodsControlledNo(): Promise<void> {
+        await this.noControlledGoodsOption.check();
+        await this.clickContinueButton();
+    }
+
+    async selectDangerousGoodsYes(): Promise<void> {
+        await this.yesDangerousGoodsOption.check();
+        await this.clickContinueButton();
+    }
+
+    async selectDangerousGoodsNo(): Promise<void> {
+        await this.noDangerousGoodsOption.check();
+        await this.clickContinueButton();
     }
 
     async inputDangerousGoodsCodes(codes: string): Promise<void> {
         await this.dangerousGoodsCodesInput.fill(codes);
-        this.clickContinueButton();
+        await this.clickContinueButton();
     }
 
     async inputCommodityCode(commodityCode: string): Promise<void> {
@@ -209,12 +206,12 @@ export class GoodsDeclarePage extends BasePage {
 
     async selectGoodsProcedureCode(goodsProcedureCode: string): Promise<void> {
         await this.goodsProcedureCodeDropdown.selectOption({ value: goodsProcedureCode });
-        this.clickContinueButton();
+        await this.clickContinueButton();
     }
 
     async selectAdditionalProcedureCode(additionalProcedureCode: string): Promise<void> {
         await this.additionalProcedureCodeDropdown.selectOption({ value: additionalProcedureCode });
-        this.clickContinueButton();
+        await this.clickContinueButton();
     }
 
     async inputInvoiceNumber(invoiceNumber: string): Promise<void> {
@@ -234,14 +231,14 @@ export class GoodsDeclarePage extends BasePage {
         await this.inputGoodsDescription(goodsDescription);
         await this.selectCountryOfOrigin(countryOfOrigin);
         await this.inputSupplementaryUnits(supplementaryUnits??'');
-        this.clickContinueButton();
+        await this.clickContinueButton();
     }
 
     async enterAdditionalCommodityCodes(cusCode?: string, taricAdditionalCode?: string, nationalAdditionalCode?: string): Promise<void> {
         await this.inputCusCode(cusCode??'');
         await this.inputTaricAdditionalCode(taricAdditionalCode??'');
         await this.selectNationalAdditionalCode(nationalAdditionalCode??'');
-        this.clickContinueButton();
+        await this.clickContinueButton();
     }
 
     async enterPackagingDetails(shippingMarks: string, typeOfPackages: string, numberOfPackages: string, numberOfPieces?: string): Promise<void> {
@@ -249,20 +246,20 @@ export class GoodsDeclarePage extends BasePage {
         await this.selectTypeOfPackages(typeOfPackages);
         await this.inputNumberOfPackages(numberOfPackages);
         await this.inputNumberOfPieces(numberOfPieces??'');
-        this.clickContinueButton();
+        await this.clickContinueButton();
     }
 
     async enterWeightInformation(grossMass: string, netMass?: string): Promise<void> {
         await this.inputGrossMass(grossMass);
         await this.inputNetMass(netMass??'');
-        this.clickContinueButton();
+        await this.clickContinueButton();
     }
 
     async enterInvoiceDetails(itemPriceAmount: string, invoiceNumber?: string, itemCurrency?: string): Promise<void> {
         await this.inputInvoiceNumber(invoiceNumber??'');
         await this.selectItemCurrency(itemCurrency??'');
         await this.inputItemPriceAmount(itemPriceAmount);
-        this.clickContinueButton();
+        await this.clickContinueButton();
     }
 
 

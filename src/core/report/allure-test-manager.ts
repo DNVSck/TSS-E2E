@@ -1,6 +1,15 @@
-import { attachment, label, description, parameter, link } from 'allure-js-commons';
+import { label, description, parameter } from 'allure-js-commons';
 import { TestInfo } from '@playwright/test';
 
+/**
+ * Test-lifecycle metadata, driven from the hooks in tests/test-hooks.ts.
+ *
+ * Failures (message, stack, screenshot, video, trace) are NOT recorded here:
+ * allure-playwright already records them from the Playwright result. Attaching
+ * them again produces duplicate entries for a single failure.
+ *
+ * The test body should not call this class — it talks to ReportLog instead.
+ */
 export class AllureTestManager {
 
     public static createParentTest(testInfo: TestInfo): void {
@@ -13,42 +22,14 @@ export class AllureTestManager {
         }
     }
 
-    public static updateTestReport(testInfo: TestInfo): void {
-        const { status, error } = testInfo;
-
-        try {
-            if (status === 'failed' && error) {
-                attachment('Error', error.message ?? '', 'text/plain');
-                attachment('Stack Trace', error.stack ?? '', 'text/plain');
-            }
-        } catch {
-            /* ignore allure failures */
-        }
-    }
-
     private static addMetadata(testInfo: TestInfo): void {
         parameter('Environment', process.env.ENV ?? 'default');
         parameter('Base URL', process.env.BASE_URL ?? 'N/A');
-        parameter(
-            'Browser',
-            testInfo.project.use?.browserName ?? process.env.BROWSER ?? 'unknown'
-        );
+        parameter('Browser', testInfo.project.use?.browserName ?? 'unknown');
         parameter('Project', testInfo.project.name);
     }
 
     public static addParameter(name: string, value: string): void {
         parameter(name, value);
-    }
-
-    public static addTestLabel(name: string, value: string): void {
-        label(name, value);
-    }
-
-    public static addTestLink(
-        url: string,
-        name?: string,
-        type?: 'issue' | 'tms'
-    ): void {
-        name ? link(url, name, type) : link(url);
     }
 }

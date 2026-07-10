@@ -9,16 +9,16 @@ export interface ConsignmentData {
     importerCity: string;
     importerPostCode: string;
     importerCountryCode: string;
-    isBuyerSameAsImporter: string;
+    isBuyerSameAsImporter: boolean;
     buyerEORI: string;
     buyerName: string;
     buyerStreetAndNumber: string;
     buyerCity: string;
     buyerPostCode: string;
     buyerCountryCode: string;
-    isGoodsAtRisk: string;
-    useIMMI: string;
-    isControlledGoods: string;
+    isGoodsAtRisk: boolean;
+    useIMMI: boolean;
+    isControlledGoods: boolean;
     transportDocumentNumber: string;
     goodsDomesticStatus: string;
     destinationCountryCode: string;
@@ -41,7 +41,7 @@ export interface ConsignmentData {
     exporterCity: string;
     exporterPostCode: string;
     exporterCountryCode: string;
-    isSellerSameAsExporter: string;
+    isSellerSameAsExporter: boolean;
     sellerEORI: string;
     sellerName: string;
     sellerStreetAndNumber: string;
@@ -50,8 +50,8 @@ export interface ConsignmentData {
     sellerCountryCode: string;
     consignmentDescription?: string;
     traderReference?: string;
-    isGoodsCrossEUBorder: string;
-    isSameContainer: string;
+    isGoodsCrossEUBorder: boolean;
+    isSameContainer: boolean;
     containerIdentifierNumber: string;
 }
 
@@ -66,7 +66,7 @@ const defaults: ConsignmentData = {
     importerCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Buyer profile
-    isBuyerSameAsImporter: 'yes',
+    isBuyerSameAsImporter: true,
     buyerEORI: 'GB427168118378',
     buyerName: 'John Doe 2',
     buyerStreetAndNumber: '1234 Main Street',
@@ -75,9 +75,9 @@ const defaults: ConsignmentData = {
     buyerCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Consignment information
-    isGoodsAtRisk: 'yes',
-    useIMMI: 'no',
-    isControlledGoods: 'yes',
+    isGoodsAtRisk: true,
+    useIMMI: false,
+    isControlledGoods: true,
 
     //Transport and destination details
     transportDocumentNumber: '5583920174',
@@ -110,7 +110,7 @@ const defaults: ConsignmentData = {
     exporterCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Seller profile
-    isSellerSameAsExporter: 'yes',
+    isSellerSameAsExporter: true,
     sellerEORI: '',
     sellerName: 'John Doe 5',
     sellerStreetAndNumber: '1237 Main Street',
@@ -121,8 +121,8 @@ const defaults: ConsignmentData = {
     //Consignment references
     consignmentDescription: '',
     traderReference: '',
-    isGoodsCrossEUBorder: 'yes',
-    isSameContainer: 'yes',
+    isGoodsCrossEUBorder: true,
+    isSameContainer: true,
     containerIdentifierNumber: '1',
 };
 

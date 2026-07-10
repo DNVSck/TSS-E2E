@@ -1,252 +1,149 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { NEW_CONSIGNMENT_DECLARATION } from '../constant/consignment-declaration-constants';
-
-
+import { PartyBlock } from './components/party-block';
 
 export class ConsignmentDeclarePage extends BasePage {
 
-    importerEORIInput: Locator;
-    importerNameInput: Locator;
-    importerStreetAndNumberInput: Locator;
-    importerCityInput: Locator;
-    importerPostCodeInput: Locator;
-    importerCountryDropdown: Locator;
-    buyerSameAsImporterYesOption: Locator;
-    buyerSameAsImporterNoOption: Locator;
-    buyerEORIInput: Locator;
-    buyerNameInput: Locator;
-    buyerStreetAndNumberInput: Locator;
-    buyerCityInput: Locator;
-    buyerPostCodeInput: Locator;
-    buyerCountryDropdown: Locator;
-    areGoodsAtRiskYesOption: Locator;
-    areGoodsAtRiskNoOption: Locator;
-    useIMMIYesOption: Locator;
-    useIMMINoOption: Locator;
-    controlledGoodsYesOption: Locator;
-    controlledGoodsNoOption: Locator;
-    transportDocumentNumberInput: Locator;
-    nidomOption: Locator;
-    niimpOption: Locator;
-    destinationCountryDropdown: Locator;
-    warehouseIdentifierInput: Locator;
-    consignorEORIInput: Locator;
-    consignorNameInput: Locator;
-    consignorStreetAndNumberInput: Locator;
-    consignorCityInput: Locator;
-    consignorPostCodeInput: Locator;
-    consignorCountryDropdown: Locator;
-    consigneeEORIInput: Locator;
-    consigneeNameInput: Locator;
-    consigneeStreetAndNumberInput: Locator;
-    consigneeCityInput: Locator;
-    consigneePostCodeInput: Locator;
-    consigneeCountryDropdown: Locator;
-    exporterEORIInput: Locator;
-    exporterNameInput: Locator;
-    exporterStreetAndNumberInput: Locator;
-    exporterCityInput: Locator;
-    exporterPostCodeInput: Locator;
-    exporterCountryDropdown: Locator;
-    sellerSameAsExporterYesOption: Locator;
-    sellerSameAsExporterNoOption: Locator;
-    sellerEORIInput: Locator;
-    sellerNameInput: Locator;
-    sellerStreetAndNumberInput: Locator;
-    sellerCityInput: Locator;
-    sellerPostCodeInput: Locator;
-    sellerCountryDropdown: Locator;
-    consignmentDescriptionInput: Locator;
-    traderReferenceInput: Locator;
-    goodsCrossEUBorderYesOption: Locator;
-    goodsCrossEUBorderNoOption: Locator;
-    allGoodsInSameContainersYesOption: Locator;
-    allGoodsInSameContainersNoOption: Locator;
-    containerIdentificationNumberInput: Locator;
+    // Trade parties — the repeated "EORI + address" screens live in PartyBlock.
+    private readonly importer: PartyBlock;
+    private readonly buyer: PartyBlock;
+    private readonly consignor: PartyBlock;
+    private readonly consignee: PartyBlock;
+    private readonly exporter: PartyBlock;
+    private readonly seller: PartyBlock;
+
+    // "Is the buyer the same as the importer?" / "Is the seller the same as the exporter?"
+    private readonly buyerSameAsImporterYesOption: Locator;
+    private readonly buyerSameAsImporterNoOption: Locator;
+    private readonly sellerSameAsExporterYesOption: Locator;
+    private readonly sellerSameAsExporterNoOption: Locator;
+
+    // Goods at risk / IMMI / controlled goods
+    private readonly areGoodsAtRiskYesOption: Locator;
+    private readonly areGoodsAtRiskNoOption: Locator;
+    private readonly useIMMIYesOption: Locator;
+    private readonly useIMMINoOption: Locator;
+    private readonly controlledGoodsYesOption: Locator;
+    private readonly controlledGoodsNoOption: Locator;
+
+    // Transport and destination details
+    private readonly transportDocumentNumberInput: Locator;
+    private readonly nidomOption: Locator;
+    private readonly niimpOption: Locator;
+    private readonly destinationCountryDropdown: Locator;
+    private readonly warehouseIdentifierInput: Locator;
+
+    // Consignment references
+    private readonly consignmentDescriptionInput: Locator;
+    private readonly traderReferenceInput: Locator;
+
+    // Containers when crossing the EU external border
+    private readonly goodsCrossEUBorderYesOption: Locator;
+    private readonly goodsCrossEUBorderNoOption: Locator;
+    private readonly allGoodsInSameContainersYesOption: Locator;
+    private readonly allGoodsInSameContainersNoOption: Locator;
+    private readonly containerIdentificationNumberInput: Locator;
 
     constructor(page: Page) {
         super(page);
 
-        // "Who is the importer?" section
-        this.importerEORIInput = page.locator("input#importerEORI");
+        this.importer = new PartyBlock(page, 'importer');
+        this.buyer = new PartyBlock(page, 'buyer');
+        this.consignor = new PartyBlock(page, 'consignor');
+        this.consignee = new PartyBlock(page, 'consignee');
+        this.exporter = new PartyBlock(page, 'exporter');
+        this.seller = new PartyBlock(page, 'seller');
 
-        // "Enter the importer's address" section
-        this.importerNameInput = page.locator("input#importerName");
-        this.importerStreetAndNumberInput = page.locator("input#importerStreetAndNumber");
-        this.importerCityInput = page.locator("input#importerCity");
-        this.importerPostCodeInput = page.locator("input#importerPostcode");
-        this.importerCountryDropdown = page.locator("select#importerCountry");
-
-        // "Is the buyer the same as the importer?" question
         this.buyerSameAsImporterYesOption = page.locator("input#isImporterSameBuyer-yesNoOptions-yes");
         this.buyerSameAsImporterNoOption = page.locator("input#isImporterSameBuyer-yesNoOptions-no");
+        this.sellerSameAsExporterYesOption = page.locator("input#isExporterSameSeller-yesNoOptions-yes");
+        this.sellerSameAsExporterNoOption = page.locator("input#isExporterSameSeller-yesNoOptions-no");
 
-        // "Buyer's EORI number" section
-        this.buyerEORIInput = page.locator("input#buyerEORI");
-
-        // "Enter the buyer's address" section
-        this.buyerNameInput = page.locator("input#buyerName");
-        this.buyerStreetAndNumberInput = page.locator("input#buyerStreetAndNumber");
-        this.buyerCityInput = page.locator("input#buyerCity");
-        this.buyerPostCodeInput = page.locator("input#buyerPostcode");
-        this.buyerCountryDropdown = page.locator("select#buyerCountry");
-
-        // "Are the goods at risk of moving into the Republic of Ireland?" question
         this.areGoodsAtRiskYesOption = page.locator("input#areGoodsAtRisk-yesNoOptions-yes");
         this.areGoodsAtRiskNoOption = page.locator("input#areGoodsAtRisk-yesNoOptions-no");
-
-        // "Do you want to use an IMMI (Internal Market Movement Information submission)?"  question
         this.useIMMIYesOption = page.locator("input#useIMMI-immiOptions-yes");
         this.useIMMINoOption = page.locator("input#useIMMI-immiOptions-no");
-
-        // "Controlled goods?"  question
         this.controlledGoodsYesOption = page.locator("input#containsControlledGoods-controlledGoodsOptions-yes");
         this.controlledGoodsNoOption = page.locator("input#containsControlledGoods-controlledGoodsOptions-no");
 
-        // "Enter transport and destination details" section
         this.transportDocumentNumberInput = page.locator("input#transportDocumentNumber");
         this.nidomOption = page.locator("input#goodsDomesticStatus-goodsDomesticStatus-NIDOM");
         this.niimpOption = page.locator("input#goodsDomesticStatus-goodsDomesticStatus-NIIMP");
         this.destinationCountryDropdown = page.locator("select#destinationCountry");
-
-        // "Warehouse identifier" section
         this.warehouseIdentifierInput = page.locator("input#warehouseIdentifier");
 
-        // "Who is the consignor?" section
-        this.consignorEORIInput = page.locator("input#consignorEORI");
-
-        // "Enter the consignor's address" section
-        this.consignorNameInput = page.locator("input#consignorName");
-        this.consignorStreetAndNumberInput = page.locator("input#consignorStreetAndNumber");
-        this.consignorCityInput = page.locator("input#consignorCity");
-        this.consignorPostCodeInput = page.locator("input#consignorPostcode");
-        this.consignorCountryDropdown = page.locator("select#consignorCountry");
-
-        // "Who is the consignee?" section
-        this.consigneeEORIInput = page.locator("input#consigneeEORI");
-
-        // "Enter the consignee's address" section
-        this.consigneeNameInput = page.locator("input#consigneeName");
-        this.consigneeStreetAndNumberInput = page.locator("input#consigneeStreetAndNumber");
-        this.consigneeCityInput = page.locator("input#consigneeCity");
-        this.consigneePostCodeInput = page.locator("input#consigneePostcode");
-        this.consigneeCountryDropdown = page.locator("select#consigneeCountry");
-
-        // "Who is the exporter?" section
-        this.exporterEORIInput = page.locator("input#exporterEORI");
-
-        // "Enter the exporter's address" section
-        this.exporterNameInput = page.locator("input#exporterName");
-        this.exporterStreetAndNumberInput = page.locator("input#exporterStreetAndNumber");
-        this.exporterCityInput = page.locator("input#exporterCity");
-        this.exporterPostCodeInput = page.locator("input#exporterPostcode");
-        this.exporterCountryDropdown = page.locator("select#exporterCountry");
-
-        // "Is the seller the same as the exporter?" question
-        this.sellerSameAsExporterYesOption = page.locator("input#isExporterSameSeller-yesNoOptions-yes");
-        this.sellerSameAsExporterNoOption = page.locator("input#isExporterSameSeller-yesNoOptions-no");
-
-        // "Seller's EORI number" section
-        this.sellerEORIInput = page.locator("input#sellerEORI");
-
-        // "Enter the seller's address" section
-        this.sellerNameInput = page.locator("input#sellerName");
-        this.sellerStreetAndNumberInput = page.locator("input#sellerStreetAndNumber");
-        this.sellerCityInput = page.locator("input#sellerCity");
-        this.sellerPostCodeInput = page.locator("input#sellerPostcode");
-        this.sellerCountryDropdown = page.locator("select#sellerCountry");
-
-        // "Consignment references" section
         this.consignmentDescriptionInput = page.locator("input#consignmentDescription");
         this.traderReferenceInput = page.locator("input#traderReference");
 
-        // "Are the goods transported in containers when crossing the EU’s external borders?" section
         this.goodsCrossEUBorderYesOption = page.locator("input#isTransportingInContainers-yesNoOptions-yes");
         this.goodsCrossEUBorderNoOption = page.locator("input#isTransportingInContainers-yesNoOptions-no");
-
-        // "Are all goods transported in the same containers when crossing the EU’s external borders?" section
         this.allGoodsInSameContainersYesOption = page.locator("input#isTheSameContainer-yesNoOptions-yes");
         this.allGoodsInSameContainersNoOption = page.locator("input#isTheSameContainer-yesNoOptions-no");
-
-        // "Container identification number" section
         this.containerIdentificationNumberInput = page.locator("input#containerIdentifierNumber");
     }
 
+    // ===================== Importer =====================
 
     async inputImporterEORI(importerEORI: string): Promise<void> {
-        await this.importerEORIInput.fill(importerEORI);
-        await this.clickContinueButton();
+        await this.importer.enterEori(importerEORI);
     }
 
-    //NOTE - this method can be called when EORI is not recognized by TSS
+    // NOTE - this method can be called when EORI is not recognized by TSS
     async inputImporterAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.importerNameInput.fill(name);
-        await this.importerStreetAndNumberInput.fill(streetAndNumber);
-        await this.importerCityInput.fill(city);
-        await this.importerPostCodeInput.fill(postCode);
-        await this.importerCountryDropdown.selectOption({ value: country });
-        await this.clickContinueButton();
+        await this.importer.enterAddress({ name, streetAndNumber, city, postCode, country });
     }
 
+    // ===================== Buyer (same as importer?) =====================
 
-    async chooseBuyerInvolvement(isBuyerInvolvement: string, buyerEORI: string, buyerName: string, buyerStreetAndNumber: string, buyerCity: string, 
+    async selectBuyerSameAsImporterYes(): Promise<void> {
+        await this.buyerSameAsImporterYesOption.check();
+    }
+
+    async selectBuyerSameAsImporterNo(): Promise<void> {
+        await this.buyerSameAsImporterNoOption.check();
+    }
+
+    /** Buyer EORI and address sit on the same screen as the radio, so no intermediate Continue. */
+    async fillBuyerDetails(buyerEORI: string, buyerName: string, buyerStreetAndNumber: string, buyerCity: string,
         buyerPostCode: string, buyerCountry: string): Promise<void> {
-        const value = isBuyerInvolvement.trim().toLowerCase();
-        if (value === 'yes') {
-            await this.buyerSameAsImporterYesOption.check();
-        } else{
-            await this.buyerSameAsImporterNoOption.check();
-            await this.inputBuyerEORI(buyerEORI);
-            await this.inputBuyerAddress(buyerName, buyerStreetAndNumber, buyerCity, buyerPostCode, buyerCountry);
-        }
+        await this.buyer.fillEori(buyerEORI);
+        await this.buyer.fillAddress({ name: buyerName, streetAndNumber: buyerStreetAndNumber, city: buyerCity, postCode: buyerPostCode, country: buyerCountry });
+    }
+
+    // ===================== Goods at risk / IMMI / controlled =====================
+
+    async selectGoodsAtRiskYes(): Promise<void> {
+        await this.areGoodsAtRiskYesOption.check();
         await this.clickContinueButton();
     }
 
-    async inputBuyerEORI(buyerEORI: string): Promise<void> {
-        await this.buyerEORIInput.fill(buyerEORI);  
-    }
-
-    //NOTE - this method can be called when EORI is not recognized by TSS
-    async inputBuyerAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.buyerNameInput.fill(name);
-        await this.buyerStreetAndNumberInput.fill(streetAndNumber);
-        await this.buyerCityInput.fill(city);
-        await this.buyerPostCodeInput.fill(postCode);
-        await this.buyerCountryDropdown.selectOption({ value: country });
-    }
-
-    async defineGoodsAtRisk(isGoodsAtRisk: string, useIMMI: string): Promise<void> {
-        const value = isGoodsAtRisk.trim().toLowerCase();
-        if (value === 'yes') {
-            await this.areGoodsAtRiskYesOption.check();
-            await this.clickContinueButton();
-        } else{
-            await this.areGoodsAtRiskNoOption.check();
-            await this.clickContinueButton();
-        }
-        await this.chooseToUseIMMI(useIMMI);
-    }
-
-    async chooseToUseIMMI(useIMMI: string): Promise<void> {
-        const value = useIMMI.trim().toLowerCase();
-        if (value === 'yes') {
-            await this.useIMMIYesOption.check();
-        } else{
-            await this.useIMMINoOption.check();
-        }
+    async selectGoodsAtRiskNo(): Promise<void> {
+        await this.areGoodsAtRiskNoOption.check();
         await this.clickContinueButton();
     }
 
-    async defineControlledGoods(isControlledGoods: string): Promise<void> {
-        const value = isControlledGoods.trim().toLowerCase();
-        if (value === 'yes') {
-            await this.controlledGoodsYesOption.check();
-        } else{
-            await this.controlledGoodsNoOption.check();
-        }
+    async selectUseIMMIYes(): Promise<void> {
+        await this.useIMMIYesOption.check();
         await this.clickContinueButton();
     }
+
+    async selectUseIMMINo(): Promise<void> {
+        await this.useIMMINoOption.check();
+        await this.clickContinueButton();
+    }
+
+    async selectControlledGoodsYes(): Promise<void> {
+        await this.controlledGoodsYesOption.check();
+        await this.clickContinueButton();
+    }
+
+    async selectControlledGoodsNo(): Promise<void> {
+        await this.controlledGoodsNoOption.check();
+        await this.clickContinueButton();
+    }
+
+    // ===================== Transport and destination =====================
 
     async fillTransportAndDestinationDetails(transportDocumentNumber: string, goodsDomesticStatus: string, destinationCountry: string): Promise<void> {
         await this.inputTransportDocumentNumber(transportDocumentNumber);
@@ -256,7 +153,7 @@ export class ConsignmentDeclarePage extends BasePage {
     }
 
     async inputTransportDocumentNumber(transportDocumentNumber: string): Promise<void> {
-        await this.transportDocumentNumberInput.fill(transportDocumentNumber); 
+        await this.transportDocumentNumberInput.fill(transportDocumentNumber);
     }
 
     async defineGoodsDomesticStatus(goodsDomesticStatus: string): Promise<void> {
@@ -276,94 +173,52 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
-    // If EORI is not supplied, then the following consignor fields are ALL mandatory
-    async inputConsignorInformation(consignorEORI: string, name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.inputConsignorEORI(consignorEORI);
-        
-        await this.inputConsignorAddress(name, streetAndNumber, city, postCode, country);
-    }
+    // ===================== Consignor / Consignee / Exporter =====================
+    // If EORI is not supplied, then the address fields are ALL mandatory.
 
     async inputConsignorEORI(consignorEORI: string): Promise<void> {
-        await this.consignorEORIInput.fill(consignorEORI);
-        await this.clickContinueButton();
+        await this.consignor.enterEori(consignorEORI);
     }
 
     async inputConsignorAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.consignorNameInput.fill(name);
-        await this.consignorStreetAndNumberInput.fill(streetAndNumber);
-        await this.consignorCityInput.fill(city);
-        await this.consignorPostCodeInput.fill(postCode);
-        await this.consignorCountryDropdown.selectOption({ value: country });
-        await this.clickContinueButton();
-    }
-
-    // If EORI is not supplied, then the following consignee fields are ALL mandatory
-    async inputConsigneeInformation(consigneeEORI: string, name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.inputConsigneeEORI(consigneeEORI);
-        
-        await this.inputConsigneeAddress(name, streetAndNumber, city, postCode, country);
+        await this.consignor.enterAddress({ name, streetAndNumber, city, postCode, country });
     }
 
     async inputConsigneeEORI(consigneeEORI: string): Promise<void> {
-        await this.consigneeEORIInput.fill(consigneeEORI);
-        await this.clickContinueButton();
+        await this.consignee.enterEori(consigneeEORI);
     }
 
     async inputConsigneeAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.consigneeNameInput.fill(name);
-        await this.consigneeStreetAndNumberInput.fill(streetAndNumber);
-        await this.consigneeCityInput.fill(city);
-        await this.consigneePostCodeInput.fill(postCode);
-        await this.consigneeCountryDropdown.selectOption({ value: country });
-        await this.clickContinueButton();
-    }
-
-    // If EORI is not supplied, then the following exporter fields are ALL mandatory
-    async inputExporterInformation(exporterEORI: string, name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.inputExporterEORI(exporterEORI);
-        await this.inputExporterAddress(name, streetAndNumber, city, postCode, country);
+        await this.consignee.enterAddress({ name, streetAndNumber, city, postCode, country });
     }
 
     async inputExporterEORI(exporterEORI: string): Promise<void> {
-        await this.exporterEORIInput.fill(exporterEORI);
-        await this.clickContinueButton();
+        await this.exporter.enterEori(exporterEORI);
     }
 
     async inputExporterAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.exporterNameInput.fill(name);
-        await this.exporterStreetAndNumberInput.fill(streetAndNumber);
-        await this.exporterCityInput.fill(city);
-        await this.exporterPostCodeInput.fill(postCode);
-        await this.exporterCountryDropdown.selectOption({ value: country });
-        await this.clickContinueButton();
+        await this.exporter.enterAddress({ name, streetAndNumber, city, postCode, country });
     }
 
-    async chooseSellerInvolvement(isSellerInvolvement: string, sellerEORI: string, sellerName: string, sellerStreetAndNumber: string, sellerCity: string, 
-        sellerPostCode: string, sellerCountryCode: string): Promise<void> {
-        const value = isSellerInvolvement.trim().toLowerCase();
-        if (value === 'yes') {
-            await this.sellerSameAsExporterYesOption.check();
-        } else{
-            await this.sellerSameAsExporterNoOption.check();
-            await this.inputSellerEORI(sellerEORI);
-            await this.inputSellerAddress(sellerName, sellerStreetAndNumber, sellerCity, sellerPostCode, sellerCountryCode);
-        }
-        await this.clickContinueButton();
+    // ===================== Seller (same as exporter?) =====================
+
+    async selectSellerSameAsExporterYes(): Promise<void> {
+        await this.sellerSameAsExporterYesOption.check();
+    }
+
+    async selectSellerSameAsExporterNo(): Promise<void> {
+        await this.sellerSameAsExporterNoOption.check();
     }
 
     async inputSellerEORI(sellerEORI: string): Promise<void> {
-        await this.sellerEORIInput.fill(sellerEORI);
-        await this.clickContinueButton();
+        await this.seller.enterEori(sellerEORI);
     }
-    
+
     async inputSellerAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.sellerNameInput.fill(name);
-        await this.sellerStreetAndNumberInput.fill(streetAndNumber);
-        await this.sellerCityInput.fill(city);
-        await this.sellerPostCodeInput.fill(postCode);
-        await this.sellerCountryDropdown.selectOption({ value: country });
-        await this.clickContinueButton();
+        await this.seller.enterAddress({ name, streetAndNumber, city, postCode, country });
     }
+
+    // ===================== Consignment references =====================
 
     async inputConsignmentReference(consignmentDescription: string, traderReference: string): Promise<void> {
         await this.inputConsignmentDescription(consignmentDescription);
@@ -379,30 +234,26 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.traderReferenceInput.fill(traderReference);
     }
 
-    async chooseGoodsCrossEUBorder(isGoodsCrossEUBorder: string, isSameContainer: string, containerIdentifierNumber: string): Promise<void> {
-        const value = isGoodsCrossEUBorder.trim().toLowerCase();    
-        if (value === 'yes') {
-            await this.goodsCrossEUBorderYesOption.check();
-            await this.clickContinueButton();
-            await this.chooseAllGoodsInSameContainers(isSameContainer, containerIdentifierNumber);
-        }
-        else{
-            await this.goodsCrossEUBorderNoOption.check();
-            await this.clickContinueButton();
-        }
+    // ===================== Containers =====================
+
+    async selectGoodsCrossEUBorderYes(): Promise<void> {
+        await this.goodsCrossEUBorderYesOption.check();
+        await this.clickContinueButton();
     }
 
-    async chooseAllGoodsInSameContainers(isSameContainer: string, containerIdentifierNumber: string): Promise<void> {
-        const value = isSameContainer.trim().toLowerCase();
-        if (value === 'yes') {
-            await this.allGoodsInSameContainersYesOption.check();
-            await this.clickContinueButton();
-            await this.inputContainerIdentificationNumber(containerIdentifierNumber);
-        }
-        else{
-            await this.allGoodsInSameContainersNoOption.check();
-            await this.clickContinueButton();
-        }
+    async selectGoodsCrossEUBorderNo(): Promise<void> {
+        await this.goodsCrossEUBorderNoOption.check();
+        await this.clickContinueButton();
+    }
+
+    async selectAllGoodsInSameContainersYes(): Promise<void> {
+        await this.allGoodsInSameContainersYesOption.check();
+        await this.clickContinueButton();
+    }
+
+    async selectAllGoodsInSameContainersNo(): Promise<void> {
+        await this.allGoodsInSameContainersNoOption.check();
+        await this.clickContinueButton();
     }
 
     async inputContainerIdentificationNumber(containerIdentifierNumber: string): Promise<void> {

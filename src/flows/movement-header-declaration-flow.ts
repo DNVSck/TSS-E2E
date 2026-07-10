@@ -1,7 +1,9 @@
 import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
 import { ReportLog } from '../core/report/report-log';
-import { NEW_GOODS_MOVEMENT_DECLARATION, TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/goods-movement-declaration-constants';
+import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
+import { ROLE_IN_MOVEMENT } from '../constant/role-in-movement-constant';
+import { SEPARATE_HAULIER } from '../constant/separate-haulier-constant';
 import { MovementData } from '../test-data/movements-data';
 
 export class MovementHeaderDeclarationFlow {
@@ -11,21 +13,15 @@ export class MovementHeaderDeclarationFlow {
     ) { }
 
     async completeNewGoodsMovementDeclaration(input: MovementData): Promise<void> {
-        await this.openTransportDetails();
-        await this.inputTransportDetails(input);
-        await this.chooseResponsibleForThisMovement(input);
-        await this.inputArrivalDateTimeAndPortOfArrival(input);
-        await this.inputLoadingDetails(input);
-        await this.chooseTransportCharges(input);
-        await this.movementDeclarePage.clickFinishButton();
-    }
-
-    async completeMovementHeaderDeclaration(): Promise<void> {
-        await this.openTransportDetails();
-    }
-
-    private async openTransportDetails(): Promise<void> {
-        await this.goodsMovementTaskListPage.clickTransportDetails();
+        await ReportLog.step('Complete movement header declaration', async () => {
+            await this.goodsMovementTaskListPage.clickTransportDetails();
+            await this.inputTransportDetails(input);
+            await this.chooseResponsibleForThisMovement(input);
+            await this.inputArrivalDateTimeAndPortOfArrival(input);
+            await this.inputLoadingDetails(input);
+            await this.chooseTransportCharges(input);
+            await this.movementDeclarePage.clickFinishButton();
+        });
     }
 
     private async inputTransportDetails(input: MovementData): Promise<void> {
@@ -38,14 +34,10 @@ export class MovementHeaderDeclarationFlow {
 
             if (input.typeOfMovement === TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED) {
                 await this.movementDeclarePage.inputTrailerRegistrationNumber(input.trailerRegistrationNumber);
-                await this.movementDeclarePage.clickContinueButton();
             } else if (input.typeOfMovement === TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED) {
                 await this.movementDeclarePage.selectTypeOfPassiveTransport(input.typeOfPassiveTransport);
                 await this.movementDeclarePage.inputVehicleRegistrationNumber(input.vehicleRegistrationNumber);
-                await this.movementDeclarePage.clickContinueButton();
             }
-
-            await this.movementDeclarePage.inputSealNumber(input.sealNumber);
             await this.movementDeclarePage.clickContinueButton();
         });
     }
@@ -56,11 +48,11 @@ export class MovementHeaderDeclarationFlow {
             await this.movementDeclarePage.chooseHaulierInvolvement(input.haulierSeparateThisMovement);
             await this.movementDeclarePage.clickContinueButton();
 
-            if (input.roleInThisMovement === NEW_GOODS_MOVEMENT_DECLARATION.ROLE_IN_THIS_MOVEMENT.ON_BEHALF_OF_CARRIER) {
+            if (input.roleInThisMovement === ROLE_IN_MOVEMENT.ON_BEHALF_OF_CARRIER) {
                 await this.movementDeclarePage.inputCarrierEori(input.carrierEori);
                 await this.movementDeclarePage.clickContinueButton();
             }
-            if (input.haulierSeparateThisMovement === NEW_GOODS_MOVEMENT_DECLARATION.SEPARATE_HAULIER_THIS_MOVEMENT.SEPARATE_HAULIER) {
+            if (input.haulierSeparateThisMovement === SEPARATE_HAULIER.SEPARATE_HAULIER) {
                 await this.movementDeclarePage.inputHaulierEori(input.haulierEori);
                 await this.movementDeclarePage.clickContinueButton();
             }
@@ -82,6 +74,14 @@ export class MovementHeaderDeclarationFlow {
             await this.movementDeclarePage.inputPlaceOfLoading(input.placeOfLoading);
             await this.movementDeclarePage.clickContinueButton();
 
+            // "Are the goods being accepted at the same place as they're loaded?"
+            if (input.isSamePlaceOfLoading) {
+                await this.movementDeclarePage.selectAcceptanceSameAsloading();
+            } else {
+                await this.movementDeclarePage.selectAcceptanceNotSameAsloading();
+                await this.movementDeclarePage.inputPlaceOfDelivery(input.placeOfacceptance);
+            }
+
             // Enter place of unloading details
             await this.movementDeclarePage.inputPlaceOfUnloading(input.placeOfUnloading);
             await this.movementDeclarePage.clickContinueButton();
@@ -94,7 +94,6 @@ export class MovementHeaderDeclarationFlow {
                 await this.movementDeclarePage.selectDeliveryNotSameAsUnloading();
                 await this.movementDeclarePage.inputPlaceOfDelivery(input.placeOfDelivery);
             }
-
         });
     }
 

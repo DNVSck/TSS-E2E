@@ -1,14 +1,14 @@
 import { BasePage } from './base-page';
 import { Page, Locator } from '@playwright/test';
-import { generateTotpCode } from '../core/util/totp-auth';
+import { generateFreshTotpCode } from '../core/util/totp-auth';
 import { UserCredentials } from '../core/auth/credentials';
 
 export class SignInPage extends BasePage {
 
-    readonly emailAddressInput: Locator;
-    readonly passwordInput: Locator;
-    readonly signInButton: Locator;
-    readonly totpCodeInput: Locator;
+    private readonly emailAddressInput: Locator;
+    private readonly passwordInput: Locator;
+    private readonly signInButton: Locator;
+    private readonly totpCodeInput: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -27,7 +27,7 @@ export class SignInPage extends BasePage {
 
     /** Complete the TOTP/OTP step using the account's own secret. */
     async inputTotp(secret: string): Promise<void> {
-        await this.totpCodeInput.fill(generateTotpCode(secret));
+        await this.totpCodeInput.fill(await generateFreshTotpCode(secret));
         await this.signInButton.click();
     }
 }

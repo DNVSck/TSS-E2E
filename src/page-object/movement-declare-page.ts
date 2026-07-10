@@ -1,76 +1,65 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { NEW_GOODS_MOVEMENT_DECLARATION } from "../constant/goods-movement-declaration-constants";
+import { ROLE_IN_MOVEMENT } from "../constant/role-in-movement-constant";
+import { SEPARATE_HAULIER } from "../constant/separate-haulier-constant";
 import { DateTimeUtil } from '../core/util/date-time-util.js';
 
 
 
 export class MovementDeclarePage extends BasePage {
 
-    typeOfMovementOption: string;
+    private readonly imoNumberInput: Locator;
+    private readonly nationalityOfMeanOfTransportInput: Locator;
 
-    imoNumberInput: Locator;
-    nationalityOfMeanOfTransportInput: Locator;
-    conveyanceReferenceNumberInput: Locator;
+    private readonly typeOfPassiveTransportDropdown: Locator;
 
-    trailerRegistrationNumberInput: Locator;
-    typeOfPassiveTransport: Locator;
-    vehicleRegistrationNumberInput: Locator;
+    private readonly trailerRegistrationNumberInput: Locator;
+    private readonly vehicleRegistrationNumberInput: Locator;
 
-    sealNumberInput: Locator;
+    private readonly sealNumberInput: Locator;
 
-    carrierResponsibleOption: Locator;
-    onBehalfOfCarrierOption: Locator;
-    theSameAsHaulierOption: Locator;
-    differentFromHaulierOption: Locator;
+    private readonly carrierResponsibleOption: Locator;
+    private readonly onBehalfOfCarrierOption: Locator;
+    private readonly theSameAsHaulierOption: Locator;
+    private readonly differentFromHaulierOption: Locator;
 
-    carrierEoriInput: Locator;
-    haulierEoriInput: Locator;
+    private readonly carrierEoriInput: Locator;
+    private readonly haulierEoriInput: Locator;
 
-    arrivalDayInput: Locator;
-    arrivalMonthInput: Locator;
+    private readonly arrivalDayInput: Locator;
+    private readonly arrivalMonthInput: Locator;
 
-    arrivalTimeHourInput: Locator;
-    arrivalTimeMinuteInput: Locator;
+    private readonly arrivalTimeHourInput: Locator;
+    private readonly arrivalTimeMinuteInput: Locator;
 
-    portOfArrivalInput: Locator;
-    portOfArrivalOption: Locator;
+    private readonly portOfArrivalInput: Locator;
 
-    placeOfLoadingInput: Locator;
+    private readonly placeOfLoadingInput: Locator;
 
-    placeOfUnloadingInput: Locator;
+    private readonly isAcceptanceSameYesOption: Locator;
+    private readonly isAcceptanceSameNoOption: Locator;
 
-    isAcceptanceSameYesOption: Locator;
-    isAcceptanceSameNoOption: Locator;
-    isDeliverySameYesOption: Locator;
-    isDeliverySameNoOption: Locator;
+    private readonly placeOfAcceptanceInput: Locator;
 
-    placeOfAcceptanceAddressLineInput: Locator;
-    placeOfAcceptancePostcodeInput: Locator;
-    placeOfAcceptanceCityInput: Locator;
+    private readonly placeOfUnloadingInput: Locator;
 
-    placeOfDeliveryAddressLineInput: Locator;
-    placeOfDeliveryPostcodeInput: Locator;
-    placeOfDeliveryCityInput: Locator;
+    private readonly isDeliverySameYesOption: Locator;
+    private readonly isDeliverySameNoOption: Locator;
 
-    placeOfDeliveryInput: Locator;
+    private readonly placeOfDeliveryInput: Locator;
 
-    transportCharges: Locator;
+    private readonly transportCharges: Locator;
 
     constructor(page: Page) {
         super(page);
 
-        // "Type of movement" screen
-        this.typeOfMovementOption = "input#typeOfMovement-typeOfMovementOptions-{movementType}";
-
         // "Enter transport details" screen
         this.imoNumberInput = page.locator("input#imoNumber");
         this.nationalityOfMeanOfTransportInput = page.locator("select#nationalityMeansOfTransport");
-        this.conveyanceReferenceNumberInput = page.locator("input#conveyanceReferenceNumber");
+
+        this.typeOfPassiveTransportDropdown = page.locator("select#typeOfPassiveTransport");
 
         this.trailerRegistrationNumberInput = page.locator("input#trailerRegistrationNumber");
-
-        this.typeOfPassiveTransport = page.locator('input[name="typeOfPassiveTransport"]');
 
         this.vehicleRegistrationNumberInput = page.locator("input#vehicleRegistrationNumber");
 
@@ -98,28 +87,21 @@ export class MovementDeclarePage extends BasePage {
 
         //"Select port of arrival"
         this.portOfArrivalInput = page.locator('select#portOfArrival');
-        this.portOfArrivalOption = page.locator('input[name="portOfArrival"]');
 
         //"Enter place of loading place details" screen
         this.placeOfLoadingInput = page.locator("input#placeOfLoading");
 
-
+        // "Place of acceptance - Are the goods being accepted at the same place as they're loaded?" screen
+        this.isAcceptanceSameYesOption = page.locator("input#isAcceptanceSame-yesNoOptions-yes");
+        this.isAcceptanceSameNoOption = page.locator("input#isAcceptanceSame-yesNoOptions-no");
+        this.placeOfAcceptanceInput = page.locator("input#placeOfAcceptance");
+        
         //"Enter place of unloading place details" screen
         this.placeOfUnloadingInput = page.locator("input#placeOfUnloading");
 
         // "Place of acceptance and delivery" screen
-        this.isAcceptanceSameYesOption = page.locator("input#isAcceptanceSame-yesNoOptions-yes");
-        this.isAcceptanceSameNoOption = page.locator("input#isAcceptanceSame-yesNoOptions-no");
         this.isDeliverySameYesOption = page.locator("input#isDeliverySame-yesNoOptions-yes");
         this.isDeliverySameNoOption = page.locator("input#isDeliverySame-yesNoOptions-no");
-
-        this.placeOfAcceptanceAddressLineInput = page.locator("input#placeOfAcceptanceAddressLine");
-        this.placeOfAcceptanceCityInput = page.locator("input#placeOfAcceptanceTownOrCity");
-        this.placeOfAcceptancePostcodeInput = page.locator("input#placeOfAcceptancePostcode");
-
-        this.placeOfDeliveryAddressLineInput = page.locator("input#placeOfDeliveryAddressLine");
-        this.placeOfDeliveryCityInput = page.locator("input#placeOfDeliveryTownOrCity");
-        this.placeOfDeliveryPostcodeInput = page.locator("input#placeOfDeliveryPostcode");
 
         this.placeOfDeliveryInput = page.locator("input#placeOfDelivery");
 
@@ -132,16 +114,8 @@ export class MovementDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
-    async inputImoNumber(imoNumber: string): Promise<void> {
-        await this.imoNumberInput.fill(imoNumber);
-    }
-
-    async inputConveyanceReferenceNumber(conveyanceReferenceNumber: string): Promise<void> {
-        await this.conveyanceReferenceNumberInput.fill(conveyanceReferenceNumber);
-    }
-
     async selectTypeOfPassiveTransport(typeOfPassiveTransport: string): Promise<void> {
-        await this.page.locator(`input[name="typeOfPassiveTransport"][value="${typeOfPassiveTransport}"]`).click();
+        await this.typeOfPassiveTransportDropdown.selectOption({ value: typeOfPassiveTransport });
     }
 
     async inputVehicleRegistrationNumber(vehicleRegistrationNumber?: string): Promise<void> {
@@ -157,17 +131,17 @@ export class MovementDeclarePage extends BasePage {
     }
 
     async chooseYourRoleInThisMovement(role: string): Promise<void> {
-        if (role.includes(NEW_GOODS_MOVEMENT_DECLARATION.ROLE_IN_THIS_MOVEMENT.CARRIER)) {
+        if (role.includes(ROLE_IN_MOVEMENT.CARRIER)) {
             await this.carrierResponsibleOption.check();
-        } else if (role.includes(NEW_GOODS_MOVEMENT_DECLARATION.ROLE_IN_THIS_MOVEMENT.ON_BEHALF_OF_CARRIER)) {
+        } else if (role.includes(ROLE_IN_MOVEMENT.ON_BEHALF_OF_CARRIER)) {
             await this.onBehalfOfCarrierOption.check();
         }
     }
 
     async chooseHaulierInvolvement(haulierInvolvement: string): Promise<void> {
-        if (haulierInvolvement.includes(NEW_GOODS_MOVEMENT_DECLARATION.SEPARATE_HAULIER_THIS_MOVEMENT.CARRIER_IS_HAULIER)) {
+        if (haulierInvolvement.includes(SEPARATE_HAULIER.CARRIER_IS_HAULIER)) {
             await this.theSameAsHaulierOption.check();
-        } else if (haulierInvolvement.includes(NEW_GOODS_MOVEMENT_DECLARATION.SEPARATE_HAULIER_THIS_MOVEMENT.SEPARATE_HAULIER)) {
+        } else if (haulierInvolvement.includes(SEPARATE_HAULIER.SEPARATE_HAULIER)) {
             await this.differentFromHaulierOption.check();
         }
     }
@@ -200,14 +174,6 @@ export class MovementDeclarePage extends BasePage {
         await this.nationalityOfMeanOfTransportInput.selectOption({ value: nationalityOfMeanOfTransport });
     }
 
-    async selectAcceptanceSameAsLoading(): Promise<void> {
-        await this.isAcceptanceSameYesOption.check();
-    }
-
-    async selectAcceptanceNotSameAsLoading(): Promise<void> {
-        await this.isAcceptanceSameNoOption.check();
-    }
-
     async selectDeliverySameAsUnloading(): Promise<void> {
         await this.isDeliverySameYesOption.check();
         await this.clickContinueButton();
@@ -215,6 +181,16 @@ export class MovementDeclarePage extends BasePage {
 
     async selectDeliveryNotSameAsUnloading(): Promise<void> {
         await this.isDeliverySameNoOption.check();
+        await this.clickContinueButton();
+    }
+
+    async selectAcceptanceSameAsloading(): Promise<void> {
+        await this.isAcceptanceSameYesOption.check();
+        await this.clickContinueButton();
+    }
+
+    async selectAcceptanceNotSameAsloading(): Promise<void> {
+        await this.isAcceptanceSameNoOption.check();
         await this.clickContinueButton();
     }
 
@@ -232,6 +208,11 @@ export class MovementDeclarePage extends BasePage {
 
     async inputPlaceOfDelivery(placeOfDelivery: string): Promise<void> {
         await this.placeOfDeliveryInput.fill(placeOfDelivery);
+        await this.clickContinueButton();
+    }
+
+    async inputPlaceOfAcceptance(placeOfAcceptance: string): Promise<void> {
+        await this.placeOfAcceptanceInput.fill(placeOfAcceptance);
         await this.clickContinueButton();
     }
 }

@@ -1,25 +1,24 @@
 import { BasePage } from "./base-page";
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
-import { expect } from '../../tests/test-hooks';
-import { StringUtil } from '../core/util/string-util';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 
 
 export class MovementOverviewPage extends BasePage {
 
-    // Declare properties - Using stable locators (NOT text-based)
-    ensConsignmentsTab: Locator;
-    sfdConsignmentsTab: Locator;
-    gmrDetailsTab: Locator;
-    newENSConsignmentBtn: Locator;
-    uploadCSVBtn: Locator;
-    associateConsignmentBtn: Locator;
+    // Locators. NOTE: summary-list fields (localReferenceNumber, declarationStatus)
+    // are matched via translated label text, so they depend on locale/label changes.
+    private readonly ensConsignmentsTab: Locator;
+    private readonly sfdConsignmentsTab: Locator;
+    private readonly gmrDetailsTab: Locator;
+    private readonly newENSConsignmentBtn: Locator;
+    private readonly uploadCSVBtn: Locator;
+    private readonly associateConsignmentBtn: Locator;
 
-    createGMRButton: Locator;
+    private readonly createGMRButton: Locator;
 
-    localReferenceNumber: Locator;
-    declarationStatus: Locator;
+    private readonly localReferenceNumber: Locator;
+    private readonly declarationStatus: Locator;
 
 
     constructor(page: Page, t: TFunction) {
@@ -68,15 +67,21 @@ export class MovementOverviewPage extends BasePage {
         return await this.declarationStatus.innerText();
     }
 
+    /**
+     * Both checks are soft so one run reports every mismatch, rather than hiding
+     * the status behind a reference-number failure.
+     */
     async assertDraftMovementOverview(): Promise<void> {
         const localReferenceNumber = await this.getTextLocalReferenceNumber();
         const declarationStatus = await this.getTextDeclarationStatus();
         const expectedStatus = this.t!('status.draft');
 
-        expect(localReferenceNumber).toBeTruthy();
-        expect(StringUtil.verifyRegex(localReferenceNumber, LOCAL_REFERENCE.ENS_REGEX)).toBeTruthy();
+        // Asserting the string, not a boolean: a failure then reports the actual
+        // reference number instead of a bare "expected truthy, received false".
+        expect.soft(localReferenceNumber, 'Local reference number')
+            .toMatch(LOCAL_REFERENCE.ENS_PREFIX);
 
-        expect(declarationStatus).toBe(expectedStatus);
+        expect.soft(declarationStatus, 'Declaration status').toBe(expectedStatus);
     }
 
     async navigateToGmrTabAndClickOnCreateGMR(): Promise<void> {

@@ -26,8 +26,8 @@ export type FlowFixtureType = {
 type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType>>;
 
 export const flowFixture: ExtendParams[0] = {
-    portalAccessFlow: async ({ basePage, portalPage, signInPage }, use) => {
-        await use(new PortalAccessFlow(basePage, portalPage, signInPage));
+    portalAccessFlow: async ({ basePage, portalPage }, use) => {
+        await use(new PortalAccessFlow(basePage, portalPage));
     },
 
     initialFormDeclarationFlow: async ({ initialFormDeclaraPage }, use) => {
@@ -42,12 +42,12 @@ export const flowFixture: ExtendParams[0] = {
         await use(new MovementOverviewFlow(movementOverviewPage));
     },
 
-    addNewConsignmentFlow: async ({ movementOverviewPage, consignmentDeclarePage, consignmentOverviewPage }, use) => {
-        await use(new AddNewConsignmentFlow(movementOverviewPage, consignmentDeclarePage, consignmentOverviewPage));
+    addNewConsignmentFlow: async ({ movementOverviewPage, consignmentDeclarePage }, use) => {
+        await use(new AddNewConsignmentFlow(movementOverviewPage, consignmentDeclarePage));
     },
 
-    addNewGoodsItemFlow: async ({ consignmentOverviewPage, goodsItemDeclarePage, goodsOverviewPage }, use) => {
-        await use(new AddNewGoodsItemFlow(consignmentOverviewPage, goodsItemDeclarePage, goodsOverviewPage));
+    addNewGoodsItemFlow: async ({ consignmentOverviewPage, goodsItemDeclarePage }, use) => {
+        await use(new AddNewGoodsItemFlow(consignmentOverviewPage, goodsItemDeclarePage));
     },
 
     createAndSubmitGmrFlow: async ({ movementOverviewPage, gmrDeclarePage, gmrDetailsPage }, use) => {

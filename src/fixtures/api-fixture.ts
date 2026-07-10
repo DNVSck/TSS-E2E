@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { APIClient } from '../src/core/api/api-client';
+import { APIClient } from '../../src/core/api/api-client';
 
 
 export type APIFixtureType = {

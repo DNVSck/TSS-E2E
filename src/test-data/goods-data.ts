@@ -10,8 +10,8 @@ import { ITEM_CURRENCY } from "../constant/item-currency-constant";
 export interface GoodsData {
     goodsDomesticStatus: string;
     additionalRiskStatus: string;
-    areGooodsControlled: string;
-    isDangerousGoods: string;
+    areGooodsControlled: boolean;
+    isDangerousGoods: boolean;
     dangerousGoodsCodes: string;
     commodityCode: string;
     goodsDescription: string;
@@ -39,9 +39,9 @@ const defaults: GoodsData = {
     // "Additional risk status"
     additionalRiskStatus: ADDITIONAL_RISK_STATUS.NO_ADDITIONAL_RISK_STATUS,
     // "Are these goods controlled?"
-    areGooodsControlled: 'yes',
+    areGooodsControlled: true,
     // "Dangerous goods"
-    isDangerousGoods: 'no',
+    isDangerousGoods: false,
     // "Dangerous goods codes"
     dangerousGoodsCodes: '1234',
     // "Commodity code"

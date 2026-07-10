@@ -1,0 +1,11 @@
+export const TRANSPORT_CHARGES_OPTION_CODE = {
+    PAYMENT_IN_CASH: 'A',
+    PAYMENT_BY_CREDIT_CARD: 'B',
+    PAYMENT_BY_CHEQUE: 'C',
+    OTHER: 'D',
+    ELECTRONIC_CREDIT_TRANSFER: 'E',
+    ACCOUNT_HOLDER_WITH_CARRIER: 'F',
+    NOT_PRE_PAID: 'G',
+} as const;
+
+export type TransportChargesKey = keyof typeof TRANSPORT_CHARGES_OPTION_CODE;

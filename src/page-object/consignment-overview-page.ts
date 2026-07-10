@@ -4,14 +4,14 @@ import { Page, Locator} from '@playwright/test';
 
 export class ConsignmentOverviewPage extends BasePage {
 
-    // Declare properties - Using stable locators (NOT text-based)
-    goodsRecordTab: Locator;
-    headerPreviousDocumentTab: Locator;
-    guaranteeTypeTab: Locator;
-    holderOfAuthorisationTab: Locator;
-    documentTab: Locator;
-    newGoodsRecordBtn: Locator;
-    confirmAndSubmitButton: Locator;
+    // Locators. NOTE: tab links use href-based xpath (not text), reasonably stable.
+    private readonly goodsRecordTab: Locator;
+    private readonly headerPreviousDocumentTab: Locator;
+    private readonly guaranteeTypeTab: Locator;
+    private readonly holderOfAuthorisationTab: Locator;
+    private readonly documentTab: Locator;
+    private readonly newGoodsRecordBtn: Locator;
+    private readonly confirmAndSubmitButton: Locator;
 
     constructor(page: Page) {
         super(page);

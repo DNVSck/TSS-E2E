@@ -1,7 +1,6 @@
 import { test } from '@playwright/test';
 import { PortalPage } from '../page-object/portal-page'
 import { BasePage } from '../page-object/base-page';
-import { SignInPage } from '../page-object/sign-in-page';
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
 import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
@@ -18,7 +17,6 @@ import { GmrDeclarePage } from '../page-object/gmr-declare-page';
 export type PageFixtureType = {
     basePage: BasePage;
     portalPage: PortalPage;
-    signInPage: SignInPage;
     initialFormDeclaraPage: InitialFormDeclaraPage;
     movementDeclarePage: MovementDeclarePage;
     goodsMovementTaskListPage: GoodsMovementTaskListPage;
@@ -40,10 +38,6 @@ export const pageFixture: ExtendParams[0] = {
 
     portalPage: async ({ page }, use) => {
         await use(new PortalPage(page));
-    },
-
-    signInPage: async ({ page }, use) => {
-        await use(new SignInPage(page));
     },
 
     initialFormDeclaraPage: async ({ page }, use) => {

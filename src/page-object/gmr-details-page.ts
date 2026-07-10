@@ -3,11 +3,11 @@ import { Page, Locator } from '@playwright/test';
 
 
 export class GmrDetailsPage extends BasePage {
-    submitGMRButton: Locator;
-    cancelGMRButton: Locator;
-    generateBarcodeButton: Locator;
+    private readonly submitGMRButton: Locator;
+    private readonly cancelGMRButton: Locator;
+    private readonly generateBarcodeButton: Locator;
 
-    externalContactsTab: Locator;
+    private readonly externalContactsTab: Locator;
 
     constructor(page: Page) {
         super(page);

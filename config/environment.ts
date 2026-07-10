@@ -17,6 +17,17 @@ export const ENV = process.env.ENV as string;
 /** Whether the environment requires the TOTP/OTP step during sign in. */
 export const OTP_ENABLED = boolOrDefault(process.env.OTP_ENABLED);
 
+/**
+ * Reuse a cached session instead of signing in again.
+ *
+ * Off by default: every run performs exactly one real sign-in, so the login
+ * journey is exercised on every run and no run can start from a stale session.
+ *
+ * Turn it on for a fast local edit-run loop — it skips the ~12s sign-in while a
+ * cached session is still within AUTH_STATE_TTL_MINUTES.
+ */
+export const AUTH_REUSE_SESSION = boolOrDefault(process.env.AUTH_REUSE_SESSION);
+
 export const LOCALE: Locale =
   (process.env.LOCALE as Locale) || LOCALES_CONSTANT.CY_GB;
 

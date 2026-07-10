@@ -2,15 +2,13 @@ import { PortalAccessFlow } from '../portal-access-flow';
 import { InitialFormDeclarationFlow } from '../initial-form-declaration-flow';
 import { MovementHeaderDeclarationFlow } from '../movement-header-declaration-flow';
 import { MovementOverviewFlow } from '../movement-overview-flow';
-import { route, InitialFormData } from '../../test-data/initial-form-data';
+import { initialFormData, InitialFormData } from '../../test-data/initial-form-data';
 import { movement, MovementData } from '../../test-data/movements-data';
 import { TestInfo } from '@playwright/test';
 import { AddNewConsignmentFlow } from '../add-new-consignment-flow';
 import { consignment, ConsignmentData } from '../../test-data/consignment-data';
-import { ReportLog } from '../../core/report/report-log';
 import { AddNewGoodsItemFlow } from '../add-new-goods-item-flow';
 import { goods, GoodsData } from '../../test-data/goods-data';
-import { CompanyProfile } from '../../core/auth/credentials';
 
 export class CreateAndSubmitEnsDeclarationFlow {
     constructor(
@@ -22,43 +20,32 @@ export class CreateAndSubmitEnsDeclarationFlow {
         private readonly addNewGoodsItemFlow: AddNewGoodsItemFlow,
     ) { }
 
+    /**
+     * The signed-in company profile is chosen by the spec through
+     * `test.use({ storageState: authStatePath(PROFILE) })`, not here — the sign-in
+     * itself happens once, in globalSetup.
+     */
     async completeEnsDeclarationFlow(
         testInfo: TestInfo,
         url: string,
-        profile: CompanyProfile,
-        routeOverrides?: Partial<InitialFormData>,
+        initialFormOverrides?: Partial<InitialFormData>,
         movementOverrides?: Partial<MovementData>,
         consignmentOverrides?: Partial<ConsignmentData>,
         goodsItemOverrides?: Partial<GoodsData>
 
     ): Promise<void> {
-        const routeData = route(routeOverrides);
+        const routeData = initialFormData(initialFormOverrides);
         const movementData = movement(movementOverrides);
         const consignmentData = consignment(consignmentOverrides);
         const goodsData = goods(goodsItemOverrides);
 
-        await ReportLog.step('Start Login to Portal', async () => {
-            await this.accessFlow.accessService({
-                baseUrl: url,
-                testInfo,
-                profile,
-            })
-        });
-
-        await ReportLog.step('Start Initial Form Declaration', async () => {
-            await this.routeFlow.completeInitialFormDeclaration(route(routeData));
-        });
-        await ReportLog.step('Start Movement Header Declaration', async () => {
-            await this.movementHeaderFlow.completeNewGoodsMovementDeclaration(movementData);
-        });
-        await ReportLog.step('Verify data at Movement Overview', async () => {
-            await this.movementOverviewFlow.MovementOverview(movementData);
-        });
-        await ReportLog.step('Start Add New Consignment', async () => {
-            await this.addNewConsignmentFlow.AddNewENSConsignment(consignmentData);
-        });
-        await ReportLog.step('Start Add New Goods Item', async () => {
-            await this.addNewGoodsItemFlow.addNewGoodsItem(goodsData);
-        });
+        // Each flow reports its own top-level step; re-wrapping here would add a
+        // redundant nesting level with a second name for the same phase.
+        await this.accessFlow.openService({ baseUrl: url, testInfo });
+        await this.routeFlow.completeInitialFormDeclaration(routeData);
+        await this.movementHeaderFlow.completeNewGoodsMovementDeclaration(movementData);
+        await this.movementOverviewFlow.verifyDraftMovementOverview();
+        await this.addNewConsignmentFlow.addNewEnsConsignment(consignmentData);
+        await this.addNewGoodsItemFlow.addNewGoodsItem(goodsData);
     }
 }

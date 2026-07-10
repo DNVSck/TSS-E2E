@@ -19,7 +19,8 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   timeout: Number(process.env.TEST_BASE_TIMEOUT ?? 30000),
   expect: {
-    timeout: Number(process.env.TEST_BASE_TIMEOUT ?? 5000),
+    /* Distinct from the whole-test timeout above: raising one must not raise the other. */
+    timeout: Number(process.env.EXPECT_BASE_TIMEOUT ?? 5000),
   },
   reporter: [
     ['allure-playwright', { suiteTitle: true }],
@@ -44,7 +45,12 @@ export default defineConfig({
     viewport: null,
   },
 
-  /* Projects must be static. Selection is done via CLI. */
+  /* Projects must be static. Selection is done via CLI.
+   *
+   * Sign-in happens once in globalSetup, which caches the session to
+   * playwright/.auth/<PROFILE>.json. storageState is applied per spec
+   * (test.use), not here: the accessibility specs must run against an
+   * anonymous, signed-out portal. */
   projects: [
     { name: 'chromium-en', use: { browserName: 'chromium' as const } },
     { name: 'chromium-cy', use: { browserName: 'chromium' as const } },
