@@ -39,6 +39,19 @@ export class CreateAndSubmitEnsDeclarationFlow {
         const consignmentData = consignment(consignmentOverrides);
         const goodsData = goods(goodsItemOverrides);
 
+        // The goods-item flow branches on consignment-level answers, so derive the
+        // journey context here where both data sets are known.
+        const goodsJourney = {
+            useIMMI: !consignmentData.isEnsOnly && consignmentData.useIMMI,
+            isEnsOnly: consignmentData.isEnsOnly,
+            isControlledGoods: !consignmentData.isEnsOnly && consignmentData.isControlledGoods,
+            // The dangerous-goods question shows on ENS-only and on the controlled-goods
+            // SFD journey — not on IMMI (which goes controlled -> country) nor EIDR.
+            hasDangerousGoods: consignmentData.isEnsOnly || (!consignmentData.useIMMI && consignmentData.isControlledGoods),
+            hasGoodsContainer: consignmentData.isGoodsCrossEUBorder && !consignmentData.isSameContainer,
+            hasInvoiceDetails: !consignmentData.isEnsOnly && (consignmentData.useIMMI || consignmentData.isControlledGoods),
+        };
+
         // Each flow reports its own top-level step; re-wrapping here would add a
         // redundant nesting level with a second name for the same phase.
         await this.accessFlow.openService({ baseUrl: url, testInfo });
@@ -46,6 +59,6 @@ export class CreateAndSubmitEnsDeclarationFlow {
         await this.movementHeaderFlow.completeNewGoodsMovementDeclaration(movementData);
         await this.movementOverviewFlow.verifyDraftMovementOverview();
         await this.addNewConsignmentFlow.addNewEnsConsignment(consignmentData);
-        await this.addNewGoodsItemFlow.addNewGoodsItem(goodsData);
+        await this.addNewGoodsItemFlow.addNewGoodsItem(goodsData, goodsJourney);
     }
 }

@@ -3,6 +3,7 @@ import { Page, Locator } from '@playwright/test';
 import { ROLE_IN_MOVEMENT } from "../constant/role-in-movement-constant";
 import { SEPARATE_HAULIER } from "../constant/separate-haulier-constant";
 import { DateTimeUtil } from '../core/util/date-time-util.js';
+import { selectDropdownValue, checkRadioByValue } from '../core/util/element-helper';
 
 
 
@@ -47,8 +48,6 @@ export class MovementDeclarePage extends BasePage {
     private readonly isDeliverySameNoOption: Locator;
 
     private readonly placeOfDeliveryInput: Locator;
-
-    private readonly transportCharges: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -104,18 +103,15 @@ export class MovementDeclarePage extends BasePage {
         this.isDeliverySameNoOption = page.locator("input#isDeliverySame-yesNoOptions-no");
 
         this.placeOfDeliveryInput = page.locator("input#placeOfDelivery");
-
-        //"How will the transport charges be paid?" screen
-        this.transportCharges = page.locator('input[name="transportCharges"]');
     }
 
     async chooseTypeOfMovement(typeOfMovement: string): Promise<void> {
-        await this.page.locator(`input[name="typeOfMovement"][value="${typeOfMovement}"]`).click();
+        await checkRadioByValue(this.page, 'typeOfMovement', typeOfMovement);
         await this.clickContinueButton();
     }
 
     async selectTypeOfPassiveTransport(typeOfPassiveTransport: string): Promise<void> {
-        await this.typeOfPassiveTransportDropdown.selectOption({ value: typeOfPassiveTransport });
+        await selectDropdownValue(this.typeOfPassiveTransportDropdown, typeOfPassiveTransport);
     }
 
     async inputVehicleRegistrationNumber(vehicleRegistrationNumber?: string): Promise<void> {
@@ -155,7 +151,7 @@ export class MovementDeclarePage extends BasePage {
     }
 
     async selectPortOfArrival(portCode: string): Promise<void> {
-        await this.portOfArrivalInput.selectOption({ value: portCode });
+        await selectDropdownValue(this.portOfArrivalInput, portCode);
     }
 
     async inputArrivalDateTime(arrivalDateTime?: string): Promise<void> {
@@ -171,7 +167,7 @@ export class MovementDeclarePage extends BasePage {
 
     async inputImoAndNationalityOfMeanOfTransport(imoNumber: string, nationalityOfMeanOfTransport: string): Promise<void> {
         await this.imoNumberInput.fill(imoNumber);
-        await this.nationalityOfMeanOfTransportInput.selectOption({ value: nationalityOfMeanOfTransport });
+        await selectDropdownValue(this.nationalityOfMeanOfTransportInput, nationalityOfMeanOfTransport);
     }
 
     async selectDeliverySameAsUnloading(): Promise<void> {
@@ -195,7 +191,7 @@ export class MovementDeclarePage extends BasePage {
     }
 
     async selectTransportCharges(transportChargesKey: string): Promise<void> {
-        await this.transportCharges.and(this.page.locator(`[value="${transportChargesKey}"]`)).click();
+        await checkRadioByValue(this.page, 'transportCharges', transportChargesKey);
     }
 
     async inputCarrierEori(carrierEori: string): Promise<void> {

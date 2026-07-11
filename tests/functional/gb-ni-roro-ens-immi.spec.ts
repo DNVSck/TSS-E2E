@@ -32,8 +32,8 @@ test.describe('GB to NI RoRo IMMI Pre-movement', () => {
       getBaseUrl(),
       initialFormData(),
       movement(),
-      consignment({ isGoodsAtRisk: false, useIMMI: true }),
-      goods()
+      consignment({ useIMMI: true }),
+      goods({ useTGP: true, additionalProcedureCode: '1EN' })
     )
 
   });
@@ -51,8 +51,9 @@ test.describe('GB to NI RoRo IMMI Pre-movement', () => {
       getBaseUrl(),
       initialFormData(),
       movement({ typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED }),
-      consignment({ isGoodsAtRisk: false, useIMMI: true }),
-      goods()
+      consignment({ useIMMI: true }),
+      goods({ useTGP: false, additionalProcedureCode: '1SG' })
     );
   });
+
 });

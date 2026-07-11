@@ -3,8 +3,21 @@ import { LOCALES_CONSTANT } from '../constant/locales-constant';
 import fs from 'fs';
 import path from 'path';
 
-// Translation function type
-export type TFunction = (key: string) => string;
+type DotPaths<T> = {
+  [K in keyof T & string]: T[K] extends Record<string, unknown>
+    ? `${K}.${DotPaths<T[K]>}`
+    : K;
+}[keyof T & string];
+
+/**
+ * en.json is the source of truth for the key set. cy.json is kept in sync by
+ * the locale-consistency guard test, so typing against en alone is safe.
+ * Type-only import: no runtime JSON load, no import assertion needed.
+ */
+export type TranslationKey = DotPaths<typeof import('../../locales/en.json')>;
+
+// Translation function type. Keys are validated at compile time.
+export type TFunction = (key: TranslationKey) => string;
 
 // Fixture type for proper TypeScript inference
 export type LocaleFixtureType = {

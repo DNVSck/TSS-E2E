@@ -1,7 +1,10 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { NEW_CONSIGNMENT_DECLARATION } from '../constant/consignment-declaration-constants';
-import { PartyBlock } from './components/party-block';
+import { PartyBlock, PartyAddress } from './components/party-block';
+import { selectDropdownValue, checkRadioByValue } from '../core/util/element-helper';
+
+/** How long the app may take to leave the EORI screen after Continue. */
+const EORI_OUTCOME_TIMEOUT_MS = 15_000;
 
 export class ConsignmentDeclarePage extends BasePage {
 
@@ -13,15 +16,17 @@ export class ConsignmentDeclarePage extends BasePage {
     private readonly exporter: PartyBlock;
     private readonly seller: PartyBlock;
 
+    // "Do you wish to complete ENS only?" — the first screen, on both journeys.
+    private readonly ensOnlyYesOption: Locator;
+    private readonly ensOnlyNoOption: Locator;
+
     // "Is the buyer the same as the importer?" / "Is the seller the same as the exporter?"
     private readonly buyerSameAsImporterYesOption: Locator;
     private readonly buyerSameAsImporterNoOption: Locator;
     private readonly sellerSameAsExporterYesOption: Locator;
     private readonly sellerSameAsExporterNoOption: Locator;
 
-    // Goods at risk / IMMI / controlled goods
-    private readonly areGoodsAtRiskYesOption: Locator;
-    private readonly areGoodsAtRiskNoOption: Locator;
+    // "Do you want to use IMMI?" / "Are these controlled goods?"
     private readonly useIMMIYesOption: Locator;
     private readonly useIMMINoOption: Locator;
     private readonly controlledGoodsYesOption: Locator;
@@ -29,14 +34,13 @@ export class ConsignmentDeclarePage extends BasePage {
 
     // Transport and destination details
     private readonly transportDocumentNumberInput: Locator;
-    private readonly nidomOption: Locator;
-    private readonly niimpOption: Locator;
     private readonly destinationCountryDropdown: Locator;
-    private readonly warehouseIdentifierInput: Locator;
 
-    // Consignment references
-    private readonly consignmentDescriptionInput: Locator;
+    // Trader reference
     private readonly traderReferenceInput: Locator;
+
+    // Invoice currency — the last screen before "check your answers"
+    private readonly invoiceCurrencyDropdown: Locator;
 
     // Containers when crossing the EU external border
     private readonly goodsCrossEUBorderYesOption: Locator;
@@ -44,6 +48,7 @@ export class ConsignmentDeclarePage extends BasePage {
     private readonly allGoodsInSameContainersYesOption: Locator;
     private readonly allGoodsInSameContainersNoOption: Locator;
     private readonly containerIdentificationNumberInput: Locator;
+    private readonly containerSizeDropdown: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -55,46 +60,85 @@ export class ConsignmentDeclarePage extends BasePage {
         this.exporter = new PartyBlock(page, 'exporter');
         this.seller = new PartyBlock(page, 'seller');
 
+        this.ensOnlyYesOption = page.locator('input[name="isEnsOnly"][value="yes"]');
+        this.ensOnlyNoOption = page.locator('input[name="isEnsOnly"][value="no"]');
+
         this.buyerSameAsImporterYesOption = page.locator("input#isImporterSameBuyer-yesNoOptions-yes");
         this.buyerSameAsImporterNoOption = page.locator("input#isImporterSameBuyer-yesNoOptions-no");
         this.sellerSameAsExporterYesOption = page.locator("input#isExporterSameSeller-yesNoOptions-yes");
         this.sellerSameAsExporterNoOption = page.locator("input#isExporterSameSeller-yesNoOptions-no");
 
-        this.areGoodsAtRiskYesOption = page.locator("input#areGoodsAtRisk-yesNoOptions-yes");
-        this.areGoodsAtRiskNoOption = page.locator("input#areGoodsAtRisk-yesNoOptions-no");
         this.useIMMIYesOption = page.locator("input#useIMMI-immiOptions-yes");
         this.useIMMINoOption = page.locator("input#useIMMI-immiOptions-no");
         this.controlledGoodsYesOption = page.locator("input#containsControlledGoods-controlledGoodsOptions-yes");
         this.controlledGoodsNoOption = page.locator("input#containsControlledGoods-controlledGoodsOptions-no");
 
         this.transportDocumentNumberInput = page.locator("input#transportDocumentNumber");
-        this.nidomOption = page.locator("input#goodsDomesticStatus-goodsDomesticStatus-NIDOM");
-        this.niimpOption = page.locator("input#goodsDomesticStatus-goodsDomesticStatus-NIIMP");
         this.destinationCountryDropdown = page.locator("select#destinationCountry");
-        this.warehouseIdentifierInput = page.locator("input#warehouseIdentifier");
 
-        this.consignmentDescriptionInput = page.locator("input#consignmentDescription");
         this.traderReferenceInput = page.locator("input#traderReference");
+
+        this.invoiceCurrencyDropdown = page.locator("select#invoiceCurrency");
 
         this.goodsCrossEUBorderYesOption = page.locator("input#isTransportingInContainers-yesNoOptions-yes");
         this.goodsCrossEUBorderNoOption = page.locator("input#isTransportingInContainers-yesNoOptions-no");
         this.allGoodsInSameContainersYesOption = page.locator("input#isTheSameContainer-yesNoOptions-yes");
         this.allGoodsInSameContainersNoOption = page.locator("input#isTheSameContainer-yesNoOptions-no");
         this.containerIdentificationNumberInput = page.locator("input#containerIdentifierNumber");
+        this.containerSizeDropdown = page.locator("select#containerSize");
+    }
+
+    // ===================== "Do you wish to complete ENS only?" =====================
+
+    async selectEnsOnlyYes(): Promise<void> {
+        await this.ensOnlyYesOption.check();
+        await this.clickContinueButton();
+    }
+
+    async selectEnsOnlyNo(): Promise<void> {
+        await this.ensOnlyNoOption.check();
+        await this.clickContinueButton();
+    }
+
+    /**
+     * "Why do you only need an Entry Summary Declaration?" — reached only after
+     * answering yes above. Driven by the reason's code (R1..R7), never its label,
+     * which is translated.
+     */
+    async selectEnsOnlyReason(reasonCode: string): Promise<void> {
+        await checkRadioByValue(this.page, 'ensOnlyReason', reasonCode);
+        await this.clickContinueButton();
     }
 
     // ===================== Importer =====================
 
+    /**
+     * The importer's EORI must already exist in TSS: there is no address screen
+     * for it, and an unknown EORI is rejected outright. Fail here with the app's
+     * own message rather than several screens later.
+     */
     async inputImporterEORI(importerEORI: string): Promise<void> {
-        await this.importer.enterEori(importerEORI);
+        const outcome = await this.importer.submitEori(importerEORI, EORI_OUTCOME_TIMEOUT_MS);
+
+        if (outcome === 'address') {
+            throw new Error(
+                `The importer address screen appeared, which means "${importerEORI}" is not ` +
+                `registered in TSS. The importer's EORI must already exist there.`
+            );
+        }
     }
 
-    // NOTE - this method can be called when EORI is not recognized by TSS
-    async inputImporterAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.importer.enterAddress({ name, streetAndNumber, city, postCode, country });
+    /**
+     * Enter a party's EORI, then supply the address when the app asks for it.
+     * It asks whenever the EORI is blank or new; a registered EORI skips it.
+     */
+    private async enterPartyEoriAndAddress(party: PartyBlock, eori: string, address: PartyAddress): Promise<void> {
+        if (await party.submitEori(eori, EORI_OUTCOME_TIMEOUT_MS) === 'address') {
+            await party.enterAddress(address);
+        }
     }
 
-    // ===================== Buyer (same as importer?) =====================
+    // ===================== Buyer =====================
 
     async selectBuyerSameAsImporterYes(): Promise<void> {
         await this.buyerSameAsImporterYesOption.check();
@@ -104,24 +148,24 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.buyerSameAsImporterNoOption.check();
     }
 
-    /** Buyer EORI and address sit on the same screen as the radio, so no intermediate Continue. */
-    async fillBuyerDetails(buyerEORI: string, buyerName: string, buyerStreetAndNumber: string, buyerCity: string,
-        buyerPostCode: string, buyerCountry: string): Promise<void> {
-        await this.buyer.fillEori(buyerEORI);
-        await this.buyer.fillAddress({ name: buyerName, streetAndNumber: buyerStreetAndNumber, city: buyerCity, postCode: buyerPostCode, country: buyerCountry });
+    /**
+     * The buyer's own EORI screen. Reached from "not the same as the importer"
+     * on the full journey, and directly on the ENS-only journey, which has no
+     * importer to compare against.
+     */
+    async inputBuyerDetails(buyerEORI: string, address: PartyAddress): Promise<void> {
+        await this.enterPartyEoriAndAddress(this.buyer, buyerEORI, address);
     }
 
-    // ===================== Goods at risk / IMMI / controlled =====================
-
-    async selectGoodsAtRiskYes(): Promise<void> {
-        await this.areGoodsAtRiskYesOption.check();
-        await this.clickContinueButton();
+    /**
+     * Saying the buyer's EORI matches the importer's skips the buyer's EORI
+     * screen, but the app still asks for the buyer's name and address.
+     */
+    async inputBuyerAddress(address: PartyAddress): Promise<void> {
+        await this.buyer.enterAddress(address);
     }
 
-    async selectGoodsAtRiskNo(): Promise<void> {
-        await this.areGoodsAtRiskNoOption.check();
-        await this.clickContinueButton();
-    }
+    // ===================== Use IMMI / controlled goods =====================
 
     async selectUseIMMIYes(): Promise<void> {
         await this.useIMMIYesOption.check();
@@ -144,11 +188,26 @@ export class ConsignmentDeclarePage extends BasePage {
     }
 
     // ===================== Transport and destination =====================
+    // The three journeys reach three different screens here, each named after the
+    // app's own step. They share the document number and nothing else.
 
-    async fillTransportAndDestinationDetails(transportDocumentNumber: string, goodsDomesticStatus: string, destinationCountry: string): Promise<void> {
+    /** `ens-only-transport-and-destination-details` */
+    async fillEnsOnlyTransportAndDestinationDetails(transportDocumentNumber: string, destinationCountry: string): Promise<void> {
         await this.inputTransportDocumentNumber(transportDocumentNumber);
-        await this.defineGoodsDomesticStatus(goodsDomesticStatus);
         await this.selectDestinationCountry(destinationCountry);
+        await this.clickContinueButton();
+    }
+
+    /** `immi-transport-and-destination-details` — the document number alone. */
+    async fillImmiTransportAndDestinationDetails(transportDocumentNumber: string): Promise<void> {
+        await this.inputTransportDocumentNumber(transportDocumentNumber);
+        await this.clickContinueButton();
+    }
+
+    /** `sfd-transport-and-destination-details` — reached when IMMI is declined. */
+    async fillSfdTransportAndDestinationDetails(transportDocumentNumber: string, goodsDomesticStatusCode: string): Promise<void> {
+        await this.inputTransportDocumentNumber(transportDocumentNumber);
+        await checkRadioByValue(this.page, 'goodsDomesticStatus', goodsDomesticStatusCode);
         await this.clickContinueButton();
     }
 
@@ -156,48 +215,23 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.transportDocumentNumberInput.fill(transportDocumentNumber);
     }
 
-    async defineGoodsDomesticStatus(goodsDomesticStatus: string): Promise<void> {
-        if (goodsDomesticStatus === NEW_CONSIGNMENT_DECLARATION.GOODS_DOMESTIC_STATUS.NIDOM) {
-            await this.nidomOption.check();
-        } else if (goodsDomesticStatus === NEW_CONSIGNMENT_DECLARATION.GOODS_DOMESTIC_STATUS.NIIMP) {
-            await this.niimpOption.check();
-        }
-    }
-
     async selectDestinationCountry(country: string): Promise<void> {
-        await this.destinationCountryDropdown.selectOption({ value: country });
-    }
-
-    async inputWarehouseIdentifier(warehouseIdentifier: string): Promise<void> {
-        await this.warehouseIdentifierInput.fill(warehouseIdentifier);
-        await this.clickContinueButton();
+        await selectDropdownValue(this.destinationCountryDropdown, country);
     }
 
     // ===================== Consignor / Consignee / Exporter =====================
-    // If EORI is not supplied, then the address fields are ALL mandatory.
+    // A registered EORI skips the address screen; a blank or new one requires it.
 
-    async inputConsignorEORI(consignorEORI: string): Promise<void> {
-        await this.consignor.enterEori(consignorEORI);
+    async inputConsignorDetails(consignorEORI: string, address: PartyAddress): Promise<void> {
+        await this.enterPartyEoriAndAddress(this.consignor, consignorEORI, address);
     }
 
-    async inputConsignorAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.consignor.enterAddress({ name, streetAndNumber, city, postCode, country });
+    async inputConsigneeDetails(consigneeEORI: string, address: PartyAddress): Promise<void> {
+        await this.enterPartyEoriAndAddress(this.consignee, consigneeEORI, address);
     }
 
-    async inputConsigneeEORI(consigneeEORI: string): Promise<void> {
-        await this.consignee.enterEori(consigneeEORI);
-    }
-
-    async inputConsigneeAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.consignee.enterAddress({ name, streetAndNumber, city, postCode, country });
-    }
-
-    async inputExporterEORI(exporterEORI: string): Promise<void> {
-        await this.exporter.enterEori(exporterEORI);
-    }
-
-    async inputExporterAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.exporter.enterAddress({ name, streetAndNumber, city, postCode, country });
+    async inputExporterDetails(exporterEORI: string, address: PartyAddress): Promise<void> {
+        await this.enterPartyEoriAndAddress(this.exporter, exporterEORI, address);
     }
 
     // ===================== Seller (same as exporter?) =====================
@@ -210,28 +244,24 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.sellerSameAsExporterNoOption.check();
     }
 
-    async inputSellerEORI(sellerEORI: string): Promise<void> {
-        await this.seller.enterEori(sellerEORI);
+    async inputSellerDetails(sellerEORI: string, address: PartyAddress): Promise<void> {
+        await this.enterPartyEoriAndAddress(this.seller, sellerEORI, address);
     }
 
-    async inputSellerAddress(name: string, streetAndNumber: string, city: string, postCode: string, country: string): Promise<void> {
-        await this.seller.enterAddress({ name, streetAndNumber, city, postCode, country });
-    }
-
-    // ===================== Consignment references =====================
-
-    async inputConsignmentReference(consignmentDescription: string, traderReference: string): Promise<void> {
-        await this.inputConsignmentDescription(consignmentDescription);
-        await this.inputTraderReference(traderReference);
-        await this.clickContinueButton();
-    }
-
-    async inputConsignmentDescription(consignmentDescription: string): Promise<void> {
-        await this.consignmentDescriptionInput.fill(consignmentDescription);
-    }
+    // ===================== Trader reference =====================
+    // Every journey reaches this screen, and every one of them asks for the
+    // trader reference alone.
 
     async inputTraderReference(traderReference: string): Promise<void> {
         await this.traderReferenceInput.fill(traderReference);
+        await this.clickContinueButton();
+    }
+
+    // ===================== Invoice currency =====================
+
+    async selectInvoiceCurrency(currencyCode: string): Promise<void> {
+        await selectDropdownValue(this.invoiceCurrencyDropdown, currencyCode);
+        await this.clickContinueButton();
     }
 
     // ===================== Containers =====================
@@ -256,8 +286,20 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
-    async inputContainerIdentificationNumber(containerIdentifierNumber: string): Promise<void> {
+    /**
+     * The "Container identification number" screen also asks for the size, the
+     * packed status and who supplied the container. All four are mandatory.
+     */
+    async fillContainerIdentification(
+        containerIdentifierNumber: string,
+        containerSize: string,
+        packedStatusCode: string,
+        supplierTypeCode: string
+    ): Promise<void> {
         await this.containerIdentificationNumberInput.fill(containerIdentifierNumber);
+        await selectDropdownValue(this.containerSizeDropdown, containerSize);
+        await checkRadioByValue(this.page, 'containerPackedStatus', packedStatusCode);
+        await checkRadioByValue(this.page, 'containerSupplierType', supplierTypeCode);
         await this.clickContinueButton();
     }
 

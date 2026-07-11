@@ -1,134 +1,218 @@
 
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
-import { NEW_CONSIGNMENT_DECLARATION } from '../constant/consignment-declaration-constants';
+import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
+import { ENS_ONLY_REASON } from '../constant/ens-only-reason-constant';
+import { ITEM_CURRENCY } from '../constant/item-currency-constant';
+import { CONTAINER_SIZE } from '../constant/container-size-constant';
+import { CONTAINER_PACKED_STATUS } from '../constant/container-packed-status-constant';
+import { CONTAINER_SUPPLIER_TYPE } from '../constant/container-supplier-type-constant';
+import { StringUtil } from '../core/util/string-util';
 
+/**
+ * One shape for both consignment journeys.
+ *
+ * "ENS only" is a shorter journey: it never asks for the importer, the exporter,
+ * goods-at-risk, IMMI, controlled goods, the warehouse identifier or the goods
+ * domestic status, and it asks for the buyer and seller directly instead of
+ * "is this the same as the importer/exporter?".
+ *
+ * The two journeys nevertheless share most of their data — six trade parties,
+ * the containers, the transport document. Splitting the type in two would
+ * duplicate that and let the copies drift, so the branch is expressed by
+ * `isEnsOnly` plus the two factories below, not by two types.
+ */
 export interface ConsignmentData {
+    /** Chooses the journey. See `consignment()` and `ensOnlyConsignment()`. */
+    isEnsOnly: boolean;
+    /** Required when isEnsOnly; ignored otherwise. */
+    ensOnlyReason?: string;
+
     importerEORI: string;
     importerName: string;
-    importerStreetAndNumber: string;
+    importerStreetName: string;
+    importerStreetNumber: string;
     importerCity: string;
     importerPostCode: string;
     importerCountryCode: string;
+
+    /** Only asked on the full journey — the ENS-only journey has no importer. */
     isBuyerSameAsImporter: boolean;
     buyerEORI: string;
     buyerName: string;
-    buyerStreetAndNumber: string;
+    buyerStreetName: string;
+    buyerStreetNumber: string;
     buyerCity: string;
     buyerPostCode: string;
     buyerCountryCode: string;
-    isGoodsAtRisk: boolean;
+
+    /** Not asked on the ENS-only journey. */
     useIMMI: boolean;
+    /** Only asked when IMMI is declined. */
     isControlledGoods: boolean;
+
+    /**
+     * The service rejects a transport document number it has already seen, so a
+     * fresh one is generated per factory call. Six to ten digits.
+     */
     transportDocumentNumber: string;
+    /** Only on the non-IMMI transport screen. See CONSIGNMENT_GOODS_DOMESTIC_STATUS. */
     goodsDomesticStatus: string;
+    /** Only on the ENS-only transport screen. */
     destinationCountryCode: string;
-    warehouseIdentifier: string;
+
     consignorEORI: string;
     consignorName: string;
-    consignorStreetAndNumber: string;
+    consignorStreetName: string;
+    consignorStreetNumber: string;
     consignorCity: string;
     consignorPostCode: string;
     consignorCountryCode: string;
+
     consigneeEORI: string;
     consigneeName: string;
-    consigneeStreetAndNumber: string;
+    consigneeStreetName: string;
+    consigneeStreetNumber: string;
     consigneeCity: string;
     consigneePostCode: string;
     consigneeCountryCode: string;
+
+    // Full journey only — the ENS-only journey has no exporter.
     exporterEORI: string;
     exporterName: string;
-    exporterStreetAndNumber: string;
+    exporterStreetName: string;
+    exporterStreetNumber: string;
     exporterCity: string;
     exporterPostCode: string;
     exporterCountryCode: string;
+
+    /** Only asked on the full journey — the ENS-only journey has no exporter. */
     isSellerSameAsExporter: boolean;
     sellerEORI: string;
     sellerName: string;
-    sellerStreetAndNumber: string;
+    sellerStreetName: string;
+    sellerStreetNumber: string;
     sellerCity: string;
     sellerPostCode: string;
     sellerCountryCode: string;
-    consignmentDescription?: string;
+
+    /** Every journey reaches the trader reference screen, and it asks for nothing else. */
     traderReference?: string;
+
     isGoodsCrossEUBorder: boolean;
     isSameContainer: boolean;
+
+    // The "Container identification number" screen asks for all four of these.
     containerIdentifierNumber: string;
+    containerSize: string;
+    containerPackedStatus: string;
+    containerSupplierType: string;
+
+    /** The last screen before "check your answers". */
+    invoiceCurrency: string;
 }
 
-const defaults: ConsignmentData = {
-    
-    //Importer profile
-    importerEORI: 'XI021111238000',
+// `transportDocumentNumber` is deliberately absent: generating it here would
+// freeze one value at module import and every consignment in the run would reuse
+// it, which the service rejects. Omit<> makes the compiler demand it below.
+const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
+    isEnsOnly: false,
+
+    //Importer profile.
+    // The importer's EORI must already exist in TSS — the app rejects an unknown
+    // one outright — so it comes from the environment rather than a literal.
+    importerEORI: process.env.IMPORTER_EORI ?? '',
     importerName: 'John Doe',
-    importerStreetAndNumber: '123 Main Street',
+    importerStreetName: 'Main Street',
+    importerStreetNumber: '123',
     importerCity: 'London',
     importerPostCode: 'SW1A 1AA',
     importerCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Buyer profile
-    isBuyerSameAsImporter: true,
-    buyerEORI: 'GB427168118378',
-    buyerName: 'John Doe 2',
-    buyerStreetAndNumber: '1234 Main Street',
+    isBuyerSameAsImporter: false,
+    buyerEORI: 'XI363127805000',
+    buyerName: 'John Doe',
+    buyerStreetName: 'Main Street',
+    buyerStreetNumber: '1234',
     buyerCity: 'London',
     buyerPostCode: 'SW1A 1AA',
     buyerCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Consignment information
-    isGoodsAtRisk: true,
     useIMMI: false,
     isControlledGoods: true,
 
     //Transport and destination details
-    transportDocumentNumber: '5583920174',
-    goodsDomesticStatus: NEW_CONSIGNMENT_DECLARATION.GOODS_DOMESTIC_STATUS.NIDOM,
+    goodsDomesticStatus: CONSIGNMENT_GOODS_DOMESTIC_STATUS.NIDOM,
     destinationCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
-    warehouseIdentifier: '',
 
     //Consignor profile
-    consignorEORI: '',
-    consignorName: 'John Doe 3',
-    consignorStreetAndNumber: '1235 Main Street',
+    consignorEORI: 'XI363127805000',
+    consignorName: 'John Doe',
+    consignorStreetName: 'Main Street',
+    consignorStreetNumber: '1235',
     consignorCity: 'London',
     consignorPostCode: 'SW1A 1AA',
     consignorCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Consignee profile
-    consigneeEORI: '',
-    consigneeName: 'John Doe 4',
-    consigneeStreetAndNumber: '1236 Main Street',
+    consigneeEORI: 'XI363127805000',
+    consigneeName: 'John Doe',
+    consigneeStreetName: 'Main Street',
+    consigneeStreetNumber: '1236',
     consigneeCity: 'London',
     consigneePostCode: 'SW1A 1AA',
     consigneeCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Exporter profile
-    exporterEORI: '',
-    exporterName: 'John Doe 5',
-    exporterStreetAndNumber: '1237 Main Street',
+    exporterEORI: 'XI163769628034',
+    exporterName: 'John Doe',
+    exporterStreetName: 'Main Street',
+    exporterStreetNumber: '1237',
     exporterCity: 'London',
     exporterPostCode: 'SW1A 1AA',
     exporterCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Seller profile
     isSellerSameAsExporter: true,
-    sellerEORI: '',
-    sellerName: 'John Doe 5',
-    sellerStreetAndNumber: '1237 Main Street',
+    sellerEORI: 'XI363127805000',
+    sellerName: 'John Doe',
+    sellerStreetName: 'Main Street',
+    sellerStreetNumber: '1237',
     sellerCity: 'London',
     sellerPostCode: 'SW1A 1AA',
     sellerCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Consignment references
-    consignmentDescription: '',
     traderReference: '',
-    isGoodsCrossEUBorder: true,
-    isSameContainer: true,
+    isGoodsCrossEUBorder: false,
+    isSameContainer: false,
+
+    //Container identification
     containerIdentifierNumber: '1',
+    containerSize: CONTAINER_SIZE.TRAILER,
+    containerPackedStatus: CONTAINER_PACKED_STATUS.NOT_EMPTY,
+    containerSupplierType: CONTAINER_SUPPLIER_TYPE.SHIPPER_SUPPLIED,
+
+    //Invoice currency
+    invoiceCurrency: ITEM_CURRENCY.POUNDS_STERLING,
 };
 
-
+/** The full customs consignment journey. */
 export const consignment = (overrides?: Partial<ConsignmentData>): ConsignmentData => ({
     ...defaults,
+    transportDocumentNumber: StringUtil.generateRandomTransportDocumentNumber(),
     ...overrides,
 });
 
+/**
+ * The "ENS only" journey. A reason is mandatory, so it is supplied here rather
+ * than left to every call site to remember.
+ */
+export const ensOnlyConsignment = (overrides?: Partial<ConsignmentData>): ConsignmentData => ({
+    ...defaults,
+    transportDocumentNumber: StringUtil.generateRandomTransportDocumentNumber(),
+    isEnsOnly: true,
+    ensOnlyReason: ENS_ONLY_REASON.STANDALONE_DECLARATION_IN_TSS,
+    ...overrides,
+});

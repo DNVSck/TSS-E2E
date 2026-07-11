@@ -1,19 +1,13 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { ADDITIONAL_RISK_STATUS } from "../constant/additional-risk-status-constant";
-import { GOODS_DOMESTIC_STATUS } from "../constant/goods-domestic-status-constant";
+import { selectDropdownValue, checkRadioByValue } from '../core/util/element-helper';
 
 
 
 export class GoodsDeclarePage extends BasePage {
 
-    private readonly nidomOption: Locator;
-    private readonly niimpOption: Locator;
-
-    private readonly niproOption: Locator;
-    private readonly niquoOption: Locator;
-    private readonly niremOption: Locator;
-    private readonly noAdditionalRiskStatusOption: Locator;
+    private readonly useTgpYesOption: Locator;
+    private readonly useTgpNoOption: Locator;
 
     private readonly noControlledGoodsOption: Locator;
     private readonly yesControlledGoodsOption: Locator;
@@ -50,15 +44,12 @@ export class GoodsDeclarePage extends BasePage {
     constructor(page: Page) {
         super(page);
 
-        // "Enter goods domestic status"
-        this.nidomOption = page.locator("input#goodsDomesticStatus-goodsDomesticStatus-NIDOM");
-        this.niimpOption = page.locator("input#goodsDomesticStatus-goodsDomesticStatus-NIIMP");
+        // "Do you want to use TGP?" — the first goods screen, IMMI goods only.
+        this.useTgpYesOption = page.locator("input#useTgp-yesNoOptions-yes");
+        this.useTgpNoOption = page.locator("input#useTgp-yesNoOptions-no");
 
-        // "Additional risk status"
-        this.niproOption = page.locator("input#additionalRiskStatus-additionalRiskStatusOptions-NIPRO");
-        this.niquoOption = page.locator("input#additionalRiskStatus-additionalRiskStatusOptions-NIQUO");
-        this.niremOption = page.locator("input#additionalRiskStatus-additionalRiskStatusOptions-NIREM");
-        this.noAdditionalRiskStatusOption = page.locator("//input[@id='additionalRiskStatus-additionalRiskStatusOptions-No additional risk status']");
+        // Goods domestic status and additional risk status have no goods-item screens
+        // — the app carries them over from the consignment — so no locators here.
 
         // "Are these goods controlled?"
         // "Do these goods require licences, certificates or other forms of control?"
@@ -70,10 +61,12 @@ export class GoodsDeclarePage extends BasePage {
         this.noDangerousGoodsOption = page.locator("input#isDangerousGoods-yesNoOptions-no");
         this.dangerousGoodsCodesInput = page.locator("input#dangerousGoodsCode");
 
-        // "Commodity information"
-        this.commodityCodeInput = page.locator("input#commodityCode");
-        this.goodsDescriptionTextArea = page.locator("textarea#goodsDescription");
-        this.countryOfOriginDropdown = page.locator("select#countryOfOrigin");
+        // "Commodity information" — commodity code is an autocomplete combobox and
+        // goods description is a single-line textbox (not a textarea), so both are
+        // matched by id only rather than by tag.
+        this.commodityCodeInput = page.locator("#commodityCode");
+        this.goodsDescriptionTextArea = page.locator("#goodsDescription");
+        this.countryOfOriginDropdown = page.locator("#countryOfOrigin");
         this.supplementaryUnitsInput = page.locator("input#supplementaryUnits");
 
         // "Enter additional commodity codes"
@@ -105,26 +98,28 @@ export class GoodsDeclarePage extends BasePage {
         
     }
 
-    async selectGoodsDomesticStatus(status: string): Promise<void> {
-        if (status === GOODS_DOMESTIC_STATUS.NIDOM) {
-            await this.nidomOption.check();
-        } else if (status === GOODS_DOMESTIC_STATUS.NIIMP) {
-            await this.niimpOption.check();
-        }
-        await this.clickContinueButton();
-    }
+    /**
+     * The "use TGP?" screen is the first goods screen, but it appears only for IMMI
+     * goods when the signed-in trader has a TGP profile — a fact about the
+     * environment, so it is detected rather than declared in the test data. Waits
+     * for whichever screen the app lands on (the TGP question, or the goods domestic
+     * status screen that immediately follows when TGP is absent) and answers the TGP
+     * question only when it is actually shown.
+     *
+     * Returns whether the screen was present and answered.
+     */
+    async answerUseTgpIfPresent(useTGP: boolean): Promise<boolean> {
+        // On IMMI the TGP screen is first; when the trader has no TGP profile the app
+        // lands straight on the procedure-code screen, so wait for whichever shows.
+        await this.useTgpYesOption.or(this.goodsProcedureCodeDropdown).first().waitFor({ state: 'visible' });
 
-    async selectAdditionalRiskStatus(status: string): Promise<void> {
-        if (status === ADDITIONAL_RISK_STATUS.NIPRO) {
-            await this.niproOption.check();
-        } else if (status === ADDITIONAL_RISK_STATUS.NIQUO) {
-            await this.niquoOption.check();
-        } else if (status === ADDITIONAL_RISK_STATUS.NIREM) {
-            await this.niremOption.check();
-        } else if (status === ADDITIONAL_RISK_STATUS.NO_ADDITIONAL_RISK_STATUS) {
-            await this.noAdditionalRiskStatusOption.check();
+        if (!(await this.useTgpYesOption.isVisible())) {
+            return false;
         }
+
+        await (useTGP ? this.useTgpYesOption : this.useTgpNoOption).check();
         await this.clickContinueButton();
+        return true;
     }
 
     async selectGoodsControlledYes(): Promise<void> {
@@ -152,16 +147,12 @@ export class GoodsDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
-    async inputCommodityCode(commodityCode: string): Promise<void> {
-        await this.commodityCodeInput.fill(commodityCode);
-    }
-
     async inputGoodsDescription(goodsDescription: string): Promise<void> {
         await this.goodsDescriptionTextArea.fill(goodsDescription);
     }
 
     async selectCountryOfOrigin(countryOfOrigin: string): Promise<void> {
-        await this.countryOfOriginDropdown.selectOption({ value: countryOfOrigin });
+        await selectDropdownValue(this.countryOfOriginDropdown, countryOfOrigin);
     }
 
     async inputSupplementaryUnits(supplementaryUnits: string): Promise<void> {
@@ -177,7 +168,7 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     async selectNationalAdditionalCode(nationalAdditionalCode: string): Promise<void> {
-        await this.nationalAdditionalCodeDropdown.selectOption({ value: nationalAdditionalCode });
+        await selectDropdownValue(this.nationalAdditionalCodeDropdown, nationalAdditionalCode);
     }
 
     async inputShippingMarks(shippingMarks: string): Promise<void> {
@@ -185,7 +176,7 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     async selectTypeOfPackages(typeOfPackages: string): Promise<void> {
-        await this.typeOfPackagesDropdown.selectOption({ value: typeOfPackages });
+        await selectDropdownValue(this.typeOfPackagesDropdown, typeOfPackages);
     }
 
     async inputNumberOfPackages(numberOfPackages: string): Promise<void> {
@@ -205,12 +196,12 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     async selectGoodsProcedureCode(goodsProcedureCode: string): Promise<void> {
-        await this.goodsProcedureCodeDropdown.selectOption({ value: goodsProcedureCode });
+        await selectDropdownValue(this.goodsProcedureCodeDropdown, goodsProcedureCode);
         await this.clickContinueButton();
     }
 
     async selectAdditionalProcedureCode(additionalProcedureCode: string): Promise<void> {
-        await this.additionalProcedureCodeDropdown.selectOption({ value: additionalProcedureCode });
+        await selectDropdownValue(this.additionalProcedureCodeDropdown, additionalProcedureCode);
         await this.clickContinueButton();
     }
 
@@ -219,20 +210,79 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     async selectItemCurrency(itemCurrency: string): Promise<void> {
-        await this.itemCurrencyDropdown.selectOption({ value: itemCurrency });
+        await selectDropdownValue(this.itemCurrencyDropdown, itemCurrency);
     }
 
     async inputItemPriceAmount(itemPriceAmount: string): Promise<void> {
         await this.itemPriceAmountInput.fill(itemPriceAmount);
     }
 
-    async fillCommodityInformation(commodityCode: string, goodsDescription: string, countryOfOrigin: string, supplementaryUnits?: string): Promise<void> {
-        await this.inputCommodityCode(commodityCode);
+    /**
+     * The commodity code is a GOV.UK accessible-autocomplete: a plain `fill` sets the
+     * value programmatically without triggering the suggestion list, so the app never
+     * registers a valid selection. Typing the code surfaces the matching option, which
+     * must then be picked for the value to stick.
+     */
+    async selectCommodityCode(commodityCode: string): Promise<void> {
+        // The commodity suggestions are fetched live from the NI tariff, which is
+        // occasionally slow or drops a request, leaving the menu empty. Re-typing
+        // re-fires the lookup, so retry a few times before giving up. Once an option
+        // is in the DOM the menu is open, and the first match is committed by keyboard
+        // (ArrowDown highlights it, Enter selects — a click races the re-render).
+        const firstOption = this.page.locator('#commodityCode__option--0');
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            await this.commodityCodeInput.click();
+            await this.commodityCodeInput.fill('');
+            await this.commodityCodeInput.pressSequentially(commodityCode, { delay: 120 });
+            try {
+                await firstOption.waitFor({ state: 'attached', timeout: 8000 });
+                await this.commodityCodeInput.press('ArrowDown');
+                await this.commodityCodeInput.press('Enter');
+                return;
+            } catch {
+                if (attempt === 3) {
+                    throw new Error(`Commodity code suggestions never loaded for "${commodityCode}" after 3 attempts.`);
+                }
+            }
+        }
+    }
+
+    /** The goods-item commodity screen: the tariff commodity code plus a description. */
+    async enterGoodsDescriptionAndCommodityCode(goodsDescription: string, commodityCode: string): Promise<void> {
+        await this.selectCommodityCode(commodityCode);
         await this.inputGoodsDescription(goodsDescription);
-        await this.selectCountryOfOrigin(countryOfOrigin);
-        await this.inputSupplementaryUnits(supplementaryUnits??'');
         await this.clickContinueButton();
     }
+
+    /** The country of origin is a native select on its own screen, late in the flow. */
+    async enterCountryOfOrigin(countryOfOrigin: string): Promise<void> {
+        await selectDropdownValue(this.countryOfOriginDropdown, countryOfOrigin);
+        await this.clickContinueButton();
+    }
+
+    /**
+     * Per-item container screen — identification number, size, status and supplier
+     * type. Reached only when the consignment declared goods in different containers.
+     */
+    async enterContainerInformation(
+        containerIdentifierNumber: string,
+        containerSize: string,
+        containerStatusCode: string,
+        containerSupplierTypeCode: string
+    ): Promise<void> {
+        await this.page.locator('#containerIdentifierNumber').fill(containerIdentifierNumber);
+        await selectDropdownValue(this.page.locator('#containerSize'), containerSize);
+        await checkRadioByValue(this.page, 'containerStatus', containerStatusCode);
+        await checkRadioByValue(this.page, 'containerSupplierType', containerSupplierTypeCode);
+        await this.clickContinueButton();
+    }
+
+    /** Goods-item invoice screen when the currency is already set at consignment level. */
+    async enterItemPrice(itemPriceAmount: string): Promise<void> {
+        await this.inputItemPriceAmount(itemPriceAmount);
+        await this.clickContinueButton();
+    }
+
 
     async enterAdditionalCommodityCodes(cusCode?: string, taricAdditionalCode?: string, nationalAdditionalCode?: string): Promise<void> {
         await this.inputCusCode(cusCode??'');
@@ -249,9 +299,16 @@ export class GoodsDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
+    /**
+     * The weight screen always asks for the gross mass; some journeys add a net mass
+     * field on the same screen (required on ENS-only, absent on EIDR), so it is filled
+     * only when present.
+     */
     async enterWeightInformation(grossMass: string, netMass?: string): Promise<void> {
         await this.inputGrossMass(grossMass);
-        await this.inputNetMass(netMass??'');
+        if (await this.netMassInput.isVisible()) {
+            await this.netMassInput.fill(netMass ?? '');
+        }
         await this.clickContinueButton();
     }
 
