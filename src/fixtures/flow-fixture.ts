@@ -6,7 +6,9 @@ import { MovementOverviewFlow } from '../flows/movement-overview-flow';
 import { PageFixtureType } from './page-fixture';
 import { CreateAndSubmitEnsDeclarationFlow } from '../flows/common-flows/createAndSubmitDeclarationFlow';
 import { AddNewConsignmentFlow } from '../flows/add-new-consignment-flow';
+import { ConsignmentOverviewFlow } from '../flows/consignment-overview-flow';
 import { AddNewGoodsItemFlow } from '../flows/add-new-goods-item-flow';
+import { GoodsOverviewFlow } from '../flows/goods-overview-flow';
 import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
 
 export type FlowFixtureType = {
@@ -16,7 +18,9 @@ export type FlowFixtureType = {
     movementHeaderDeclarationFlow: MovementHeaderDeclarationFlow;
     movementOverviewFlow: MovementOverviewFlow;
     addNewConsignmentFlow: AddNewConsignmentFlow;
+    consignmentOverviewFlow: ConsignmentOverviewFlow;
     addNewGoodsItemFlow: AddNewGoodsItemFlow;
+    goodsOverviewFlow: GoodsOverviewFlow;
     createAndSubmitGmrFlow: AddNewGMRFlow; // This flow is added here as it relies on multiple other flows, and it will be used in multiple places, so it makes sense to have it as a common flow
 
     // Common Flows
@@ -46,8 +50,16 @@ export const flowFixture: ExtendParams[0] = {
         await use(new AddNewConsignmentFlow(movementOverviewPage, consignmentDeclarePage));
     },
 
+    consignmentOverviewFlow: async ({ consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage }, use) => {
+        await use(new ConsignmentOverviewFlow(consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage));
+    },
+
     addNewGoodsItemFlow: async ({ consignmentOverviewPage, goodsItemDeclarePage }, use) => {
         await use(new AddNewGoodsItemFlow(consignmentOverviewPage, goodsItemDeclarePage));
+    },
+
+    goodsOverviewFlow: async ({ goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage }, use) => {
+        await use(new GoodsOverviewFlow(goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage));
     },
 
     createAndSubmitGmrFlow: async ({ movementOverviewPage, gmrDeclarePage, gmrDetailsPage }, use) => {
@@ -60,7 +72,9 @@ export const flowFixture: ExtendParams[0] = {
         movementHeaderDeclarationFlow,
         movementOverviewFlow,
         addNewConsignmentFlow,
-        addNewGoodsItemFlow
+        consignmentOverviewFlow,
+        addNewGoodsItemFlow,
+        goodsOverviewFlow
     }, use) => {
         await use(new CreateAndSubmitEnsDeclarationFlow(
             portalAccessFlow,
@@ -68,7 +82,9 @@ export const flowFixture: ExtendParams[0] = {
             movementHeaderDeclarationFlow,
             movementOverviewFlow,
             addNewConsignmentFlow,
-            addNewGoodsItemFlow
+            consignmentOverviewFlow,
+            addNewGoodsItemFlow,
+            goodsOverviewFlow
         ));
     },
 };

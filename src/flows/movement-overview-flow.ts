@@ -8,7 +8,9 @@ export class MovementOverviewFlow {
 
     async verifyDraftMovementOverview(): Promise<void> {
         await ReportLog.step('Validate goods movement overview', async () => {
-            await this.movementOverviewPage.assertDraftMovementOverview();
+            const localReferenceNumber = await this.movementOverviewPage.assertDraftMovementOverview();
+            ReportLog.setParameter('Movement LRN', localReferenceNumber);
+            await ReportLog.info(`Movement local reference number: ${localReferenceNumber}`);
         });
     }
 

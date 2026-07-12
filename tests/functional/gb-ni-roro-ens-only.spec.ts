@@ -1,8 +1,5 @@
 import { ReportLog } from '../../src/core/report/report-log';
 import { ensOnlyConsignment } from '../../src/test-data/consignment-data';
-import { movement } from '../../src/test-data/movements-data';
-import { initialFormData } from '../../src/test-data/initial-form-data';
-import { goods } from '../../src/test-data/goods-data';
 import { getBaseUrl, test } from '../test-hooks';
 import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
 import { authStatePath } from '../../src/core/auth/auth-state';
@@ -26,13 +23,10 @@ test.describe('GB to NI RoRo ENS-only Declaration Process', () => {
   test('Accompanied', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS-only - GB to NI RoRo Accompanied');
 
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
+    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
-      getBaseUrl(),
-      initialFormData(),
-      movement(),
-      ensOnlyConsignment(),
-      goods()
-    );
+      url: getBaseUrl(),
+      consignmentOverrides: ensOnlyConsignment(),
+    });
   });
 });

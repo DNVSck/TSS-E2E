@@ -6,9 +6,13 @@ import { initialFormData, InitialFormData } from '../../test-data/initial-form-d
 import { movement, MovementData } from '../../test-data/movements-data';
 import { TestInfo } from '@playwright/test';
 import { AddNewConsignmentFlow } from '../add-new-consignment-flow';
+import { ConsignmentOverviewFlow } from '../consignment-overview-flow';
 import { consignment, ConsignmentData } from '../../test-data/consignment-data';
 import { AddNewGoodsItemFlow } from '../add-new-goods-item-flow';
+import { GoodsOverviewFlow } from '../goods-overview-flow';
 import { goods, GoodsData } from '../../test-data/goods-data';
+import { ReportLog } from '../../core/report/report-log';
+import { COMPANY_PROFILE, CompanyProfile, getCredentials } from '../../core/auth/credentials';
 
 export class CreateAndSubmitEnsDeclarationFlow {
     constructor(
@@ -17,7 +21,9 @@ export class CreateAndSubmitEnsDeclarationFlow {
         private readonly movementHeaderFlow: MovementHeaderDeclarationFlow,
         private readonly movementOverviewFlow: MovementOverviewFlow,
         private readonly addNewConsignmentFlow: AddNewConsignmentFlow,
+        private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
         private readonly addNewGoodsItemFlow: AddNewGoodsItemFlow,
+        private readonly goodsOverviewFlow: GoodsOverviewFlow,
     ) { }
 
     /**
@@ -25,19 +31,29 @@ export class CreateAndSubmitEnsDeclarationFlow {
      * `test.use({ storageState: authStatePath(PROFILE) })`, not here — the sign-in
      * itself happens once, in globalSetup.
      */
-    async completeEnsDeclarationFlow(
-        testInfo: TestInfo,
-        url: string,
-        initialFormOverrides?: Partial<InitialFormData>,
-        movementOverrides?: Partial<MovementData>,
-        consignmentOverrides?: Partial<ConsignmentData>,
-        goodsItemOverrides?: Partial<GoodsData>
+    async completeEnsDeclarationFlow(options: {
+        testInfo: TestInfo;
+        url: string;
+        profile?: CompanyProfile;
+        initialFormOverrides?: Partial<InitialFormData>;
+        movementOverrides?: Partial<MovementData>;
+        consignmentOverrides?: Partial<ConsignmentData>;
+        goodsItemOverrides?: Partial<GoodsData>;
+    }): Promise<void> {
+        const { testInfo, url } = options;
 
-    ): Promise<void> {
-        const routeData = initialFormData(initialFormOverrides);
-        const movementData = movement(movementOverrides);
-        const consignmentData = consignment(consignmentOverrides);
-        const goodsData = goods(goodsItemOverrides);
+        // Which account this journey runs as — surfaced in the report for tracking.
+        // Defaults to AGENT because that is the profile every current spec signs in
+        // as via `test.use({ storageState })`; pass `profile` when a spec differs.
+        const profile = options.profile ?? COMPANY_PROFILE.AGENT;
+        const account = `${getCredentials(profile).username} (${profile})`;
+        ReportLog.setParameter('Test account', account);
+        await ReportLog.info(`Test account: ${account}`);
+
+        const routeData = initialFormData(options.initialFormOverrides);
+        const movementData = movement(options.movementOverrides);
+        const consignmentData = consignment(options.consignmentOverrides);
+        const goodsData = goods(options.goodsItemOverrides);
 
         // The goods-item flow branches on consignment-level answers, so derive the
         // journey context here where both data sets are known.
@@ -59,6 +75,21 @@ export class CreateAndSubmitEnsDeclarationFlow {
         await this.movementHeaderFlow.completeNewGoodsMovementDeclaration(movementData);
         await this.movementOverviewFlow.verifyDraftMovementOverview();
         await this.addNewConsignmentFlow.addNewEnsConsignment(consignmentData);
+        await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
+        await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
+        // Declaring those tabs leaves the overview on the tab's own route; return to
+        // the consignment overview (Goods records tab) before adding the goods item.
         await this.addNewGoodsItemFlow.addNewGoodsItem(goodsData, goodsJourney);
+        // Goods-item overview tabs (e.g. document references). No-op unless the goods
+        // data supplies entries, so existing journeys are unaffected.
+        await this.goodsOverviewFlow.declareDocumentReferences(goodsData.documentReferences);
+        await this.goodsOverviewFlow.declareAdditionalInformations(goodsData.additionalInformations);
+        await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
+        await this.goodsOverviewFlow.declareAdditionalProcedureCodes(goodsData.additionalProcedureCodes);
+        await this.goodsOverviewFlow.declareTaricAdditionalCodes(goodsData.taricAdditionalCodes);
+        await this.goodsOverviewFlow.declareNationalAdditionalCodes(goodsData.nationalAdditionalCodes);
+        // Goods-item work done: return to the consignment overview via the breadcrumb
+        // and submit the consignment.
+        await this.consignmentOverviewFlow.submitConsignment();
     }
 }

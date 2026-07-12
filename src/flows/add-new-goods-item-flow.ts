@@ -76,7 +76,7 @@ export class AddNewGoodsItemFlow {
 
     private async clickNewGoodsRecordAtOverview(): Promise<void> {
         await ReportLog.step('Click New Goods Record', async () => {
-            await this.consignmentOverviewPage.clickNewGoodsRecord();
+            await this.consignmentOverviewPage.openNewGoodsRecord();
         });
     }
 

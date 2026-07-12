@@ -70,8 +70,11 @@ export class MovementOverviewPage extends BasePage {
     /**
      * Both checks are soft so one run reports every mismatch, rather than hiding
      * the status behind a reference-number failure.
+     *
+     * Returns the validated local reference number so callers can surface it (in
+     * the report, logs, ...) without a second read of the page.
      */
-    async assertDraftMovementOverview(): Promise<void> {
+    async assertDraftMovementOverview(): Promise<string> {
         const localReferenceNumber = await this.getTextLocalReferenceNumber();
         const declarationStatus = await this.getTextDeclarationStatus();
         const expectedStatus = this.t!('status.draft');
@@ -82,6 +85,8 @@ export class MovementOverviewPage extends BasePage {
             .toMatch(LOCAL_REFERENCE.ENS_PREFIX);
 
         expect.soft(declarationStatus, 'Declaration status').toBe(expectedStatus);
+
+        return localReferenceNumber;
     }
 
     async navigateToGmrTabAndClickOnCreateGMR(): Promise<void> {

@@ -8,6 +8,9 @@ import { ITEM_CURRENCY } from "../constant/item-currency-constant";
 import { CONTAINER_SIZE } from "../constant/container-size-constant";
 import { CONTAINER_PACKED_STATUS } from "../constant/container-packed-status-constant";
 import { CONTAINER_SUPPLIER_TYPE } from "../constant/container-supplier-type-constant";
+import { DocumentReferenceData } from "./document-reference-data";
+import { AdditionalInformationData } from "./additional-information-data";
+import { PreviousDocumentData } from "./previous-document-data";
 
 
 export interface GoodsData {
@@ -47,6 +50,22 @@ export interface GoodsData {
     containerSize: string;
     containerStatus: string;
     containerSupplierType: string;
+
+    // Goods-item overview tabs (opt-in per test). No-op unless entries are supplied.
+    documentReferences: DocumentReferenceData[];
+    additionalInformations: AdditionalInformationData[];
+    // The goods item's "Previous documents" tab reuses the same wizard (and data) as
+    // the consignment's "Header previous documents" tab.
+    previousDocuments: PreviousDocumentData[];
+    // Extra codes declared via the "Additional procedure codes" tab, on top of the
+    // primary `additionalProcedureCode` chosen during the goods declaration.
+    additionalProcedureCodes: string[];
+    // Extra codes declared via the "Taric additional codes" tab, on top of the
+    // primary `taricAdditionalCode` chosen during the goods declaration.
+    taricAdditionalCodes: string[];
+    // Extra codes declared via the "National additional codes" tab, on top of the
+    // primary `nationalAdditionalCode` chosen during the goods declaration.
+    nationalAdditionalCodes: string[];
 }
 
 const defaults: GoodsData = {
@@ -65,7 +84,7 @@ const defaults: GoodsData = {
     // "Commodity code"
     commodityCode: '2403199000',
     // "Goods description"
-    goodsDescription: '"Smoking tobacco, whether or not containing tobacco substitutes in any proportion, 100 packs',
+    goodsDescription: 'Smoking tobacco, whether or not containing tobacco substitutes in any proportion, 100 packs',
     // "Country of origin"
     countryOfOrigin: COUNTRY_CODE.UNITED_KINGDOM,
     // "Supplementary units" (Optional field)
@@ -104,6 +123,14 @@ const defaults: GoodsData = {
     containerSize: CONTAINER_SIZE.TRAILER,
     containerStatus: CONTAINER_PACKED_STATUS.NOT_EMPTY,
     containerSupplierType: CONTAINER_SUPPLIER_TYPE.SHIPPER_SUPPLIED,
+
+    // Goods-item overview tabs (opt-in per test)
+    documentReferences: [],
+    additionalInformations: [],
+    previousDocuments: [],
+    additionalProcedureCodes: [],
+    taricAdditionalCodes: [],
+    nationalAdditionalCodes: [],
 };
 
 export const goods = (overrides?: Partial<GoodsData>): GoodsData => ({

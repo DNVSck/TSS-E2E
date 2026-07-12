@@ -6,6 +6,8 @@ import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { CONTAINER_SIZE } from '../constant/container-size-constant';
 import { CONTAINER_PACKED_STATUS } from '../constant/container-packed-status-constant';
 import { CONTAINER_SUPPLIER_TYPE } from '../constant/container-supplier-type-constant';
+import { PreviousDocumentData } from './previous-document-data';
+import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
 import { StringUtil } from '../core/util/string-util';
 
 /**
@@ -109,6 +111,14 @@ export interface ConsignmentData {
 
     /** The last screen before "check your answers". */
     invoiceCurrency: string;
+
+    /**
+     * The consignment-overview tabs that each hold a list of records. Empty by
+     * default so existing journeys are unchanged — a spec opts in by supplying
+     * entries, and the overview flow replays the matching wizard once per element.
+     */
+    headerPreviousDocuments: PreviousDocumentData[];
+    holdersOfAuthorisation: HolderOfAuthorisationData[];
 }
 
 // `transportDocumentNumber` is deliberately absent: generating it here would
@@ -120,7 +130,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
     //Importer profile.
     // The importer's EORI must already exist in TSS — the app rejects an unknown
     // one outright — so it comes from the environment rather than a literal.
-    importerEORI: process.env.IMPORTER_EORI ?? '',
+    importerEORI: process.env.IMPORTER_EORI ?? 'XI896458895023',
     importerName: 'John Doe',
     importerStreetName: 'Main Street',
     importerStreetNumber: '123',
@@ -165,16 +175,16 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
     consigneeCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Exporter profile
-    exporterEORI: 'XI163769628034',
+    exporterEORI: 'XI100116496000',
     exporterName: 'John Doe',
-    exporterStreetName: 'Main Street',
-    exporterStreetNumber: '1237',
-    exporterCity: 'London',
-    exporterPostCode: 'SW1A 1AA',
+    exporterStreetName: '"REGENT ROAD',
+    exporterStreetNumber: '157',
+    exporterCity: 'LIVERPOOL',
+    exporterPostCode: 'L5 9TF',
     exporterCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Seller profile
-    isSellerSameAsExporter: true,
+    isSellerSameAsExporter: false,
     sellerEORI: 'XI363127805000',
     sellerName: 'John Doe',
     sellerStreetName: 'Main Street',
@@ -196,6 +206,10 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
 
     //Invoice currency
     invoiceCurrency: ITEM_CURRENCY.POUNDS_STERLING,
+
+    //Consignment-overview tabs (opt-in per spec)
+    headerPreviousDocuments: [],
+    holdersOfAuthorisation: [],
 };
 
 /** The full customs consignment journey. */

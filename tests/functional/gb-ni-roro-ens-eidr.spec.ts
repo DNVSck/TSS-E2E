@@ -1,8 +1,4 @@
 import { ReportLog } from '../../src/core/report/report-log';
-import { consignment } from '../../src/test-data/consignment-data';
-import { movement } from '../../src/test-data/movements-data';
-import { initialFormData } from '../../src/test-data/initial-form-data';
-import { goods } from '../../src/test-data/goods-data';
 import { getBaseUrl, test } from '../test-hooks';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../src/constant/type-of-movement-code-constant';
 import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
@@ -28,27 +24,22 @@ test.describe('GB to NI RoRo EIDR Declaration Process', () => {
   test('Accompanied', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied (controlled goods = No)');
 
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
+    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
-      getBaseUrl(),
-      initialFormData(),
-      movement(),
-      consignment({ isControlledGoods: false }),
-      goods()
-    );
+      url: getBaseUrl(),
+      consignmentOverrides: { isControlledGoods: false },
+    });
   });
 
   test('Unaccompanied', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Unaccompanied (controlled goods = No)');
 
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
+    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
-      getBaseUrl(),
-      initialFormData(),
-      movement({ typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED }),
-      consignment({ isControlledGoods: false }),
-      goods()
-    );
+      url: getBaseUrl(),
+      movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
+      consignmentOverrides: { isControlledGoods: false },
+    });
   });
 
   test('Accompanied - goods in different containers', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
@@ -59,13 +50,10 @@ test.describe('GB to NI RoRo EIDR Declaration Process', () => {
 
     // Different containers on the consignment makes each goods item declare its own
     // container details.
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(
+    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
-      getBaseUrl(),
-      initialFormData(),
-      movement(),
-      consignment({ isControlledGoods: false, isGoodsCrossEUBorder: true, isSameContainer: false }),
-      goods()
-    );
+      url: getBaseUrl(),
+      consignmentOverrides: { isControlledGoods: false, isGoodsCrossEUBorder: true, isSameContainer: false },
+    });
   });
 });

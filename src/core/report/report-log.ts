@@ -4,6 +4,7 @@ import {
     feature,
     link,
     logStep,
+    parameter,
     Status,
     step,
     story,
@@ -42,6 +43,15 @@ export class ReportLog {
     public static async fail(message: string): Promise<void> {
         console.error(message);
         await logStep(message, Status.FAILED);
+    }
+
+    /**
+     * Records a business identifier (test account, LRN, ...) in the test's Allure
+     * "Parameters" table, so it is filterable and visible without scrolling the
+     * step timeline. Use for short key/value facts, not log narration.
+     */
+    public static setParameter(name: string, value: string): void {
+        parameter(name, value);
     }
 
     /** For real artefacts (payloads, generated files) — not for log lines. */

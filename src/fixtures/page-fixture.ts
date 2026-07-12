@@ -12,6 +12,13 @@ import { ConsignmentOverviewPage } from '../page-object/consignment-overview-pag
 import { GoodsOverviewPage } from '../page-object/goods-overview-page';
 import { GmrDetailsPage } from '../page-object/gmr-details-page';
 import { GmrDeclarePage } from '../page-object/gmr-declare-page';
+import { PreviousDocumentDeclarePage } from '../page-object/header-previous-documents-declare-page';
+import { HolderOfAuthorisationDeclarePage } from '../page-object/holder-of-authorisation-declare-page';
+import { DocumentReferenceDeclarePage } from '../page-object/document-reference-declare-page';
+import { AdditionalInformationDeclarePage } from '../page-object/additional-information-declare-page';
+import { AdditionalProcedureCodeDeclarePage } from '../page-object/additional-procedure-code-declare-page';
+import { TaricAdditionalCodeDeclarePage } from '../page-object/taric-additional-code-declare-page';
+import { NationalAdditionalCodeDeclarePage } from '../page-object/national-additional-code-declare-page';
 
 
 export type PageFixtureType = {
@@ -27,6 +34,13 @@ export type PageFixtureType = {
     goodsOverviewPage: GoodsOverviewPage;
     gmrDeclarePage: GmrDeclarePage;
     gmrDetailsPage: GmrDetailsPage;
+    previousDocumentDeclarePage: PreviousDocumentDeclarePage;
+    holderOfAuthorisationDeclarePage: HolderOfAuthorisationDeclarePage;
+    documentReferenceDeclarePage: DocumentReferenceDeclarePage;
+    additionalInformationDeclarePage: AdditionalInformationDeclarePage;
+    additionalProcedureCodeDeclarePage: AdditionalProcedureCodeDeclarePage;
+    taricAdditionalCodeDeclarePage: TaricAdditionalCodeDeclarePage;
+    nationalAdditionalCodeDeclarePage: NationalAdditionalCodeDeclarePage;
 }
 
 type ExtendParams = Parameters<typeof test.extend<PageFixtureType & LocaleFixtureType>>;
@@ -78,5 +92,33 @@ export const pageFixture: ExtendParams[0] = {
 
     gmrDetailsPage: async ({ page }, use) => {
         await use(new GmrDetailsPage(page));
+    },
+
+    previousDocumentDeclarePage: async ({ page }, use) => {
+        await use(new PreviousDocumentDeclarePage(page));
+    },
+
+    holderOfAuthorisationDeclarePage: async ({ page }, use) => {
+        await use(new HolderOfAuthorisationDeclarePage(page));
+    },
+
+    documentReferenceDeclarePage: async ({ page }, use) => {
+        await use(new DocumentReferenceDeclarePage(page));
+    },
+
+    additionalInformationDeclarePage: async ({ page }, use) => {
+        await use(new AdditionalInformationDeclarePage(page));
+    },
+
+    additionalProcedureCodeDeclarePage: async ({ page }, use) => {
+        await use(new AdditionalProcedureCodeDeclarePage(page));
+    },
+
+    taricAdditionalCodeDeclarePage: async ({ page }, use) => {
+        await use(new TaricAdditionalCodeDeclarePage(page));
+    },
+
+    nationalAdditionalCodeDeclarePage: async ({ page }, use) => {
+        await use(new NationalAdditionalCodeDeclarePage(page));
     }
 };

@@ -1,6 +1,6 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue, checkRadioByValue } from '../core/util/element-helper';
+import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue } from '../core/util/element-helper';
 
 
 
@@ -17,6 +17,7 @@ export class GoodsDeclarePage extends BasePage {
     private readonly dangerousGoodsCodesInput: Locator;
 
     private readonly commodityCodeInput: Locator;
+    private readonly commodityCodeFirstOption: Locator;
     private readonly goodsDescriptionTextArea: Locator;
     private readonly countryOfOriginDropdown: Locator;
     private readonly supplementaryUnitsInput: Locator;
@@ -65,6 +66,7 @@ export class GoodsDeclarePage extends BasePage {
         // goods description is a single-line textbox (not a textarea), so both are
         // matched by id only rather than by tag.
         this.commodityCodeInput = page.locator("#commodityCode");
+        this.commodityCodeFirstOption = page.locator("#commodityCode__option--0");
         this.goodsDescriptionTextArea = page.locator("#goodsDescription");
         this.countryOfOriginDropdown = page.locator("#countryOfOrigin");
         this.supplementaryUnitsInput = page.locator("input#supplementaryUnits");
@@ -217,34 +219,9 @@ export class GoodsDeclarePage extends BasePage {
         await this.itemPriceAmountInput.fill(itemPriceAmount);
     }
 
-    /**
-     * The commodity code is a GOV.UK accessible-autocomplete: a plain `fill` sets the
-     * value programmatically without triggering the suggestion list, so the app never
-     * registers a valid selection. Typing the code surfaces the matching option, which
-     * must then be picked for the value to stick.
-     */
+    /** The commodity code is a GOV.UK accessible-autocomplete (see selectAutocompleteValue). */
     async selectCommodityCode(commodityCode: string): Promise<void> {
-        // The commodity suggestions are fetched live from the NI tariff, which is
-        // occasionally slow or drops a request, leaving the menu empty. Re-typing
-        // re-fires the lookup, so retry a few times before giving up. Once an option
-        // is in the DOM the menu is open, and the first match is committed by keyboard
-        // (ArrowDown highlights it, Enter selects — a click races the re-render).
-        const firstOption = this.page.locator('#commodityCode__option--0');
-        for (let attempt = 1; attempt <= 3; attempt++) {
-            await this.commodityCodeInput.click();
-            await this.commodityCodeInput.fill('');
-            await this.commodityCodeInput.pressSequentially(commodityCode, { delay: 120 });
-            try {
-                await firstOption.waitFor({ state: 'attached', timeout: 8000 });
-                await this.commodityCodeInput.press('ArrowDown');
-                await this.commodityCodeInput.press('Enter');
-                return;
-            } catch {
-                if (attempt === 3) {
-                    throw new Error(`Commodity code suggestions never loaded for "${commodityCode}" after 3 attempts.`);
-                }
-            }
-        }
+        await selectAutocompleteValue(this.commodityCodeInput, this.commodityCodeFirstOption, commodityCode);
     }
 
     /** The goods-item commodity screen: the tariff commodity code plus a description. */

@@ -11,6 +11,7 @@
     "test:headed": "playwright test --headed",
     "test:report": "pnpm test && pnpm report:open",
     "test:smoke": "cross-env ENV=dev npx playwright test --grep '@smoke' --project=chromium-en",
+    "test:functional": "cross-env ENV=sit playwright test tests/functional --workers=1 --project=chromium-en",
     "report:open": "powershell -Command \"Start-Process 'test-results/result.html'\"",
     "report:serve": "npx allure serve allure-results",
     "report:manual": "node -e \"require('./global-teardown.js').default()\"",

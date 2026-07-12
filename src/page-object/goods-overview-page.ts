@@ -17,6 +17,12 @@ export class GoodsOverviewPage extends BasePage {
     private readonly additionalInformationTab: Locator;
     private readonly newAdditionalInformationButton: Locator;
 
+    private readonly taricAdditionalCodesTab: Locator;
+    private readonly newTaricAdditionalCodeButton: Locator;
+
+    private readonly nationalAdditionalCodesTab: Locator;
+    private readonly newNationalAdditionalCodeButton: Locator;
+
     constructor(page: Page) {
         super(page);
 
@@ -26,15 +32,15 @@ export class GoodsOverviewPage extends BasePage {
         this.additionalProcedureCodesTab = page.locator("//a[contains(@href, '/additional-procedure-codes/#overview-tab')]");
         this.previousDocumentsTab = page.locator("//a[contains(@href, '/previous-documents/#overview-tab')]");
         this.additionalInformationTab = page.locator("//a[contains(@href, '/additional-information/#overview-tab')]");
+        this.taricAdditionalCodesTab = page.locator("//a[contains(@href, '/taric-additional-codes/#overview-tab')]");
+        this.nationalAdditionalCodesTab = page.locator("//a[contains(@href, '/national-additional-codes/#overview-tab')]");
 
-        //Document tab
-        this.newDocumentRefButton = page.locator("//form[contains(@action,'/overview/?index')]//button[@value='new-record']");
-        //Additional Procedure Codes tab
-        this.newAdditionalProcedureCodeButton = page.locator("//form[contains(@action,'/additional-procedure-codes')]//button[@value='new-record']");
-        //Previous Documents tab
-        this.newPreviousDocumentButton = page.locator("//form[contains(@action,'/previous-documents')]//button[@value='new-record']");
-        //Additional Information tab
-        this.newAdditionalInformationButton = page.locator("//form[contains(@action,'/additional-information')]//button[@value='new-record']");
+        this.newDocumentRefButton = page.locator("form[action*='?index'] button[value='new-record']");
+        this.newAdditionalProcedureCodeButton = page.locator("form[action*='/additional-procedure-codes'] button[value='new-record']");
+        this.newPreviousDocumentButton = page.locator("form[action*='/previous-documents'] button[value='new-record']");
+        this.newAdditionalInformationButton = page.locator("form[action*='/additional-information'] button[value='new-record']");
+        this.newTaricAdditionalCodeButton = page.locator("form[action*='/taric-additional-codes'] button[value='new-record']");
+        this.newNationalAdditionalCodeButton = page.locator("form[action*='/national-additional-codes'] button[value='new-record']");
     }
 
     async clickDocumentTab(): Promise<void> {
@@ -91,6 +97,32 @@ export class GoodsOverviewPage extends BasePage {
     async declareNewAdditionalInformation(): Promise<void> {
         await this.clickAdditionalInformationTab();
         await this.clickNewAdditionalInformation();
+    }
+
+    async clickTaricAdditionalCodesTab(): Promise<void> {
+        await this.taricAdditionalCodesTab.click();
+    }
+
+    async clickNewTaricAdditionalCode(): Promise<void> {
+        await this.newTaricAdditionalCodeButton.click();
+    }
+
+    async declareNewTaricAdditionalCode(): Promise<void> {
+        await this.clickTaricAdditionalCodesTab();
+        await this.clickNewTaricAdditionalCode();
+    }
+
+    async clickNationalAdditionalCodesTab(): Promise<void> {
+        await this.nationalAdditionalCodesTab.click();
+    }
+
+    async clickNewNationalAdditionalCode(): Promise<void> {
+        await this.newNationalAdditionalCodeButton.click();
+    }
+
+    async declareNewNationalAdditionalCode(): Promise<void> {
+        await this.clickNationalAdditionalCodesTab();
+        await this.clickNewNationalAdditionalCode();
     }
 
 }
