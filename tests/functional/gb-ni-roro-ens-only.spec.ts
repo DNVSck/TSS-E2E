@@ -3,14 +3,7 @@ import { ensOnlyConsignment } from '../../src/test-data/consignment-data';
 import { getBaseUrl, test } from '../test-hooks';
 import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
 
-// TODO: set the Azure test case id for the ENS-only journey once it exists.
 
-/**
- * ENS-only is the shortest journey: no importer, no IMMI/controlled-goods
- * questions, no exporter and no invoice currency. The buyer and seller are asked
- * directly, and the transport screen additionally asks for a destination country.
- * `ensOnlyConsignment()` supplies `isEnsOnly` plus the mandatory ENS-only reason.
- */
 test.describe('GB to NI RoRo ENS-only Declaration Process', () => {
   // Runs as AGENT: this worker replays its own AGENT account's cached session
   // (chosen from the pool), signed in once by globalSetup. No sign-in per test.

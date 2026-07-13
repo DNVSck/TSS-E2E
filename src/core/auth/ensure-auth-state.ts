@@ -1,5 +1,5 @@
 import { chromium } from '@playwright/test';
-import { OTP_ENABLED, ENV } from '../../../config/environment';
+import { OTP_ENABLED, ENV, BASE_URL } from '../../../config/environment';
 import { PortalPage } from '../../page-object/portal-page';
 import { SignInPage } from '../../page-object/sign-in-page';
 import { authStatePath, isAuthStateFresh, AUTH_STATE_TTL_MINUTES } from './auth-state';
@@ -135,7 +135,7 @@ async function signInAndSaveState(
         const portalPage = new PortalPage(page);
         const signInPage = new SignInPage(page);
 
-        await page.goto(process.env.BASE_URL!);
+        await page.goto(BASE_URL);
         await portalPage.clickSignIn();
         await signInPage.signIn(credentials);
 
@@ -150,6 +150,7 @@ async function signInAndSaveState(
     } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
         const stuckOnAuthServer = page.url().includes('/realms/');
+        const totpHint = OTP_ENABLED ? ` / ${envKey(credentials, 'TOTP_SECRET')}` : '';
 
         throw new Error(
             `Auth: failed to sign in as ${label} on "${ENV}" (${page.url()}).\n` +
@@ -157,7 +158,7 @@ async function signInAndSaveState(
                 ? 'The browser never left the identity provider, so a credential was rejected. '
                 : '') +
             `Check ${envKey(credentials, 'USER_NAME')} / ${envKey(credentials, 'PASSWORD')}` +
-            `${OTP_ENABLED ? ` / ${envKey(credentials, 'TOTP_SECRET')}` : ''} in .env.${ENV}.\n` +
+            `${totpHint} in .env.${ENV}.\n` +
             `Underlying error: ${reason}`
         );
     } finally {

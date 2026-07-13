@@ -3,15 +3,7 @@ import { getBaseUrl, test } from '../test-hooks';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../src/constant/type-of-movement-code-constant';
 import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
 
-// TODO: set the Azure test case id for the EIDR journey once it exists.
 
-/**
- * EIDR is the SFD journey taken when the goods are declared as not controlled.
- * Answering "controlled goods = No" drops the exporter and the invoice-currency
- * screens, so the consignment goes straight from the consignee to the seller and
- * on to the container questions. `isControlledGoods: false` is the only override
- * that distinguishes it from the controlled-goods SFD journey.
- */
 test.describe('GB to NI RoRo EIDR Declaration Process', () => {
   // Runs as AGENT: this worker replays its own AGENT account's cached session
   // (chosen from the pool), signed in once by globalSetup. No sign-in per test.
@@ -44,7 +36,6 @@ test.describe('GB to NI RoRo EIDR Declaration Process', () => {
 
   test('Accompanied - goods in different containers', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
 
-    //test.fixme(true, 'Per-item container screen does not appear on SIT — app bug.');
 
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied with goods in different containers');
 
