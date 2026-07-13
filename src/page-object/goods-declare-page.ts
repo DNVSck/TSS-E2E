@@ -231,7 +231,7 @@ export class GoodsDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
-    /** The country of origin is a native select on its own screen, late in the flow. */
+    /** The country of origin is a native select on its own screen, before the commodity screen. */
     async enterCountryOfOrigin(countryOfOrigin: string): Promise<void> {
         await selectDropdownValue(this.countryOfOriginDropdown, countryOfOrigin);
         await this.clickContinueButton();
@@ -249,7 +249,7 @@ export class GoodsDeclarePage extends BasePage {
     ): Promise<void> {
         await this.page.locator('#containerIdentifierNumber').fill(containerIdentifierNumber);
         await selectDropdownValue(this.page.locator('#containerSize'), containerSize);
-        await checkRadioByValue(this.page, 'containerStatus', containerStatusCode);
+        await checkRadioByValue(this.page, 'containerPackedStatus', containerStatusCode);
         await checkRadioByValue(this.page, 'containerSupplierType', containerSupplierTypeCode);
         await this.clickContinueButton();
     }

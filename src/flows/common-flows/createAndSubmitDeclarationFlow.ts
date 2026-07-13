@@ -12,7 +12,7 @@ import { AddNewGoodsItemFlow } from '../add-new-goods-item-flow';
 import { GoodsOverviewFlow } from '../goods-overview-flow';
 import { goods, GoodsData } from '../../test-data/goods-data';
 import { ReportLog } from '../../core/report/report-log';
-import { COMPANY_PROFILE, CompanyProfile, getCredentials } from '../../core/auth/credentials';
+import { COMPANY_PROFILE, CompanyProfile, accountFor } from '../../core/auth/credentials';
 
 export class CreateAndSubmitEnsDeclarationFlow {
     constructor(
@@ -43,10 +43,13 @@ export class CreateAndSubmitEnsDeclarationFlow {
         const { testInfo, url } = options;
 
         // Which account this journey runs as — surfaced in the report for tracking.
-        // Defaults to AGENT because that is the profile every current spec signs in
-        // as via `test.use({ storageState })`; pass `profile` when a spec differs.
+        // Defaults to AGENT because that is the profile every current spec runs as
+        // via `test.use({ authProfile })`; pass `profile` when a spec differs. The
+        // exact account is this worker's slot in the profile's pool, matching the
+        // session `storageState` replayed for it.
         const profile = options.profile ?? COMPANY_PROFILE.AGENT;
-        const account = `${getCredentials(profile).username} (${profile})`;
+        const credentials = accountFor(profile, testInfo.parallelIndex);
+        const account = `${credentials.username} (${profile} account ${credentials.accountNumber ?? 1})`;
         ReportLog.setParameter('Test account', account);
         await ReportLog.info(`Test account: ${account}`);
 

@@ -175,9 +175,9 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
     consigneeCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Exporter profile
-    exporterEORI: 'XI100116496000',
+    exporterEORI: '',
     exporterName: 'John Doe',
-    exporterStreetName: '"REGENT ROAD',
+    exporterStreetName: 'REGENT ROAD',
     exporterStreetNumber: '157',
     exporterCity: 'LIVERPOOL',
     exporterPostCode: 'L5 9TF',

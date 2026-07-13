@@ -2,7 +2,6 @@ import { ReportLog } from '../../src/core/report/report-log';
 import { ensOnlyConsignment } from '../../src/test-data/consignment-data';
 import { getBaseUrl, test } from '../test-hooks';
 import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
-import { authStatePath } from '../../src/core/auth/auth-state';
 
 // TODO: set the Azure test case id for the ENS-only journey once it exists.
 
@@ -13,8 +12,9 @@ import { authStatePath } from '../../src/core/auth/auth-state';
  * `ensOnlyConsignment()` supplies `isEnsOnly` plus the mandatory ENS-only reason.
  */
 test.describe('GB to NI RoRo ENS-only Declaration Process', () => {
-  // Replays the session cached by globalSetup; no sign-in per test.
-  test.use({ storageState: authStatePath(COMPANY_PROFILE.AGENT) });
+  // Runs as AGENT: this worker replays its own AGENT account's cached session
+  // (chosen from the pool), signed in once by globalSetup. No sign-in per test.
+  test.use({ authProfile: COMPANY_PROFILE.AGENT });
 
   test.beforeEach(async () => {
     await ReportLog.setFeature('GB to NI RoRo ENS-only Declaration Process');

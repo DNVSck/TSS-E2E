@@ -2,7 +2,6 @@ import { ReportLog } from '../../src/core/report/report-log';
 import { getBaseUrl, test } from '../test-hooks';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../src/constant/type-of-movement-code-constant';
 import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
-import { authStatePath } from '../../src/core/auth/auth-state';
 import { previousDocument } from '../../src/test-data/previous-document-data';
 import { holderOfAuthorisation } from '../../src/test-data/holder-of-authorisation-data';
 import { documentReference } from '../../src/test-data/document-reference-data';
@@ -12,8 +11,9 @@ import { DOCUMENT_CODE } from '../../src/constant/document-code-constant';
 const TEST_CASE_ID = '2423';
 
 test.describe('GB to NI RoRo Simplified Customs Declaration Process', () => {
-  // Replays the session cached by globalSetup; no sign-in per test.
-  test.use({ storageState: authStatePath(COMPANY_PROFILE.AGENT) });
+  // Runs as AGENT: this worker replays its own AGENT account's cached session
+  // (chosen from the pool), signed in once by globalSetup. No sign-in per test.
+  test.use({ authProfile: COMPANY_PROFILE.AGENT });
 
   test.beforeEach(async () => {
     await ReportLog.setFeature('GB to NI RoRo Simplified Customs Declaration Process');

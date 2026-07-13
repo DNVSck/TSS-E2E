@@ -5,6 +5,17 @@ bootstrapEnv();
 const LOCALE = process.env.LOCALE ?? 'all';
 
 /**
+ * Worker count: an explicit WORKERS wins everywhere; otherwise CI runs serial
+ * and local runs use Playwright's default (undefined). Keep WORKERS <= the
+ * number of accounts in the profile's pool — two workers sharing a session fail.
+ */
+function resolveWorkers(): number | undefined {
+  if (process.env.WORKERS) return Number(process.env.WORKERS);
+  if (process.env.CI) return 1;
+  return undefined;
+}
+
+/**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
@@ -15,7 +26,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI, /* Fail the build on CI if you accidentally left test.only in the source code. */
   retries: process.env.CI ? 2 : Number(process.env.RETRY_COUNT ?? 0), /* Retry strategy - number of retries */
 
-  workers: process.env.CI ? 1 : undefined,
+  workers: resolveWorkers(),
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   timeout: Number(process.env.TEST_BASE_TIMEOUT ?? 30000),
   expect: {

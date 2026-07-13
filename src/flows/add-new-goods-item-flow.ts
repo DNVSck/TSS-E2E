@@ -54,6 +54,14 @@ export class AddNewGoodsItemFlow {
                 await this.fillDangerousGoodsFlow(input);
             }
 
+            // On the latest build the country-of-origin screen precedes the
+            // commodity screen on every journey that reaches it (hasInvoiceDetails)
+            // — SFD and IMMI alike. (IMMI currently has a Test-env defect at this
+            // step, so its spec is skipped as a known defect until resolved.)
+            if (journey.hasInvoiceDetails) {
+                await this.fillCountryOfOriginFlow(input);
+            }
+
             await this.fillCommodityInformationFlow(input);
             await this.fillPackagingFlow(input);
             await this.fillWeightFlow(input);
@@ -64,10 +72,8 @@ export class AddNewGoodsItemFlow {
             }
 
             // The consignment already captured the currency; here it is only the price.
-            // Country of origin appears on the same journeys, just before the summary.
             if (journey.hasInvoiceDetails) {
                 await this.fillInvoiceDetailsFlow(input);
-                await this.fillCountryOfOriginFlow(input);
             }
 
             await this.finishGoodsItemDeclaration();

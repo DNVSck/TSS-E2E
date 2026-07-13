@@ -123,6 +123,111 @@ LOCALE=en                       # Language: en | cy | all
 - Do **NOT** commit `.env.poc` to the repository (already in .gitignore)
 - For other environments, create `.env.staging`, `.env.uat`, etc.
 
+## Authentication & Parallel Execution
+
+Tests never sign in themselves. `globalSetup` signs in **once per account**, caches the
+browser session (cookies + localStorage) to `playwright/.auth/<ENV>/<PROFILE>.json`, and
+each test simply **replays** its session. This keeps the login journey exercised once per
+run while every test starts already signed in.
+
+### How a test picks its identity
+
+A spec declares the company profile it runs as — nothing else:
+
+```typescript
+test.describe('...', () => {
+  test.use({ authProfile: COMPANY_PROFILE.AGENT });   // the only knob
+  // ...
+});
+```
+
+- `authProfile` drives the `storageState` a worker replays. Omit it (default `null`) and
+  the test runs **anonymous / signed-out** — that is how the accessibility specs stay on
+  the logged-out portal.
+- Sign-in itself lives in `globalSetup` (`src/core/auth/ensure-auth-state.ts`), so a
+  successful login never shows up as a passing test in the report.
+
+### Account pool → one session per parallel worker
+
+A company profile may hold **several logins**. This matters because the TSS portal keys
+draft state by **session**: two workers replaying the *same* session collide, but distinct
+sessions — even of accounts in the same company — run in parallel cleanly. So each
+concurrently-running worker is pinned to its **own** account:
+
+```
+parallelIndex 0  →  AGENT account 1  →  AGENT-1.json
+parallelIndex 1  →  AGENT account 2  →  AGENT-2.json
+parallelIndex 2  →  AGENT account 3  →  AGENT-3.json
+```
+
+Assignment is `pool[testInfo.parallelIndex]` (see `accountFor` in
+`src/core/auth/credentials.ts`). We use **`parallelIndex`** (the concurrent slot, bounded
+to `[0, workers)` and reused when a worker is recycled), **not** `workerIndex` (which keeps
+climbing on every fresh worker and would index past the pool into a session file that was
+never created).
+
+> **Rule:** keep `--workers` ≤ the number of accounts in the pool. Exceeding it throws a
+> clear error rather than silently sharing a session.
+
+### Configuring the account pool (`.env.<ENV>`)
+
+Number accounts contiguously from 1. `PASSWORD` / `TOTP_SECRET` / `EORI` fall back to the
+unindexed `<PROFILE>_*` var, so a shared password is written once. **TOTP secrets must be
+base32 with NO spaces.**
+
+```ini
+# AGENT pool — one account per parallel worker
+AGENT_PASSWORD=shared-password           # shared, so set once (fallback)
+AGENT_USER_NAME_1=agent1@example.com
+AGENT_TOTP_SECRET_1=BASE32SECRETNOSPACES1
+AGENT_USER_NAME_2=agent2@example.com
+AGENT_TOTP_SECRET_2=BASE32SECRETNOSPACES2
+# ...add _3, _4 to grow the pool
+
+# Single-account profiles keep the unindexed form, unchanged
+IMPORTER_USER_NAME=importer@example.com
+IMPORTER_PASSWORD=...
+IMPORTER_TOTP_SECRET=...
+
+OTP_ENABLED=true                         # environment enforces the TOTP step
+```
+
+The `AUTH_PROFILES` env var says which profiles **this run** needs (defaults to `AGENT`):
+
+```powershell
+$env:AUTH_PROFILES="AGENT,IMPORTER"; pnpm test ...
+```
+
+### TOTP (OTP) handling — no sleeps
+
+`generateTotpCode` (`src/core/util/totp-auth.ts`) is a **pure** function of
+`(secret, 30s window)`. Keycloak rejects a code it has already seen (e.g. two sign-ins in
+the same window), so `SignInPage.inputTotp` submits, and if the on-screen OTP error appears
+it **polls the generator until it yields a new code** (the next window) and resubmits — a
+condition-based wait, never a fixed `sleep`. One submit per window, capped at
+`MAX_TOTP_ATTEMPTS`.
+
+Pool accounts have **distinct** secrets, so `globalSetup` logs them all in **concurrently**
+(`Promise.allSettled`) — no window collision, and ~pool-size faster than serial.
+
+### Running in parallel
+
+```powershell
+# Control worker count with the --workers flag (CLI wins over config/env)
+pnpm test tests/functional --project=chromium-en --workers=3
+
+# WORKERS in the .env file is respected too, but a shell WORKERS var is overridden
+# by the .env value (dotenv override:true) — prefer --workers for ad-hoc runs.
+```
+
+Retries: `RETRY_COUNT` locally (default 0), 2 on CI.
+
+### Known limitation
+
+There is **no mid-run re-authentication**. If a session is lost mid-test (idle timeout, or
+the account kicked out by a login elsewhere), that test simply fails. The 15-minute session
+TTL is kept below Keycloak's 30-minute idle timeout so a run never *starts* near expiry.
+
 ## 🎮 Running Tests
 
 ### Basic Commands

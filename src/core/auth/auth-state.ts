@@ -29,8 +29,12 @@ export const AUTH_STATE_TTL_MINUTES = 15;
  * domain would not match, the request would go out unauthenticated, and the test
  * would fail on some arbitrary screen far from the real cause.
  */
-export function authStatePath(profile: CompanyProfile): string {
-    return path.join(AUTH_STATE_DIR, ENV, `${profile}.json`);
+export function authStatePath(profile: CompanyProfile, accountNumber?: number): string {
+    // One file per account so pooled workers never share a session file. The
+    // unindexed form (accountNumber undefined) keeps the legacy single-account
+    // name — `AGENT.json`, not `AGENT-1.json` — so nothing else has to change.
+    const name = accountNumber === undefined ? `${profile}` : `${profile}-${accountNumber}`;
+    return path.join(AUTH_STATE_DIR, ENV, `${name}.json`);
 }
 
 /**
@@ -40,10 +44,10 @@ export function authStatePath(profile: CompanyProfile): string {
  * exactly one real sign-in, so the login journey is exercised each run and no
  * run inherits a stale session.
  */
-export function isAuthStateFresh(profile: CompanyProfile): boolean {
+export function isAuthStateFresh(profile: CompanyProfile, accountNumber?: number): boolean {
     if (!AUTH_REUSE_SESSION) return false;
 
-    const file = authStatePath(profile);
+    const file = authStatePath(profile, accountNumber);
 
     if (!fs.existsSync(file)) return false;
 

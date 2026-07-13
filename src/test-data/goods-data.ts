@@ -82,7 +82,7 @@ const defaults: GoodsData = {
     // "Dangerous goods codes"
     dangerousGoodsCodes: '1234',
     // "Commodity code"
-    commodityCode: '2403199000',
+    commodityCode: '2404199000',
     // "Goods description"
     goodsDescription: 'Smoking tobacco, whether or not containing tobacco substitutes in any proportion, 100 packs',
     // "Country of origin"

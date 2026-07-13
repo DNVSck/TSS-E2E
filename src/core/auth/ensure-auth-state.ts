@@ -3,7 +3,7 @@ import { OTP_ENABLED, ENV } from '../../../config/environment';
 import { PortalPage } from '../../page-object/portal-page';
 import { SignInPage } from '../../page-object/sign-in-page';
 import { authStatePath, isAuthStateFresh, AUTH_STATE_TTL_MINUTES } from './auth-state';
-import { COMPANY_PROFILE, CompanyProfile, getCredentials } from './credentials';
+import { COMPANY_PROFILE, CompanyProfile, UserCredentials, getCredentialsPool } from './credentials';
 
 const SIGN_IN_TIMEOUT_MS = 60_000;
 
@@ -36,8 +36,10 @@ export function profilesToAuthenticate(): CompanyProfile[] {
 }
 
 /**
- * Signs in once per requested profile and caches the browser state, so no test
- * ever performs an interactive sign-in.
+ * Signs in one account per parallel worker (per requested profile) and caches
+ * each session, so no test ever performs an interactive sign-in. `workerCount`
+ * caps how many pool accounts are signed in — one no worker will use is a wasted
+ * login.
  *
  * This runs in globalSetup rather than as a Playwright "setup project" so that a
  * successful sign-in does not appear as a passing test in the report. The cost:
@@ -47,17 +49,28 @@ export function profilesToAuthenticate(): CompanyProfile[] {
  * each run. Set AUTH_REUSE_SESSION to skip it while a cached session is still
  * within its TTL — useful for a fast local edit-run loop.
  *
- * Re-running within 30 seconds is safe: generateFreshTotpCode waits for the next
- * TOTP window rather than replaying a code Keycloak has already seen.
+ * Re-running within 30 seconds is safe: SignInPage.inputTotp retries on the OTP
+ * error, resubmitting once the code rolls into the next window, rather than
+ * replaying a code Keycloak has already seen.
  */
-export async function ensureAuthState(): Promise<void> {
+export async function ensureAuthState(workerCount: number): Promise<void> {
     const profiles = profilesToAuthenticate();
-    const stale = profiles.filter(profile => !isAuthStateFresh(profile));
+
+    // Sign in one account per worker, capped at the profile's pool size: an
+    // account no worker will use is a wasted login. A single-account profile
+    // yields a one-element pool, so this reduces to today's behaviour.
+    const accounts = profiles.flatMap(profile => {
+        const pool = getCredentialsPool(profile);
+        const needed = Math.min(pool.length, Math.max(workerCount, 1));
+        return pool.slice(0, needed);
+    });
+
+    const stale = accounts.filter(a => !isAuthStateFresh(a.profile, a.accountNumber));
 
     if (stale.length === 0) {
         console.log(
-            `Auth: AUTH_REUSE_SESSION is on — reusing cached "${ENV}" session for ` +
-            `${profiles.join(', ')} (younger than ${AUTH_STATE_TTL_MINUTES} minutes).`
+            `Auth: AUTH_REUSE_SESSION is on — reusing ${accounts.length} cached "${ENV}" ` +
+            `session(s) (younger than ${AUTH_STATE_TTL_MINUTES} minutes).`
         );
         return;
     }
@@ -67,26 +80,51 @@ export async function ensureAuthState(): Promise<void> {
     });
 
     try {
-        // Different profiles have different TOTP secrets, so signing them in one
-        // after another inside the same 30-second window is safe.
-        for (const profile of stale) {
-            await signInAndSaveState(browser, profile);
+        // Sign every account in concurrently — each in its own context. They have
+        // DISTINCT TOTP secrets, so landing in the same 30-second window yields
+        // different codes, not the reused code Keycloak rejects. allSettled (not
+        // Promise.all) lets every account finish before we surface failures, so a
+        // report names all bad credentials at once instead of just the first.
+        const results = await Promise.allSettled(
+            stale.map(account => signInAndSaveState(browser, account))
+        );
+
+        const failures = results
+            .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+            .map(r => (r.reason instanceof Error ? r.reason.message : String(r.reason)));
+
+        if (failures.length > 0) {
+            throw new Error(
+                `Auth: ${failures.length} of ${stale.length} sign-in(s) failed.\n\n` +
+                failures.join('\n\n')
+            );
         }
     } finally {
         await browser.close();
     }
 }
 
+/** Human label + env-var hints for one account, indexed or not. */
+function accountLabel(c: UserCredentials): string {
+    return c.accountNumber === undefined ? c.profile : `${c.profile} account ${c.accountNumber}`;
+}
+
+function envKey(c: UserCredentials, field: string): string {
+    return c.accountNumber === undefined
+        ? `${c.profile}_${field}`
+        : `${c.profile}_${field}_${c.accountNumber}`;
+}
+
 async function signInAndSaveState(
     browser: Awaited<ReturnType<typeof chromium.launch>>,
-    profile: CompanyProfile
+    credentials: UserCredentials
 ): Promise<void> {
-    const credentials = getCredentials(profile);
+    const label = accountLabel(credentials);
 
     if (OTP_ENABLED && !credentials.totpSecret) {
         throw new Error(
-            `OTP_ENABLED is true but no TOTP secret is set for profile "${profile}". ` +
-            `Set ${profile}_TOTP_SECRET in .env.${ENV}.`
+            `OTP_ENABLED is true but no TOTP secret is set for ${label}. ` +
+            `Set ${envKey(credentials, 'TOTP_SECRET')} in .env.${ENV}.`
         );
     }
 
@@ -106,20 +144,20 @@ async function signInAndSaveState(
         }
 
         await portalPage.waitUntilSignedIn(SIGN_IN_TIMEOUT_MS);
-        await context.storageState({ path: authStatePath(profile) });
+        await context.storageState({ path: authStatePath(credentials.profile, credentials.accountNumber) });
 
-        console.log(`Auth: signed in as ${profile} on "${ENV}".`);
+        console.log(`Auth: signed in as ${credentials.username} (${label}) on "${ENV}".`);
     } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
         const stuckOnAuthServer = page.url().includes('/realms/');
 
         throw new Error(
-            `Auth: failed to sign in as ${profile} on "${ENV}" (${page.url()}).\n` +
+            `Auth: failed to sign in as ${label} on "${ENV}" (${page.url()}).\n` +
             (stuckOnAuthServer
                 ? 'The browser never left the identity provider, so a credential was rejected. '
                 : '') +
-            `Check ${profile}_USER_NAME / ${profile}_PASSWORD` +
-            `${OTP_ENABLED ? ` / ${profile}_TOTP_SECRET` : ''} in .env.${ENV}.\n` +
+            `Check ${envKey(credentials, 'USER_NAME')} / ${envKey(credentials, 'PASSWORD')}` +
+            `${OTP_ENABLED ? ` / ${envKey(credentials, 'TOTP_SECRET')}` : ''} in .env.${ENV}.\n` +
             `Underlying error: ${reason}`
         );
     } finally {

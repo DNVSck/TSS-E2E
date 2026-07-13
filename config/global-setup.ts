@@ -23,10 +23,12 @@ async function globalSetup(config: FullConfig) {
   initAllureResults();
   console.log(`Allure results at: ${getAllureResultsDir()}`);
 
-  // Sign in once per requested company profile and cache the session, so no test
-  // signs in itself. Lives here rather than in a Playwright "setup project" so a
-  // successful sign-in does not show up as a passing test in the report.
-  await ensureAuthState();
+  // Sign in one account per worker (per requested profile) and cache each
+  // session, so no test signs in itself. Passing the resolved worker count lets
+  // it skip logging in accounts no worker will use. Lives here rather than in a
+  // Playwright "setup project" so a successful sign-in does not show up as a
+  // passing test in the report.
+  await ensureAuthState(config.workers);
 }
 
 export default globalSetup;
