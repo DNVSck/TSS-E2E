@@ -174,7 +174,7 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     async inputShippingMarks(shippingMarks: string): Promise<void> {
-        await this.shippingMarksInput.fill(shippingMarks);
+        await this.shippingMarksInput.fill(shippingMarks, { timeout: 30000 });
     }
 
     async selectTypeOfPackages(typeOfPackages: string): Promise<void> {
