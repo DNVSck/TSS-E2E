@@ -1,57 +1,51 @@
 # 🎭 TSS E2E Test Automation with Playwright
 
-A comprehensive end-to-end testing framework for the TSS (Trader Support Service) project using Playwright with TypeScript.
+End-to-end testing framework for the TSS (Trader Support Service) project using [Playwright](https://playwright.dev/) with TypeScript.
 
-## 📚 What is Playwright?
-
-[Playwright](https://playwright.dev/) is a modern automation framework that:
-- Tests across **Chrome, Firefox, Safari** browsers
-- Supports **mobile testing** (Android/iOS)
-- Provides **fast, reliable** element interactions
-- Includes **auto-wait** mechanisms
-- Generates **traces, screenshots, videos** for debugging
-- Has **built-in assertions** with retry logic
+See also: [DEVELOPING.md](DEVELOPING.md) (development guide) and [CODING_GUIDELINES.md](CODING_GUIDELINES.md) (coding standards).
 
 ## 🏗️ Project Structure
 
 ```
 TSS-E2E/
-├── 📁 tests/                    # Test files (.spec.ts)
-│   ├── ui/                      # UI tests
-│   └── test-hooks.ts           # Common test utilities
-├── 📁 page-object/             # Page Object Model classes
-│   ├── base-page.ts            # Base page with common methods
-│   └── portal-page.ts          # Portal-specific pages
-├── 📁 fixtures/                # Test fixtures & utilities
-│   ├── locale-fixture.ts       # Multi-language support
-│   ├── main-fixture.ts         # Combined fixtures
-│   └── page-fixture.ts         # Page object fixtures
-├── 📁 core/                    # Core framework
-│   ├── element/                # Custom element wrapper
-│   ├── browser/                # Browser management
-│   └── util/                   # Utility functions
-├── 📁 locales/                 # Translation files
-│   ├── en.json                 # English translations
-│   └── cy.json                 # Welsh translations
-├── 📁 config/                  # Configuration
-│   ├── environment.ts          # Environment management
-│   └── global-setup.ts         # Test setup
-├── 📁 test-data/               # Test data files
-├── playwright.config.ts        # Playwright configuration
-└── package.json                # Dependencies & scripts
+├── 📁 tests/
+│   ├── functional/              # GB→NI RoRo declaration journeys (.spec.ts)
+│   ├── accessibility/           # Axe accessibility scans (signed-out portal)
+│   └── test-hooks.ts            # Shared test object + before/after hooks
+├── 📁 src/
+│   ├── flows/                   # Business flows composed from page objects
+│   │   └── common-flows/        # End-to-end composed flows (create & submit declaration)
+│   ├── page-object/             # Page Object Model classes
+│   │   └── components/          # Reusable UI components (agent banner, party block)
+│   ├── fixtures/                # Playwright fixtures (pages, flows, locale, auth, axe, api)
+│   ├── core/
+│   │   ├── auth/                # globalSetup sign-in, credentials & account pool
+│   │   ├── api/                 # API client
+│   │   ├── report/              # Allure report managers, PDF export
+│   │   └── util/                # Helpers (element, totp, string, date, ...)
+│   ├── constant/                # Opaque domain codes (procedure codes, country codes, ...)
+│   ├── test-data/               # Test data builders per screen
+│   └── data-objects/            # Data types (user, ...)
+├── 📁 locales/                  # Translation files (en.json, cy.json)
+├── 📁 config/
+│   ├── bootstrap-env.ts         # Loads .env.<ENV> (throws if ENV is not set)
+│   ├── environment.ts           # Typed access to env vars
+│   ├── global-setup.ts          # Signs in once per account, caches sessions
+│   └── global-teardown.ts       # Generates the Allure report
+├── 📁 templates/                # Azure DevOps pipeline templates
+├── playwright.config.ts
+└── package.json
 ```
 
-## 🚀 Complete Setup Guide
+## 🚀 Setup Guide
 
 ### Prerequisites
 
-- **Windows 10/11** 
-- **PowerShell** (any version)
-- **Git** installed
+- **Windows 10/11**
+- **PowerShell**
+- **Git**
 
 ### Step 1: Install Node.js with NVM
-
-Open PowerShell as normal user (not admin):
 
 ```powershell
 # Install NVM for Windows
@@ -59,69 +53,82 @@ winget install CoreyButler.NVMforWindows
 
 # Restart terminal, then install Node.js LTS
 nvm install lts
-nvm use lts
+nvm use lts        # triggers a UAC prompt (creates a symlink) — accept it
 
 # Verify installation
 node --version
 npm --version
 ```
 
-### Step 2: Configure Package Registry
+> `nvm use` needs elevation to create the Node symlink. If it fails silently, re-run the
+> terminal as Administrator once, or accept the UAC prompt.
 
-**Option A - Public Registry (Quick Start):**
-```powershell
-npm config set registry https://registry.npmjs.org/
-```
-
-**Option B - NC JFrog (Production):**
-1. Request JFrog access via IT Services
-2. Login to Netcompany JFrog Artifactory  
-3. Click "Set Me Up" → Select npm repository
-4. Copy auth config to `C:\Users\YourName\.npmrc`
-
-### Step 3: Install Project Dependencies
+### Step 2: Install Project Dependencies
 
 ```powershell
 # Clone repository
 git clone <repository-url>
 cd TSS-E2E
 
-# Enable pnpm (faster package manager)
+# Enable pnpm (version pinned via "packageManager" in package.json)
 corepack enable
 
 # Install dependencies
 pnpm install
 
-# Install Playwright browsers
-pnpm exec playwright install
+# Install the Playwright browser (only chromium is used by the projects)
+pnpm exec playwright install chromium
 ```
 
-### Step 4: Environment Configuration
+**Notes:**
+- If your machine was previously pointed at a corporate registry and `pnpm install` fails,
+  reset to the public registry: `npm config set registry https://registry.npmjs.org/`
+- On Node 25+ corepack is no longer bundled — install it first: `npm install -g corepack`
 
-Create environment file for local testing:
+Verify the toolchain:
 
 ```powershell
-# 1. Create .env.poc file
-New-Item -Path .env.poc -ItemType File
-
-# 2. Copy content from .env.example
-Get-Content .env.example | Set-Content .env.poc
+pnpm exec playwright --version
 ```
 
-Edit `.env.poc` with your credentials:
+### Step 3: Environment Configuration
+
+Every run **requires** `ENV=<name>`; the config then loads `.env.<name>` (missing `ENV` fails immediately). Two environments are used:
+
+| | `.env.sit` | `.env.test` |
+|---|---|---|
+| Used by | `pnpm test:functional`, day-to-day dev runs | IMMI Standalone journey (test-env only) |
+| `DEFAULT_TIMEOUT` | 5s | **15s** — the test env is noticeably slower, 5s action timeouts were flaky |
+
+Create the file(s) from the example and fill in credentials:
+
+```powershell
+Copy-Item .env.example .env.sit
+# then edit .env.sit
+```
+
+Key variables (see `.env.example` for the full list):
+
 ```ini
-BASE_URL=https://nc-tss.uk/portal
+BASE_URL=<portal URL of the environment>   # get from Team Lead
+LOCALE=en                        # en | cy | all
 
-USER_NAME=your_username_here    # Get from Team Lead
-PASSWORD=your_password_here     # Get from Team Lead
+# Credentials per company profile: AGENT_*, IMPORTER_*, HAULIER_*
+# (see "Authentication & Parallel Execution" below for the account-pool format)
+AGENT_PASSWORD=...
+AGENT_USER_NAME_1=...
+AGENT_TOTP_SECRET_1=...
 
-LOCALE=en                       # Language: en | cy | all
+# Company names the Agent represents before declaring (env data, like the EORIs)
+HAULIER_COMPANY_NAME=...
+IMPORTER_COMPANY_NAME=...
+
+OTP_ENABLED=true                 # environment enforces the TOTP step
 ```
 
 **Important:**
-- Contact your **Team Lead** to get `USER_NAME` and `PASSWORD`
-- Do **NOT** commit `.env.poc` to the repository (already in .gitignore)
-- For other environments, create `.env.staging`, `.env.uat`, etc.
+- Contact your **Team Lead** to get credentials
+- Do **NOT** commit `.env.*` files to the repository (already in .gitignore) — they contain real credentials
 
 ## Authentication & Parallel Execution
 
@@ -214,7 +221,7 @@ Pool accounts have **distinct** secrets, so `globalSetup` logs them all in **con
 
 ```powershell
 # Control worker count with the --workers flag (CLI wins over config/env)
-pnpm test tests/functional --project=chromium-en --workers=3
+$env:ENV="sit"; pnpm test tests/functional --project=chromium-en --workers=3
 
 # WORKERS in the .env file is respected too, but a shell WORKERS var is overridden
 # by the .env value (dotenv override:true) — prefer --workers for ad-hoc runs.
@@ -230,181 +237,166 @@ TTL is kept below Keycloak's 30-minute idle timeout so a run never *starts* near
 
 ## 🎮 Running Tests
 
-### Basic Commands
+`ENV` must always be set. The package scripts (`test:functional`, `test:smoke`) bake it in
+via `cross-env`; for ad-hoc runs set it in PowerShell first — `cross-env` typed directly in
+a shell is **not** on PATH (it only resolves inside package scripts):
 
 ```powershell
-# Run all tests
-pnpm test
-
-# Run with visible browser
-pnpm test --headed
-
-# Run specific test file
-pnpm test tests/ui/gb-ni-roro-simple-acco.spec.ts
-
-# Run with environment
-pnpm test:poc                   # Use .env.poc
-pnpm test:staging              # Use .env.staging
+$env:ENV="sit"     # sticks for the rest of the terminal session
 ```
 
-### Advanced Commands
+### Package scripts
 
 ```powershell
-# Debug mode (step-by-step)
-pnpm test --debug
+# All functional journeys on SIT, serial, English (the main suite)
+pnpm test:functional
 
-# UI mode (visual test runner)
-pnpm test --ui
+# Smoke-tagged tests (@smoke) on dev
+pnpm test:smoke
 
-# Generate test code (record actions)
-pnpm exec playwright codegen https://nc-tss.uk/portal/
+# Lint
+pnpm lint
+```
 
-# Run specific project (language)
-pnpm test --project=chromium-en
-pnpm test --project=chromium-cy
+### Ad-hoc runs
+
+```powershell
+# A single spec
+$env:ENV="sit"; pnpm test tests/functional/gb-ni-roro-ens-only.spec.ts --project=chromium-en
+
+# With visible browser / step debugger / UI mode
+$env:ENV="sit"; pnpm test:headed ...
+$env:ENV="sit"; pnpm test:debug ...
+$env:ENV="sit"; pnpm test:ui ...
+
+# IMMI Standalone (test env only)
+$env:ENV="test"; pnpm test tests/functional/gb-ni-roro-immi-standalone.spec.ts --project=chromium-en
 ```
 
 ### Reports
 
+The Allure report is generated automatically in `globalTeardown` after each run.
+
 ```powershell
-# Generate and open Allure report
-pnpm report:generate
-pnpm report:open
-
-# Serve live Allure report  
-pnpm report:serve
+pnpm report:open       # open the generated report (test-results/result.html)
+pnpm report:serve      # serve a live Allure report from allure-results/
+pnpm report:pdf        # export the Allure report to PDF
 ```
 
-## 🌍 Multi-Language Testing
+Also produced per run: Playwright HTML report (`playwright-report/`) and JUnit XML
+(`test-results/junit.xml`, used by CI).
 
-The framework supports English and Welsh:
+## 🌍 Multi-Language (Welsh)
 
-```typescript
-// Test automatically adapts to project language
-test('Portal test', async ({ t, portalPage }) => {
-  const title = t('portal.title');           // "Trader Support Service" (en)
-                                             // "Gwasanaeth Cymorth Masnachwyr" (cy)
-  await portalPage.verifyPortalTitle(title);
-});
-```
+Two Playwright projects exist: `chromium-en` and `chromium-cy`, with translations in
+`locales/en.json` / `locales/cy.json` and a `t('key')` fixture for translated assertions.
 
-**Language Projects:**
-- `chromium-en` - English tests
-- `chromium-cy` - Welsh tests  
-- `LOCALE=all` - Run both languages
+> **Note:** Welsh testing is currently **inactive** — the portal's language switcher is not
+> yet available, so the `cy` switch in `BasePage` is a placeholder and the functional suite
+> runs `chromium-en` only. The infrastructure stays in place for when the switcher ships.
 
-## 🏛️ Page Object Model
+## 🏛️ Architecture: Page Objects → Flows → Tests
 
-Use page objects for maintainable tests:
+Three layers keep tests readable:
+
+1. **Page objects** (`src/page-object/`) own locators and single-screen actions. They use
+   Playwright `Locator`s directly (there is no custom element wrapper) and take `page` in
+   the constructor:
 
 ```typescript
-// page-object/portal-page.ts
+// src/page-object/portal-page.ts
 export class PortalPage extends BasePage {
-    signInBtn = new Element("a[href='/portal/sign-in']");
-    
+    private readonly signInBtn: Locator;
+
+    constructor(page: Page) {
+        super(page);
+        this.signInBtn = page.locator("a[href='/portal']");
+    }
+
     async clickSignIn(): Promise<void> {
         await this.signInBtn.click();
     }
 }
-
-// tests/ui/example.spec.ts
-test('Sign in test', async ({ portalPage }) => {
-    await portalPage.clickSignIn();           // Clean, readable
-});
 ```
 
-## 🔧 Writing Your First Test
+2. **Flows** (`src/flows/`) compose page objects into business journeys (initial form →
+   movement → consignment → goods → submit). `common-flows/` chains those into complete
+   end-to-end journeys.
 
-1. **Create test file:**
+3. **Tests** (`tests/functional/`) declare an `authProfile`, pick a flow fixture, and pass
+   journey-specific data overrides:
+
 ```typescript
-// tests/ui/my-test.spec.ts
-import { test } from '../test-hooks';
+// tests/functional/gb-ni-roro-ens-only.spec.ts
+import { getBaseUrl, test } from '../test-hooks';
+import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
 
-test('My first test', async ({ basePage, portalPage, t }) => {
-  // Navigate to portal
-  await basePage.navigateToPortal('https://nc-tss.uk/portal/');
-  
-  // Verify title using translation
-  const expectedTitle = t('portal.title');
-  await portalPage.verifyPortalTitle(expectedTitle);
-  
-  // Click sign in button  
-  await portalPage.clickSignIn();
+test.describe('GB to NI RoRo ENS-only Declaration Process', () => {
+  test.use({ authProfile: COMPANY_PROFILE.AGENT });
+
+  test.beforeEach(async ({ representTraderFlow }) => {
+    await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
+  });
+
+  test('Accompanied', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
+    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+      testInfo,
+      url: getBaseUrl(),
+      consignmentOverrides: ensOnlyConsignment(),
+    });
+  });
 });
 ```
 
-2. **Run your test:**
+All page objects and flows are injected as fixtures (`src/fixtures/`), so tests never
+`new` anything. To add a page/flow, register it in `page-fixture.ts` / `flow-fixture.ts` —
+see [DEVELOPING.md](DEVELOPING.md).
+
+### Ground rules
+
+- **No fixed sleeps** — never `waitForTimeout`/`sleep`; always wait on a real condition
+  (element state, URL, new TOTP window, ...).
+- **Constants only for opaque codes** (`GB`, `R1`, `14`, procedure codes) in
+  `src/constant/` — self-describing strings stay inline.
+- Full standards in [CODING_GUIDELINES.md](CODING_GUIDELINES.md).
+
+## 🆘 Troubleshooting
+
+**`ENV is not set` on startup:**
 ```powershell
-pnpm test tests/ui/my-test.spec.ts --headed
+# Every run needs ENV — use a package script, or set it in the shell first
+$env:ENV="sit"; pnpm test ...
 ```
 
-## 🛠️ Key Features
-
-### Custom Element Wrapper
-```typescript
-const button = new Element('button#submit');
-await button.click();                       // Auto-wait included
-await button.waitForElementToBeVisible();   // Custom waits
+**`ENOENT ... playwright/.auth/<ENV>/<PROFILE>.json`:**
+The run needed a profile that `globalSetup` did not sign in. Set `AUTH_PROFILES` for the
+run (defaults to `AGENT`):
+```powershell
+$env:AUTH_PROFILES="AGENT,IMPORTER"; $env:ENV="sit"; pnpm test ...
 ```
 
-### Environment Management  
-```typescript
-import { BASE_URL, LOCALE } from '../config/environment';
-// Automatically loads correct .env file based on ENV variable
-```
+**Worker-count error mentioning the account pool:**
+`--workers` exceeds the number of pool accounts — add `<PROFILE>_USER_NAME_<n>` accounts
+or lower `--workers`.
 
-### Allure Reporting
-- **Screenshots** on failure
-- **Video recordings** of tests  
-- **Step-by-step** execution traces
-- **Multi-language** test results
+**OTP rejected repeatedly:**
+Check the `TOTP_SECRET` is base32 **without spaces**, and the machine clock is accurate.
 
-### Browser Translation Disabled
-```typescript
-// Prevents auto-translation for accurate language testing
-launchOptions: {
-  args: ['--disable-translate', '--disable-features=Translate']
-}
+**Tests flaky on the `test` env:**
+The test env is slow — make sure you run with `.env.test` (its `DEFAULT_TIMEOUT` is 15s,
+vs 5s on SIT).
+
+**Browsers missing / "Project not found":**
+```powershell
+pnpm exec playwright install chromium --force
 ```
 
 ## 📖 Resources
 
 - **Playwright Docs**: [playwright.dev](https://playwright.dev/docs/intro)
-- **TypeScript Guide**: [typescriptlang.org](https://www.typescriptlang.org/docs/)
-- **Allure Reports**: [docs.qameta.io](https://docs.qameta.io/allure/)
 - **Page Object Model**: [playwright.dev/docs/pom](https://playwright.dev/docs/pom)
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-**Tests fail with "Project not found":**
-```powershell
-# Clear Playwright cache
-pnpm exec playwright install --force
-```
-
-**Environment variables not loading:**
-```powershell
-# Check environment file exists
-ls .env.poc
-# Verify ENV variable
-echo $env:ENV
-```
-
-**Translation not working:**
-```powershell
-# Check locale files exist  
-ls locales/
-# Verify project name includes locale
-pnpm test --list
-```
-
-### Debug Mode
-```powershell
-# Run single test with full debug info
-pnpm test tests/ui/my-test.spec.ts --debug --headed
-```
+- **Allure Reports**: [allurereport.org/docs](https://allurereport.org/docs/)
+- **TypeScript**: [typescriptlang.org](https://www.typescriptlang.org/docs/)
 
 ---
 
