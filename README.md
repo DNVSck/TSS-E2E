@@ -44,6 +44,8 @@ TSS-E2E/
 - **Windows 10/11**
 - **PowerShell**
 - **Git**
+- **[Visual Studio Code](https://code.visualstudio.com/)** — the recommended editor for this
+  framework (Step 4 sets up its extensions and one-click debugging)
 
 ### Step 1: Install Node.js with NVM
 
@@ -97,7 +99,7 @@ Every run **requires** `ENV=<name>`; the config then loads `.env.<name>` (missin
 
 | | `.env.sit` | `.env.test` |
 |---|---|---|
-| Used by | `pnpm test:functional`, day-to-day dev runs | IMMI Standalone journey (test-env only) |
+| Used by | `*:sit` scripts — day-to-day dev runs | `*:test` scripts |
 | `DEFAULT_TIMEOUT` | 5s | **15s** — the test env is noticeably slower, 5s action timeouts were flaky |
 
 Create the file(s) from the example and fill in credentials:
@@ -129,6 +131,104 @@ OTP_ENABLED=true                 # environment enforces the TOTP step
 **Important:**
 - Contact your **Team Lead** to get credentials
 - Do **NOT** commit `.env.*` files to the repository (already in .gitignore) — they contain real credentials
+
+### Step 4: VS Code (recommended)
+
+VS Code is the recommended editor — it gives one-click run/debug of a single test with
+breakpoints straight in the TypeScript.
+
+#### Extensions
+
+Install these from the Extensions panel (`Ctrl+Shift+X`):
+
+| Extension | ID | Why |
+|---|---|---|
+| Playwright Test for VSCode | `ms-playwright.playwright` | Run/debug tests from the Testing sidebar; reads `playwright.env` below |
+| ESLint | `dbaeumer.vscode-eslint` | Surfaces the same lint rules as `pnpm lint` inline |
+| SonarQube for IDE (SonarLint) | `SonarSource.sonarlint-vscode` | Connected-mode analysis against the team's SonarQube project |
+
+#### `.vscode` files
+
+Both `.vscode/settings.json` and `.vscode/launch.json` are **gitignored** (they hold
+per-developer choices), so a fresh clone won't have them — create them yourself with the
+content below. They will never be committed.
+
+`.vscode/settings.json` — the env the Playwright extension's Testing sidebar runs with. The
+`playwright.env` block is all you need to run and debug tests:
+
+```jsonc
+{
+  "playwright.env": {
+    "ENV": "sit",
+    "LOCALE": "en"
+  }
+}
+```
+
+Optionally, to wire SonarLint to the team's SonarQube (connected mode), add the block below.
+The `connectionId` and `projectKey` point at internal infrastructure, so they are **not
+listed here** — get the exact values from a team member (or from SonarQube → *Connected
+Mode* setup):
+
+```jsonc
+{
+  "sonarlint.connectedMode.project": {
+    "connectionId": "<your-team's-sonarqube-connection-id>",
+    "projectKey": "<project-key-from-team>"
+  }
+}
+```
+
+`.vscode/launch.json` — F5 debug configurations. "current file" runs just the spec you have
+open; the others run the whole suite against a given env:
+
+```jsonc
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Playwright: current file (ENV=sit)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+      "args": ["test", "${relativeFile}", "--project=chromium-en"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "ENV": "sit", "LOCALE": "en" }
+    },
+    {
+      "name": "Playwright: ENV=sit",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+      "args": ["test"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "ENV": "sit", "LOCALE": "en" }
+    },
+    {
+      "name": "Playwright: ENV=test",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+      "args": ["test"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "ENV": "test", "LOCALE": "en" }
+    }
+  ]
+}
+```
+
+#### How to debug a test
+
+- **Testing sidebar** (Playwright extension): open the flask icon, hit the ▶/🐛 next to any
+  test. It uses `playwright.env` from `settings.json`, so no `ENV` juggling. Set breakpoints
+  by clicking the gutter — they hit inside page objects and flows.
+- **Run and Debug panel** (`F5`): pick a `launch.json` config. Use **"current file (ENV=sit)"**
+  while iterating on one spec. Breakpoints in `.ts` work directly.
+- To debug against the TEST env, switch `playwright.env.ENV` to `test`, or pick the
+  **"ENV=test"** launch config.
 
 ## Authentication & Parallel Execution
 
@@ -237,9 +337,9 @@ TTL is kept below Keycloak's 30-minute idle timeout so a run never *starts* near
 
 ## 🎮 Running Tests
 
-`ENV` must always be set. The package scripts (`test:functional`, `test:smoke`) bake it in
-via `cross-env`; for ad-hoc runs set it in PowerShell first — `cross-env` typed directly in
-a shell is **not** on PATH (it only resolves inside package scripts):
+`ENV` must always be set. The package scripts (`test:functional:*`, `test:smoke:*`) bake it
+in via `cross-env`; for ad-hoc runs set it in PowerShell first — `cross-env` typed directly
+in a shell is **not** on PATH (it only resolves inside package scripts):
 
 ```powershell
 $env:ENV="sit"     # sticks for the rest of the terminal session
@@ -248,15 +348,21 @@ $env:ENV="sit"     # sticks for the rest of the terminal session
 ### Package scripts
 
 ```powershell
-# All functional journeys on SIT, serial, English (the main suite)
-pnpm test:functional
+# All functional journeys, serial, English (the main suite)
+pnpm test:functional:sit      # SIT
+pnpm test:functional:test     # TEST env
 
-# Smoke-tagged tests (@smoke) on dev
-pnpm test:smoke
+# Smoke-tagged tests (@smoke)
+pnpm test:smoke:sit           # SIT
+pnpm test:smoke:test          # TEST env
 
 # Lint
 pnpm lint
 ```
+
+> Every run script names its environment (`:sit` / `:test`) so it is unambiguous which
+> env you are hitting. Smoke vs functional is a **scope** split (a `@smoke`-tagged subset
+> vs the whole `tests/functional` folder), not an environment one.
 
 ### Ad-hoc runs
 
