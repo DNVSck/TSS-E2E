@@ -35,7 +35,7 @@ export class ConsignmentDetailPage extends BasePage {
             return '';
         }
         const raw = await this.movementReferenceNumber.innerText();
-        return raw.replace(/[^A-Za-z0-9]/g, '');
+        return raw.replaceAll(/[^A-Za-z0-9]/g, '');
     }
 
     /**
@@ -84,7 +84,7 @@ export class ConsignmentDetailPage extends BasePage {
         const raw = await this.movementReferenceNumber.count()
             ? (await this.movementReferenceNumber.innerText()).trim()
             : '';
-        expect.soft(raw.replace(/[^A-Za-z0-9]/g, ''), 'EIDR MRN (should be absent)').toBe('');
+        expect.soft(raw.replaceAll(/[^A-Za-z0-9]/g, ''), 'EIDR MRN (should be absent)').toBe('');
         return raw;
     }
 }
