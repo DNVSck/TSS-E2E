@@ -38,7 +38,7 @@ export class InitialFormDeclaraPage extends BasePage {
         this.ensCustomsOrEnsOnlyOption = page.locator("input#ensSubmissionType-gbNiEnsSubmissionTypeOptions__ensSubmissionType-ens-and-customs-now-or-ens-only");
 
         // "Which standalone customs declaration are you submitting? - Declaration type" screen
-        this.internalMarketMovementInformationOption = page.locator("input#standaloneCustomsType-gbNiStandaloneCustomsTypeWithImmiOptions-immi");
+        this.internalMarketMovementInformationOption = page.locator("standaloneCustomsType-gbNiStandaloneCustomsTypeWithImmiOptions-immi");
         this.simplifiedDeclarationOption = page.locator("input#standaloneCustomsType-gbNiStandaloneCustomsTypeWithImmiOptions-simplified");
         this.standardDeclarationOption = page.locator("input#standaloneCustomsType-gbNiStandaloneCustomsTypeWithImmiOptions-standard");
 
@@ -86,7 +86,7 @@ export class InitialFormDeclaraPage extends BasePage {
                 INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.INTERNAL_MARKET_MOVEMENT_INFORMATION
             )
         ) {
-            await this.page.locator("input#standaloneDeclarationType-standaloneDeclarationTypeOptions__standaloneDeclarationType-internal-market-movement-information").click();
+            await this.internalMarketMovementInformationOption.click();
         }
         else if (
             standaloneDeclarationType.includes(

@@ -173,23 +173,12 @@ export class JsonUtil {
         const errors: string[] = [];
 
         const validate = (current: any, currentSchema: any, path: string = '') => {
-            if (currentSchema.type) {
-                const expectedType = currentSchema.type;
-                const actualType = Array.isArray(current) ? 'array' : typeof current;
+            errors.push(
+                ...this.checkType(current, currentSchema, path),
+                ...this.checkRequired(current, currentSchema, path)
+            );
 
-                if (actualType !== expectedType) {
-                    errors.push(`${path}: expected ${expectedType}, got ${actualType}`);
-                }
-            }
-
-            if (currentSchema.required && Array.isArray(currentSchema.required)) {
-                currentSchema.required.forEach((field: string) => {
-                    if (!current || !current.hasOwnProperty(field)) {
-                        errors.push(`${path}.${field}: required field missing`);
-                    }
-                });
-            }
-
+            // Recurse into declared properties that are present on the object.
             if (currentSchema.properties && current && typeof current === 'object') {
                 Object.keys(currentSchema.properties).forEach(prop => {
                     if (current[prop] !== undefined) {
@@ -202,6 +191,27 @@ export class JsonUtil {
 
         validate(obj, schema);
         return { valid: errors.length === 0, errors };
+    }
+
+    /** Schema `type` check for one node — empty if it matches or no type is declared. */
+    private static checkType(current: any, currentSchema: any, path: string): string[] {
+        if (!currentSchema.type) {
+            return [];
+        }
+        const actualType = Array.isArray(current) ? 'array' : typeof current;
+        return actualType === currentSchema.type
+            ? []
+            : [`${path}: expected ${currentSchema.type}, got ${actualType}`];
+    }
+
+    /** Schema `required` check for one node — one message per missing field. */
+    private static checkRequired(current: any, currentSchema: any, path: string): string[] {
+        if (!currentSchema.required || !Array.isArray(currentSchema.required)) {
+            return [];
+        }
+        return currentSchema.required
+            .filter((field: string) => !current?.hasOwnProperty(field))
+            .map((field: string) => `${path}.${field}: required field missing`);
     }
 
     /**

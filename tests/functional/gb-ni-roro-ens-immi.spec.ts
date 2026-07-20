@@ -8,6 +8,9 @@ import { holderOfAuthorisation } from '../../src/test-data/holder-of-authorisati
 import { previousDocument } from '../../src/test-data/previous-document-data';
 import { AUTHORISATION_TYPE_CODE } from '../../src/constant/authorisation-type-code-constant';
 import { DOCUMENT_STATUS } from '../../src/constant/document-status-constant';
+import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../src/constant/type-of-movement-code-constant';
+import { HAULIER_COMPANY_NAME } from '../../config/environment';
+import { gmrData } from '../../src/test-data/gmr-data';
 
 const TGP_TC_ID = '2793';
 const NO_TGP_TC_ID = '2809';
@@ -17,37 +20,36 @@ test.describe('GB to NI RoRo IMMI Pre-movement', () => {
   // (chosen from the pool), signed in once by globalSetup. No sign-in per test.
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
 
-  test.beforeEach(async () => {
-    await ReportLog.setFeature('IMMI - Pre-movement');
+  test.beforeEach(async ({ representTraderFlow }) => {
+    await ReportLog.setFeature('GB to NI RoRo IMMI - Pre-movement');
+    await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
   });
 
-  test('IMMI Pre-movement - GB to NI RoRo Accompanied with using TGP', { tag: ['@smoke'] }, async ({
+  test('Verify ENS-IMMI - RoRo (Accompanied) with TGP is created and submitted successfully', { tag: ['@smoke'] }, async ({
     t,
     createAndSubmitEnsDeclarationFlow,
   }, testInfo) => {
     test.fixme(true, 'TGP screen does not skip step for Commodity code.');
-
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied with TGP');
-
     ReportLog.setTestCaseLink(TGP_TC_ID);
-
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
-      consignmentOverrides: { 
+      movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
+      consignmentOverrides: {
         useIMMI: true,
         headerPreviousDocuments: [
             previousDocument({ documentReference: '4GBXI553202734852-20240501' })
         ],
         holdersOfAuthorisation: [
             holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME, roleId: 'XI896458895023' })
-        ], 
+        ],
       },
-      goodsItemOverrides: { 
-        useTGP: true, 
+      goodsItemOverrides: {
+        useTGP: true,
         additionalProcedureCode: '1EN', 
         documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XIUKIM89645889502320240124160138' }),
+          //documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XIUKIM89645889502320240124160138' }),
           documentReference({ documentCode: DOCUMENT_CODE.C672,   documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XI896458895023' }),
           documentReference({ documentCode: DOCUMENT_CODE.N705,   documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
         ],
@@ -60,30 +62,26 @@ test.describe('GB to NI RoRo IMMI Pre-movement', () => {
 
   });
 
-  test('IMMI Pre-movement - GB to NI RoRo Unaccompanied without using TGP', { tag: ['@smoke'] }, async ({
-    t,
-    createAndSubmitEnsDeclarationFlow,
+  test('Verify ENS-IMMI - RoRo (Unaccompanied) without TGP is created and submitted successfully', { tag: ['@smoke'] }, async ({
+    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
   }, testInfo) => {
-    test.fixme(true, 'Test-env defect: Country of Origin screen does not appear before Commodity Code on IMMI.');
-
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied without TGP');
-
     ReportLog.setTestCaseLink(NO_TGP_TC_ID);
-
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
-      consignmentOverrides: { 
+      movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
+      consignmentOverrides: {
         useIMMI: true,
         headerPreviousDocuments: [
             previousDocument({ documentReference: '4GBXI553202734852-20240501' })
         ],
         holdersOfAuthorisation: [
             holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME, roleId: 'XI896458895023' })
-        ], 
+        ],
       },
-      goodsItemOverrides: { 
-        useTGP: false, 
+      goodsItemOverrides: {
+        useTGP: false,
         additionalProcedureCode: '1SG', 
         documentReferences: [
           documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XIUKIM89645889502320240124160138' }),
@@ -95,6 +93,8 @@ test.describe('GB to NI RoRo IMMI Pre-movement', () => {
         ],
       },
     });
+
+    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });
 
 });

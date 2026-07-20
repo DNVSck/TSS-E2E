@@ -17,12 +17,12 @@ class APIClient {
         return this;
     }
 
-    setHeaders(headers: { [key: string]: string }): APIClient {
+    setHeaders(headers: { [key: string]: string }): this {
         this.headers = headers;
         return this;
     }
 
-    setDefaultHeaders(): APIClient {
+    setDefaultHeaders(): this {
         this.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -35,17 +35,17 @@ class APIClient {
         return this.context;
     }
 
-    addHeader(name: string, value: string): APIClient {
+    addHeader(name: string, value: string): this {
         this.headers[name] = value;
         return this;
     }
 
-    clearHeader(): APIClient {
+    clearHeader(): this {
         this.headers = {};
         return this;
     }
 
-    addAuthorizationHeader(value: string): APIClient {
+    addAuthorizationHeader(value: string): this {
         this.headers["Authorization"] = value;
         return this;
     }

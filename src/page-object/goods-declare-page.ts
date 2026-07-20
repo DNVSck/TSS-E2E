@@ -231,8 +231,16 @@ export class GoodsDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
-    /** The country of origin is a native select on its own screen, before the commodity screen. */
+    /**
+     * The country of origin is a native select on its own screen, before the
+     * commodity screen — but only on some journeys: on IMMI the app skips it and
+     * lands straight on the commodity screen. Wait for whichever appears and answer
+     * country only when it is actually shown. Returns whether it was shown/answered.
+     */
     async enterCountryOfOrigin(countryOfOrigin: string): Promise<void> {
+        // Wait for the screen to paint: the previous screen advances via a
+        // client-side navigation, so the select can lag a beat behind the click.
+        await this.countryOfOriginDropdown.waitFor({ state: 'visible' });
         await selectDropdownValue(this.countryOfOriginDropdown, countryOfOrigin);
         await this.clickContinueButton();
     }

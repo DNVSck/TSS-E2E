@@ -32,11 +32,21 @@ export class MovementHeaderDeclarationFlow {
             await this.movementDeclarePage.inputImoAndNationalityOfMeanOfTransport(input.imoNumber, input.nationalityOfMeanOfTransport);
             await this.movementDeclarePage.clickContinueButton();
 
-            if (input.typeOfMovement === TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED) {
-                await this.movementDeclarePage.inputTrailerRegistrationNumber(input.trailerRegistrationNumber);
-            } else if (input.typeOfMovement === TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED) {
-                await this.movementDeclarePage.selectTypeOfPassiveTransport(input.typeOfPassiveTransport);
-                await this.movementDeclarePage.inputVehicleRegistrationNumber(input.vehicleRegistrationNumber);
+            // The trailer/vehicle screen is RoRo-specific. AIR and MARITIME have no
+            // handling here yet, so the default throws rather than letting an
+            // unsupported movement type silently continue down the wrong path.
+            switch (input.typeOfMovement) {
+                case TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED:
+                    await this.movementDeclarePage.inputTrailerRegistrationNumber(input.trailerRegistrationNumber);
+                    break;
+
+                case TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED:
+                    await this.movementDeclarePage.selectTypeOfPassiveTransport(input.typeOfPassiveTransport);
+                    await this.movementDeclarePage.inputVehicleRegistrationNumber(input.vehicleRegistrationNumber);
+                    break;
+
+                default:
+                    throw new Error(`Unsupported movement type: ${input.typeOfMovement}`);
             }
             await this.movementDeclarePage.clickContinueButton();
         });
@@ -79,7 +89,7 @@ export class MovementHeaderDeclarationFlow {
                 await this.movementDeclarePage.selectAcceptanceSameAsloading();
             } else {
                 await this.movementDeclarePage.selectAcceptanceNotSameAsloading();
-                await this.movementDeclarePage.inputPlaceOfDelivery(input.placeOfacceptance);
+                await this.movementDeclarePage.inputPlaceOfAcceptance(input.placeOfacceptance);
             }
 
             // Enter place of unloading details

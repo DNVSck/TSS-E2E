@@ -54,17 +54,7 @@ export function profilesToAuthenticate(): CompanyProfile[] {
  * replaying a code Keycloak has already seen.
  */
 export async function ensureAuthState(workerCount: number): Promise<void> {
-    const profiles = profilesToAuthenticate();
-
-    // Sign in one account per worker, capped at the profile's pool size: an
-    // account no worker will use is a wasted login. A single-account profile
-    // yields a one-element pool, so this reduces to today's behaviour.
-    const accounts = profiles.flatMap(profile => {
-        const pool = getCredentialsPool(profile);
-        const needed = Math.min(pool.length, Math.max(workerCount, 1));
-        return pool.slice(0, needed);
-    });
-
+    const accounts = selectAccounts(profilesToAuthenticate(), workerCount);
     const stale = accounts.filter(a => !isAuthStateFresh(a.profile, a.accountNumber));
 
     if (stale.length === 0) {
@@ -88,19 +78,36 @@ export async function ensureAuthState(workerCount: number): Promise<void> {
         const results = await Promise.allSettled(
             stale.map(account => signInAndSaveState(browser, account))
         );
-
-        const failures = results
-            .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-            .map(r => (r.reason instanceof Error ? r.reason.message : String(r.reason)));
-
-        if (failures.length > 0) {
-            throw new Error(
-                `Auth: ${failures.length} of ${stale.length} sign-in(s) failed.\n\n` +
-                failures.join('\n\n')
-            );
-        }
+        assertNoSignInFailures(results, stale.length);
     } finally {
         await browser.close();
+    }
+}
+
+/**
+ * Sign in one account per worker, capped at the profile's pool size: an account
+ * no worker will use is a wasted login. A single-account profile yields a
+ * one-element pool, so this reduces to today's behaviour.
+ */
+function selectAccounts(profiles: CompanyProfile[], workerCount: number): UserCredentials[] {
+    return profiles.flatMap(profile => {
+        const pool = getCredentialsPool(profile);
+        const needed = Math.min(pool.length, Math.max(workerCount, 1));
+        return pool.slice(0, needed);
+    });
+}
+
+/** Throw if any concurrent sign-in rejected, naming every failure at once. */
+function assertNoSignInFailures(results: PromiseSettledResult<void>[], attempted: number): void {
+    const failures = results
+        .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+        .map(r => (r.reason instanceof Error ? r.reason.message : String(r.reason)));
+
+    if (failures.length > 0) {
+        throw new Error(
+            `Auth: ${failures.length} of ${attempted} sign-in(s) failed.\n\n` +
+            failures.join('\n\n')
+        );
     }
 }
 
@@ -120,13 +127,7 @@ async function signInAndSaveState(
     credentials: UserCredentials
 ): Promise<void> {
     const label = accountLabel(credentials);
-
-    if (OTP_ENABLED && !credentials.totpSecret) {
-        throw new Error(
-            `OTP_ENABLED is true but no TOTP secret is set for ${label}. ` +
-            `Set ${envKey(credentials, 'TOTP_SECRET')} in .env.${ENV}.`
-        );
-    }
+    assertTotpSecretPresent(credentials, label);
 
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -148,20 +149,35 @@ async function signInAndSaveState(
 
         console.log(`Auth: signed in as ${credentials.username} (${label}) on "${ENV}".`);
     } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        const stuckOnAuthServer = page.url().includes('/realms/');
-        const totpHint = OTP_ENABLED ? ` / ${envKey(credentials, 'TOTP_SECRET')}` : '';
-
-        throw new Error(
-            `Auth: failed to sign in as ${label} on "${ENV}" (${page.url()}).\n` +
-            (stuckOnAuthServer
-                ? 'The browser never left the identity provider, so a credential was rejected. '
-                : '') +
-            `Check ${envKey(credentials, 'USER_NAME')} / ${envKey(credentials, 'PASSWORD')}` +
-            `${totpHint} in .env.${ENV}.\n` +
-            `Underlying error: ${reason}`
-        );
+        throw buildSignInError(credentials, label, page.url(), error);
     } finally {
         await context.close();
     }
+}
+
+/** OTP_ENABLED requires a TOTP secret per account — fail early with the env-var hint. */
+function assertTotpSecretPresent(credentials: UserCredentials, label: string): void {
+    if (OTP_ENABLED && !credentials.totpSecret) {
+        throw new Error(
+            `OTP_ENABLED is true but no TOTP secret is set for ${label}. ` +
+            `Set ${envKey(credentials, 'TOTP_SECRET')} in .env.${ENV}.`
+        );
+    }
+}
+
+/** The diagnostic error for a failed sign-in — points at the exact env vars to check. */
+function buildSignInError(credentials: UserCredentials, label: string, url: string, error: unknown): Error {
+    const reason = error instanceof Error ? error.message : String(error);
+    const stuckOnAuthServer = url.includes('/realms/');
+    const totpHint = OTP_ENABLED ? ` / ${envKey(credentials, 'TOTP_SECRET')}` : '';
+
+    return new Error(
+        `Auth: failed to sign in as ${label} on "${ENV}" (${url}).\n` +
+        (stuckOnAuthServer
+            ? 'The browser never left the identity provider, so a credential was rejected. '
+            : '') +
+        `Check ${envKey(credentials, 'USER_NAME')} / ${envKey(credentials, 'PASSWORD')}` +
+        `${totpHint} in .env.${ENV}.\n` +
+        `Underlying error: ${reason}`
+    );
 }

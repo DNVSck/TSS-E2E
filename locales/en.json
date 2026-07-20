@@ -9,11 +9,24 @@
     "passwordLabel": "Password",
     "submitButton": "Sign in"
   },
-  "movementHeaderOverview": {
+  "common": {
     "localReferenceNumber": "Local reference number",
+    "status": "Status"
+  },
+  "movementHeaderOverview": {
     "declarationStatus": "Declaration status"
   },
+  "consignmentDetail": {
+    "movementReferenceNumber": "Movement reference number"
+  },
+  "gmrDetail": {
+    "gmrId": "GMR ID"
+  },
   "status": {
-    "draft": "Draft"
+    "draft": "Draft",
+    "authorised": "Authorised",
+    "awaitingArrival": "Awaiting arrival",
+    "arrived": "Arrived",
+    "open": "Open"
   }
 }

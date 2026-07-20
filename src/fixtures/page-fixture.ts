@@ -19,11 +19,17 @@ import { AdditionalInformationDeclarePage } from '../page-object/additional-info
 import { AdditionalProcedureCodeDeclarePage } from '../page-object/additional-procedure-code-declare-page';
 import { TaricAdditionalCodeDeclarePage } from '../page-object/taric-additional-code-declare-page';
 import { NationalAdditionalCodeDeclarePage } from '../page-object/national-additional-code-declare-page';
+import { RepresentTraderPage } from '../page-object/represent-trader-page';
+import { AgentBanner } from '../page-object/components/agent-banner';
+import { ConsignmentDetailPage } from '../page-object/consignment-detail-page';
 
 
 export type PageFixtureType = {
     basePage: BasePage;
     portalPage: PortalPage;
+    representTraderPage: RepresentTraderPage;
+    agentBanner: AgentBanner;
+    consignmentDetailPage: ConsignmentDetailPage;
     initialFormDeclaraPage: InitialFormDeclaraPage;
     movementDeclarePage: MovementDeclarePage;
     goodsMovementTaskListPage: GoodsMovementTaskListPage;
@@ -54,6 +60,14 @@ export const pageFixture: ExtendParams[0] = {
         await use(new PortalPage(page));
     },
 
+    representTraderPage: async ({ page }, use) => {
+        await use(new RepresentTraderPage(page));
+    },
+
+    agentBanner: async ({ page }, use) => {
+        await use(new AgentBanner(page));
+    },
+
     initialFormDeclaraPage: async ({ page }, use) => {
         await use(new InitialFormDeclaraPage(page));
     },
@@ -70,12 +84,16 @@ export const pageFixture: ExtendParams[0] = {
         await use(new MovementOverviewPage(page, t));
     },
 
+    consignmentDetailPage: async ({ page, t }, use) => {
+        await use(new ConsignmentDetailPage(page, t));
+    },
+
     consignmentDeclarePage: async ({ page }, use) => {
         await use(new ConsignmentDeclarePage(page));
     },
 
-    consignmentOverviewPage: async ({ page }, use) => {
-        await use(new ConsignmentOverviewPage(page));
+    consignmentOverviewPage: async ({ page, t }, use) => {
+        await use(new ConsignmentOverviewPage(page, t));
     },
 
     goodsItemDeclarePage: async ({ page }, use) => {
@@ -90,8 +108,8 @@ export const pageFixture: ExtendParams[0] = {
         await use(new GmrDeclarePage(page));
     },
 
-    gmrDetailsPage: async ({ page }, use) => {
-        await use(new GmrDetailsPage(page));
+    gmrDetailsPage: async ({ page, t }, use) => {
+        await use(new GmrDetailsPage(page, t));
     },
 
     previousDocumentDeclarePage: async ({ page }, use) => {

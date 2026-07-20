@@ -9,8 +9,10 @@
     "passwordLabel": "Cyfrinair",
     "submitButton": "Mewngofnodi"
   },
+  "common": {
+    "localReferenceNumber": "Rhif cyfeirnod lleol"
+  },
   "movementHeaderOverview": {
-    "localReferenceNumber": "Rhif cyfeirnod lleol",
     "declarationStatus": "Status y datganiad"
   },
   "status": {

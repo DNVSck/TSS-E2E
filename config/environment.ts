@@ -32,6 +32,16 @@ export const LOCALE: Locale =
   (process.env.LOCALE as Locale) || LOCALES_CONSTANT.CY_GB;
 
 export const BASE_URL = process.env.BASE_URL!;
+
+/**
+ * Company names an Agent starts representing before running a journey. These are
+ * environment data (they differ per env, like the *_EORI values), matched on the
+ * trader's visible name on the "Traders that you can represent" screen — never on
+ * the company GUID, which changes when data is reseeded.
+ */
+export const HAULIER_COMPANY_NAME = process.env.HAULIER_COMPANY_NAME ?? '';
+export const IMPORTER_COMPANY_NAME = process.env.IMPORTER_COMPANY_NAME ?? '';
+
 export const DEFAULT_TIMEOUT = numberOrDefault(
   process.env.DEFAULT_TIMEOUT,
   5000

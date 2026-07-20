@@ -1,12 +1,11 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
+import { switchToTabAndClickNew } from '../core/util/element-helper';
 
 export class GoodsOverviewPage extends BasePage {
     
     private readonly documentTab: Locator;
     private readonly newDocumentRefButton: Locator;
-
-    private readonly attachmentsTab: Locator;
 
     private readonly additionalProcedureCodesTab: Locator;
     private readonly newAdditionalProcedureCodeButton: Locator;
@@ -28,7 +27,6 @@ export class GoodsOverviewPage extends BasePage {
 
         //Tab list
         this.documentTab = page.locator("//a[contains(@href, '/overview/#overview-tab')]");
-        this.attachmentsTab = page.locator("//a[contains(@href, '/attachments/#overview-tab')]");
         this.additionalProcedureCodesTab = page.locator("//a[contains(@href, '/additional-procedure-codes/#overview-tab')]");
         this.previousDocumentsTab = page.locator("//a[contains(@href, '/previous-documents/#overview-tab')]");
         this.additionalInformationTab = page.locator("//a[contains(@href, '/additional-information/#overview-tab')]");
@@ -43,86 +41,28 @@ export class GoodsOverviewPage extends BasePage {
         this.newNationalAdditionalCodeButton = page.locator("form[action*='/national-additional-codes'] button[value='new-record']");
     }
 
-    async clickDocumentTab(): Promise<void> {
-        await this.documentTab.click();
-    }
-
-    async clickAttachmentsTab(): Promise<void> {
-        await this.attachmentsTab.click();
-    }
-
-    async clickAdditionalProcedureCodesTab(): Promise<void> {
-        await this.additionalProcedureCodesTab.click();
-    }
-
-    async clickPreviousDocumentsTab(): Promise<void> {
-        await this.previousDocumentsTab.click();
-    }
-
-    async clickAdditionalInformationTab(): Promise<void> {
-        await this.additionalInformationTab.click();
-    }
-
-    async clickNewDocumentReference(): Promise<void> {
-        await this.newDocumentRefButton.click();
-    }
-
-    async clickNewAdditionalProcedureCode(): Promise<void> {
-        await this.newAdditionalProcedureCodeButton.click();
-    }
-
-    async clickNewPreviousDocument(): Promise<void> {
-        await this.newPreviousDocumentButton.click();
-    }
-
-    async clickNewAdditionalInformation(): Promise<void> {
-        await this.newAdditionalInformationButton.click();
-    }
-
     async declareNewDocumentReference(): Promise<void> {
-            await this.clickDocumentTab();
-            await this.clickNewDocumentReference();
+        await switchToTabAndClickNew(this.page,this.documentTab, this.newDocumentRefButton);
     }
 
     async declareNewAdditionalProcedureCode(): Promise<void> {
-        await this.clickAdditionalProcedureCodesTab();
-        await this.clickNewAdditionalProcedureCode();
+        await switchToTabAndClickNew(this.page,this.additionalProcedureCodesTab, this.newAdditionalProcedureCodeButton);
     }
 
     async declareNewPreviousDocument(): Promise<void> {
-        await this.clickPreviousDocumentsTab();
-        await this.clickNewPreviousDocument();
+        await switchToTabAndClickNew(this.page,this.previousDocumentsTab, this.newPreviousDocumentButton);
     }
 
     async declareNewAdditionalInformation(): Promise<void> {
-        await this.clickAdditionalInformationTab();
-        await this.clickNewAdditionalInformation();
-    }
-
-    async clickTaricAdditionalCodesTab(): Promise<void> {
-        await this.taricAdditionalCodesTab.click();
-    }
-
-    async clickNewTaricAdditionalCode(): Promise<void> {
-        await this.newTaricAdditionalCodeButton.click();
+        await switchToTabAndClickNew(this.page,this.additionalInformationTab, this.newAdditionalInformationButton);
     }
 
     async declareNewTaricAdditionalCode(): Promise<void> {
-        await this.clickTaricAdditionalCodesTab();
-        await this.clickNewTaricAdditionalCode();
-    }
-
-    async clickNationalAdditionalCodesTab(): Promise<void> {
-        await this.nationalAdditionalCodesTab.click();
-    }
-
-    async clickNewNationalAdditionalCode(): Promise<void> {
-        await this.newNationalAdditionalCodeButton.click();
+        await switchToTabAndClickNew(this.page,this.taricAdditionalCodesTab, this.newTaricAdditionalCodeButton);
     }
 
     async declareNewNationalAdditionalCode(): Promise<void> {
-        await this.clickNationalAdditionalCodesTab();
-        await this.clickNewNationalAdditionalCode();
+        await switchToTabAndClickNew(this.page,this.nationalAdditionalCodesTab, this.newNationalAdditionalCodeButton);
     }
 
 }

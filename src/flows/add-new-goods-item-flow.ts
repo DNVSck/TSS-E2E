@@ -32,52 +32,68 @@ export class AddNewGoodsItemFlow {
     async addNewGoodsItem(input: GoodsData, journey: GoodsJourneyContext): Promise<void> {
         await ReportLog.step('Add new goods item', async () => {
             await this.clickNewGoodsRecordAtOverview();
-
-            // The TGP screen is the first goods screen, but only on the IMMI journey.
-            if (journey.useIMMI) {
-                await this.handleTgpFlow(input);
-            }
-
-            // ENS-only has no procedure codes; every other journey starts here.
-            if (!journey.isEnsOnly) {
-                await this.fillProcedureCodesFlow(input);
-            }
-
-            // The goods-level "are the goods controlled?" question only appears when
-            // the consignment itself declared controlled goods.
-            if (journey.isControlledGoods) {
-                await this.fillControlledGoodsFlow(input);
-            }
-
-            // The dangerous-goods question follows on every journey except EIDR.
-            if (journey.hasDangerousGoods) {
-                await this.fillDangerousGoodsFlow(input);
-            }
-
-            // On the latest build the country-of-origin screen precedes the
-            // commodity screen on every journey that reaches it (hasInvoiceDetails)
-            // — SFD and IMMI alike. (IMMI currently has a Test-env defect at this
-            // step, so its spec is skipped as a known defect until resolved.)
-            if (journey.hasInvoiceDetails) {
-                await this.fillCountryOfOriginFlow(input);
-            }
-
-            await this.fillCommodityInformationFlow(input);
-            await this.fillPackagingFlow(input);
-            await this.fillWeightFlow(input);
-
-            // Per-item container details, only when goods are in different containers.
-            if (journey.hasGoodsContainer) {
-                await this.fillGoodsContainerFlow(input);
-            }
-
-            // The consignment already captured the currency; here it is only the price.
-            if (journey.hasInvoiceDetails) {
-                await this.fillInvoiceDetailsFlow(input);
-            }
-
+            await this.declarePreCommodityScreens(input, journey);
+            await this.declareCoreGoodsScreens(input);
+            await this.declarePostCommodityScreens(input, journey);
             await this.finishGoodsItemDeclaration();
         });
+    }
+
+    /** Conditional screens shown, in order, before the commodity screen. */
+    private async declarePreCommodityScreens(input: GoodsData, journey: GoodsJourneyContext): Promise<void> {
+        // The TGP screen is the first goods screen, but only on the IMMI journey.
+        if (journey.useIMMI) {
+            await this.handleTgpFlow(input);
+        }
+
+        // ENS-only has no procedure codes; every other journey starts here.
+        if (!journey.isEnsOnly) {
+            await this.fillProcedureCodesFlow(input);
+        }
+
+        // The goods-level "are the goods controlled?" question only appears when
+        // the consignment itself declared controlled goods.
+        if (journey.isControlledGoods) {
+            await this.fillControlledGoodsFlow(input);
+        }
+
+        // The dangerous-goods question follows on every journey except EIDR.
+        if (journey.hasDangerousGoods) {
+            await this.fillDangerousGoodsFlow(input);
+        }
+
+        // On SFD the country-of-origin screen precedes the commodity screen. IMMI
+        // instead asks it near the end, after the invoice screen — see
+        // declarePostCommodityScreens.
+        if (journey.hasInvoiceDetails && !journey.useIMMI) {
+            await this.fillCountryOfOriginFlow(input);
+        }
+    }
+
+    /** The screens shown on every goods item: commodity, packaging, weight. */
+    private async declareCoreGoodsScreens(input: GoodsData): Promise<void> {
+        await this.fillCommodityInformationFlow(input);
+        await this.fillPackagingFlow(input);
+        await this.fillWeightFlow(input);
+    }
+
+    /** Conditional screens shown, in order, after the weight screen. */
+    private async declarePostCommodityScreens(input: GoodsData, journey: GoodsJourneyContext): Promise<void> {
+        // Per-item container details, only when goods are in different containers.
+        if (journey.hasGoodsContainer) {
+            await this.fillGoodsContainerFlow(input);
+        }
+
+        // The consignment already captured the currency; here it is only the price.
+        if (journey.hasInvoiceDetails) {
+            await this.fillInvoiceDetailsFlow(input);
+        }
+
+        // On IMMI the country-of-origin screen comes here, after the invoice screen
+        // (unlike SFD, where it precedes commodity — see declarePreCommodityScreens).
+        if (journey.useIMMI) {
+            await this.fillCountryOfOriginFlow(input);
+        }
     }
 
     private async clickNewGoodsRecordAtOverview(): Promise<void> {
@@ -89,14 +105,14 @@ export class AddNewGoodsItemFlow {
     /**
      * The "use TGP?" screen only appears for IMMI goods when the signed-in trader
      * has a TGP profile, so it is detected at runtime; when absent there is nothing
-     * to answer. A test that asked to use TGP but never saw the screen is warned —
-     * its TGP path was not actually exercised.
+     * to answer. A test that asked to use TGP but never saw the screen fails —
+     * its TGP path was not actually exercised, so a green result would be misleading.
      */
     private async handleTgpFlow(input: GoodsData): Promise<void> {
         await ReportLog.step('Answer "Do you want to use TGP?" (IMMI goods only)', async () => {
             const shown = await this.goodsDeclarePage.answerUseTgpIfPresent(input.useTGP);
             if (!shown && input.useTGP) {
-                await ReportLog.warn(
+                throw new Error(
                     'Requested useTGP=true but the TGP screen never appeared — the signed-in ' +
                     'profile has no TGP set up, so the TGP path was not exercised.'
                 );

@@ -1,6 +1,11 @@
 import { BasePage } from "./base-page";
-import { Page, Locator} from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
+import { TFunction } from '../fixtures/locale-fixture';
+import { clickLinkAndWaitForRoute, switchToTabAndClickNew, summaryListValue } from '../core/util/element-helper';
+import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 
+/** The overview summary list paints a beat after the draft is created. */
+const SUMMARY_READ_TIMEOUT = 20_000;
 
 export class ConsignmentOverviewPage extends BasePage {
 
@@ -16,8 +21,17 @@ export class ConsignmentOverviewPage extends BasePage {
     private readonly confirmAndSubmitButton: Locator;
     private readonly consignmentBreadcrumbLink: Locator;
 
-    constructor(page: Page) {
-        super(page);
+    // Draft summary-list fields, matched by their translated label (see t()). The
+    // label is exact-matched (:text-is) so "Status" is not also satisfied by the
+    // "Goods domestic status" row on the same list.
+    private readonly localReferenceNumber: Locator;
+    private readonly status: Locator;
+
+    constructor(page: Page, t: TFunction) {
+        super(page, t);
+
+        this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
+        this.status = summaryListValue(page, this.t!('common.status'));
 
         this.consignmentBreadcrumbLink = page.locator("//nav[contains(@class,'breadcrumb')]//a[starts-with(normalize-space(.),'DEC')]");
         this.goodsRecordTab = page.locator("//a[contains(@href, '/overview/#overview-tab')]");
@@ -38,56 +52,58 @@ export class ConsignmentOverviewPage extends BasePage {
     }
 
 
-    async clickNewGoodsRecord(): Promise<void> {
-        await this.newGoodsRecordBtn.click();
-    }
-
-    async clickHeaderPreviousDocumentTab(): Promise<void> {
-        await this.headerPreviousDocumentTab.click();
-    }
-
-    async clickNewPreviousDocument(): Promise<void> {
-        await this.newPreviousDocumentBtn.click();
-    }
-
     /** Open the "New previous document" wizard from the Header previous documents tab. */
     async openNewHeaderPreviousDocument(): Promise<void> {
-        await this.clickHeaderPreviousDocumentTab();
-        await this.clickNewPreviousDocument();
-    }
-
-    async clickHolderOfAuthorisationTab(): Promise<void> {
-        await this.holderOfAuthorisationTab.click();
-    }
-
-    async clickNewHolderOfAuthorisation(): Promise<void> {
-        await this.newHolderOfAuthorisationBtn.click();
+        await switchToTabAndClickNew(this.page,this.headerPreviousDocumentTab, this.newPreviousDocumentBtn);
     }
 
     /** Open the "New holder of authorisation" wizard from the Holder of authorisation tab. */
     async openNewHolderOfAuthorisation(): Promise<void> {
-        await this.clickHolderOfAuthorisationTab();
-        await this.clickNewHolderOfAuthorisation();
+        await switchToTabAndClickNew(this.page,this.holderOfAuthorisationTab, this.newHolderOfAuthorisationBtn);
     }
-
 
     async openNewGoodsRecord(): Promise<void> {
-        await this.goodsRecordTab.click();
-        await this.newGoodsRecordBtn.click();
-    }
-
-    async goToConsignmentOverview(): Promise<void> {
-        await this.consignmentBreadcrumbLink.click();
+        await switchToTabAndClickNew(this.page,this.goodsRecordTab, this.newGoodsRecordBtn);
     }
 
     /**
-     * The consignment reference (DEC...) shown in the breadcrumb. Read it while a
-     * child page (e.g. goods-item overview) is open, where the consignment is a
-     * breadcrumb *link*; on the consignment overview itself it is the current
-     * crumb and no longer an anchor.
+     * Return to the consignment overview via the "DEC…" breadcrumb, and wait until
+     * the page has actually landed there. These overview routes are server
+     * sub-routes, so the active page is reflected in the URL — waiting on it is a
+     * more reliable "we're on the overview" signal than a bare click, which races
+     * the next step's read against the paint. Reuses clickLinkAndWaitForRoute, which
+     * reads the expected route from the breadcrumb's own href (so it is not hard-coded).
      */
-    async getConsignmentReference(): Promise<string> {
-        return (await this.consignmentBreadcrumbLink.innerText()).trim();
+    async goToConsignmentOverview(): Promise<void> {
+        await clickLinkAndWaitForRoute(this.page, this.consignmentBreadcrumbLink);
+    }
+
+    private async getTextLocalReferenceNumber(): Promise<string> {
+        await this.localReferenceNumber.first().waitFor({ state: 'visible', timeout: SUMMARY_READ_TIMEOUT });
+        return (await this.localReferenceNumber.first().innerText()).trim();
+    }
+
+    private async getTextStatus(): Promise<string> {
+        await this.status.first().waitFor({ state: 'visible', timeout: SUMMARY_READ_TIMEOUT });
+        return (await this.status.first().innerText()).trim();
+    }
+
+    /**
+     * Soft-assert the freshly-created draft consignment — its reference opens with
+     * "DEC" and its status is "Draft" — and return the reference. Both are read from
+     * the consignment-overview summary list, which paints as soon as the draft is
+     * created. Mirrors {@link MovementOverviewPage.assertDraftMovementOverview}: the
+     * page reads and asserts, the flow reports. All checks are soft.
+     */
+    async assertDraftConsignment(): Promise<string> {
+        const consignmentReference = await this.getTextLocalReferenceNumber();
+        const declarationStatus = await this.getTextStatus();
+        const expectedStatus = this.t!('status.draft');
+
+        expect.soft(consignmentReference, 'Consignment reference').toMatch(LOCAL_REFERENCE.DEC_PREFIX);
+        expect(declarationStatus, 'Consignment status').toBe(expectedStatus);
+
+        return consignmentReference;
     }
 
     async clickConfirmAndSubmit(): Promise<void> {

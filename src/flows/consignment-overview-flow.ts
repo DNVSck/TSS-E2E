@@ -23,16 +23,22 @@ export class ConsignmentOverviewFlow {
         await this.consignmentOverviewPage.goToConsignmentOverview();
     }
 
+    /**
+     * Report the ENS consignment's reference (DEC...) as soon as its draft is
+     * created, so a run captures it even if a later step fails — mirroring the
+     * movement LRN, which is reported at draft time too.
+     */
+    async verifyDraftConsignment(): Promise<void> {
+        await ReportLog.step('Validate draft ENS consignment', async () => {
+            const consignmentReference = await this.consignmentOverviewPage.assertDraftConsignment();
+            ReportLog.setParameter('Consignment reference', consignmentReference);
+        });
+    }
+
     /** From the goods-item overview, return to the consignment overview via the
      *  breadcrumb and submit the consignment. */
     async submitConsignment(): Promise<void> {
         await ReportLog.step('Submit consignment', async () => {
-            // Capture the reference before navigating: here (goods-item overview)
-            // the consignment is still a breadcrumb link.
-            const consignmentReference = await this.consignmentOverviewPage.getConsignmentReference();
-            ReportLog.setParameter('Consignment reference', consignmentReference);
-            await ReportLog.info(`Consignment reference: ${consignmentReference}`);
-
             await this.consignmentOverviewPage.goToConsignmentOverview();
             await this.consignmentOverviewPage.clickConfirmAndSubmit();
         });

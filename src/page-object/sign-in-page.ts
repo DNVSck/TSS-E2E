@@ -37,19 +37,12 @@ export class SignInPage extends BasePage {
 
         for (let attempt = 1; attempt <= MAX_TOTP_ATTEMPTS; attempt++) {
             if (lastCode !== undefined) {
-                // Condition-based wait: block until the generator yields a code
-                // different from the rejected one, i.e. the next 30s window.
-                await expect
-                    .poll(() => generateTotpCode(secret), { timeout: 35_000, intervals: [500] })
-                    .not.toBe(lastCode);
+                await this.waitForNextCode(secret, lastCode);
             }
 
             const code = generateTotpCode(secret);
-            await this.totpCodeInput.fill(code);
             lastCode = code;
-
-            await this.signInButton.click();
-            await this.page.waitForLoadState('domcontentloaded');
+            await this.submitCode(code);
 
             // On the freshly loaded page: the error present means the code was
             // refused; its absence means we are through the OTP step.
@@ -61,5 +54,22 @@ export class SignInPage extends BasePage {
         throw new Error(
             `TOTP login failed: Keycloak refused the code on all ${MAX_TOTP_ATTEMPTS} attempts.`
         );
+    }
+
+    /**
+     * Condition-based wait: block until the generator yields a code different from
+     * the rejected one, i.e. the next 30-second window has begun.
+     */
+    private async waitForNextCode(secret: string, lastCode: string): Promise<void> {
+        await expect
+            .poll(() => generateTotpCode(secret), { timeout: 35_000, intervals: [500] })
+            .not.toBe(lastCode);
+    }
+
+    /** Fill the OTP code, submit, and wait for the resulting page to load. */
+    private async submitCode(code: string): Promise<void> {
+        await this.totpCodeInput.fill(code);
+        await this.signInButton.click();
+        await this.page.waitForLoadState('domcontentloaded');
     }
 }

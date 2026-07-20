@@ -119,7 +119,8 @@ const defaults: GoodsData = {
     itemPriceAmount: '1000',
 
     // Per-item container details (only used when goods are in different containers)
-    containerIdentifierNumber: '1',
+    // Value of Container Identifier Number must follow ISO standard
+    containerIdentifierNumber: 'MSKU3988348',
     containerSize: CONTAINER_SIZE.TRAILER,
     containerStatus: CONTAINER_PACKED_STATUS.NOT_EMPTY,
     containerSupplierType: CONTAINER_SUPPLIER_TYPE.SHIPPER_SUPPLIED,

@@ -10,10 +10,13 @@ import { ConsignmentOverviewFlow } from '../flows/consignment-overview-flow';
 import { AddNewGoodsItemFlow } from '../flows/add-new-goods-item-flow';
 import { GoodsOverviewFlow } from '../flows/goods-overview-flow';
 import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
+import { RepresentTraderFlow } from '../flows/represent-trader-flow';
+import { WorkerAuthFixtureType } from './worker-auth-fixture';
 
 export type FlowFixtureType = {
     // Business Flows
     portalAccessFlow: PortalAccessFlow;
+    representTraderFlow: RepresentTraderFlow;
     initialFormDeclarationFlow: InitialFormDeclarationFlow;
     movementHeaderDeclarationFlow: MovementHeaderDeclarationFlow;
     movementOverviewFlow: MovementOverviewFlow;
@@ -27,11 +30,15 @@ export type FlowFixtureType = {
     createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow;
 }
 
-type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType>>;
+type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType>>;
 
 export const flowFixture: ExtendParams[0] = {
     portalAccessFlow: async ({ basePage, portalPage }, use) => {
         await use(new PortalAccessFlow(basePage, portalPage));
+    },
+
+    representTraderFlow: async ({ agentBanner, representTraderPage }, use) => {
+        await use(new RepresentTraderFlow(agentBanner, representTraderPage));
     },
 
     initialFormDeclarationFlow: async ({ initialFormDeclaraPage }, use) => {
@@ -42,8 +49,8 @@ export const flowFixture: ExtendParams[0] = {
         await use(new MovementHeaderDeclarationFlow(goodsMovementTaskListPage, movementDeclarePage));
     },
 
-    movementOverviewFlow: async ({ movementOverviewPage }, use) => {
-        await use(new MovementOverviewFlow(movementOverviewPage));
+    movementOverviewFlow: async ({ movementOverviewPage, consignmentDetailPage }, use) => {
+        await use(new MovementOverviewFlow(movementOverviewPage, consignmentDetailPage));
     },
 
     addNewConsignmentFlow: async ({ movementOverviewPage, consignmentDeclarePage }, use) => {
@@ -74,7 +81,8 @@ export const flowFixture: ExtendParams[0] = {
         addNewConsignmentFlow,
         consignmentOverviewFlow,
         addNewGoodsItemFlow,
-        goodsOverviewFlow
+        goodsOverviewFlow,
+        authAccount
     }, use) => {
         await use(new CreateAndSubmitEnsDeclarationFlow(
             portalAccessFlow,
@@ -84,7 +92,8 @@ export const flowFixture: ExtendParams[0] = {
             addNewConsignmentFlow,
             consignmentOverviewFlow,
             addNewGoodsItemFlow,
-            goodsOverviewFlow
+            goodsOverviewFlow,
+            authAccount
         ));
     },
 };

@@ -35,3 +35,6 @@ Thumbs.db
 .vscode/launch.json
 *.swp
 *.swo
+
+.claude/
+.mcp.json

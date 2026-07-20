@@ -13,3 +13,28 @@ export const LOCAL_REFERENCE = {
     GLR_PREFIX: /^GLR/,
     SFD_PREFIX: /^SFD/,
 } as const;
+
+/**
+ * The country code that opens a Movement Reference Number, by consignment type.
+ * An ENS (safety & security) MRN uses "XI"; a Customs (SFD) or IMMI MRN uses
+ * "GB". See {@link mrnPrefix}.
+ */
+export const MRN_COUNTRY_CODE = {
+    ENS: 'XI',
+    SFD: 'GB',
+    IMMI: 'GB',
+} as const;
+
+export type MrnCountryCode = (typeof MRN_COUNTRY_CODE)[keyof typeof MRN_COUNTRY_CODE];
+
+/**
+ * The opening an MRN must match: the current year's last two digits followed by
+ * the type's country code — e.g. in 2026 an ENS MRN starts "26XI", an SFD/IMMI
+ * MRN starts "26GB". The year is read at runtime so the rule stays correct as
+ * years roll over. Only the opening is asserted; the service-generated remainder
+ * is not a contract this suite defends.
+ */
+export function mrnPrefix(code: MrnCountryCode): RegExp {
+    const yearSuffix = String(new Date().getFullYear()).slice(-2);
+    return new RegExp(`^${yearSuffix}${code}`);
+}
