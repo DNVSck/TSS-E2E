@@ -1,4 +1,5 @@
 import { expect, Locator, Page } from '@playwright/test';
+import { StringUtil } from './string-util';
 
 // This class provides utility functions for interacting with web elements in a consistent way across the test suite. 
 // It can be imported and used in any page object or test file to perform common actions on web elements, such as clicking, filling forms, 
@@ -74,8 +75,8 @@ export async function clickLinkAndWaitForRoute(page: Page, link: Locator): Promi
     }
     // Strip the "#overview-tab" anchor and any trailing slash, then match the URL
     // path exactly (so the root tab's "/overview" is not satisfied by a sub-route).
-    const route = href.split('#')[0].replace(/\/+$/, '');
-    await page.waitForURL(url => url.pathname.replace(/\/+$/, '') === route);
+    const route = StringUtil.stripTrailingSlashes(href.split('#')[0]);
+    await page.waitForURL(url => StringUtil.stripTrailingSlashes(url.pathname) === route);
 }
 
 // How long to wait for a tab's "add new record" button after the tab has become

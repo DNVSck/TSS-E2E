@@ -3,6 +3,7 @@ import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 import { summaryListValue } from '../core/util/element-helper';
+import { StringUtil } from '../core/util/string-util';
 
 /** URL path segments used to build and await movement routes. */
 const GOODS_MOVEMENT_SEGMENT = 'goods-movement';
@@ -325,9 +326,9 @@ export class MovementOverviewPage extends BasePage {
         const href = await this.gmrViewLink.first().getAttribute('href');
         await this.gmrViewLink.first().click();
         if (href) {
-            const route = href.split('#')[0].replace(/\/+$/, '');
+            const route = StringUtil.stripTrailingSlashes(href.split('#')[0]);
             await this.page.waitForURL(
-                url => url.pathname.replace(/\/+$/, '') === route,
+                url => StringUtil.stripTrailingSlashes(url.pathname) === route,
                 { timeout: NAV_TIMEOUT }
             );
         }

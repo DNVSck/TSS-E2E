@@ -75,6 +75,19 @@ export class StringUtil {
     }
 
     /**
+     * Strip any trailing slashes from a URL path without a regex. Done as a manual
+     * scan (rather than /\/+$/) so the unbounded quantifier can never backtrack — a
+     * linear walk from the end is both safe and clearer about intent.
+     */
+    static stripTrailingSlashes(path: string): string {
+        let end = path.length;
+        while (end > 0 && path[end - 1] === '/') {
+            end--;
+        }
+        return path.slice(0, end);
+    }
+
+    /**
      * Mask sensitive data (e.g., credit card, SSN)
      */
     static maskString(str: string, visibleStart: number = 2, visibleEnd: number = 2, maskChar: string = '*'): string {
