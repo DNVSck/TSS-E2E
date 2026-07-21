@@ -1,7 +1,6 @@
 import { test } from '@playwright/test';
 import { PortalPage } from '../page-object/portal-page'
 import { BasePage } from '../page-object/base-page';
-import { SignInPage } from '../page-object/sign-in-page';
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
 import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
@@ -13,12 +12,24 @@ import { ConsignmentOverviewPage } from '../page-object/consignment-overview-pag
 import { GoodsOverviewPage } from '../page-object/goods-overview-page';
 import { GmrDetailsPage } from '../page-object/gmr-details-page';
 import { GmrDeclarePage } from '../page-object/gmr-declare-page';
+import { PreviousDocumentDeclarePage } from '../page-object/header-previous-documents-declare-page';
+import { HolderOfAuthorisationDeclarePage } from '../page-object/holder-of-authorisation-declare-page';
+import { DocumentReferenceDeclarePage } from '../page-object/document-reference-declare-page';
+import { AdditionalInformationDeclarePage } from '../page-object/additional-information-declare-page';
+import { AdditionalProcedureCodeDeclarePage } from '../page-object/additional-procedure-code-declare-page';
+import { TaricAdditionalCodeDeclarePage } from '../page-object/taric-additional-code-declare-page';
+import { NationalAdditionalCodeDeclarePage } from '../page-object/national-additional-code-declare-page';
+import { RepresentTraderPage } from '../page-object/represent-trader-page';
+import { AgentBanner } from '../page-object/components/agent-banner';
+import { ConsignmentDetailPage } from '../page-object/consignment-detail-page';
 
 
 export type PageFixtureType = {
     basePage: BasePage;
     portalPage: PortalPage;
-    signInPage: SignInPage;
+    representTraderPage: RepresentTraderPage;
+    agentBanner: AgentBanner;
+    consignmentDetailPage: ConsignmentDetailPage;
     initialFormDeclaraPage: InitialFormDeclaraPage;
     movementDeclarePage: MovementDeclarePage;
     goodsMovementTaskListPage: GoodsMovementTaskListPage;
@@ -29,6 +40,13 @@ export type PageFixtureType = {
     goodsOverviewPage: GoodsOverviewPage;
     gmrDeclarePage: GmrDeclarePage;
     gmrDetailsPage: GmrDetailsPage;
+    previousDocumentDeclarePage: PreviousDocumentDeclarePage;
+    holderOfAuthorisationDeclarePage: HolderOfAuthorisationDeclarePage;
+    documentReferenceDeclarePage: DocumentReferenceDeclarePage;
+    additionalInformationDeclarePage: AdditionalInformationDeclarePage;
+    additionalProcedureCodeDeclarePage: AdditionalProcedureCodeDeclarePage;
+    taricAdditionalCodeDeclarePage: TaricAdditionalCodeDeclarePage;
+    nationalAdditionalCodeDeclarePage: NationalAdditionalCodeDeclarePage;
 }
 
 type ExtendParams = Parameters<typeof test.extend<PageFixtureType & LocaleFixtureType>>;
@@ -42,8 +60,12 @@ export const pageFixture: ExtendParams[0] = {
         await use(new PortalPage(page));
     },
 
-    signInPage: async ({ page }, use) => {
-        await use(new SignInPage(page));
+    representTraderPage: async ({ page }, use) => {
+        await use(new RepresentTraderPage(page));
+    },
+
+    agentBanner: async ({ page }, use) => {
+        await use(new AgentBanner(page));
     },
 
     initialFormDeclaraPage: async ({ page }, use) => {
@@ -62,12 +84,16 @@ export const pageFixture: ExtendParams[0] = {
         await use(new MovementOverviewPage(page, t));
     },
 
+    consignmentDetailPage: async ({ page, t }, use) => {
+        await use(new ConsignmentDetailPage(page, t));
+    },
+
     consignmentDeclarePage: async ({ page }, use) => {
         await use(new ConsignmentDeclarePage(page));
     },
 
-    consignmentOverviewPage: async ({ page }, use) => {
-        await use(new ConsignmentOverviewPage(page));
+    consignmentOverviewPage: async ({ page, t }, use) => {
+        await use(new ConsignmentOverviewPage(page, t));
     },
 
     goodsItemDeclarePage: async ({ page }, use) => {
@@ -82,7 +108,35 @@ export const pageFixture: ExtendParams[0] = {
         await use(new GmrDeclarePage(page));
     },
 
-    gmrDetailsPage: async ({ page }, use) => {
-        await use(new GmrDetailsPage(page));
+    gmrDetailsPage: async ({ page, t }, use) => {
+        await use(new GmrDetailsPage(page, t));
+    },
+
+    previousDocumentDeclarePage: async ({ page }, use) => {
+        await use(new PreviousDocumentDeclarePage(page));
+    },
+
+    holderOfAuthorisationDeclarePage: async ({ page }, use) => {
+        await use(new HolderOfAuthorisationDeclarePage(page));
+    },
+
+    documentReferenceDeclarePage: async ({ page }, use) => {
+        await use(new DocumentReferenceDeclarePage(page));
+    },
+
+    additionalInformationDeclarePage: async ({ page }, use) => {
+        await use(new AdditionalInformationDeclarePage(page));
+    },
+
+    additionalProcedureCodeDeclarePage: async ({ page }, use) => {
+        await use(new AdditionalProcedureCodeDeclarePage(page));
+    },
+
+    taricAdditionalCodeDeclarePage: async ({ page }, use) => {
+        await use(new TaricAdditionalCodeDeclarePage(page));
+    },
+
+    nationalAdditionalCodeDeclarePage: async ({ page }, use) => {
+        await use(new NationalAdditionalCodeDeclarePage(page));
     }
 };

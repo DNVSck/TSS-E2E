@@ -1,7 +1,6 @@
 import { faker } from '@faker-js/faker';
 
 export class DateTimeUtil {
-    private static readonly UK_TIMEZONE = 'Europe/London';
 
     /**
      * Get current timestamp in various formats
@@ -250,44 +249,19 @@ export class DateTimeUtil {
     }
 
     /**
-     * Generate a valid arrival date/time for TSS forms.
-     * Constraint-safe: generate within the next 14 days to avoid edge failures
+     * A valid arrival date/time for TSS forms: the current UTC (UTC+0) date and
+     * time plus 30 minutes, formatted as `YYYY-MM-DDTHH:mm` for the
+     * datetime-local input. The 30-minute lead keeps it safely in the future
+     * without tripping the form's far-future validation.
      */
     static generateValidArrivalDate(): string {
-        const now = new Date();
-        const minMinutesAhead = 30;
-        const maxDaysAhead = 13;
-
-        const minTimestamp = now.getTime() + minMinutesAhead * 60 * 1000;
-        const maxTimestamp =
-            now.getTime() + maxDaysAhead * 24 * 60 * 60 * 1000 - 60 * 1000;
-
-        const randomTimestamp = faker.number.int({
-            min: minTimestamp,
-            max: maxTimestamp
-        });
-
-        return this.formatUkDateTimeLocal(new Date(randomTimestamp));
+        const arrival = new Date(Date.now() + 30 * 60 * 1000);
+        return this.formatUtcDateTimeLocal(arrival);
     }
 
-    private static formatUkDateTimeLocal(date: Date): string {
-        const parts = new Intl.DateTimeFormat('en-GB', {
-            timeZone: this.UK_TIMEZONE,
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        }).formatToParts(date);
-
-        const lookup = Object.fromEntries(
-            parts
-                .filter(part => part.type !== 'literal')
-                .map(part => [part.type, part.value])
-        ) as Record<string, string>;
-
-        return `${lookup.year}-${lookup.month}-${lookup.day}T${lookup.hour}:${lookup.minute}`;
+    /** `YYYY-MM-DDTHH:mm` in UTC (UTC+0) — `toISOString` is always UTC. */
+    private static formatUtcDateTimeLocal(date: Date): string {
+        return date.toISOString().slice(0, 16);
     }
 
 }

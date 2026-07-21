@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { TRANSPORT_DOCUMENT_FORMAT, TypeOfMovementKey } from '../../constant/type-of-movement-code-constant';
 
 export class StringUtil {
     
@@ -74,6 +75,19 @@ export class StringUtil {
     }
 
     /**
+     * Strip any trailing slashes from a URL path without a regex. Done as a manual
+     * scan (rather than /\/+$/) so the unbounded quantifier can never backtrack — a
+     * linear walk from the end is both safe and clearer about intent.
+     */
+    static stripTrailingSlashes(path: string): string {
+        let end = path.length;
+        while (end > 0 && path[end - 1] === '/') {
+            end--;
+        }
+        return path.slice(0, end);
+    }
+
+    /**
      * Mask sensitive data (e.g., credit card, SSN)
      */
     static maskString(str: string, visibleStart: number = 2, visibleEnd: number = 2, maskChar: string = '*'): string {
@@ -109,6 +123,28 @@ export class StringUtil {
      */
     static randomEmail(): string {
         return faker.internet.email();
+    }
+
+
+    static randomNumeric(minLength: number, maxLength: number): string {
+        return faker.string.numeric({
+            length: { min: minLength, max: maxLength },
+            allowLeadingZeros: false,
+        });
+    }
+
+    /**
+     * A transport document number shaped like the reference a real trader would
+     * enter, chosen by transport mode (defaults to Road/RoRo — the common case):
+     *   Road/RoRo  CMR1234567890   Maritime  B/L987654321   Air  AWB0123456789
+     *
+     * The service rejects a number it has already seen, so call this per
+     * consignment rather than holding on to the result.
+     */
+    static generateRandomTransportDocumentNumber(movement: TypeOfMovementKey = 'RORO_ACCOMPANIED'): string {
+        const { prefix, digits } = TRANSPORT_DOCUMENT_FORMAT[movement];
+        const serial = faker.string.numeric({ length: digits});
+        return `${prefix}${serial}`;
     }
 
     /**

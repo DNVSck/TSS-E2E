@@ -1,4 +1,8 @@
-import { NEW_GOODS_MOVEMENT_DECLARATION, TYPE_OF_MOVEMENT_OPTION_CODE, TRANSPORT_CHARGES_OPTION_CODE } from '../constant/goods-movement-declaration-constants';
+import { ROLE_IN_MOVEMENT } from '../constant/role-in-movement-constant';
+import { SEPARATE_HAULIER } from '../constant/separate-haulier-constant';
+import { PASSIVE_TRANSPORT_TYPE } from '../constant/passive-transport-type-constant';
+import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
+import { TRANSPORT_CHARGES_OPTION_CODE } from '../constant/transport-charges-code-constant';
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { DateTimeUtil } from '../core/util/date-time-util';
@@ -28,16 +32,17 @@ export interface MovementData {
     haulierEori: string;
 }
 
-const defaults: MovementData = {
+// `arrivalDateTime` is deliberately absent here: it must be generated per factory call,
+// not frozen once at module import, or a long run reuses a stale (possibly past) date.
+const defaults: Omit<MovementData, 'arrivalDateTime'> = {
     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-    roleInThisMovement: NEW_GOODS_MOVEMENT_DECLARATION.ROLE_IN_THIS_MOVEMENT.CARRIER,
-    haulierSeparateThisMovement: NEW_GOODS_MOVEMENT_DECLARATION.SEPARATE_HAULIER_THIS_MOVEMENT.CARRIER_IS_HAULIER,
-    imoNumber: '1234567',
+    roleInThisMovement: ROLE_IN_MOVEMENT.ON_BEHALF_OF_CARRIER,
+    haulierSeparateThisMovement: SEPARATE_HAULIER.CARRIER_IS_HAULIER,
+    imoNumber: '9198941',
     vehicleRegistrationNumber: 'AB12CDE',
     conveyanceReferenceNumber: '',
     nationalityOfMeanOfTransport: COUNTRY_CODE.UNITED_KINGDOM,
     sealNumber: '',
-    arrivalDateTime: DateTimeUtil.generateValidArrivalDate(),
     portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
     placeOfLoading: 'London',
     placeOfUnloading: 'Belfast',
@@ -45,16 +50,17 @@ const defaults: MovementData = {
     isSamePlaceOfUnloading: true,
     placeOfacceptance: '',
     placeOfDelivery: 'Belfast',
-    typeOfPassiveTransport: NEW_GOODS_MOVEMENT_DECLARATION.TYPE_OF_PASSIVE_TRANSPORT.TRUCK,
-    transportCharges: TRANSPORT_CHARGES_OPTION_CODE.PAYMENT_IN_CASH,
+    typeOfPassiveTransport: PASSIVE_TRANSPORT_TYPE.BUS,
+    transportCharges: TRANSPORT_CHARGES_OPTION_CODE.ACCOUNT_HOLDER_WITH_CARRIER,
     trailerRegistrationNumber: 'TR12LER',
     carrierEori: process.env.CARRIER_EORI ?? 'XI404517186000',
-    haulierEori: process.env.HAULIER_EORI ?? 'XI404517186000',
+    haulierEori: process.env.HAULIER_EORI ?? 'XI311281505000',
 };
 
 
 export const movement = (overrides?: Partial<MovementData>): MovementData => ({
     ...defaults,
+    arrivalDateTime: DateTimeUtil.generateValidArrivalDate(),
     ...overrides,
 });
 

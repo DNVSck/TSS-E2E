@@ -1,24 +1,35 @@
 # 📝 Coding Guidelines & Best Practices
 
-This document outlines the coding standards and best practices for the TSS E2E Test Automation project using Playwright with TypeScript.
+Coding standards for the TSS E2E Test Automation project (Playwright + TypeScript).
+For the how-to (creating pages/flows/fixtures), see [DEVELOPING.md](./DEVELOPING.md).
 
 ## 🎯 Core Principles
 
-### 1. Page Object Model (POM) - **MANDATORY**
-Always use Page Object Model pattern for maintainable and scalable tests.
+### 1. Layered architecture — **MANDATORY**
+
+Tests → Flows → Page Objects. Each layer only talks to the one below it:
+
+- **Page objects** (`src/page-object/`) own locators and single-screen actions
+- **Flows** (`src/flows/`) sequence page objects into business journeys
+- **Tests** (`tests/`) declare identity (`authProfile`), data, and call flows
 
 **✅ DO:**
 ```typescript
-// page-object/portal-page.ts
+// src/page-object/portal-page.ts
 export class PortalPage extends BasePage {
-    signInBtn = new Element("a[href='/portal/sign-in']");
-    
+    private readonly signInBtn: Locator;
+
+    constructor(page: Page) {
+        super(page);
+        this.signInBtn = page.locator("a[href='/portal/oauth']");
+    }
+
     async clickSignIn(): Promise<void> {
         await this.signInBtn.click();
     }
 }
 
-// tests/ui/portal.spec.ts
+// tests/functional/portal.spec.ts
 test('Sign in test', async ({ portalPage }) => {
     await portalPage.clickSignIn();
 });
@@ -27,512 +38,206 @@ test('Sign in test', async ({ portalPage }) => {
 **❌ DON'T:**
 ```typescript
 test('Bad test', async ({ page }) => {
-    await page.click("a[href='/portal/sign-in']");  // Raw selectors in test
+    await page.click("a[href='/portal/oauth']");  // Raw selectors in a test
 });
 ```
 
-### 2. Multi-Language Support - **CRITICAL**
-Never use hardcoded text in locators or assertions. Always use translation keys.
+### 2. No fixed sleeps — **HARD RULE**
+
+Never `page.waitForTimeout()`, `setTimeout`-based sleeps, or arbitrary delays. Always wait
+on the real condition you actually need:
+
+```typescript
+// ✅ DO: condition-based waits
+await locator.waitFor({ state: 'visible' });
+await page.waitForURL(url => url.pathname === route);
+await expect(dropdown).toHaveValue(value);          // web-first assertion retries
+
+// ❌ DON'T
+await page.waitForTimeout(5000);
+```
+
+If something is flaky, find the condition that isn't being awaited (a route change, a
+re-render, a new TOTP window) and wait on *that* — see `element-helper.ts` and
+`SignInPage.inputTotp` for worked examples.
+
+### 3. No hardcoded UI text — use `t()`
+
+Never text-based locators or hardcoded strings in assertions. Text comes from
+`locales/*.json` via the `t('key')` fixture, so assertions survive a locale switch.
+(Welsh runs are currently inactive, but the rule keeps us ready.)
 
 **✅ DO:**
 ```typescript
-// Use stable selectors (ID, data-testid, href)
-signInBtn = new Element("a[href='/portal/sign-in']");
-submitBtn = new Element("button[data-testid='submit']");
-titleElement = new Element("h1[class*='govuk-heading']");
-
-// Use translation function for text verification
-test('Verify title', async ({ t, portalPage }) => {
-    const expectedTitle = t('portal.title');  // "Trader Support Service" (en) / "Gwasanaeth Cymorth Masnachwyr" (cy)
-    await portalPage.verifyPortalTitle(expectedTitle);
-});
+signInBtn = page.locator("a[href='/portal/oauth']");        // stable attribute
+const expectedTitle = t('portal.title');
 ```
 
 **❌ DON'T:**
 ```typescript
-// Never use text in selectors - breaks multi-language
-badBtn = new Element("button:has-text('Sign in')");
-badLink = new Element("text=Portal");
-
-// Never hardcode text in assertions
-await expect(page.locator('h1')).toContainText('Trader Support Service');
+page.locator("button:has-text('Sign in')");                  // breaks i18n
+await expect(heading).toHaveText('Trader Support Service');  // hardcoded text
 ```
 
-## 🏗️ Project Structure Conventions
+## 🔧 Selectors
 
-### File Naming
-```
-kebab-case.extension
-```
-
-**Examples:**
-- `portal-page.ts` ✅
-- `sign-in-page.ts` ✅  
-- `PortalPage.ts` ❌
-- `signin_page.ts` ❌
-
-### Folder Structure
-```
-page-object/          # Page classes
-├── base-page.ts     # Base functionality
-├── portal-page.ts   # Specific page
-└── sign-in-page.ts  # Another page
-
-tests/ui/            # Test files
-├── portal.spec.ts   # Portal tests
-└── sign-in.spec.ts  # Sign-in tests
-
-fixtures/            # Test fixtures
-├── main-fixture.ts  # Combined fixtures
-└── locale-fixture.ts # Translation fixture
-```
-
-## 🎨 Naming Conventions
-
-### Classes
-```typescript
-// PascalCase for classes
-export class PortalPage extends BasePage { }
-export class SignInPage extends BasePage { }
-export class UserManagementPage extends BasePage { }
-```
-
-### Variables & Functions
-```typescript
-// camelCase for variables and functions
-const expectedTitle = t('portal.title');
-const signInButton = new Element("button#sign-in");
-
-async clickSignInButton(): Promise<void> { }
-async verifyUserProfile(): Promise<void> { }
-```
-
-### Constants
-```typescript
-// UPPER_SNAKE_CASE for constants
-const MAX_RETRY_COUNT = 3;
-const DEFAULT_TIMEOUT = 30000;
-const BASE_URL = process.env.BASE_URL;
-```
-
-### Test Names
-```typescript
-// Descriptive test names with tags
-test('Navigation from Portal to Sign In @smoke @portal @ui', async ({ }) => {});
-test('User login with valid credentials @regression @auth', async ({ }) => {});
-test('Form validation with invalid email @negative @validation', async ({ }) => {});
-```
-
-## 🔧 Element Selectors Best Practices
-
-### Priority Order (Use in this order)
-1. **data-testid** (Recommended)
+### Priority order
+1. **data-testid** (when available)
 2. **Unique IDs**
-3. **Semantic attributes** (href, type, role)
-4. **CSS classes** (stable ones only)
+3. **Semantic attributes** (`href`, `name`, `value`, `type`, `role`)
+4. **Stable CSS classes** (GOV.UK classes like `.govuk-summary-list__row` are fine)
 5. **XPath** (last resort)
 
-**✅ DO:**
 ```typescript
-// 1. Test IDs (most stable)
-submitBtn = new Element("[data-testid='submit-button']");
+// ✅ DO
+submitBtn = page.locator("[data-testid='submit-button']");
+userMenu = page.locator('#user-menu');
+signInLink = page.locator("a[href='/portal/oauth']");
+continueBtn = page.locator("button.govuk-button[value='next']");
 
-// 2. Unique IDs
-userMenu = new Element("#user-menu");
-
-// 3. Semantic attributes
-signInLink = new Element("a[href='/portal/sign-in']");
-submitBtn = new Element("button[type='submit']");
-
-// 4. Stable CSS classes
-heading = new Element(".govuk-heading-xl");
-
-// 5. XPath for complex scenarios
-breadcrumb = new Element("//nav[@aria-label='breadcrumb']//a[last()]");
+// ❌ DON'T
+page.locator("text=Sign in");                    // text-based
+page.locator('div > div > button:nth-child(3)'); // structure-fragile
+page.locator('.css-1abc2def');                   // generated class
 ```
 
-**❌ DON'T:**
-```typescript
-// Text-based selectors (breaks i18n)
-badBtn = new Element("text=Sign in");
-badLink = new Element(":has-text('Portal')");
+### Helper convention — value-add only
 
-// Fragile selectors
-fragileBtn = new Element("div > div > button:nth-child(3)");
-unstableClass = new Element(".css-1abc2def");  // Generated classes
+Shared interaction helpers live in `src/core/util/element-helper.ts`. A helper earns its
+place only when it **adds behaviour** — waiting, retry, an assertion, or knowledge of a
+DOM shape (autocomplete commit, tab routes, summary-list rows). Do **not** write one-line
+passthrough wrappers around the Playwright `Locator` API:
+
+```typescript
+// ✅ Worth a helper: fill() alone silently fails on this component
+await selectAutocompleteValue(input, firstOption, '0808108010');
+
+// ❌ Not worth a helper — just call Playwright
+export async function clickElement(l: Locator) { await l.click(); }
 ```
 
-### Custom Element Wrapper Usage
+## 📦 Constants & Test Data
+
+Constants (`src/constant/`) are for **opaque domain codes only** — values a reader can't
+decode without the mapping (`'GB'`, `'R1'`, procedure code `'40 00'`, package type `'BX'`):
+
 ```typescript
-// Always use custom Element class, not raw Playwright
-export class PortalPage extends BasePage {
-    // ✅ Custom Element wrapper
-    signInBtn = new Element("a[href='/portal/sign-in']");
-    
-    async clickSignIn(): Promise<void> {
-        await this.signInBtn.click();  // Auto-wait included
-    }
-    
-    // ❌ Don't use raw Playwright in page objects
-    // async clickSignIn(): Promise<void> {
-    //     await this.page().locator("a[href='/portal/sign-in']").click();
-    // }
-}
+// ✅ Opaque code — constant earns its keep
+await checkRadioByValue(page, 'roleInMovement', ROLE_IN_MOVEMENT.CARRIER);
+
+// ❌ Self-describing string — inline it, a constant only adds indirection
+await checkRadioByValue(page, 'isContainerPacked', 'yes');
 ```
 
-## 🌍 Internationalization (i18n) Patterns
+Test data lives in `src/test-data/` as typed builders (`consignment()`,
+`ensOnlyConsignment()`, ...). Journeys that share most fields share one type with a
+discriminator + factories — don't fork near-identical types that will drift.
 
-### Translation Keys Structure
-```json
-// locales/en.json
-{
-  "portal": {
-    "title": "Trader Support Service",
-    "button": "Sign in",
-    "navigation": {
-      "home": "Home",
-      "profile": "Profile"
-    }
-  },
-  "forms": {
-    "validation": {
-      "required": "This field is required",
-      "email": "Enter a valid email address"
-    }
-  }
-}
-```
+## 🏗️ Naming & Files
 
-### Using Translations in Tests
+- **Files:** `kebab-case.ts` (`sign-in-page.ts`, `movement-overview-flow.ts`)
+- **Classes:** `PascalCase` (`SignInPage`, `MovementOverviewFlow`)
+- **Variables/functions:** `camelCase`
+- **Env-derived constants:** `UPPER_SNAKE_CASE` (`BASE_URL`, `DEFAULT_TIMEOUT`)
+- **Page object suffixes:** `*-page.ts` in `src/page-object/`, reusable fragments in
+  `src/page-object/components/`, flows `*-flow.ts` in `src/flows/`
+
+## 🧪 Test Structure
+
 ```typescript
-test('Multi-language portal test', async ({ t, portalPage }) => {
-    // Get translated text
-    const portalTitle = t('portal.title');
-    const signInText = t('portal.button');
-    const homeNavText = t('portal.navigation.home');
-    
-    // Use in verifications
-    await portalPage.verifyPortalTitle(portalTitle);
-    await portalPage.verifySignInButtonText(signInText);
+import { getBaseUrl, test } from '../test-hooks';
+import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
+import { ReportLog } from '../../src/core/report/report-log';
+
+test.describe('GB to NI RoRo ENS-only Declaration Process', () => {
+  // Identity: which cached session this spec replays. Never sign in inside a test.
+  test.use({ authProfile: COMPANY_PROFILE.AGENT });
+
+  test.beforeEach(async ({ representTraderFlow }) => {
+    await ReportLog.setFeature('GB to NI RoRo ENS-only Declaration Process');
+    await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
+  });
+
+  test('Accompanied', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
+    await ReportLog.setStory('ENS-only - GB to NI RoRo Accompanied');
+    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+      testInfo,
+      url: getBaseUrl(),
+      consignmentOverrides: ensOnlyConsignment(),
+    });
+  });
 });
 ```
 
-### Page Object Translation Support
+Rules:
+- Import `test` from `tests/test-hooks.ts`, never from `@playwright/test` in a spec
+- Tags go in the options object: `{ tag: ['@smoke'] }`
+- `ReportLog.setFeature/setStory` structure the Allure report; `ReportLog.info/pass/warn/fail`
+  for step-level logging
+- A known product defect blocks a scenario → `test.fixme()` with a comment naming the defect,
+  not a deleted or permanently-skipped test
+
+## 🚀 Async/Await
+
 ```typescript
-export class PortalPage extends BasePage {
-    async verifyPortalTitle(expectedTitle: string): Promise<void> {
-        const actualTitle = await this.portalTitle.getText();
-        await expect(actualTitle).toContain(expectedTitle);
-    }
-    
-    // Don't hardcode text in page objects
-    // ❌ async verifyPortalTitle(): Promise<void> {
-    //     await expect(this.portalTitle.asLocator).toHaveText('Trader Support Service');
-    // }
-}
-```
-
-## 🧪 Test Structure & Organization
-
-### Test File Structure
-```typescript
-import { test } from '../test-hooks';
-
-// Setup (if needed)
-test.beforeEach(async ({ basePage }) => {
-    await basePage.setViewport(ENVIRONMENT_INFO.viewport.width, ENVIRONMENT_INFO.viewport.height);
-});
-
-// Main test
-test('Descriptive test name @tags', async ({ t, portalPage, basePage }, testInfo) => {
-    // Arrange
-    const expectedTitle = t('portal.title');
-    
-    // Act
-    await basePage.navigateToPortal(getBaseUrl(), testInfo);
-    
-    // Assert
-    await portalPage.verifyPortalTitle(expectedTitle);
-});
-
-// Cleanup (if needed)
-test.afterEach(async ({ basePage }) => {
-    // Cleanup code
-});
-```
-
-### Test Tags Convention
-```typescript
-// Use meaningful tags for filtering
-test('User flow test @smoke @e2e @critical', async ({ }) => {});     // Critical smoke test
-test('Form validation @regression @forms @ui', async ({ }) => {});   // Regression test
-test('Performance check @performance @slow', async ({ }) => {});     // Performance test
-test('Negative scenario @negative @edge-case', async ({ }) => {});   // Edge case test
-```
-
-## 🚀 Async/Await Best Practices
-
-### Always Use Async/Await
-```typescript
-// ✅ DO: Use async/await consistently
+// ✅ DO: await everything, consistently
 async navigateAndVerify(): Promise<void> {
     await this.navigateToPortal();
     await this.verifyPageLoaded();
-    await this.waitForLanguageSwitch();
 }
 
-// ❌ DON'T: Mix promises and async/await
+// ❌ DON'T: mix .then() chains with async/await, or drop promises
 async badExample(): Promise<void> {
-    this.navigateToPortal().then(() => {  // Don't mix
-        this.verifyPageLoaded();
-    });
+    this.navigateToPortal().then(() => this.verifyPageLoaded());  // floating promise
 }
 ```
 
-### Error Handling
-```typescript
-// ✅ DO: Handle errors appropriately
-async safeOperation(): Promise<void> {
-    try {
-        await this.riskyOperation();
-    } catch (error) {
-        console.warn(`Operation failed: ${error.message}`);
-        // Fallback or re-throw
-    }
-}
-
-// Use built-in retry mechanisms
-await PlaywrightUtils.retry(async () => {
-    await this.unstableOperation();
-}, 60000, 1000);
-```
-
-## 🎯 Wait Strategies
-
-### Use Appropriate Waits
-```typescript
-// ✅ DO: Use specific waits
-await element.waitForElementToBeVisible();
-await page.waitForLoadState('networkidle');
-await page.waitForURL(/\/portal/);
-
-// Wait for conditions
-await page.waitForFunction(() => 
-    document.querySelector('h1')?.textContent?.includes('Expected Text')
-);
-
-// ❌ DON'T: Use arbitrary timeouts
-await page.waitForTimeout(5000);  // Avoid if possible
-```
-
-## 📊 Reporting & Debugging
-
-### Test Steps
-```typescript
-// Use testStep for clear reporting
-test('Complex workflow', async ({ portalPage, t }) => {
-    await testStep('Navigate to portal', async () => {
-        await basePage.navigateToPortal(getBaseUrl(), testInfo);
-    });
-    
-    await testStep('Verify portal title', async () => {
-        const expectedTitle = t('portal.title');
-        await portalPage.verifyPortalTitle(expectedTitle);
-    });
-    
-    await testStep('Complete sign in process', async () => {
-        await portalPage.clickSignIn();
-        // Additional steps...
-    });
-});
-```
-
-### Logging
-```typescript
-// Use structured logging
-logInfo(`Starting test with locale: ${currentLocale}`);
-logPass(`Successfully verified title: "${actualTitle}"`);
-console.warn(`Fallback used for translation key: ${key}`);
-```
+Don't swallow errors to make a test pass — a `try/catch` is only justified when the catch
+does something real (retry with a new condition, fallback path, enriched error).
 
 ## 🔒 Security & Environment
 
-### Environment Variables
-```typescript
-// ✅ DO: Use environment management
-import { BASE_URL, LOCALE } from '../config/environment';
+- Credentials come from `.env.<ENV>` per company profile (`AGENT_*`, `IMPORTER_*`, ...) —
+  **never** hardcode usernames, passwords, TOTP secrets, or EORIs in code
+- Access config through `config/environment.ts` (typed, validated), not scattered
+  `process.env` reads
+- `.env.*` files are gitignored — keep them that way; they hold real credentials
+- Environment-specific data (company names, EORIs) belongs in the env file, matched on
+  visible names — not on GUIDs that change when data is reseeded
 
-// Access credentials safely
-const credentials = {
-    username: process.env.USER_NAME,
-    password: process.env.PASSWORD
-};
+## 📋 Common Anti-Patterns
 
-// ❌ DON'T: Hardcode sensitive data
-// const username = "admin@test.com";  // Never do this
-// const password = "password123";     // Never do this
-```
-
-### Test Data Management
-```typescript
-// ✅ DO: Use external test data
-import testData from '../test-data/users.json';
-
-// ✅ DO: Use data builders/factories
-const user = UserBuilder.createDefault()
-    .withEmail('test@example.com')
-    .withRole('admin')
-    .build();
-```
-
-## 🧹 Code Quality
-
-### TypeScript Best Practices
-```typescript
-// ✅ DO: Use proper typing
-interface User {
-    id: string;
-    email: string;
-    role: 'admin' | 'user';
-}
-
-async processUser(user: User): Promise<void> {
-    // Implementation
-}
-
-// ✅ DO: Use enums for constants
-enum UserRole {
-    ADMIN = 'admin',
-    USER = 'user',
-    GUEST = 'guest'
-}
-```
-
-### Method Size & Responsibility
-```typescript
-// ✅ DO: Keep methods focused and small
-async clickSignIn(): Promise<void> {
-    await this.signInBtn.click();
-}
-
-async verifyPortalTitle(expectedTitle: string): Promise<void> {
-    const actualTitle = await this.portalTitle.getText();
-    await expect(actualTitle).toContain(expectedTitle);
-}
-
-// ❌ DON'T: Create god methods
-async doEverything(): Promise<void> {
-    // 100 lines of mixed responsibilities
-}
-```
-
-## 📋 Common Anti-Patterns to Avoid
-
-### 1. **Text-Based Selectors**
-```typescript
-// ❌ NEVER: Will break with different languages
-button:has-text('Submit')
-text=English Text
-:has-text('Click here')
-```
-
-### 2. **Raw Page Usage in Tests**
-```typescript
-// ❌ DON'T: Use page directly in tests
-test('Bad test', async ({ page }) => {
-    await page.click('#button');  // Use page objects instead
-});
-```
-
-### 3. **Hardcoded Values**
-```typescript
-// ❌ DON'T: Hardcode URLs, timeouts, or text
-await page.goto('https://hardcoded-url.com');
-await page.waitForTimeout(5000);
-await expect(heading).toHaveText('Hardcoded Text');
-```
-
-### 4. **Mixed Fixture Patterns**
-```typescript
-// ❌ DON'T: Mix old and new fixture patterns
-import { test } from '@playwright/test';  // Old way
-import { testMain as test } from '../fixtures/main-fixture';  // New way - use this
-```
-
-### 5. **Inconsistent Naming**
-```typescript
-// ❌ DON'T: Use inconsistent naming
-class portalpage { }           // Wrong case
-const SignIn_Button = '';     // Wrong convention
-async Do_Something() { }       // Wrong convention
-```
+1. **Text-based selectors** — `:has-text(...)`, `text=` (breaks i18n)
+2. **Raw `page` in tests** — go through page objects/flows
+3. **Fixed sleeps** — `waitForTimeout` anywhere
+4. **Passthrough helpers** — wrappers that just rename a Playwright call
+5. **Constants for self-describing strings** — `const YES = 'yes'`
+6. **Signing in inside a test** — identity is `authProfile`; sign-in lives in globalSetup
+7. **`workerIndex` for pool assignment** — use `parallelIndex` (see README)
+8. **Importing `test` from `@playwright/test`** in specs — fixtures won't be available
 
 ## ✅ Code Review Checklist
 
-Before submitting code, ensure:
-
-- [ ] **Page Object Model used** - No raw page interactions in tests
-- [ ] **No text-based selectors** - Uses stable selectors only
-- [ ] **Translation keys used** - No hardcoded text
-- [ ] **Proper async/await** - All async operations awaited
-- [ ] **TypeScript types** - Proper typing used
-- [ ] **Naming conventions** - Follows project standards
-- [ ] **Test tags applied** - Appropriate tags for filtering
-- [ ] **Environment variables** - No hardcoded config
-- [ ] **Error handling** - Appropriate error handling
-- [ ] **Code documentation** - Clear comments where needed
-
-## 🔄 Migration Guidelines
-
-### From Legacy Pattern to Modern Pattern
-
-**Old (Locale Manager):**
-```typescript
-// ❌ Old pattern - remove this
-import { LocaleManager } from '../locales/locale-manager';
-const locale = new LocaleManager();
-const title = locale.getPortalTitle();
-```
-
-**New (Fixture Pattern):**
-```typescript
-// ✅ New pattern - use this
-test('Modern test', async ({ t }) => {
-    const title = t('portal.title');
-});
-```
-
-### From Raw Page to Page Objects
-
-**Old (Raw Playwright):**
-```typescript
-// ❌ Old pattern
-test('Old test', async ({ page }) => {
-    await page.goto(url);
-    await page.click('#button');
-    await page.fill('#input', 'text');
-});
-```
-
-**New (Page Objects):**
-```typescript
-// ✅ New pattern
-test('Modern test', async ({ portalPage, basePage }) => {
-    await basePage.navigateToPortal(url);
-    await portalPage.clickSignIn();
-    await portalPage.fillEmail('text');
-});
-```
+- [ ] Layering respected — no raw page interactions in tests, no business sequencing in page objects
+- [ ] No text-based selectors; stable selectors only
+- [ ] No hardcoded UI text — `t()` for assertions
+- [ ] **No fixed sleeps** — every wait is condition-based
+- [ ] Constants only for opaque codes; helpers only where they add behaviour
+- [ ] All async operations awaited; no floating promises
+- [ ] `authProfile` declared; no in-test sign-in
+- [ ] No credentials/EORIs/secrets in code
+- [ ] Naming and file-location conventions followed
+- [ ] `pnpm lint` passes
 
 ---
 
 ## 📚 Additional Resources
 
 - [Playwright Best Practices](https://playwright.dev/docs/best-practices)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 - [Page Object Model Pattern](https://playwright.dev/docs/pom)
 - [Accessibility Testing](https://playwright.dev/docs/accessibility-testing)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 
 ---
 
-**Remember: These guidelines ensure maintainable, scalable, and reliable test automation that works across multiple languages and environments.** 🎯
+**Remember: these guidelines keep the suite maintainable, parallel-safe, and free of the flakiness that fixed sleeps and fragile selectors create.** 🎯

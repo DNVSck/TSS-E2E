@@ -5,13 +5,25 @@ import {TYPE_OF_PACKAGES} from "../constant/type-of-packages-constant";
 import { PROCEDURE_CODES } from "../constant/procedure-codes-constant";
 import { ADDITIONAL_PROCEDURE_CODES } from "../constant/additional-procedure-codes-constant";
 import { ITEM_CURRENCY } from "../constant/item-currency-constant";
+import { CONTAINER_SIZE } from "../constant/container-size-constant";
+import { CONTAINER_PACKED_STATUS } from "../constant/container-packed-status-constant";
+import { CONTAINER_SUPPLIER_TYPE } from "../constant/container-supplier-type-constant";
+import { DocumentReferenceData } from "./document-reference-data";
+import { AdditionalInformationData } from "./additional-information-data";
+import { PreviousDocumentData } from "./previous-document-data";
 
 
 export interface GoodsData {
+    /**
+     * Answer to the "use TGP?" screen. Only consulted when that screen appears —
+     * IMMI goods where the signed-in trader has a TGP profile. Ignored on every
+     * other journey, where the screen never shows.
+     */
+    useTGP: boolean;
     goodsDomesticStatus: string;
     additionalRiskStatus: string;
-    areGooodsControlled: string;
-    isDangerousGoods: string;
+    areGooodsControlled: boolean;
+    isDangerousGoods: boolean;
     dangerousGoodsCodes: string;
     commodityCode: string;
     goodsDescription: string;
@@ -31,23 +43,48 @@ export interface GoodsData {
     invoiceNumber?: string;
     itemCurrency: string;
     itemPriceAmount: string;
+
+    // Per-item container screens — only reached when the consignment declared goods
+    // in different containers (isGoodsCrossEUBorder && !isSameContainer).
+    containerIdentifierNumber: string;
+    containerSize: string;
+    containerStatus: string;
+    containerSupplierType: string;
+
+    // Goods-item overview tabs (opt-in per test). No-op unless entries are supplied.
+    documentReferences: DocumentReferenceData[];
+    additionalInformations: AdditionalInformationData[];
+    // The goods item's "Previous documents" tab reuses the same wizard (and data) as
+    // the consignment's "Header previous documents" tab.
+    previousDocuments: PreviousDocumentData[];
+    // Extra codes declared via the "Additional procedure codes" tab, on top of the
+    // primary `additionalProcedureCode` chosen during the goods declaration.
+    additionalProcedureCodes: string[];
+    // Extra codes declared via the "Taric additional codes" tab, on top of the
+    // primary `taricAdditionalCode` chosen during the goods declaration.
+    taricAdditionalCodes: string[];
+    // Extra codes declared via the "National additional codes" tab, on top of the
+    // primary `nationalAdditionalCode` chosen during the goods declaration.
+    nationalAdditionalCodes: string[];
 }
 
 const defaults: GoodsData = {
+    // "Do you want to use TGP?" — IMMI goods only; false = "without TGP".
+    useTGP: false,
     // "Enter goods domestic status"
     goodsDomesticStatus: GOODS_DOMESTIC_STATUS.NIDOM,
     // "Additional risk status"
     additionalRiskStatus: ADDITIONAL_RISK_STATUS.NO_ADDITIONAL_RISK_STATUS,
     // "Are these goods controlled?"
-    areGooodsControlled: 'yes',
+    areGooodsControlled: true,
     // "Dangerous goods"
-    isDangerousGoods: 'no',
+    isDangerousGoods: false,
     // "Dangerous goods codes"
     dangerousGoodsCodes: '1234',
     // "Commodity code"
-    commodityCode: '0101210000',
+    commodityCode: '2404199000',
     // "Goods description"
-    goodsDescription: 'Live horses - Pure-bred breeding animals',
+    goodsDescription: 'Smoking tobacco, whether or not containing tobacco substitutes in any proportion, 100 packs',
     // "Country of origin"
     countryOfOrigin: COUNTRY_CODE.UNITED_KINGDOM,
     // "Supplementary units" (Optional field)
@@ -68,8 +105,8 @@ const defaults: GoodsData = {
     numberOfPieces: '10',
     // "Gross mass"
     grossMass: '100',
-    // "Net mass" (Optional field)
-    netMass: '',
+    // "Net mass" — optional on some journeys, required on others; kept <= gross mass.
+    netMass: '90',
     // "Goods procedure code"
     goodsProcedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
     // "Additional procedure code"
@@ -80,6 +117,21 @@ const defaults: GoodsData = {
     itemCurrency: ITEM_CURRENCY.POUNDS_STERLING,
     // "Item price amount"
     itemPriceAmount: '1000',
+
+    // Per-item container details (only used when goods are in different containers)
+    // Value of Container Identifier Number must follow ISO standard
+    containerIdentifierNumber: 'MSKU3988348',
+    containerSize: CONTAINER_SIZE.TRAILER,
+    containerStatus: CONTAINER_PACKED_STATUS.NOT_EMPTY,
+    containerSupplierType: CONTAINER_SUPPLIER_TYPE.SHIPPER_SUPPLIED,
+
+    // Goods-item overview tabs (opt-in per test)
+    documentReferences: [],
+    additionalInformations: [],
+    previousDocuments: [],
+    additionalProcedureCodes: [],
+    taricAdditionalCodes: [],
+    nationalAdditionalCodes: [],
 };
 
 export const goods = (overrides?: Partial<GoodsData>): GoodsData => ({

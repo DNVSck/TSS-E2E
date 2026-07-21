@@ -3,19 +3,13 @@ import { TFunction } from '../fixtures/locale-fixture';
 import { PortalPage } from './portal-page';
 
 export class BasePage {
-    readonly commonButton: Locator;
-    readonly commonContinueButton: Locator;
-    readonly commonFinishButton: Locator;
-    readonly backLink: Locator;
-    readonly commonSubmitConsignmentButton: Locator;
+    protected readonly commonContinueButton: Locator;
+    protected readonly commonFinishButton: Locator;
 
     protected readonly t?: TFunction;
 
     constructor(protected readonly page: Page, t?: TFunction) {
         this.t = t;
-        this.commonButton = page.locator(
-            "//button[contains(@class, 'govuk-button')]"
-        );
 
         this.commonContinueButton = page.locator(
             "button.govuk-button[value='next']"
@@ -24,34 +18,19 @@ export class BasePage {
         this.commonFinishButton = page.locator(
             "button.govuk-button[value='finish']"
         )
-
-        this.backLink = page.locator("a.govuk-back-link");
-
-        this.commonSubmitConsignmentButton = page.locator(
-            "button[value='submit-consignment']"
-        );
     }
 
     /**
-     * Universal portal navigation with language switching
+     * Universal portal navigation with language switching.
+     *
+     * Browser storage is deliberately NOT cleared here: tests restore a
+     * signed-in session via `storageState`, and `storageState` replays
+     * localStorage as well as cookies. Clearing it would sign the test out.
+     * Each test already starts from a fresh browser context anyway.
      */
     async navigateToPortal(url: string, testInfo: TestInfo): Promise<void> {
         await this.page.goto(url);
-        await this.clearBrowserStorage();
         await this.switchToWelshIfNeeded(testInfo);
-    }
-
-    /**
-     * Clear browser storage safely
-     */
-    private async clearBrowserStorage(): Promise<void> {
-        const url = this.page.url();
-        if (!url || url === 'about:blank') return;
-
-        await this.page.evaluate(() => {
-            localStorage.clear();
-            sessionStorage.clear();
-        });
     }
 
     /**
@@ -62,7 +41,7 @@ export class BasePage {
         const isCyProject = testInfo.project.name.includes('cy');
 
         if (isCyProject) {
-            await portalPage.languageSwitcher.click();
+            await portalPage.switchLanguage('cy');
             await this.waitUntilLanguageSwitchSuccess('cy');
         } else {
             await this.waitUntilLanguageSwitchSuccess('en');
@@ -84,14 +63,6 @@ export class BasePage {
 
     async clickContinueButton(): Promise<void> {
         await this.commonContinueButton.click();
-    }
-
-    async clickBackLink(): Promise<void> {
-        await this.backLink.click();
-    }
-
-    async clickSubmitButton(): Promise<void> {
-        await this.commonSubmitConsignmentButton.click();
     }
 
     async clickFinishButton(): Promise<void> {

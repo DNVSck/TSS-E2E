@@ -7,11 +7,9 @@ export interface TotpOptions {
     label?: string;
 }
 
-/**
- * Generate a TOTP code from the given base32 secret.
- * The secret is passed in (not read from a global env var) so the code always
- * matches the account currently signing in.
- */
+const DEFAULT_PERIOD_SECONDS = 30;
+
+
 export function generateTotpCode(secret: string, options: TotpOptions = {}): string {
     const trimmed = secret?.trim();
 
@@ -24,7 +22,7 @@ export function generateTotpCode(secret: string, options: TotpOptions = {}): str
         label: options.label,
         algorithm: 'SHA1',
         digits: options.digits ?? 6,
-        period: options.periodSeconds ?? 30,
+        period: options.periodSeconds ?? DEFAULT_PERIOD_SECONDS,
         secret: OTPAuth.Secret.fromBase32(trimmed)
     });
 

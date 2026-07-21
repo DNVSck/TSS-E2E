@@ -1,35 +1,60 @@
-import { type Page } from '@playwright/test';
-import { attachment, epic, feature, step, story, tags } from 'allure-js-commons';
+import {
+    attachment,
+    epic,
+    feature,
+    link,
+    logStep,
+    parameter,
+    Status,
+    step,
+    story,
+    tags,
+} from 'allure-js-commons';
+import { TEST_LINK_CONFIG } from '../../constant/test-link.constant';
 
-
+/**
+ * The single facade the test body and flows use to talk to Allure.
+ *
+ * Log messages become Allure *steps*, never attachments: an attachment per log
+ * line produces one file per call, all sharing the same name, which floods the
+ * report and the results directory.
+ *
+ * Screenshots, videos and traces are captured by Playwright itself (see
+ * `use.screenshot` / `use.video` / `use.trace` in playwright.config.ts) and are
+ * picked up automatically by allure-playwright. Do not attach them by hand.
+ */
 export class ReportLog {
-    private static currentPage?: Page;
 
-    public static setCurrentPage(page?: Page): void {
-        this.currentPage = page;
-    }
-
-    public static info(message: string): void {
-        attachment('Info', message, 'text/plain');
+    public static async info(message: string): Promise<void> {
         console.log(message);
+        await logStep(message);
     }
 
-    public static warn(message: string): void {
-        attachment('Warning', message, 'text/plain');
+    public static async warn(message: string): Promise<void> {
         console.warn(message);
+        await logStep(message, Status.BROKEN);
     }
 
-    public static pass(message: string): void {
-        attachment('Pass', message, 'text/plain');
+    public static async pass(message: string): Promise<void> {
         console.log(message);
+        await logStep(message, Status.PASSED);
     }
 
-    public static async fail(message: string, page?: Page): Promise<void> {
-        if (page) await this.attachScreenshot(page);
-        attachment('Failure', message, 'text/plain');
+    public static async fail(message: string): Promise<void> {
         console.error(message);
+        await logStep(message, Status.FAILED);
     }
 
+    /**
+     * Records a business identifier (test account, LRN, ...) in the test's Allure
+     * "Parameters" table, so it is filterable and visible without scrolling the
+     * step timeline. Use for short key/value facts, not log narration.
+     */
+    public static setParameter(name: string, value: string): void {
+        parameter(name, value);
+    }
+
+    /** For real artefacts (payloads, generated files) — not for log lines. */
     public static addAttachment(
         name: string,
         content: string | Buffer,
@@ -54,31 +79,24 @@ export class ReportLog {
         await tags(...tagList);
     }
 
-
-    public static async step<T>(
-        name: string,
-        fn: () => Promise<T> | T,
-        page?: Page
-    ): Promise<T> {
-        return step(name, async () => {
-            try {
-                const result = await fn();
-                return result;
-            } catch (err) {
-                await this.fail(`Step failed: ${name}`, page ?? this.currentPage);
-                throw err;
-            }
-        });
+    /** Links the test to its case in the test management system. */
+    public static setTestCaseLink(testCaseId: string): void {
+        link(
+            `${TEST_LINK_CONFIG.TEST_CASES_URL}${testCaseId}`,
+            `Test case ${testCaseId}`,
+            'tms'
+        );
     }
 
-    public static async attachScreenshot(page: Page): Promise<void> {
-        try {
-            const buffer = await page.screenshot({ fullPage: true });
-            attachment('Screenshot', buffer, 'image/png');
-        } catch (error) {
-            const message =
-                error instanceof Error ? error.message : String(error);
-            attachment('Screenshot Capture Error', message, 'text/plain');
-        }
+    /**
+     * Wraps `fn` in an Allure step. It deliberately does NOT catch: a failure
+     * deep in a nested step would otherwise be logged (and screenshotted) once
+     * per enclosing level as it propagates. Playwright reports the failure once.
+     */
+    public static async step<T>(
+        name: string,
+        fn: () => Promise<T> | T
+    ): Promise<T> {
+        return step(name, fn);
     }
 }
