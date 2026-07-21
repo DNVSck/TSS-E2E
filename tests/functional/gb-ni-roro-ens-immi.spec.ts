@@ -26,7 +26,6 @@ test.describe('GB to NI RoRo IMMI Pre-movement', () => {
   });
 
   test('Verify ENS-IMMI - RoRo (Accompanied) with TGP is created and submitted successfully', { tag: ['@smoke'] }, async ({
-    t,
     createAndSubmitEnsDeclarationFlow,
   }, testInfo) => {
     test.fixme(true, 'TGP screen does not skip step for Commodity code.');
@@ -48,8 +47,8 @@ test.describe('GB to NI RoRo IMMI Pre-movement', () => {
       goodsItemOverrides: {
         useTGP: true,
         additionalProcedureCode: '1EN', 
+        // "1UKI" is not inputted by user, but it is automatically added by system inside generated IMMI Consignment.
         documentReferences: [
-          //documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XIUKIM89645889502320240124160138' }),
           documentReference({ documentCode: DOCUMENT_CODE.C672,   documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XI896458895023' }),
           documentReference({ documentCode: DOCUMENT_CODE.N705,   documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
         ],
@@ -82,7 +81,8 @@ test.describe('GB to NI RoRo IMMI Pre-movement', () => {
       },
       goodsItemOverrides: {
         useTGP: false,
-        additionalProcedureCode: '1SG', 
+        additionalProcedureCode: '1SG',
+        // "1UKI" is inputted by user, checking the code list and input manually step.
         documentReferences: [
           documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XIUKIM89645889502320240124160138' }),
           documentReference({ documentCode: DOCUMENT_CODE.C672,   documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XI896458895023' }),

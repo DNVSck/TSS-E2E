@@ -32,9 +32,6 @@ export class MovementHeaderDeclarationFlow {
             await this.movementDeclarePage.inputImoAndNationalityOfMeanOfTransport(input.imoNumber, input.nationalityOfMeanOfTransport);
             await this.movementDeclarePage.clickContinueButton();
 
-            // The trailer/vehicle screen is RoRo-specific. AIR and MARITIME have no
-            // handling here yet, so the default throws rather than letting an
-            // unsupported movement type silently continue down the wrong path.
             switch (input.typeOfMovement) {
                 case TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED:
                     await this.movementDeclarePage.inputTrailerRegistrationNumber(input.trailerRegistrationNumber);
