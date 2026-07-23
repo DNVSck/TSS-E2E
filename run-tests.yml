@@ -1,94 +1,147 @@
+# =============================================================================
+# ⛔ PRACTICE ONLY — DO NOT MERGE THIS FILE ⛔
+#
+# The real config for this file lives on `main` (UI / Accessibility / Functional
+# jobs driven by templates/run-group-of-tests.yml). This branch overwrites it
+# purely to exercise a practice pipeline: registering a separate pipeline needs
+# permissions I don't have, so the only way to run my own YAML is to put it
+# where the existing "TSS-E2E Tests" pipeline already reads from.
+#
+# Clean, unmodified source of this content: trung-practice-smoke.yml
+# REVERT BEFORE ANY PR:  git checkout origin/main -- run-tests.yml
+# =============================================================================
+
 parameters:
   - name: environment
     displayName: 'Environment'
     type: string
-    default: 'dev'
+    default: sit
     values:
-      - dev
-      - test
       - sit
+      - test
 
-  - name: runUITests
-    displayName: 'Run UI Tests'
-    type: boolean
-    default: true
-
-  - name: runAccessibilityTests
-    displayName: 'Run Accessibility Tests'
-    type: boolean
-    default: true
-
-  - name: runFunctionalTests
-    displayName: 'Run Functional Tests'
-    type: boolean
-    default: true
-
-  - name: runAll
-    displayName: 'Run All Tests (overrides above)'
-    type: boolean
-    default: false
-
-variables:
-  - group: TSS-Secrets
-  - group: TSS-${{ parameters.environment }}
-
+# --- Trigger 1: MANUAL only ---------------------------------------------------
 trigger: none
-pr:
-  branches:
-    include:
-      - dev
+pr: none
+
+# --- Trigger 2: DAILY 09:00 giờ VN -------------------------------------------
+# cron của Azure DevOps chạy theo UTC. 09:00 VN (UTC+7) = 02:00 UTC.
+#
+# LƯU Ý: khối này KHÔNG kích hoạt được từ branch practice. Azure đọc lịch từ
+# "default branch" của pipeline (là main), nên nó chỉ chạy khi nội dung này nằm
+# trên branch đó. Giữ lại để học đúng cú pháp; thực tế chỉ chạy manual.
+schedules:
+  - cron: '0 2 * * *'
+    displayName: 'Daily functional smoke (09:00 VN)'
+    branches:
+      include:
+        - trung/practice-pipeline-config
+    always: true                            # chạy kể cả khi không có commit mới
+
+# --- "Trỏ" tới variable group đúng theo env (khớp casing TSS-Sit / TSS-Test) --
+variables:
+  - group: TSS-Secrets                      # NPM_TOKEN cho bước pnpm install
+  - ${{ if eq(parameters.environment, 'sit') }}:
+      - group: TSS-Sit
+  - ${{ if eq(parameters.environment, 'test') }}:
+      - group: TSS-Test
 
 pool:
   name: Linux
 
 jobs:
-  - job: UITests
-    displayName: 'Run UI tests'
+  - job: FunctionalSmoke
+    displayName: 'Functional smoke (${{ parameters.environment }})'
     timeoutInMinutes: 30
-    dependsOn: []
     container: mcr.microsoft.com/playwright:v1.57.0-noble
-    condition: |
-      or(
-        eq('${{ parameters.runAll }}', 'True'),
-        eq('${{ parameters.runUITests }}', 'True'),
-        eq(variables['Build.Reason'], 'PullRequest')
-      )
     steps:
-      - template: templates/run-group-of-tests.yml
-        parameters:
-          environment: ${{ parameters.environment }}
-          testType: 'ui'
+      - checkout: self
 
-  - job: AccessibilityTests
-    displayName: 'Run Accessibility tests'
-    timeoutInMinutes: 30
-    dependsOn: []
-    container: mcr.microsoft.com/playwright:v1.57.0-noble
-    condition: |
-      or(
-        eq('${{ parameters.runAll }}', 'True'),
-        eq('${{ parameters.runAccessibilityTests }}', 'True'),
-        eq(variables['Build.Reason'], 'PullRequest')
-      )
-    steps:
-      - template: templates/run-group-of-tests.yml
-        parameters:
-          environment: ${{ parameters.environment }}
-          testType: 'accessibility'
+      - script: |
+          cd "$(Build.SourcesDirectory)"
+          set -e
+          npx pnpm install --frozen-lockfile
+        displayName: 'Install dependencies'
+        env:
+          NPM_TOKEN: $(NPM_TOKEN)
 
-  - job: FunctionalTests
-    displayName: 'Run Functional tests'
-    timeoutInMinutes: 30
-    dependsOn: []
-    container: mcr.microsoft.com/playwright:v1.57.0-noble
-    condition: |
-      or(
-        eq('${{ parameters.runAll }}', 'True'),
-        eq('${{ parameters.runFunctionalTests }}', 'True'),
-        eq(variables['Build.Reason'], 'PullRequest')
-      )
-    steps:
-      - template: templates/run-group-of-tests.yml
+      - script: |
+          cd "$(Build.SourcesDirectory)"
+          set -e
+          npx playwright test tests/functional \
+            --grep @smoke \
+            --project=chromium-en
+        displayName: 'Run functional smoke tests'
+        env:
+          # --- Config chung ---
+          ENV: ${{ parameters.environment }}
+          CI: true
+          HEADLESS: true
+          OTP_ENABLED: true               # sit/test bắt buộc bước TOTP
+          PLAYWRIGHT_HTML_OPEN: never
+          # KHÔNG set JAVA_HOME ở đây: biến $(JAVA_HOME_21_X64) là đường dẫn của
+          # agent HOST, không tồn tại bên trong container.
+
+          # --- Biến THƯỜNG (tự map, khai báo cho rõ ràng) ---
+          BASE_URL: $(BASE_URL)
+          HAULIER_COMPANY_NAME: $(HAULIER_COMPANY_NAME)
+          AGENT_USER_NAME_1: $(AGENT_USER_NAME_1)
+          AGENT_USER_NAME_2: $(AGENT_USER_NAME_2)
+          AGENT_USER_NAME_3: $(AGENT_USER_NAME_3)
+          AGENT_USER_NAME_4: $(AGENT_USER_NAME_4)
+
+          # --- SECRET (BẮT BUỘC map tay, không tự vào process.env) ---
+          AGENT_PASSWORD: $(AGENT_PASSWORD)
+          AGENT_TOTP_SECRET_1: $(AGENT_TOTP_SECRET_1)
+          AGENT_TOTP_SECRET_2: $(AGENT_TOTP_SECRET_2)
+          AGENT_TOTP_SECRET_3: $(AGENT_TOTP_SECRET_3)
+          AGENT_TOTP_SECRET_4: $(AGENT_TOTP_SECRET_4)
+          CARRIER_EORI: $(CARRIER_EORI)
+
+      # Allure CLI là công cụ Java, container playwright không có sẵn JRE.
+      # Chỉ cài khi thiếu, dùng bản headless cho nhẹ. Đặt SAU bước test để
+      # globalTeardown (bản trên branch này vẫn tự generate) lặng lẽ no-op,
+      # tránh sinh report trùng vào test-results.
+      - script: |
+          set -e
+          if command -v java >/dev/null 2>&1; then
+            echo "Java da co san, bo qua buoc cai dat."
+          else
+            # Container co the chay bang user thuong -> can sudo
+            SUDO=""
+            if [ "$(id -u)" != "0" ]; then SUDO="sudo"; fi
+            $SUDO apt-get update -qq
+            $SUDO apt-get install -y -qq --no-install-recommends default-jre-headless
+          fi
+          java -version
+        displayName: 'Install Java (Allure CLI cần JRE)'
+        condition: always()
+
+      # condition: always() để test fail vẫn có report — đúng lúc cần nhất.
+      - script: |
+          cd "$(Build.SourcesDirectory)"
+          set -e
+          if [ ! -d allure-results ]; then
+            echo "Khong co allure-results, bo qua."
+            exit 0
+          fi
+          npx allure generate allure-results -o allure-report --clean
+        displayName: 'Generate Allure HTML report'
+        condition: always()
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Allure HTML report'
+        condition: always()
+        continueOnError: true
+        inputs:
+          pathToPublish: '$(Build.SourcesDirectory)/allure-report'
+          artifactName: 'functional-smoke-allure-report-$(Build.BuildId)'
+
+      # Publish JUnit + Playwright report + Allure results
+      - template: templates/publish-test-artifacts.yml
         parameters:
+          testType: functional-smoke
           environment: ${{ parameters.environment }}
-          testType: 'functional'
+
+      # Dọn workspace của self-hosted agent
+      - template: templates/cleanup.yml
