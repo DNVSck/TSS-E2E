@@ -22,8 +22,9 @@ export const getBaseUrl = (): string => BASE_URL;
 test.beforeEach(({}, testInfo) => {
     AllureTestManager.createParentTest(testInfo);
 
+    // "Project" is not recorded here: allure-playwright already reports it, and
+    // AllureTestManager.addMetadata covers the rest of the run's context.
     AllureTestManager.addParameter('Test File', testInfo.file);
-    AllureTestManager.addParameter('Project', testInfo.project.name);
     AllureTestManager.addParameter('Expected Status', testInfo.expectedStatus);
 });
 

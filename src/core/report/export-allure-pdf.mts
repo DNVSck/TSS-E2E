@@ -259,6 +259,8 @@ export async function exportAllurePDF(options: ExportAllurePdfOptions = {}): Pro
   const resultsDir = options.resultsDir ?? path.resolve('allure-results');
   const outputPath = options.outputPath ?? path.resolve('test-results', 'allure-report.pdf');
 
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
+
   const [groups, env] = await Promise.all([
     buildFeatureGroups(resultsDir),
     getEnvironment(resultsDir),
@@ -297,8 +299,26 @@ const currentFilePath = fileURLToPath(import.meta.url);
 const entryFilePath = process.argv[1] ? path.resolve(process.argv[1]) : null;
 
 if (entryFilePath === currentFilePath) {
+  /**
+   * Both arguments are optional and keep the previous defaults, so a bare
+   * `pnpm report:pdf` behaves exactly as before:
+   *
+   *   pnpm report:pdf
+   *   pnpm report:pdf -- ./downloaded-allure-results
+   *   pnpm report:pdf -- ./downloaded-allure-results ./out/run-1234.pdf
+   *
+   * The point is the middle form: CI publishes raw allure-results as an
+   * artifact, so this turns "unzip it" into a report without needing a JRE or a
+   * local server.
+   */
+  // pnpm forwards the "--" separator itself, so drop it before reading paths.
+  const [resultsArg, outputArg] = process.argv.slice(2).filter(arg => arg !== '--');
+
   try {
-    await exportAllurePDF();
+    await exportAllurePDF({
+      resultsDir: resultsArg ? path.resolve(resultsArg) : undefined,
+      outputPath: outputArg ? path.resolve(outputArg) : undefined,
+    });
   } catch (error) {
     console.error('Failed to export Allure PDF:', error);
     process.exit(1);

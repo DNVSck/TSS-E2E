@@ -76,8 +76,6 @@ export class MovementOverviewFlow {
 
             // Asserts the MRN row renders "-"; its value is not recorded (there is none).
             await this.consignmentDetailPage.assertNoMovementReferenceNumber();
-            const status = await this.consignmentDetailPage.getStatus();
-            ReportLog.setParameter('EIDR status', status);
         });
     }
 
@@ -97,9 +95,9 @@ export class MovementOverviewFlow {
             if (!opened) return;
 
             const mrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();
-            const status = await this.consignmentDetailPage.assertStatusAwaitingArrival();
+            // Still asserted, just no longer reported as a parameter.
+            await this.consignmentDetailPage.assertStatusAwaitingArrival();
             ReportLog.setParameter(`${label} MRN`, mrn);
-            ReportLog.setParameter(`${label} status`, status);
 
             expect.soft(mrn, `${label} MRN`).toMatch(mrnPrefix(mrnCode));
         });

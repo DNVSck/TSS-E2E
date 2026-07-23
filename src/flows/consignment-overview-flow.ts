@@ -31,7 +31,7 @@ export class ConsignmentOverviewFlow {
     async verifyDraftConsignment(): Promise<void> {
         await ReportLog.step('Validate draft ENS consignment', async () => {
             const consignmentReference = await this.consignmentOverviewPage.assertDraftConsignment();
-            ReportLog.setParameter('Consignment reference', consignmentReference);
+            ReportLog.setParameter('ENS Consignment reference', consignmentReference);
         });
     }
 

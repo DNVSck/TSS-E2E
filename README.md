@@ -381,13 +381,19 @@ $env:ENV="test"; pnpm test tests/functional/gb-ni-roro-immi-standalone.spec.ts -
 
 ### Reports
 
-The Allure report is generated automatically in `globalTeardown` after each run.
+The Allure report is generated automatically in `globalTeardown` after each local
+run, into `allure-report/`. On CI the teardown skips generation and the pipeline
+publishes the raw `allure-results/` instead.
 
 ```powershell
-pnpm report:open       # open the generated report (test-results/result.html)
-pnpm report:serve      # serve a live Allure report from allure-results/
+pnpm report:open       # serve the generated report from allure-report/
+pnpm report:serve      # generate and serve straight from allure-results/
 pnpm report:pdf        # export the Allure report to PDF
 ```
+
+Both report commands serve over HTTP rather than opening a file directly: a
+generated Allure report loads its data by XHR, which the browser blocks under
+`file://`.
 
 Also produced per run: Playwright HTML report (`playwright-report/`) and JUnit XML
 (`test-results/junit.xml`, used by CI).
