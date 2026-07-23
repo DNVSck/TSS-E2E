@@ -6,37 +6,56 @@ steps:
   - checkout: self
 
   - script: |
+      set -euo pipefail
       cd "$(Build.SourcesDirectory)"
-      set -e
 
-      npm config set registry https://registry.npmjs.org/
+      ENVIRONMENT="${{ parameters.environment }}"
 
-      echo "Installing dependencies..."
-      npx pnpm install --frozen-lockfile
-
-      echo "Preparing environment files..."
-      if [ ! -f ".env.example" ]; then
-        echo "ERROR: .env.example not found"
+      if [[ ! "$ENVIRONMENT" =~ ^[A-Za-z0-9_-]+$ ]]; then
+        echo "ERROR: Invalid environment name: $ENVIRONMENT"
         exit 1
       fi
 
-      # 1. Create the env-specific file (e.g., .env.dev)
-      ENV_FILE=".env.${{ parameters.environment }}"
+      echo "Node version:"
+      node --version
+
+      echo "Corepack version:"
+      corepack --version
+
+      npm config set registry https://registry.npmjs.org/
+
+      echo "Installing dependencies with the pnpm version pinned in package.json..."
+      corepack pnpm --version
+      corepack pnpm install --frozen-lockfile
+
+      if [ ! -f ".env.example" ]; then
+        echo "ERROR: .env.example was not found in $(Build.SourcesDirectory)"
+        exit 1
+      fi
+
+      ENV_FILE=".env.${ENVIRONMENT}"
       cp .env.example "$ENV_FILE"
 
-      # 2. Inject the variables into that specific file
-      sed -i "s|^BASE_URL=.*|BASE_URL=$(BASE_URL)|" "$ENV_FILE"
-      sed -i "s|^USER_NAME=.*|USER_NAME=$(USER_NAME)|" "$ENV_FILE"
-      sed -i "s|^PASSWORD=.*|PASSWORD=$(PASSWORD)|" "$ENV_FILE"
-      sed -i "s|^HEADLESS=.*|HEADLESS=true|" "$ENV_FILE"
-      sed -i "s|^VIDEO_MODE=.*|VIDEO_MODE=retain-on-failure|" "$ENV_FILE"
+      set_env_value() {
+        local key="$1"
+        local value="$2"
 
-      cp "$ENV_FILE" .env
-      echo "Environment: ${{ parameters.environment }} ready"
-    displayName: 'Install Dependencies'
+        if grep -q "^${key}=" "$ENV_FILE"; then
+          sed -i "s|^${key}=.*|${key}=${value}|" "$ENV_FILE"
+        else
+          printf '\n%s=%s\n' "$key" "$value" >> "$ENV_FILE"
+        fi
+      }
+
+      set_env_value "HEADLESS" "true"
+      set_env_value "VIDEO_MODE" "retain-on-failure"
+
+      chmod 600 "$ENV_FILE"
+
+      echo "Environment file created: $ENV_FILE"
+      echo "Environment preparation completed for: $ENVIRONMENT"
+
+    displayName: 'Install dependencies and prepare environment'
+
     env:
-      CI: true
-      NPM_TOKEN: $(NPM_TOKEN)
-      BASE_URL: $(BASE_URL)
-      USER_NAME: $(USER_NAME)
-      PASSWORD: $(PASSWORD)
+      CI: 'true'

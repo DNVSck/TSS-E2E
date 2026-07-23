@@ -1,17 +1,30 @@
 parameters:
   - name: environment
-    displayName: 'Environment'
+    displayName: 'Environment to run against'
     type: string
-    default: 'dev'
+    default: test
     values:
-      - dev
       - test
       - sit
+      - dev
 
-  - name: runUITests
-    displayName: 'Run UI Tests'
-    type: boolean
-    default: true
+  - name: testScope
+    displayName: 'Tests to run'
+    type: string
+    default: smoke
+    values:
+      - smoke
+      - all
+
+  - name: workers
+    displayName: 'Parallel Playwright workers'
+    type: number
+    default: 1
+    values:
+      - 1
+      - 2
+      - 3
+      - 4
 
   - name: runAccessibilityTests
     displayName: 'Run Accessibility Tests'
@@ -24,15 +37,24 @@ parameters:
     default: true
 
   - name: runAll
-    displayName: 'Run All Tests (overrides above)'
+    displayName: 'Run All Test Types (overrides selections above)'
     type: boolean
     default: false
 
 variables:
   - group: TSS-Secrets
-  - group: TSS-${{ parameters.environment }}
+
+  - ${{ if eq(parameters.environment, 'dev') }}:
+      - group: TSS-Dev
+
+  - ${{ if eq(parameters.environment, 'test') }}:
+      - group: TSS-Test
+
+  - ${{ if eq(parameters.environment, 'sit') }}:
+      - group: TSS-Sit
 
 trigger: none
+
 pr:
   branches:
     include:
@@ -42,28 +64,13 @@ pool:
   name: Linux
 
 jobs:
-  - job: UITests
-    displayName: 'Run UI tests'
-    timeoutInMinutes: 30
-    dependsOn: []
-    container: mcr.microsoft.com/playwright:v1.57.0-noble
-    condition: |
-      or(
-        eq('${{ parameters.runAll }}', 'True'),
-        eq('${{ parameters.runUITests }}', 'True'),
-        eq(variables['Build.Reason'], 'PullRequest')
-      )
-    steps:
-      - template: templates/run-group-of-tests.yml
-        parameters:
-          environment: ${{ parameters.environment }}
-          testType: 'ui'
-
   - job: AccessibilityTests
-    displayName: 'Run Accessibility tests'
+    displayName: 'Run accessibility tests - ${{ parameters.environment }}'
     timeoutInMinutes: 30
     dependsOn: []
-    container: mcr.microsoft.com/playwright:v1.57.0-noble
+    container:
+      image: mcr.microsoft.com/playwright:v1.57.0-noble
+      options: --ipc=host --security-opt label=disable
     condition: |
       or(
         eq('${{ parameters.runAll }}', 'True'),
@@ -75,12 +82,16 @@ jobs:
         parameters:
           environment: ${{ parameters.environment }}
           testType: 'accessibility'
+          testScope: ${{ parameters.testScope }}
+          workers: ${{ parameters.workers }}'
 
   - job: FunctionalTests
-    displayName: 'Run Functional tests'
-    timeoutInMinutes: 30
+    displayName: 'Run functional tests - ${{ parameters.environment }}'
+    timeoutInMinutes: 60
     dependsOn: []
-    container: mcr.microsoft.com/playwright:v1.57.0-noble
+    container:
+      image: mcr.microsoft.com/playwright:v1.57.0-noble
+      options: --ipc=host --security-opt label=disable
     condition: |
       or(
         eq('${{ parameters.runAll }}', 'True'),
@@ -92,3 +103,5 @@ jobs:
         parameters:
           environment: ${{ parameters.environment }}
           testType: 'functional'
+          testScope: ${{ parameters.testScope }}
+          workers: ${{ parameters.workers }}

@@ -1,30 +1,33 @@
-import { FullConfig } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
 
-async function globalTeardown(config: FullConfig) {
+async function globalTeardown(): Promise<void> {
   const allureResultsPath = path.resolve('allure-results');
-  const testResultsPath = path.resolve('test-results');
 
-  if (fs.existsSync(allureResultsPath)) {
-    try {
-      execSync(
-        `npx allure generate ${allureResultsPath} -o ${testResultsPath} --clean`,
-        { stdio: 'inherit' }
-      );
+  if (!fs.existsSync(allureResultsPath)) {
+    return;
+  }
 
-      const indexPath = path.join(testResultsPath, 'index.html');
-      const resultPath = path.join(testResultsPath, 'result.html');
+  if (process.env.CI) {
+    console.log(
+      'CI detected: skipping Allure HTML generation. Raw allure-results will be published by the pipeline.',
+    );
+    return;
+  }
 
-      if (fs.existsSync(indexPath)) {
-        fs.copyFileSync(indexPath, resultPath);
-        fs.unlinkSync(indexPath);
-      }
+  const allureReportPath = path.resolve('allure-report');
 
-    } catch (error) {
-      console.warn('Allure report generation failed:', String(error));
-    }
+  try {
+    execSync(
+      `npx allure generate "${allureResultsPath}" -o "${allureReportPath}" --clean`,
+      { stdio: 'inherit' },
+    );
+  } catch (error) {
+    console.warn(
+      'Allure report generation failed:',
+      error instanceof Error ? error.message : String(error),
+    );
   }
 }
 

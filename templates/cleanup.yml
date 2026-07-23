@@ -1,8 +1,16 @@
+parameters:
+  - name: environment
+    type: string
+
 steps:
   - script: |
       set -e
       echo "Cleaning up agent workspace..."
       
+      rm -f ".env.${{ parameters.environment }}"
+      rm -f ".env"
+      rm -rf "playwright/.auth/${{ parameters.environment }}"
+
       dirs=(
         "$(Build.SourcesDirectory)/node_modules"
         "$(Build.SourcesDirectory)/test-results"
@@ -17,6 +25,9 @@ steps:
           echo "Removed: $dir"
         fi
       done
+
+      echo "Cleaning installed dependencies..."
+      rm -rf node_modules
       
       echo "Cleanup complete"
     displayName: 'Cleanup agent workspace'

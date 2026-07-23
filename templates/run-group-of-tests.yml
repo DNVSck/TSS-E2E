@@ -1,8 +1,25 @@
 parameters:
   - name: environment
     type: string
+
   - name: testType
     type: string
+
+  - name: testScope
+    type: string
+    default: smoke
+    values:
+      - smoke
+      - all
+
+  - name: workers
+    type: number
+    default: 1
+    values:
+      - 1
+      - 2
+      - 3
+      - 4
 
 steps:
   - template: test-env-prepare.yml
@@ -10,27 +27,122 @@ steps:
       environment: ${{ parameters.environment }}
 
   - script: |
+      set -euo pipefail
       cd "$(Build.SourcesDirectory)"
-      set -e
-      
-      RUN_ARGS="${{ parameters.testType }} --pass-with-no-tests"
-      if [ "$(Build.Reason)" = "PullRequest" ]; then
-        RUN_ARGS="$RUN_ARGS --grep @smoke"
+
+      TEST_PATH="tests/${{ parameters.testType }}"
+      TEST_SCOPE="${{ parameters.testScope }}"
+      WORKER_COUNT="${{ parameters.workers }}"
+
+      if [ ! -d "$TEST_PATH" ]; then
+        echo "ERROR: Test directory does not exist: $TEST_PATH"
+        echo "Available test directories:"
+        find tests -maxdepth 1 -mindepth 1 -type d -print
+        exit 1
       fi
 
-      echo "Running: pnpm test $RUN_ARGS"
-      pnpm test $RUN_ARGS
-    displayName: 'Run ${{ parameters.testType }} tests'
+      if ! [[ "$WORKER_COUNT" =~ ^[1-4]$ ]]; then
+        echo "ERROR: workers must be between 1 and 4."
+        exit 1
+      fi
+
+      # Azure leaves an unresolved macro as literal text such as
+      # $(AGENT_USER_NAME_2). Remove any unresolved optional account values
+      # before Playwright reads the account pool.
+      normalise_optional_variable() {
+        local name="$1"
+        local value="${!name:-}"
+
+        if [ "$value" = "\$($name)" ]; then
+          unset "$name"
+        fi
+      }
+
+      for account_number in 1 2 3 4; do
+        normalise_optional_variable "AGENT_USER_NAME_${account_number}"
+        normalise_optional_variable "AGENT_TOTP_SECRET_${account_number}"
+      done
+
+      require_variable() {
+        local name="$1"
+        local value="${!name:-}"
+
+        if [ -z "$value" ] || [ "$value" = "\$($name)" ]; then
+          echo "ERROR: Missing required pipeline variable: $name"
+          exit 1
+        fi
+
+        echo "Configuration present: $name"
+      }
+
+      require_variable "BASE_URL"
+      require_variable "OTP_ENABLED"
+      require_variable "HAULIER_COMPANY_NAME"
+      require_variable "AGENT_PASSWORD"
+
+      for account_number in $(seq 1 "$WORKER_COUNT"); do
+        require_variable "AGENT_USER_NAME_${account_number}"
+
+        if [ "${OTP_ENABLED,,}" = "true" ]; then
+          require_variable "AGENT_TOTP_SECRET_${account_number}"
+        fi
+      done
+
+      RUN_ARGS=(
+        "$TEST_PATH"
+        "--project=chromium-en"
+        "--workers=$WORKER_COUNT"
+      )
+
+      if [ "$TEST_SCOPE" = "smoke" ]; then
+        RUN_ARGS+=("--grep" "@smoke")
+      fi
+
+      echo "Running Playwright tests..."
+      echo "Environment: $ENV"
+      echo "Test path: $TEST_PATH"
+      echo "Test scope: $TEST_SCOPE"
+      echo "Workers: $WORKER_COUNT"
+
+      corepack pnpm exec playwright test "${RUN_ARGS[@]}"
+
+    displayName: 'Run ${{ parameters.testType }} tests - ${{ parameters.environment }}'
+
     env:
       ENV: ${{ parameters.environment }}
-      CI: true
-      PWDEBUG: 0
-      PLAYWRIGHT_HTML_OPEN: never
-      JAVA_HOME: $(JAVA_HOME_21_X64)
+
+      CI: 'true'
+      HEADLESS: 'true'
+      LOCALE: 'en'
+      AUTH_PROFILES: 'AGENT'
+      AUTH_REUSE_SESSION: 'false'
+      PWDEBUG: '0'
+      PLAYWRIGHT_HTML_OPEN: 'never'
+
+      BASE_URL: $(BASE_URL)
+      OTP_ENABLED: $(OTP_ENABLED)
+      HAULIER_COMPANY_NAME: $(HAULIER_COMPANY_NAME)
+      IMPORTER_COMPANY_NAME: $(IMPORTER_COMPANY_NAME)
+
+      AGENT_PASSWORD: $(AGENT_PASSWORD)
+
+      AGENT_USER_NAME_1: $(AGENT_USER_NAME_1)
+      AGENT_TOTP_SECRET_1: $(AGENT_TOTP_SECRET_1)
+
+      AGENT_USER_NAME_2: $(AGENT_USER_NAME_2)
+      AGENT_TOTP_SECRET_2: $(AGENT_TOTP_SECRET_2)
+
+      AGENT_USER_NAME_3: $(AGENT_USER_NAME_3)
+      AGENT_TOTP_SECRET_3: $(AGENT_TOTP_SECRET_3)
+
+      AGENT_USER_NAME_4: $(AGENT_USER_NAME_4)
+      AGENT_TOTP_SECRET_4: $(AGENT_TOTP_SECRET_4)
 
   - template: publish-test-artifacts.yml
     parameters:
-      testType: ${{ parameters.testType }}
       environment: ${{ parameters.environment }}
+      testType: ${{ parameters.testType }}
 
   - template: cleanup.yml
+    parameters:
+      environment: ${{ parameters.environment }}

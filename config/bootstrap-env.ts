@@ -16,7 +16,17 @@ export function bootstrapEnv(): void {
     console.log(`Bootstrapping environment: ${envName}`);
     console.log(`Loading env file: ${envPath}`);
 
-    dotenv.config({ path: envPath, override: true });
+    const result = dotenv.config({
+    path: envPath,
+    override: false,
+    });
+
+    if (result.error) {
+    throw new Error(
+        `Unable to load environment file "${envFile}": ` +
+        result.error.message,
+    );
+    }
 
     // Optional but junior-friendly: validate required vars early
     const required = ['BASE_URL'];

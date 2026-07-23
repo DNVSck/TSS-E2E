@@ -1,31 +1,56 @@
 parameters:
-  - name: testType
-    type: string
   - name: environment
     type: string
 
+  - name: testType
+    type: string
+
 steps:
+  - script: |
+      set -euo pipefail
+      cd "$(Build.SourcesDirectory)"
+
+      mkdir -p test-results
+      mkdir -p playwright-report
+      mkdir -p allure-results
+
+    displayName: 'Prepare report directories'
+    condition: always()
+
   - task: PublishTestResults@2
+    displayName: 'Publish JUnit results - ${{ parameters.environment }}'
     condition: always()
-    continueOnError: true
-    displayName: 'Publish test results'
     inputs:
-      testResultsFiles: '$(Build.SourcesDirectory)/test-results/junit.xml'
-      testRunTitle: '${{ parameters.testType }} tests (${{ parameters.environment }})'
+      testResultsFormat: JUnit
+      searchFolder: '$(Build.SourcesDirectory)'
+      testResultsFiles: 'test-results/junit.xml'
+      mergeTestResults: true
       failTaskOnFailedTests: false
+      testRunTitle: '${{ parameters.testType }} tests - ${{ parameters.environment }}'
 
   - task: PublishBuildArtifacts@1
+    displayName: 'Publish Playwright report - ${{ parameters.environment }}'
     condition: always()
     continueOnError: true
-    displayName: 'Publish Playwright report'
     inputs:
-      pathToPublish: '$(Build.SourcesDirectory)/playwright-report'
-      artifactName: '${{ parameters.testType }}-playwright-report-$(Build.BuildId)'
+      PathtoPublish: '$(Build.SourcesDirectory)/playwright-report'
+      ArtifactName: 'playwright-report-${{ parameters.testType }}-${{ parameters.environment }}'
+      publishLocation: Container
 
   - task: PublishBuildArtifacts@1
+    displayName: 'Publish Playwright test artifacts - ${{ parameters.environment }}'
     condition: always()
     continueOnError: true
-    displayName: 'Publish Allure results'
     inputs:
-      pathToPublish: '$(Build.SourcesDirectory)/allure-results'
-      artifactName: '${{ parameters.testType }}-allure-results-$(Build.BuildId)'
+      PathtoPublish: '$(Build.SourcesDirectory)/test-results'
+      ArtifactName: 'test-results-${{ parameters.testType }}-${{ parameters.environment }}'
+      publishLocation: Container
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Allure results - ${{ parameters.environment }}'
+    condition: always()
+    continueOnError: true
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)/allure-results'
+      ArtifactName: 'allure-results-${{ parameters.testType }}-${{ parameters.environment }}'
+      publishLocation: Container
