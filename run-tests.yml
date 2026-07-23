@@ -79,6 +79,10 @@ jobs:
           HEADLESS: true
           OTP_ENABLED: true               # sit/test bắt buộc bước TOTP
           PLAYWRIGHT_HTML_OPEN: never
+          # Ghi de mac dinh "CI => 1 worker" cua playwright.config.ts. Tran cung
+          # la so account trong pool AGENT (hien co 4), vi moi worker can mot
+          # session rieng — xem src/core/auth/credentials.ts accountFor().
+          WORKERS: 3
           # KHÔNG set JAVA_HOME ở đây: biến $(JAVA_HOME_21_X64) là đường dẫn của
           # agent HOST, không tồn tại bên trong container.
 
