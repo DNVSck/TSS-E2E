@@ -102,32 +102,44 @@ jobs:
       # Chỉ cài khi thiếu, dùng bản headless cho nhẹ. Đặt SAU bước test để
       # globalTeardown (bản trên branch này vẫn tự generate) lặng lẽ no-op,
       # tránh sinh report trùng vào test-results.
+      # KHONG dung cu phap $(...) trong script cua ADO: do la cu phap bien cua
+      # Azure, no thay the truoc khi bash chay. `$(id -u)` bi nuot -> chuoi rong.
       - script: |
-          set -e
+          echo "=== user dang chay ==="
+          id
+          echo "=== da co java chua? ==="
           if command -v java >/dev/null 2>&1; then
+            java -version
             echo "Java da co san, bo qua buoc cai dat."
-          else
-            # Container co the chay bang user thuong -> can sudo
-            SUDO=""
-            if [ "$(id -u)" != "0" ]; then SUDO="sudo"; fi
-            $SUDO apt-get update -qq
-            $SUDO apt-get install -y -qq --no-install-recommends default-jre-headless
+            exit 0
           fi
+          echo "=== thu cai JRE (khong sudo) ==="
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends default-jre-headless
           java -version
         displayName: 'Install Java (Allure CLI cần JRE)'
         condition: always()
+        # Khong lam sap build: neu khong cai duoc Java thi van con raw
+        # allure-results + Playwright report de doi chieu.
+        continueOnError: true
 
       # condition: always() để test fail vẫn có report — đúng lúc cần nhất.
       - script: |
           cd "$(Build.SourcesDirectory)"
-          set -e
+          if ! command -v java >/dev/null 2>&1; then
+            echo "Khong co Java -> Allure CLI khong chay duoc. Bo qua buoc nay."
+            echo "Raw allure-results van duoc publish o buoc sau."
+            exit 0
+          fi
           if [ ! -d allure-results ]; then
             echo "Khong co allure-results, bo qua."
             exit 0
           fi
+          set -e
           npx allure generate allure-results -o allure-report --clean
         displayName: 'Generate Allure HTML report'
         condition: always()
+        continueOnError: true
 
       - task: PublishBuildArtifacts@1
         displayName: 'Publish Allure HTML report'
