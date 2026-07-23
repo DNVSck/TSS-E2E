@@ -18,8 +18,10 @@ steps:
         RUN_ARGS="$RUN_ARGS --grep @smoke"
       fi
 
-      echo "Running: pnpm test $RUN_ARGS"
-      pnpm test $RUN_ARGS
+      # `npx pnpm`, not bare `pnpm`: test-env-prepare.yml installs via npx, which
+      # never puts pnpm on PATH, so a bare call exits 127 (command not found).
+      echo "Running: npx pnpm test $RUN_ARGS"
+      npx pnpm test $RUN_ARGS
     displayName: 'Run ${{ parameters.testType }} tests'
     env:
       ENV: ${{ parameters.environment }}
