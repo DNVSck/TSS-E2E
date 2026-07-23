@@ -50,7 +50,7 @@ pool:
 jobs:
   - job: FunctionalSmoke
     displayName: 'Functional smoke (${{ parameters.environment }})'
-    timeoutInMinutes: 30
+    timeoutInMinutes: 60
     container: mcr.microsoft.com/playwright:v1.57.0-noble
     steps:
       - checkout: self
@@ -83,6 +83,21 @@ jobs:
           WORKERS: 3
           # JAVA_HOME is deliberately not set: $(JAVA_HOME_21_X64) is a path on
           # the agent host and does not exist inside the container.
+
+          # --- Timeouts ---
+          # .env.* is gitignored, so no env file reaches CI: bootstrap-env.ts
+          # finds nothing and every timeout silently falls back to the defaults
+          # in playwright.config.ts. That left each test with 30s to complete a
+          # whole declaration journey, so runs died mid-click with
+          # "locator resolved to <button> ... Test ended". These mirror .env.sit
+          # so CI behaves like a local run.
+          TEST_BASE_TIMEOUT: 300000
+          EXPECT_BASE_TIMEOUT: 30000
+          PAGE_TIMEOUT: 30000
+          # 15s rather than the 5s default: the commodity field is a live tariff
+          # autocomplete, and 5s is not enough for it once three workers are
+          # sharing a container and hitting that API at once.
+          DEFAULT_TIMEOUT: 15000
 
           # --- Non-secret variables (auto-exported, listed for visibility) ---
           BASE_URL: $(BASE_URL)
