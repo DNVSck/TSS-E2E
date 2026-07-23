@@ -1,0 +1,133 @@
+# =============================================================================
+# PRACTICE pipeline — Trung
+# Manual + Daily (09:00 giờ VN) smoke run over tests/functional
+# Branch: trung/practice-pipeline-config  (đổi cho khớp branch của bạn)
+# =============================================================================
+
+parameters:
+  - name: environment
+    displayName: 'Environment'
+    type: string
+    default: sit
+    values:
+      - sit
+      - test
+
+# --- Trigger 1: MANUAL only ---------------------------------------------------
+trigger: none
+pr: none
+
+# --- Trigger 2: DAILY 09:00 giờ VN -------------------------------------------
+# cron của Azure DevOps chạy theo UTC. 09:00 VN (UTC+7) = 02:00 UTC.
+schedules:
+  - cron: '0 2 * * *'
+    displayName: 'Daily functional smoke (09:00 VN)'
+    branches:
+      include:
+        - trung/practice-pipeline-config   # phải đúng branch chứa file này
+    always: true                            # chạy kể cả khi không có commit mới
+
+# --- "Trỏ" tới variable group đúng theo env (khớp casing TSS-Sit / TSS-Test) --
+variables:
+  - ${{ if eq(parameters.environment, 'sit') }}:
+      - group: TSS-Sit
+  - ${{ if eq(parameters.environment, 'test') }}:
+      - group: TSS-Test
+
+pool:
+  name: Linux
+
+jobs:
+  - job: FunctionalSmoke
+    displayName: 'Functional smoke (${{ parameters.environment }})'
+    timeoutInMinutes: 30
+    container: mcr.microsoft.com/playwright:v1.57.0-noble
+    steps:
+      - checkout: self
+
+      - script: |
+          cd "$(Build.SourcesDirectory)"
+          set -e
+          npx pnpm install --frozen-lockfile
+        displayName: 'Install dependencies'
+
+      - script: |
+          cd "$(Build.SourcesDirectory)"
+          set -e
+          npx playwright test tests/functional \
+            --grep @smoke \
+            --project=chromium-en
+        displayName: 'Run functional smoke tests'
+        env:
+          # --- Config chung ---
+          ENV: ${{ parameters.environment }}
+          CI: true
+          HEADLESS: true
+          OTP_ENABLED: true               # sit/test bắt buộc bước TOTP
+          PLAYWRIGHT_HTML_OPEN: never
+          # KHÔNG set JAVA_HOME ở đây: biến $(JAVA_HOME_21_X64) là đường dẫn của
+          # agent HOST, không tồn tại bên trong container. Bước test cũng không
+          # cần Java nữa (globalTeardown skip generate khi CI=true).
+
+          # --- Biến THƯỜNG (tự map, khai báo cho rõ ràng) ---
+          BASE_URL: $(BASE_URL)
+          HAULIER_COMPANY_NAME: $(HAULIER_COMPANY_NAME)
+          AGENT_USER_NAME_1: $(AGENT_USER_NAME_1)
+          AGENT_USER_NAME_2: $(AGENT_USER_NAME_2)
+          AGENT_USER_NAME_3: $(AGENT_USER_NAME_3)
+          AGENT_USER_NAME_4: $(AGENT_USER_NAME_4)
+
+          # --- SECRET (BẮT BUỘC map tay, không tự vào process.env) ---
+          AGENT_PASSWORD: $(AGENT_PASSWORD)
+          AGENT_TOTP_SECRET_1: $(AGENT_TOTP_SECRET_1)
+          AGENT_TOTP_SECRET_2: $(AGENT_TOTP_SECRET_2)
+          AGENT_TOTP_SECRET_3: $(AGENT_TOTP_SECRET_3)
+          AGENT_TOTP_SECRET_4: $(AGENT_TOTP_SECRET_4)
+          CARRIER_EORI: $(CARRIER_EORI)
+
+      # Allure CLI là công cụ Java, container playwright không có sẵn JRE.
+      # Chỉ cài khi thiếu, dùng bản headless cho nhẹ.
+      - script: |
+          set -e
+          if command -v java >/dev/null 2>&1; then
+            echo "Java da co san, bo qua buoc cai dat."
+          else
+            # Container co the chay bang user thuong -> can sudo
+            SUDO=""
+            if [ "$(id -u)" != "0" ]; then SUDO="sudo"; fi
+            $SUDO apt-get update -qq
+            $SUDO apt-get install -y -qq --no-install-recommends default-jre-headless
+          fi
+          java -version
+        displayName: 'Install Java (Allure CLI cần JRE)'
+        condition: always()
+
+      # globalTeardown skip generate khi CI=true, nên pipeline phải tự generate.
+      # condition: always() để test fail vẫn có report — đúng lúc cần nhất.
+      - script: |
+          cd "$(Build.SourcesDirectory)"
+          set -e
+          if [ ! -d allure-results ]; then
+            echo "Khong co allure-results, bo qua."
+            exit 0
+          fi
+          npx allure generate allure-results -o allure-report --clean
+        displayName: 'Generate Allure HTML report'
+        condition: always()
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Allure HTML report'
+        condition: always()
+        continueOnError: true
+        inputs:
+          pathToPublish: '$(Build.SourcesDirectory)/allure-report'
+          artifactName: 'functional-smoke-allure-report-$(Build.BuildId)'
+
+      # Publish JUnit + Playwright report + Allure results
+      - template: templates/publish-test-artifacts.yml
+        parameters:
+          testType: functional-smoke
+          environment: ${{ parameters.environment }}
+
+      # Dọn workspace của self-hosted agent
+      - template: templates/cleanup.yml
