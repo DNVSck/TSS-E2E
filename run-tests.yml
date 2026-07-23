@@ -83,7 +83,7 @@ jobs:
           environment: ${{ parameters.environment }}
           testType: 'accessibility'
           testScope: ${{ parameters.testScope }}
-          workers: ${{ parameters.workers }}'
+          workers: ${{ parameters.workers }}
 
   - job: FunctionalTests
     displayName: 'Run functional tests - ${{ parameters.environment }}'

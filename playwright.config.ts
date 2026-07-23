@@ -5,6 +5,14 @@ bootstrapEnv();
 const LOCALE = process.env.LOCALE ?? 'all';
 
 /**
+ * Central Playwright timeout configuration.
+ */
+const TEST_TIMEOUT = 300_000; // Maximum duration of one test: 5 minutes
+const EXPECT_TIMEOUT = 30_000; // Maximum wait for Playwright assertions: 30 seconds
+const ACTION_TIMEOUT = 15_000; // Maximum wait for actions such as click/fill: 15 seconds
+const NAVIGATION_TIMEOUT = 30_000; // Maximum wait for page navigation: 30 seconds
+
+/**
  * Worker count: an explicit WORKERS wins everywhere; otherwise CI runs serial
  * and local runs use Playwright's default (undefined). Keep WORKERS <= the
  * number of accounts in the profile's pool — two workers sharing a session fail.
@@ -28,10 +36,10 @@ export default defineConfig({
 
   workers: resolveWorkers(),
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  timeout: Number(process.env.TEST_BASE_TIMEOUT ?? 30000),
+  timeout: TEST_TIMEOUT,
+
   expect: {
-    /* Distinct from the whole-test timeout above: raising one must not raise the other. */
-    timeout: Number(process.env.EXPECT_BASE_TIMEOUT ?? 5000),
+    timeout: EXPECT_TIMEOUT,
   },
   reporter: [
     ['allure-playwright', { suiteTitle: true }],
@@ -48,8 +56,8 @@ export default defineConfig({
       slowMo: Number(process.env.SLOW_MO ?? 0),
     },
     /* Screenshots and traces for failure debugging */
-    actionTimeout: Number(process.env.DEFAULT_TIMEOUT ?? 5000),
-    navigationTimeout: Number(process.env.PAGE_TIMEOUT ?? 10000),
+    actionTimeout: ACTION_TIMEOUT,
+    navigationTimeout: NAVIGATION_TIMEOUT,
     screenshot: 'only-on-failure',
     video: {
       mode: 'retain-on-failure',

@@ -100,7 +100,7 @@ Every run **requires** `ENV=<name>`; the config then loads `.env.<name>` (missin
 | | `.env.sit` | `.env.test` |
 |---|---|---|
 | Used by | `*:sit` scripts — day-to-day dev runs | `*:test` scripts |
-| `DEFAULT_TIMEOUT` | 5s | **15s** — the test env is noticeably slower, 5s action timeouts were flaky |
+| `NAVIGATION_TIMEOUT` | 5s | **15s** — the test env is noticeably slower, 5s action timeouts were flaky |
 
 Create the file(s) from the example and fill in credentials:
 
@@ -489,7 +489,7 @@ or lower `--workers`.
 Check the `TOTP_SECRET` is base32 **without spaces**, and the machine clock is accurate.
 
 **Tests flaky on the `test` env:**
-The test env is slow — make sure you run with `.env.test` (its `DEFAULT_TIMEOUT` is 15s,
+The test env is slow — make sure you run with `.env.test` (its `NAVIGATION_TIMEOUT` is 15s,
 vs 5s on SIT).
 
 **Browsers missing / "Project not found":**
