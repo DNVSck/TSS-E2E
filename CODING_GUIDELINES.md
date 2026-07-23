@@ -138,7 +138,7 @@ discriminator + factories — don't fork near-identical types that will drift.
 - **Files:** `kebab-case.ts` (`sign-in-page.ts`, `movement-overview-flow.ts`)
 - **Classes:** `PascalCase` (`SignInPage`, `MovementOverviewFlow`)
 - **Variables/functions:** `camelCase`
-- **Env-derived constants:** `UPPER_SNAKE_CASE` (`BASE_URL`, `DEFAULT_TIMEOUT`)
+- **Env-derived constants:** `UPPER_SNAKE_CASE` (`BASE_URL`, `NAVIGATION_TIMEOUT`)
 - **Page object suffixes:** `*-page.ts` in `src/page-object/`, reusable fragments in
   `src/page-object/components/`, flows `*-flow.ts` in `src/flows/`
 

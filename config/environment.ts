@@ -42,8 +42,8 @@ export const BASE_URL = process.env.BASE_URL!;
 export const HAULIER_COMPANY_NAME = process.env.HAULIER_COMPANY_NAME ?? '';
 export const IMPORTER_COMPANY_NAME = process.env.IMPORTER_COMPANY_NAME ?? '';
 
-export const DEFAULT_TIMEOUT = numberOrDefault(
-  process.env.DEFAULT_TIMEOUT,
+export const NAVIGATION_TIMEOUT = numberOrDefault(
+  process.env.NAVIGATION_TIMEOUT,
   5000
 );
 
@@ -54,7 +54,7 @@ export const ENVIRONMENT_INFO = {
   currentEnv: ENV,
   currentLocale: LOCALE,
   baseUrl: BASE_URL,
-  defaultTimeout: DEFAULT_TIMEOUT,
+  defaultTimeout: NAVIGATION_TIMEOUT,
   viewport: {
     width: MAX_WIDTH,
     height: MAX_HEIGHT

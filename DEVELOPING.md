@@ -192,7 +192,7 @@ await this.saveButton.click();   // ✅ auto-waits for actionable
 **Environment access** goes through `config/environment.ts` (typed, validated), not raw
 `process.env` scattered around:
 ```typescript
-import { BASE_URL, DEFAULT_TIMEOUT } from '../config/environment';
+import { BASE_URL, NAVIGATION_TIMEOUT } from '../config/environment';
 ```
 
 **Translations:** use the `t('key')` fixture for text assertions, never hardcoded strings.
