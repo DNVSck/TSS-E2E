@@ -102,54 +102,64 @@ jobs:
           AGENT_TOTP_SECRET_4: $(AGENT_TOTP_SECRET_4)
           CARRIER_EORI: $(CARRIER_EORI)
 
-      # The Allure CLI is a Java tool and the Playwright image ships no JRE.
-      # Runs after the tests so the current globalTeardown, which still tries to
-      # generate on its own, quietly no-ops instead of writing a duplicate
-      # report into test-results.
+      # The Allure CLI is a Java tool and the Playwright image ships no JRE. The
+      # container also runs as uid 1003 with no sudo, so apt-get cannot install
+      # one ("Unable to acquire the dpkg frontend lock, are you root?").
       #
-      # Do NOT use $(...) in an ADO script block: that is Azure's own variable
-      # macro and is substituted before bash runs, so `$(id -u)` collapses to an
-      # empty string. Plain commands only.
-      - script: |
-          echo "=== current user ==="
-          id
-          echo "=== is java present? ==="
-          if command -v java >/dev/null 2>&1; then
-            java -version
-            echo "Java already available, skipping install."
-            exit 0
-          fi
-          echo "=== installing a headless JRE ==="
-          apt-get update -qq
-          apt-get install -y -qq --no-install-recommends default-jre-headless
-          java -version
-        displayName: 'Install Java (required by the Allure CLI)'
+      # Everything below therefore uses `target: host`, running on the agent
+      # machine instead of inside the container. The host already provides a
+      # JDK - azure-pipelines.yml relies on the same one - and the workspace is
+      # mounted into the container, so the host sees the very allure-results and
+      # node_modules the test step just produced.
+      - task: JavaToolInstaller@0
+        displayName: 'Provision Java on the agent host'
+        target: host
         condition: always()
-        # Never fail the build over this: without a JRE we still publish the raw
-        # allure-results and the Playwright report.
         continueOnError: true
+        inputs:
+          versionSpec: '21'
+          jdkArchitectureOption: 'x64'
+          jdkSourceOption: 'PreInstalled'
+
+      - task: NodeTool@0
+        displayName: 'Provision Node on the agent host'
+        target: host
+        condition: always()
+        continueOnError: true
+        inputs:
+          versionSpec: '24.x'
 
       # condition: always() so a failing test run still produces a report, which
-      # is exactly when the report matters most.
+      # is exactly when the report matters most. The diagnostics up front make
+      # the next run self-explanatory if the host toolchain is not what we think.
       - script: |
-          cd "$(Build.SourcesDirectory)"
+          echo "=== host context ==="
+          pwd
+          id
+          echo "=== toolchain ==="
+          node --version || echo "node is missing"
+          java -version || echo "java is missing"
           if ! command -v java >/dev/null 2>&1; then
-            echo "No Java available, so the Allure CLI cannot run. Skipping."
-            echo "Raw allure-results are still published by a later step."
+            echo "No Java on the host either, so the Allure CLI cannot run."
             exit 0
           fi
           if [ ! -d allure-results ]; then
             echo "No allure-results directory, nothing to generate."
+            ls -la
             exit 0
           fi
           set -e
           npx allure generate allure-results -o allure-report --clean
+          ls -la allure-report
         displayName: 'Generate Allure HTML report'
+        target: host
+        workingDirectory: $(Build.SourcesDirectory)
         condition: always()
         continueOnError: true
 
       - task: PublishBuildArtifacts@1
         displayName: 'Publish Allure HTML report'
+        target: host
         condition: always()
         continueOnError: true
         inputs:
