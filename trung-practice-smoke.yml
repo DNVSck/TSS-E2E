@@ -1,7 +1,11 @@
 # =============================================================================
-# PRACTICE pipeline — Trung
-# Manual + Daily (09:00 giờ VN) smoke run over tests/functional
-# Branch: trung/practice-pipeline-config  (đổi cho khớp branch của bạn)
+# Practice pipeline - Trung
+# Manual trigger plus a daily 09:00 (Vietnam time) smoke run over tests/functional.
+#
+# This is the clean source. It is not wired to any pipeline yet: registering a
+# pipeline needs permissions I do not have, so the same content currently also
+# lives in run-tests.yml on this branch, which is where the existing
+# "TSS-E2E Tests" pipeline reads from. Keep the two in sync.
 # =============================================================================
 
 parameters:
@@ -13,22 +17,28 @@ parameters:
       - sit
       - test
 
-# --- Trigger 1: MANUAL only ---------------------------------------------------
+# --- Trigger 1: manual only --------------------------------------------------
 trigger: none
 pr: none
 
-# --- Trigger 2: DAILY 09:00 giờ VN -------------------------------------------
-# cron của Azure DevOps chạy theo UTC. 09:00 VN (UTC+7) = 02:00 UTC.
+# --- Trigger 2: daily at 09:00 Vietnam time ----------------------------------
+# Azure DevOps cron runs in UTC. 09:00 UTC+7 is 02:00 UTC.
+# Azure reads schedules from the pipeline's default branch, so that setting must
+# point at the branch holding this file or the schedule never fires.
 schedules:
   - cron: '0 2 * * *'
-    displayName: 'Daily functional smoke (09:00 VN)'
+    displayName: 'Daily functional smoke (09:00 Vietnam time)'
     branches:
       include:
-        - trung/practice-pipeline-config   # phải đúng branch chứa file này
-    always: true                            # chạy kể cả khi không có commit mới
+        - trung/practice-pipeline-config
+    always: true                            # run even with no new commits
 
-# --- "Trỏ" tới variable group đúng theo env (khớp casing TSS-Sit / TSS-Test) --
+# --- Variable groups, selected to match their exact casing -------------------
+# Not built as TSS-${{ parameters.environment }}: the groups are capitalised
+# (TSS-Sit / TSS-Test) while ENV must stay lowercase for the .env.<env>
+# convention, so one string cannot serve both.
 variables:
+  - group: TSS-Secrets                      # NPM_TOKEN for the install step
   - ${{ if eq(parameters.environment, 'sit') }}:
       - group: TSS-Sit
   - ${{ if eq(parameters.environment, 'test') }}:
@@ -50,6 +60,8 @@ jobs:
           set -e
           npx pnpm install --frozen-lockfile
         displayName: 'Install dependencies'
+        env:
+          NPM_TOKEN: $(NPM_TOKEN)
 
       - script: |
           cd "$(Build.SourcesDirectory)"
@@ -59,21 +71,20 @@ jobs:
             --project=chromium-en
         displayName: 'Run functional smoke tests'
         env:
-          # --- Config chung ---
+          # --- General configuration ---
           ENV: ${{ parameters.environment }}
           CI: true
           HEADLESS: true
-          OTP_ENABLED: true               # sit/test bắt buộc bước TOTP
+          OTP_ENABLED: true               # sit and test both enforce the TOTP step
           PLAYWRIGHT_HTML_OPEN: never
-          # Ghi de mac dinh "CI => 1 worker" cua playwright.config.ts. Tran cung
-          # la so account trong pool AGENT (hien co 4), vi moi worker can mot
-          # session rieng — xem src/core/auth/credentials.ts accountFor().
+          # Overrides the "CI => 1 worker" default in playwright.config.ts. The
+          # ceiling is the size of the AGENT account pool (currently 4), because
+          # each worker needs its own session - see credentials.ts accountFor().
           WORKERS: 3
-          # KHÔNG set JAVA_HOME ở đây: biến $(JAVA_HOME_21_X64) là đường dẫn của
-          # agent HOST, không tồn tại bên trong container. Bước test cũng không
-          # cần Java nữa (globalTeardown skip generate khi CI=true).
+          # JAVA_HOME is deliberately not set: $(JAVA_HOME_21_X64) is a path on
+          # the agent host and does not exist inside the container.
 
-          # --- Biến THƯỜNG (tự map, khai báo cho rõ ràng) ---
+          # --- Non-secret variables (auto-exported, listed for visibility) ---
           BASE_URL: $(BASE_URL)
           HAULIER_COMPANY_NAME: $(HAULIER_COMPANY_NAME)
           AGENT_USER_NAME_1: $(AGENT_USER_NAME_1)
@@ -81,7 +92,9 @@ jobs:
           AGENT_USER_NAME_3: $(AGENT_USER_NAME_3)
           AGENT_USER_NAME_4: $(AGENT_USER_NAME_4)
 
-          # --- SECRET (BẮT BUỘC map tay, không tự vào process.env) ---
+          # --- Secrets: mapping these is mandatory. Azure never auto-exports a
+          # secret variable to a script, so without them the pool accounts
+          # resolve with no password and sign-in fails. ---
           AGENT_PASSWORD: $(AGENT_PASSWORD)
           AGENT_TOTP_SECRET_1: $(AGENT_TOTP_SECRET_1)
           AGENT_TOTP_SECRET_2: $(AGENT_TOTP_SECRET_2)
@@ -89,38 +102,44 @@ jobs:
           AGENT_TOTP_SECRET_4: $(AGENT_TOTP_SECRET_4)
           CARRIER_EORI: $(CARRIER_EORI)
 
-      # Allure CLI là công cụ Java, container playwright không có sẵn JRE.
-      # Chỉ cài khi thiếu, dùng bản headless cho nhẹ.
-      # KHONG dung cu phap $(...) trong script cua ADO: do la cu phap bien cua
-      # Azure, no thay the truoc khi bash chay. `$(id -u)` bi nuot -> chuoi rong.
+      # The Allure CLI is a Java tool and the Playwright image ships no JRE.
+      # Runs after the tests so the current globalTeardown, which still tries to
+      # generate on its own, quietly no-ops instead of writing a duplicate
+      # report into test-results.
+      #
+      # Do NOT use $(...) in an ADO script block: that is Azure's own variable
+      # macro and is substituted before bash runs, so `$(id -u)` collapses to an
+      # empty string. Plain commands only.
       - script: |
-          echo "=== user dang chay ==="
+          echo "=== current user ==="
           id
-          echo "=== da co java chua? ==="
+          echo "=== is java present? ==="
           if command -v java >/dev/null 2>&1; then
             java -version
-            echo "Java da co san, bo qua buoc cai dat."
+            echo "Java already available, skipping install."
             exit 0
           fi
-          echo "=== thu cai JRE (khong sudo) ==="
+          echo "=== installing a headless JRE ==="
           apt-get update -qq
           apt-get install -y -qq --no-install-recommends default-jre-headless
           java -version
-        displayName: 'Install Java (Allure CLI cần JRE)'
+        displayName: 'Install Java (required by the Allure CLI)'
         condition: always()
+        # Never fail the build over this: without a JRE we still publish the raw
+        # allure-results and the Playwright report.
         continueOnError: true
 
-      # globalTeardown skip generate khi CI=true, nên pipeline phải tự generate.
-      # condition: always() để test fail vẫn có report — đúng lúc cần nhất.
+      # condition: always() so a failing test run still produces a report, which
+      # is exactly when the report matters most.
       - script: |
           cd "$(Build.SourcesDirectory)"
           if ! command -v java >/dev/null 2>&1; then
-            echo "Khong co Java -> Allure CLI khong chay duoc. Bo qua buoc nay."
-            echo "Raw allure-results van duoc publish o buoc sau."
+            echo "No Java available, so the Allure CLI cannot run. Skipping."
+            echo "Raw allure-results are still published by a later step."
             exit 0
           fi
           if [ ! -d allure-results ]; then
-            echo "Khong co allure-results, bo qua."
+            echo "No allure-results directory, nothing to generate."
             exit 0
           fi
           set -e
@@ -137,11 +156,11 @@ jobs:
           pathToPublish: '$(Build.SourcesDirectory)/allure-report'
           artifactName: 'functional-smoke-allure-report-$(Build.BuildId)'
 
-      # Publish JUnit + Playwright report + Allure results
+      # Publishes JUnit results, the Playwright report and the raw Allure results
       - template: templates/publish-test-artifacts.yml
         parameters:
           testType: functional-smoke
           environment: ${{ parameters.environment }}
 
-      # Dọn workspace của self-hosted agent
+      # Frees disk on the self-hosted agent
       - template: templates/cleanup.yml
