@@ -107,69 +107,50 @@ jobs:
           AGENT_TOTP_SECRET_4: $(AGENT_TOTP_SECRET_4)
           CARRIER_EORI: $(CARRIER_EORI)
 
-      # The Allure CLI is a Java tool and the Playwright image ships no JRE. The
-      # container also runs as uid 1003 with no sudo, so apt-get cannot install
-      # one ("Unable to acquire the dpkg frontend lock, are you root?").
+      # Rendering the report on this agent has two dead ends: the Allure CLI is
+      # a Java tool and the Playwright image ships no JRE, while the container
+      # runs as uid 1003 with no sudo so apt-get cannot supply one. Moving the
+      # work to `target: host` failed too - mixing container and host steps in
+      # one job leaves _work/_temp owned by the container uid, and the host user
+      # then hits EACCES on _temp/.taskkey.
       #
-      # Everything below therefore uses `target: host`, running on the agent
-      # machine instead of inside the container. The host already provides a
-      # JDK - azure-pipelines.yml relies on the same one - and the workspace is
-      # mounted into the container, so the host sees the very allure-results and
-      # node_modules the test step just produced.
-      - task: JavaToolInstaller@0
-        displayName: 'Provision Java on the agent host'
-        target: host
-        condition: always()
-        continueOnError: true
-        inputs:
-          versionSpec: '21'
-          jdkArchitectureOption: 'x64'
-          jdkSourceOption: 'PreInstalled'
-
-      - task: NodeTool@0
-        displayName: 'Provision Node on the agent host'
-        target: host
-        condition: always()
-        continueOnError: true
-        inputs:
-          versionSpec: '24.x'
-
-      # condition: always() so a failing test run still produces a report, which
-      # is exactly when the report matters most. The diagnostics up front make
-      # the next run self-explanatory if the host toolchain is not what we think.
+      # src/core/report/export-allure-pdf.mts renders the same allure-results
+      # with Puppeteer instead. Puppeteer is already a dependency and already
+      # launches with --no-sandbox, so this needs no Java and no extra
+      # privileges: it runs inside the container like every other step.
+      #
+      # Backticks, not $(...), for command substitution: $(...) is Azure's own
+      # variable macro and is replaced before bash ever runs.
       - script: |
-          echo "=== host context ==="
-          pwd
-          id
-          echo "=== toolchain ==="
-          node --version || echo "node is missing"
-          java -version || echo "java is missing"
-          if ! command -v java >/dev/null 2>&1; then
-            echo "No Java on the host either, so the Allure CLI cannot run."
-            exit 0
-          fi
+          cd "$(Build.SourcesDirectory)"
           if [ ! -d allure-results ]; then
-            echo "No allure-results directory, nothing to generate."
-            ls -la
+            echo "No allure-results directory, nothing to export."
             exit 0
           fi
+          # Prefer the browser the Playwright image already ships, so the export
+          # does not depend on Puppeteer having downloaded its own copy.
+          CHROME=`ls -d /ms-playwright/chromium-*/chrome-linux/chrome 2>/dev/null | head -1`
+          if [ -n "$CHROME" ]; then
+            export PUPPETEER_EXECUTABLE_PATH="$CHROME"
+            echo "Using browser: $CHROME"
+          else
+            echo "No Playwright chromium found, falling back to Puppeteer's own."
+          fi
+          mkdir -p test-results
           set -e
-          npx allure generate allure-results -o allure-report --clean
-          ls -la allure-report
-        displayName: 'Generate Allure HTML report'
-        target: host
-        workingDirectory: $(Build.SourcesDirectory)
+          npx pnpm report:pdf
+          ls -la test-results/allure-report.pdf
+        displayName: 'Export Allure report to PDF'
         condition: always()
         continueOnError: true
 
       - task: PublishBuildArtifacts@1
-        displayName: 'Publish Allure HTML report'
-        target: host
+        displayName: 'Publish Allure PDF report'
         condition: always()
         continueOnError: true
         inputs:
-          pathToPublish: '$(Build.SourcesDirectory)/allure-report'
-          artifactName: 'functional-smoke-allure-report-$(Build.BuildId)'
+          pathToPublish: '$(Build.SourcesDirectory)/test-results/allure-report.pdf'
+          artifactName: 'functional-smoke-allure-pdf-$(Build.BuildId)'
 
       # Publishes JUnit results, the Playwright report and the raw Allure results
       - template: templates/publish-test-artifacts.yml
