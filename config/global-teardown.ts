@@ -1,7 +1,7 @@
+import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { execSync } from 'node:child_process';
 
 async function globalTeardown(): Promise<void> {
   const allureResultsPath = path.resolve('allure-results');
@@ -18,21 +18,12 @@ async function globalTeardown(): Promise<void> {
   }
 
   const allureReportPath = path.resolve('allure-report');
-
-  /**
-   * Build the report outside the project, then move it in.
-   *
-   * Allure writes the report to <output>/awesome and then renames that
-   * directory up a level. On Windows that rename fails with EPERM whenever an
-   * editor's file watcher still holds handles on the hundreds of files just
-   * written - which is every run with the project open in VS Code. Staging
-   * outside the watched tree sidesteps it, and costs one directory move.
-   */
   const stagingPath = fs.mkdtempSync(path.join(os.tmpdir(), 'allure-report-'));
-  const command = `npx allure generate "${allureResultsPath}" -o "${stagingPath}"`;
+  const allureCli = path.join(path.dirname(require.resolve('allure')), '..', 'cli.js');
+  const args = [allureCli, 'generate', allureResultsPath, '-o', stagingPath];
 
   try {
-    execSync(command, { stdio: 'inherit' });
+    execFileSync(process.execPath, args, { stdio: 'inherit' });
 
     fs.rmSync(allureReportPath, { recursive: true, force: true });
     moveDirectory(stagingPath, allureReportPath);
@@ -41,12 +32,9 @@ async function globalTeardown(): Promise<void> {
   } catch (error) {
     fs.rmSync(stagingPath, { recursive: true, force: true });
 
-    // Report the command as well as the reason: a silent "generation failed"
-    // warning has twice hidden the real cause (a missing JRE on CI, then an
-    // option the CLI no longer accepts).
     console.warn(
       'Allure report generation failed.\n' +
-      `  Command: ${command}\n` +
+      `  Command: node ${args.join(' ')}\n` +
       `  Reason:  ${error instanceof Error ? error.message : String(error)}\n` +
       `  The raw results are still in ${allureResultsPath}.`,
     );
