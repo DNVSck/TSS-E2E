@@ -31,6 +31,23 @@ type ExportAllurePdfOptions = {
   outputPath?: string;
 };
 
+/**
+ * Local time as `YYYY-MM-DD_HH-mm-ss`, for use in a file name.
+ *
+ * Not `toISOString()`: that reports UTC, so a report exported at 09:00 in
+ * Vietnam would be stamped 02:00 the same day, and its colons are illegal in a
+ * Windows file name. Year-first keeps a directory listing in chronological
+ * order.
+ */
+function fileNameTimestamp(date: Date): string {
+  const pad = (value: number): string => String(value).padStart(2, '0');
+
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `_${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}`
+  );
+}
+
 function isAllureResultFile(fileName: string): boolean {
   if (!fileName.endsWith('.json')) return false;
   return !['categories.json', 'executor.json', 'environment.json'].includes(fileName);
@@ -257,7 +274,21 @@ function buildHtml(
 
 export async function exportAllurePDF(options: ExportAllurePdfOptions = {}): Promise<void> {
   const resultsDir = options.resultsDir ?? path.resolve('allure-results');
-  const outputPath = options.outputPath ?? path.resolve('test-results', 'allure-report.pdf');
+
+  // One timestamp for both the file name and the "generated at" line inside the
+  // PDF, so the two can never disagree.
+  const exportedAt = new Date();
+
+  // reports/, not test-results/: test-results is Playwright's own outputDir and
+  // is wiped on every run (and by `pnpm clean`), which is the wrong lifetime for
+  // a file whose whole purpose is to be shared. reports/ is already gitignored
+  // and belongs to no other tool.
+  //
+  // The default name carries the run time so exports accumulate instead of
+  // overwriting each other. An explicit outputPath is used verbatim - naming it
+  // is the caller's decision, not ours.
+  const outputPath = options.outputPath
+    ?? path.resolve('reports', `allure-report_${fileNameTimestamp(exportedAt)}.pdf`);
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
 
@@ -266,7 +297,7 @@ export async function exportAllurePDF(options: ExportAllurePdfOptions = {}): Pro
     getEnvironment(resultsDir),
   ]);
 
-  const generatedAt = new Date().toLocaleString('en-GB', {
+  const generatedAt = exportedAt.toLocaleString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
