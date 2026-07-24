@@ -31,14 +31,6 @@ type ExportAllurePdfOptions = {
   outputPath?: string;
 };
 
-/**
- * Local time as `YYYY-MM-DD_HH-mm-ss`, for use in a file name.
- *
- * Not `toISOString()`: that reports UTC, so a report exported at 09:00 in
- * Vietnam would be stamped 02:00 the same day, and its colons are illegal in a
- * Windows file name. Year-first keeps a directory listing in chronological
- * order.
- */
 function fileNameTimestamp(date: Date): string {
   const pad = (value: number): string => String(value).padStart(2, '0');
 

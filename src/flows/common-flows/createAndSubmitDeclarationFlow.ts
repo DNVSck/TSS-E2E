@@ -94,9 +94,6 @@ export class CreateAndSubmitEnsDeclarationFlow {
      * confirm the ENS consignment MRN is returned (the smoke proof-of-life).
      */
     private async verifyPostSubmit(goodsJourney: GoodsJourneyContext): Promise<void> {
-        // Submit is a server round-trip that redirects to the movement overview.
-        // Wait for that redirect to settle before reading any tab, otherwise the
-        // first detail check races it and flakes.
         await this.movementOverviewFlow.waitForSubmittedMovementOverview();
 
         if (goodsJourney.useIMMI) {

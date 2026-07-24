@@ -10,11 +10,6 @@ export class MovementOverviewFlow {
         private readonly consignmentDetailPage: ConsignmentDetailPage,
     ) { }
 
-    /**
-     * Block until submit has auto-returned to the movement overview, so the
-     * post-submit detail checks do not race the redirect. No ReportLog step: it
-     * is a wait, not a user-visible action.
-     */
     async waitForSubmittedMovementOverview(): Promise<void> {
         await this.movementOverviewPage.waitForSubmittedMovementOverview();
     }

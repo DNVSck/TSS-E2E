@@ -26,13 +26,6 @@ export class ConsignmentDetailPage extends BasePage {
         this.status = summaryListValue(page, this.t!('common.status'));
     }
 
-    /**
-     * Read the consignment's Local Reference Number. Unlike the MRN, the LRN is
-     * assigned at creation and is present as soon as the detail paints, so this
-     * only waits for the row to be visible rather than polling. Not stripped of
-     * zero-width spaces: it is reported verbatim, matching how the movement- and
-     * consignment-overview LRNs are read.
-     */
     async getLocalReferenceNumber(): Promise<string> {
         await this.localReferenceNumber.first().waitFor({ state: 'visible', timeout: DETAIL_READ_TIMEOUT });
         return (await this.localReferenceNumber.first().innerText()).trim();

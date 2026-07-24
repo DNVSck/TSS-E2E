@@ -22,12 +22,7 @@ export class AllureTestManager {
         }
     }
 
-    /**
-     * "Project" is deliberately absent: allure-playwright already records it from
-     * the Playwright result, so adding it here only pushes the business
-     * identifiers (LRN, consignment reference, MRN) below the report's
-     * "Show more" fold.
-     */
+
     private static addMetadata(testInfo: TestInfo): void {
         parameter('Environment', process.env.ENV ?? 'default');
         parameter('Base URL', process.env.BASE_URL ?? 'N/A');
