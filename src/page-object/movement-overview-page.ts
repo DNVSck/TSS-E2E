@@ -221,16 +221,13 @@ export class MovementOverviewPage extends BasePage {
         return match[0];
     }
 
-    /**
-     * Click the breadcrumb back to the movement overview and wait for it to load.
-     * The movement number is captured from the current (detail) URL first, then
-     * used to target the breadcrumb whose href ends exactly ".../{movement}/overview"
-     * — a consignment crumb ends ".../{DEC|GLR…}/overview" instead, so this stays
-     * unambiguous whatever the consignment type (ENS→DEC, SFD→DEC, IMMI→GLR).
-     *
-     * Public so a following journey (e.g. creating a GMR) can return here from a
-     * consignment detail before opening a movement-level tab.
-     */
+    async waitForSubmittedMovementOverview(): Promise<void> {
+        await this.page.waitForURL(
+            new RegExp(String.raw`/${GOODS_MOVEMENT_SEGMENT}/ENS\d+/${OVERVIEW_SEGMENT}(?:[?#]|$)`),
+            { timeout: NAV_TIMEOUT }
+        );
+    }
+
     async returnToMovementOverview(): Promise<void> {
         const movement = this.currentMovementNumber();
         await this.page

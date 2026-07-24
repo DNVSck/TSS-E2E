@@ -29,7 +29,7 @@ export const OTP_ENABLED = boolOrDefault(process.env.OTP_ENABLED);
 export const AUTH_REUSE_SESSION = boolOrDefault(process.env.AUTH_REUSE_SESSION);
 
 export const LOCALE: Locale =
-  (process.env.LOCALE as Locale) || LOCALES_CONSTANT.CY_GB;
+  (process.env.LOCALE as Locale) || LOCALES_CONSTANT.EN_GB;
 
 export const BASE_URL = process.env.BASE_URL!;
 

@@ -80,9 +80,8 @@ export class AddNewGMRFlow {
             expect.soft(opened, 'GMR detail opened').toBe(true);
             if (!opened) return;
 
-            const { gmrId, status } = await this.gmrDetailsPage.waitForGmrOpen();
+            const { gmrId } = await this.gmrDetailsPage.waitForGmrOpen();
             ReportLog.setParameter('GMR ID', gmrId);
-            ReportLog.setParameter('GMR status', status);
         });
     }
 }

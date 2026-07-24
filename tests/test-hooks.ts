@@ -21,9 +21,7 @@ export const getBaseUrl = (): string => BASE_URL;
 // eslint-disable-next-line no-empty-pattern
 test.beforeEach(({}, testInfo) => {
     AllureTestManager.createParentTest(testInfo);
-
     AllureTestManager.addParameter('Test File', testInfo.file);
-    AllureTestManager.addParameter('Project', testInfo.project.name);
     AllureTestManager.addParameter('Expected Status', testInfo.expectedStatus);
 });
 

@@ -94,6 +94,8 @@ export class CreateAndSubmitEnsDeclarationFlow {
      * confirm the ENS consignment MRN is returned (the smoke proof-of-life).
      */
     private async verifyPostSubmit(goodsJourney: GoodsJourneyContext): Promise<void> {
+        await this.movementOverviewFlow.waitForSubmittedMovementOverview();
+
         if (goodsJourney.useIMMI) {
             await this.movementOverviewFlow.verifyImmiConsignmentDetail();
         } else if (goodsJourney.isControlledGoods) {

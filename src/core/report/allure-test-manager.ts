@@ -22,11 +22,11 @@ export class AllureTestManager {
         }
     }
 
+
     private static addMetadata(testInfo: TestInfo): void {
         parameter('Environment', process.env.ENV ?? 'default');
         parameter('Base URL', process.env.BASE_URL ?? 'N/A');
         parameter('Browser', testInfo.project.use?.browserName ?? 'unknown');
-        parameter('Project', testInfo.project.name);
     }
 
     public static addParameter(name: string, value: string): void {

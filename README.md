@@ -381,13 +381,36 @@ $env:ENV="test"; pnpm test tests/functional/gb-ni-roro-immi-standalone.spec.ts -
 
 ### Reports
 
-The Allure report is generated automatically in `globalTeardown` after each run.
+The Allure report is generated automatically in `globalTeardown` after each local
+run, into `allure-report/`. On CI the teardown skips generation and the pipeline
+publishes the raw `allure-results/` instead.
 
 ```powershell
-pnpm report:open       # open the generated report (test-results/result.html)
-pnpm report:serve      # serve a live Allure report from allure-results/
-pnpm report:pdf        # export the Allure report to PDF
+pnpm report:open       # serve the generated report from allure-report/
+pnpm report:serve      # generate and serve straight from allure-results/
+pnpm report:pdf        # export a shareable PDF to reports/
 ```
+
+Both `open` commands serve over HTTP rather than opening a file directly: a
+generated Allure report loads its data by XHR, which the browser blocks under
+`file://`.
+
+`report:pdf` takes optional paths, which is how you turn a CI artifact into a
+report without a JRE or a local server - download the published `allure-results`
+and point it at the unpacked folder:
+
+```powershell
+pnpm report:pdf -- .\downloaded-allure-results
+pnpm report:pdf -- .\downloaded-allure-results .\reports\run-1234.pdf
+```
+
+It reads raw `allure-results/`, not the generated `allure-report/`. Output lands
+in `reports/`, which no other tool clears - unlike `test-results/`, which
+Playwright wipes on every run.
+
+The default file name carries the export time
+(`reports/allure-report_2026-07-24_09-36-40.pdf`), so exports accumulate rather
+than overwrite. Passing an explicit output path uses that name as given.
 
 Also produced per run: Playwright HTML report (`playwright-report/`) and JUnit XML
 (`test-results/junit.xml`, used by CI).

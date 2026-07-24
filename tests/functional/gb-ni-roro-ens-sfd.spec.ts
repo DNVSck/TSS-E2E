@@ -38,13 +38,9 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process', () => {
         headerPreviousDocuments: [
           previousDocument({ documentReference: '3XI352196303000-12345' })
         ],
-        holdersOfAuthorisation: [
-          holderOfAuthorisation()
-        ],
       },
       goodsItemOverrides: {
         documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE.C512, documentStatus: undefined, documentReference: 'XISDE896458895023I20231019133850' }),
           documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
         ],
       },
@@ -65,14 +61,10 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process', () => {
         headerPreviousDocuments: [
           previousDocument({ documentReference: '5GB553202734852-09042025' })
         ],
-        holdersOfAuthorisation: [
-          holderOfAuthorisation()
-        ],
       },
       goodsItemOverrides: {
         documentReferences: [
           documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
-          documentReference({ documentCode: DOCUMENT_CODE.C512, documentStatus: undefined, documentReference: 'XISDE896458895023I20231019133850' }),
         ],
       },
     });

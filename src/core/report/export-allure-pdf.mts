@@ -31,6 +31,15 @@ type ExportAllurePdfOptions = {
   outputPath?: string;
 };
 
+function fileNameTimestamp(date: Date): string {
+  const pad = (value: number): string => String(value).padStart(2, '0');
+
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `_${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}`
+  );
+}
+
 function isAllureResultFile(fileName: string): boolean {
   if (!fileName.endsWith('.json')) return false;
   return !['categories.json', 'executor.json', 'environment.json'].includes(fileName);
@@ -257,14 +266,30 @@ function buildHtml(
 
 export async function exportAllurePDF(options: ExportAllurePdfOptions = {}): Promise<void> {
   const resultsDir = options.resultsDir ?? path.resolve('allure-results');
-  const outputPath = options.outputPath ?? path.resolve('test-results', 'allure-report.pdf');
+
+  // One timestamp for both the file name and the "generated at" line inside the
+  // PDF, so the two can never disagree.
+  const exportedAt = new Date();
+
+  // reports/, not test-results/: test-results is Playwright's own outputDir and
+  // is wiped on every run (and by `pnpm clean`), which is the wrong lifetime for
+  // a file whose whole purpose is to be shared. reports/ is already gitignored
+  // and belongs to no other tool.
+  //
+  // The default name carries the run time so exports accumulate instead of
+  // overwriting each other. An explicit outputPath is used verbatim - naming it
+  // is the caller's decision, not ours.
+  const outputPath = options.outputPath
+    ?? path.resolve('reports', `allure-report_${fileNameTimestamp(exportedAt)}.pdf`);
+
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
 
   const [groups, env] = await Promise.all([
     buildFeatureGroups(resultsDir),
     getEnvironment(resultsDir),
   ]);
 
-  const generatedAt = new Date().toLocaleString('en-GB', {
+  const generatedAt = exportedAt.toLocaleString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
@@ -297,8 +322,26 @@ const currentFilePath = fileURLToPath(import.meta.url);
 const entryFilePath = process.argv[1] ? path.resolve(process.argv[1]) : null;
 
 if (entryFilePath === currentFilePath) {
+  /**
+   * Both arguments are optional and keep the previous defaults, so a bare
+   * `pnpm report:pdf` behaves exactly as before:
+   *
+   *   pnpm report:pdf
+   *   pnpm report:pdf -- ./downloaded-allure-results
+   *   pnpm report:pdf -- ./downloaded-allure-results ./out/run-1234.pdf
+   *
+   * The point is the middle form: CI publishes raw allure-results as an
+   * artifact, so this turns "unzip it" into a report without needing a JRE or a
+   * local server.
+   */
+  // pnpm forwards the "--" separator itself, so drop it before reading paths.
+  const [resultsArg, outputArg] = process.argv.slice(2).filter(arg => arg !== '--');
+
   try {
-    await exportAllurePDF();
+    await exportAllurePDF({
+      resultsDir: resultsArg ? path.resolve(resultsArg) : undefined,
+      outputPath: outputArg ? path.resolve(outputArg) : undefined,
+    });
   } catch (error) {
     console.error('Failed to export Allure PDF:', error);
     process.exit(1);
