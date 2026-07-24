@@ -10,6 +10,15 @@ export class MovementOverviewFlow {
         private readonly consignmentDetailPage: ConsignmentDetailPage,
     ) { }
 
+    /**
+     * Block until submit has auto-returned to the movement overview, so the
+     * post-submit detail checks do not race the redirect. No ReportLog step: it
+     * is a wait, not a user-visible action.
+     */
+    async waitForSubmittedMovementOverview(): Promise<void> {
+        await this.movementOverviewPage.waitForSubmittedMovementOverview();
+    }
+
     async verifyDraftMovementOverview(): Promise<void> {
         await ReportLog.step('Validate goods movement overview', async () => {
             const localReferenceNumber = await this.movementOverviewPage.assertDraftMovementOverview();
@@ -74,6 +83,11 @@ export class MovementOverviewFlow {
             expect.soft(opened, 'EIDR consignment auto-generated').toBe(true);
             if (!opened) return;
 
+            // The LRN is EIDR's only identifier here — it is never authorised with
+            // an MRN, so that row renders "-" and carries nothing to report.
+            const lrn = await this.consignmentDetailPage.getLocalReferenceNumber();
+            ReportLog.setParameter('EIDR LRN', lrn);
+
             // Asserts the MRN row renders "-"; its value is not recorded (there is none).
             await this.consignmentDetailPage.assertNoMovementReferenceNumber();
         });
@@ -94,10 +108,11 @@ export class MovementOverviewFlow {
             expect.soft(opened, `${label} consignment auto-generated`).toBe(true);
             if (!opened) return;
 
+            // Report the LRN (the identifier used to find this consignment in the service);
+            const lrn = await this.consignmentDetailPage.getLocalReferenceNumber();
             const mrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();
-            // Still asserted, just no longer reported as a parameter.
             await this.consignmentDetailPage.assertStatusAwaitingArrival();
-            ReportLog.setParameter(`${label} MRN`, mrn);
+            ReportLog.setParameter(`${label} LRN`, lrn);
 
             expect.soft(mrn, `${label} MRN`).toMatch(mrnPrefix(mrnCode));
         });

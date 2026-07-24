@@ -14,14 +14,28 @@ const MRN_POLL_TIMEOUT = 60_000;
  * consignment "Status" as summary-list rows.
  */
 export class ConsignmentDetailPage extends BasePage {
+    private readonly localReferenceNumber: Locator;
     private readonly movementReferenceNumber: Locator;
     private readonly status: Locator;
 
     constructor(page: Page, t: TFunction) {
         super(page, t);
 
+        this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
         this.movementReferenceNumber = summaryListValue(page, this.t!('consignmentDetail.movementReferenceNumber'));
         this.status = summaryListValue(page, this.t!('common.status'));
+    }
+
+    /**
+     * Read the consignment's Local Reference Number. Unlike the MRN, the LRN is
+     * assigned at creation and is present as soon as the detail paints, so this
+     * only waits for the row to be visible rather than polling. Not stripped of
+     * zero-width spaces: it is reported verbatim, matching how the movement- and
+     * consignment-overview LRNs are read.
+     */
+    async getLocalReferenceNumber(): Promise<string> {
+        await this.localReferenceNumber.first().waitFor({ state: 'visible', timeout: DETAIL_READ_TIMEOUT });
+        return (await this.localReferenceNumber.first().innerText()).trim();
     }
 
     /**
