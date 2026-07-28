@@ -3,7 +3,6 @@ import { getBaseUrl, test } from '../../test-hooks';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { COMPANY_PROFILE } from '../../../src/core/auth/credentials';
 import { previousDocument } from '../../../src/test-data/previous-document-data';
-import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
 import { documentReference } from '../../../src/test-data/document-reference-data';
 import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
 import { HAULIER_COMPANY_NAME } from '../../../config/environment';
