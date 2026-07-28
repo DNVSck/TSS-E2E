@@ -39,6 +39,7 @@ export class MovementHeaderDeclarationFlow {
 
                 case TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED:
                     await this.movementDeclarePage.selectTypeOfPassiveTransport(input.typeOfPassiveTransport);
+                    await this.movementDeclarePage.clickContinueButton();
                     await this.movementDeclarePage.inputVehicleRegistrationNumber(input.vehicleRegistrationNumber);
                     break;
 
@@ -69,6 +70,7 @@ export class MovementHeaderDeclarationFlow {
     private async inputArrivalDateTimeAndPortOfArrival(input: MovementData): Promise<void> {
         await ReportLog.step('Input information for "When and where will the goods arrive?" ', async () => {
             await this.movementDeclarePage.inputArrivalDateTime(input.arrivalDateTime);
+            await this.movementDeclarePage.clickContinueButton();
             await this.movementDeclarePage.selectPortOfArrival(input.portOfArrival);
             await this.movementDeclarePage.clickContinueButton();
         });

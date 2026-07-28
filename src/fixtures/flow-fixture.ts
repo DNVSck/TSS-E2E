@@ -11,6 +11,7 @@ import { AddNewGoodsItemFlow } from '../flows/add-new-goods-item-flow';
 import { GoodsOverviewFlow } from '../flows/goods-overview-flow';
 import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
 import { RepresentTraderFlow } from '../flows/represent-trader-flow';
+import { Ics2NotificationFlow } from '../flows/ics2-notification-flow';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
 
 export type FlowFixtureType = {
@@ -25,6 +26,8 @@ export type FlowFixtureType = {
     addNewGoodsItemFlow: AddNewGoodsItemFlow;
     goodsOverviewFlow: GoodsOverviewFlow;
     createAndSubmitGmrFlow: AddNewGMRFlow; // This flow is added here as it relies on multiple other flows, and it will be used in multiple places, so it makes sense to have it as a common flow
+
+    ics2NotificationFlow: Ics2NotificationFlow;
 
     // Common Flows
     createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow;
@@ -71,6 +74,10 @@ export const flowFixture: ExtendParams[0] = {
 
     createAndSubmitGmrFlow: async ({ movementOverviewPage, gmrDeclarePage, gmrDetailsPage }, use) => {
         await use(new AddNewGMRFlow(movementOverviewPage, gmrDeclarePage, gmrDetailsPage));
+    },
+
+    ics2NotificationFlow: async ({ browser }, use) => {
+        await use(new Ics2NotificationFlow());
     },
 
     createAndSubmitEnsDeclarationFlow: async ({

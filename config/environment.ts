@@ -42,6 +42,14 @@ export const BASE_URL = process.env.BASE_URL!;
 export const HAULIER_COMPANY_NAME = process.env.HAULIER_COMPANY_NAME ?? '';
 export const IMPORTER_COMPANY_NAME = process.env.IMPORTER_COMPANY_NAME ?? '';
 
+/** Whether the current run targets the SIT environment. */
+export const IS_ISC2_MOCK = boolOrDefault(process.env.ISC2_MOCK_SERVER);
+
+/** RabbitMQ management API — only populated and used in SIT. */
+export const RMQ_HOST     = process.env.RMQ_HOST     ?? '';
+export const RMQ_USERNAME = process.env.RMQ_USERNAME ?? '';
+export const RMQ_PWD      = process.env.RMQ_PWD      ?? '';
+
 export const NAVIGATION_TIMEOUT = numberOrDefault(
   process.env.NAVIGATION_TIMEOUT,
   5000
