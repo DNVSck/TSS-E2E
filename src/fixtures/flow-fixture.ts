@@ -16,6 +16,7 @@ import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
 import { RepresentTraderFlow } from '../flows/represent-trader-flow';
 import { Ics2NotificationFlow } from '../flows/ics2-notification-flow';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
+import { APIFixtureType } from './api-fixture';
 
 export type FlowFixtureType = {
     // Business Flows
@@ -44,7 +45,7 @@ export type FlowFixtureType = {
     createAndSubmitStandaloneFlow: CreateAndSubmitStandaloneFlow;
 }
 
-type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType>>;
+type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType & APIFixtureType>>;
 
 export const flowFixture: ExtendParams[0] = {
     portalAccessFlow: async ({ basePage, portalPage }, use) => {
@@ -87,8 +88,8 @@ export const flowFixture: ExtendParams[0] = {
         await use(new AddNewGMRFlow(movementOverviewPage, gmrDeclarePage, gmrDetailsPage));
     },
 
-    ics2NotificationFlow: async ({ browser }, use) => {
-        await use(new Ics2NotificationFlow());
+    ics2NotificationFlow: async ({ rmqApiRequest }, use) => {
+        await use(new Ics2NotificationFlow(rmqApiRequest));
     },
 
     createAndSubmitEnsDeclarationFlow: async ({
@@ -133,4 +134,4 @@ export const flowFixture: ExtendParams[0] = {
         ));
     },
 };
-};
+
