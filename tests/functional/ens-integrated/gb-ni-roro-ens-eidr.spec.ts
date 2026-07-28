@@ -1,12 +1,12 @@
-import { ReportLog } from '../../src/core/report/report-log';
-import { getBaseUrl, test } from '../test-hooks';
-import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../src/constant/type-of-movement-code-constant';
-import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
-import { HAULIER_COMPANY_NAME } from '../../config/environment';
-import { gmrData } from '../../src/test-data/gmr-data';
+﻿import { ReportLog } from '../../../src/core/report/report-log';
+import { getBaseUrl, test } from '../../test-hooks';
+import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
+import { COMPANY_PROFILE } from '../../../src/core/auth/credentials';
+import { HAULIER_COMPANY_NAME } from '../../../config/environment';
+import { gmrData } from '../../../src/test-data/gmr-data';
 
 
-test.describe('GB to NI RoRo EIDR Declaration Process', () => {
+test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader', () => {
   // Runs as AGENT: this worker replays its own AGENT account's cached session
   // (chosen from the pool), signed in once by globalSetup. No sign-in per test.
   test.use({ authProfile: COMPANY_PROFILE.AGENT });

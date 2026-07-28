@@ -1,8 +1,8 @@
-import { BasePage } from "./base-page";
-import { Page, Locator} from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
+import { BasePage } from './base-page';
 
-export class GoodsMovementTaskListPage extends BasePage {
 
+export class TaskListPage extends BasePage {
     private readonly transportDetailsLink: Locator;
 
     constructor(page: Page) {
@@ -10,9 +10,7 @@ export class GoodsMovementTaskListPage extends BasePage {
         this.transportDetailsLink = page.locator('a[aria-describedby="transport-details-status"]');
     }
 
-
     async clickTransportDetails(): Promise<void> {
         await this.transportDetailsLink.click();
     }
-
 }

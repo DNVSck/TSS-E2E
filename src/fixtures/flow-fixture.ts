@@ -5,6 +5,9 @@ import { MovementHeaderDeclarationFlow } from '../flows/movement-header-declarat
 import { MovementOverviewFlow } from '../flows/movement-overview-flow';
 import { PageFixtureType } from './page-fixture';
 import { CreateAndSubmitEnsDeclarationFlow } from '../flows/common-flows/createAndSubmitDeclarationFlow';
+import { CreateAndSubmitStandaloneFlow } from '../flows/common-flows/createAndSubmitStandaloneFlow';
+import { AddNewStandaloneConsignmentFlow } from '../flows/add-new-standalone-consignment-flow';
+import { AddNewStandaloneGoodsItemFlow } from '../flows/add-new-standalone-goods-item-flow';
 import { AddNewConsignmentFlow } from '../flows/add-new-consignment-flow';
 import { ConsignmentOverviewFlow } from '../flows/consignment-overview-flow';
 import { AddNewGoodsItemFlow } from '../flows/add-new-goods-item-flow';
@@ -26,8 +29,15 @@ export type FlowFixtureType = {
     goodsOverviewFlow: GoodsOverviewFlow;
     createAndSubmitGmrFlow: AddNewGMRFlow; // This flow is added here as it relies on multiple other flows, and it will be used in multiple places, so it makes sense to have it as a common flow
 
-    // Common Flows
+    // Standalone flows - the consignment flow is assembled inside the common flow
+    // below, since it is the only consumer.
+    addNewStandaloneGoodsItemFlow: AddNewStandaloneGoodsItemFlow;
+
+    // Common Flows for ENS integrated flow: ENS Only, ENS-SFD, ENS-IMMI, ENS-EIDR
     createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow;
+    // One flow for IMMI / SFD / FFD - the journey is chosen by the consignment data
+    // the spec passes, not by which fixture it asks for.
+    createAndSubmitStandaloneFlow: CreateAndSubmitStandaloneFlow;
 }
 
 type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType>>;
@@ -94,6 +104,24 @@ export const flowFixture: ExtendParams[0] = {
             addNewGoodsItemFlow,
             goodsOverviewFlow,
             authAccount
+        ));
+    },
+
+    addNewStandaloneGoodsItemFlow: async ({ consignmentOverviewPage, goodsItemDeclarePage }, use) => {
+        await use(new AddNewStandaloneGoodsItemFlow(consignmentOverviewPage, goodsItemDeclarePage));
+    },
+
+    createAndSubmitStandaloneFlow: async ({
+        portalAccessFlow, initialFormDeclarationFlow,
+        consignmentTaskListPage, standaloneConsignmentDeclarePage, movementDeclarePage, consignmentDeclarePage,
+        addNewStandaloneGoodsItemFlow, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+    }, use) => {
+        const addConsignment = new AddNewStandaloneConsignmentFlow(
+            consignmentTaskListPage, standaloneConsignmentDeclarePage, movementDeclarePage, consignmentDeclarePage
+        );
+        await use(new CreateAndSubmitStandaloneFlow(
+            portalAccessFlow, initialFormDeclarationFlow, addConsignment,
+            addNewStandaloneGoodsItemFlow, consignmentOverviewFlow, goodsOverviewFlow, authAccount
         ));
     },
 };

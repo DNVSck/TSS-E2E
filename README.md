@@ -276,6 +276,22 @@ never created).
 > **Rule:** keep `--workers` ≤ the number of accounts in the pool. Exceeding it throws a
 > clear error rather than silently sharing a session.
 
+### Single-account profiles take turns
+
+A profile with only one login (today `IMPORTER`) hands every worker the same account, so its
+tests cannot run at the same time. They do **not** have to sit in one file: the `authAccount`
+fixture takes a lock on the account for the duration of each test, so tests using that profile
+queue up wherever they live — while every other profile keeps running in parallel around them.
+
+That matters because specs are organised by journey, and one journey may sign in as several
+companies — `IMPORTER` tests legitimately appear in the FFD and IMMI standalone specs alike.
+`test.describe.configure({ mode: 'serial' })` would not cover that: it only orders tests inside
+a single describe block, and `fullyParallel` runs separate spec files concurrently.
+
+Time spent queueing is added back to the test's timeout, so a test never fails for having
+waited its turn. Give the profile an `IMPORTER_USER_NAME_1..N` pool and the locking stops by
+itself — no code change.
+
 ### Configuring the account pool (`.env.<ENV>`)
 
 Number accounts contiguously from 1. `PASSWORD` / `TOTP_SECRET` / `EORI` fall back to the
@@ -299,11 +315,17 @@ IMPORTER_TOTP_SECRET=...
 OTP_ENABLED=true                         # environment enforces the TOTP step
 ```
 
-The `AUTH_PROFILES` env var says which profiles **this run** needs (defaults to `AGENT`):
+By default a run signs in every profile the suite uses — today `AGENT,IMPORTER` — so the
+usual command needs nothing extra. `AUTH_PROFILES` **narrows** that when a targeted run
+needs fewer companies (a `@smoke` run selects no `IMPORTER` spec, so it can skip that login):
 
 ```powershell
-$env:AUTH_PROFILES="AGENT,IMPORTER"; pnpm test ...
+$env:AUTH_PROFILES="AGENT"; pnpm test ... --grep @smoke
 ```
+
+A spec asking for a profile the run did not sign in fails immediately, naming the value to
+set. The default list lives in `DEFAULT_AUTH_PROFILES` ([src/core/auth/credentials.ts](src/core/auth/credentials.ts)) —
+add a profile there once a spec starts using it.
 
 ### TOTP (OTP) handling — no sleeps
 
@@ -497,12 +519,19 @@ see [DEVELOPING.md](DEVELOPING.md).
 $env:ENV="sit"; pnpm test ...
 ```
 
-**`ENOENT ... playwright/.auth/<ENV>/<PROFILE>.json`:**
-The run needed a profile that `globalSetup` did not sign in. Set `AUTH_PROFILES` for the
-run (defaults to `AGENT`):
+**`This spec runs as <PROFILE>, but this run only signed in: ...`:**
+A spec needs a profile `AUTH_PROFILES` narrowed away, so `globalSetup` never signed it in.
+The error names the value to set:
 ```powershell
 $env:AUTH_PROFILES="AGENT,IMPORTER"; $env:ENV="sit"; pnpm test ...
 ```
+If every run needs that profile, add it to `DEFAULT_AUTH_PROFILES` instead of setting the
+var each time.
+
+**`Timed out ... waiting for the <PROFILE> account`:**
+Tests of a single-account profile queue on a lock. Either a long queue ran past the limit, or a
+killed run left the lock behind — the error prints the file to delete. A pool
+(`<PROFILE>_USER_NAME_1..N`) removes the queueing entirely.
 
 **Worker-count error mentioning the account pool:**
 `--workers` exceeds the number of pool accounts — add `<PROFILE>_USER_NAME_<n>` accounts

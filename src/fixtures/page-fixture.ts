@@ -3,7 +3,6 @@ import { PortalPage } from '../page-object/portal-page'
 import { BasePage } from '../page-object/base-page';
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
-import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
 import { MovementOverviewPage } from '../page-object/movement-overview-page';
 import { ConsignmentDeclarePage } from '../page-object/consignment-declare-page';
 import { GoodsDeclarePage } from '../page-object/goods-declare-page';
@@ -22,6 +21,8 @@ import { NationalAdditionalCodeDeclarePage } from '../page-object/national-addit
 import { RepresentTraderPage } from '../page-object/represent-trader-page';
 import { AgentBanner } from '../page-object/components/agent-banner';
 import { ConsignmentDetailPage } from '../page-object/consignment-detail-page';
+import { StandaloneConsignmentDeclarePage } from '../page-object/standalone-consignment-declare-page';
+import { TaskListPage } from '../page-object/task-list-page';
 
 
 export type PageFixtureType = {
@@ -32,7 +33,7 @@ export type PageFixtureType = {
     consignmentDetailPage: ConsignmentDetailPage;
     initialFormDeclaraPage: InitialFormDeclaraPage;
     movementDeclarePage: MovementDeclarePage;
-    goodsMovementTaskListPage: GoodsMovementTaskListPage;
+    goodsMovementTaskListPage: TaskListPage;
     movementOverviewPage: MovementOverviewPage;
     consignmentDeclarePage: ConsignmentDeclarePage;
     goodsItemDeclarePage: GoodsDeclarePage;
@@ -47,6 +48,8 @@ export type PageFixtureType = {
     additionalProcedureCodeDeclarePage: AdditionalProcedureCodeDeclarePage;
     taricAdditionalCodeDeclarePage: TaricAdditionalCodeDeclarePage;
     nationalAdditionalCodeDeclarePage: NationalAdditionalCodeDeclarePage;
+    standaloneConsignmentDeclarePage: StandaloneConsignmentDeclarePage;
+    consignmentTaskListPage: TaskListPage;
 }
 
 type ExtendParams = Parameters<typeof test.extend<PageFixtureType & LocaleFixtureType>>;
@@ -77,7 +80,7 @@ export const pageFixture: ExtendParams[0] = {
     },
 
     goodsMovementTaskListPage: async ({ page }, use) => {
-        await use(new GoodsMovementTaskListPage(page));
+        await use(new TaskListPage(page));
     },
 
     movementOverviewPage: async ({ page, t }, use) => {
@@ -138,5 +141,13 @@ export const pageFixture: ExtendParams[0] = {
 
     nationalAdditionalCodeDeclarePage: async ({ page }, use) => {
         await use(new NationalAdditionalCodeDeclarePage(page));
+    },
+
+    standaloneConsignmentDeclarePage: async ({ page }, use) => {
+        await use(new StandaloneConsignmentDeclarePage(page));
+    },
+
+    consignmentTaskListPage: async ({ page }, use) => {
+        await use(new TaskListPage(page));
     }
 };

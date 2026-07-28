@@ -110,4 +110,17 @@ export class PartyBlock extends BasePage {
         await this.fillAddress(address);
         await this.clickContinueButton();
     }
+
+    /**
+     * Submit the party's EORI, then supply the address only if the app asks for it:
+     * a blank or new EORI lands on the `<party>-profile` address screen, a
+     * registered one skips it. This "EORI then maybe address" orchestration lives
+     * on the party itself so every consignment journey (ENS and standalone) shares
+     * one copy instead of repeating the branch per page.
+     */
+    async enterEoriThenAddressIfAsked(eori: string, address: PartyAddress, timeoutMs: number): Promise<void> {
+        if (await this.submitEori(eori, timeoutMs) === 'address') {
+            await this.enterAddress(address);
+        }
+    }
 }

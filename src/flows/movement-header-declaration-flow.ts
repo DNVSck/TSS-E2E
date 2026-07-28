@@ -1,4 +1,4 @@
-import { GoodsMovementTaskListPage } from '../page-object/goods-movement-task-list-page';
+import { TaskListPage } from '../page-object/task-list-page';
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
 import { ReportLog } from '../core/report/report-log';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
@@ -8,7 +8,7 @@ import { MovementData } from '../test-data/movements-data';
 
 export class MovementHeaderDeclarationFlow {
     constructor(
-        private readonly goodsMovementTaskListPage: GoodsMovementTaskListPage,
+        private readonly goodsMovementTaskListPage: TaskListPage,
         private readonly movementDeclarePage: MovementDeclarePage,
     ) { }
 
@@ -39,6 +39,7 @@ export class MovementHeaderDeclarationFlow {
 
                 case TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED:
                     await this.movementDeclarePage.selectTypeOfPassiveTransport(input.typeOfPassiveTransport);
+                    await this.movementDeclarePage.clickContinueButton();
                     await this.movementDeclarePage.inputVehicleRegistrationNumber(input.vehicleRegistrationNumber);
                     break;
 
@@ -69,6 +70,7 @@ export class MovementHeaderDeclarationFlow {
     private async inputArrivalDateTimeAndPortOfArrival(input: MovementData): Promise<void> {
         await ReportLog.step('Input information for "When and where will the goods arrive?" ', async () => {
             await this.movementDeclarePage.inputArrivalDateTime(input.arrivalDateTime);
+            await this.movementDeclarePage.clickContinueButton();
             await this.movementDeclarePage.selectPortOfArrival(input.portOfArrival);
             await this.movementDeclarePage.clickContinueButton();
         });

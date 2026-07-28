@@ -6,6 +6,8 @@ import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 
 /** The overview summary list paints a beat after the draft is created. */
 const SUMMARY_READ_TIMEOUT = 20_000;
+/** After submit, the status flips to "Awaiting arrival" asynchronously. */
+const SUBMIT_STATUS_POLL_TIMEOUT = 60_000;
 
 export class ConsignmentOverviewPage extends BasePage {
 
@@ -33,7 +35,9 @@ export class ConsignmentOverviewPage extends BasePage {
         this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
         this.status = summaryListValue(page, this.t!('common.status'));
 
-        this.consignmentBreadcrumbLink = page.locator("//nav[contains(@class,'breadcrumb')]//a[starts-with(normalize-space(.),'DEC')]");
+        // ENS consignments reference starts "DEC"; standalone consignments use a
+        // "GLR" reference - match either so the breadcrumb works for both.
+        this.consignmentBreadcrumbLink = page.locator("//nav[contains(@class,'breadcrumb')]//a[starts-with(normalize-space(.),'DEC') or starts-with(normalize-space(.),'GLR')]");
         this.goodsRecordTab = page.locator("//a[contains(@href, '/overview/#overview-tab')]");
         this.headerPreviousDocumentTab = page.locator("//a[contains(@href, '/overview/previous-documents#overview-tab')]");
         this.guaranteeTypeTab = page.locator("//a[contains(@href, '/guarantee-type#overview-tab')]");
@@ -108,6 +112,51 @@ export class ConsignmentOverviewPage extends BasePage {
 
     async clickConfirmAndSubmit(): Promise<void> {
         await this.confirmAndSubmitButton.click();
+    }
+
+    /**
+     * Soft-assert the freshly-created standalone consignment's reference and return
+     * it. Each journey stamps its own prefix (IMMI "GLR", SFD "SFD", FFD "FFD"), so
+     * the caller passes the one it expects - asserting the journey that actually ran,
+     * not merely that some standalone reference exists. Mirrors
+     * {@link assertDraftConsignment} (the ENS "DEC" variant); the status is not
+     * asserted here because the standalone overview shows it only after submit.
+     */
+    async assertDraftStandaloneConsignment(expectedPrefix: RegExp): Promise<string> {
+        const consignmentReference = await this.getTextLocalReferenceNumber();
+        expect.soft(consignmentReference, 'Consignment LRN').toMatch(expectedPrefix);
+        return consignmentReference;
+    }
+
+    /** Read the status row, or '' if it has not painted yet (never throws). */
+    private async readStatusOrEmpty(): Promise<string> {
+        if (await this.status.count() === 0) {
+            return '';
+        }
+        return (await this.status.first().innerText()).trim();
+    }
+
+    /**
+     * After submit, wait for the consignment status to become "Awaiting arrival".
+     * It lands asynchronously and the page does not auto-refresh, so reload until it
+     * appears. Non-throwing: on timeout it returns the last-read status so the caller
+     * can soft-assert (and report) it rather than the test aborting here.
+     */
+    async waitForStatusAwaitingArrival(): Promise<string> {
+        const expected = this.t!('status.awaitingArrival');
+        let status = '';
+        await expect(async () => {
+            status = await this.readStatusOrEmpty();
+            if (status !== expected) {
+                await this.page.reload();
+            }
+            expect(status, 'Consignment status').toBe(expected);
+        })
+            .toPass({ timeout: SUBMIT_STATUS_POLL_TIMEOUT, intervals: [2_000, 3_000, 5_000] })
+            .catch(() => { /* soft: return whatever was last read for the caller to report */ });
+
+        expect.soft(status, 'Consignment status').toBe(expected);
+        return status;
     }
 
 }

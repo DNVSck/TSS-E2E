@@ -133,9 +133,7 @@ export class ConsignmentDeclarePage extends BasePage {
      * It asks whenever the EORI is blank or new; a registered EORI skips it.
      */
     private async enterPartyEoriAndAddress(party: PartyBlock, eori: string, address: PartyAddress): Promise<void> {
-        if (await party.submitEori(eori, EORI_OUTCOME_TIMEOUT_MS) === 'address') {
-            await party.enterAddress(address);
-        }
+        await party.enterEoriThenAddressIfAsked(eori, address, EORI_OUTCOME_TIMEOUT_MS);
     }
 
     // ===================== Buyer =====================

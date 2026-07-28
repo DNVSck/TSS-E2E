@@ -35,6 +35,31 @@ export class ConsignmentOverviewFlow {
         });
     }
 
+    /**
+     * Report the standalone consignment's LRN as soon as its draft exists, so a run
+     * captures it even if a later step fails - mirrors verifyDraftConsignment for ENS.
+     * The expected prefix comes from the journey (IMMI "GLR", SFD "SFD", FFD "FFD"),
+     * so this checks the journey that ran rather than any standalone reference.
+     */
+    async verifyStandaloneConsignmentLrn(expectedPrefix: RegExp): Promise<void> {
+        await ReportLog.step('Validate standalone consignment LRN', async () => {
+            const consignmentReference =
+                await this.consignmentOverviewPage.assertDraftStandaloneConsignment(expectedPrefix);
+            ReportLog.setParameter('Consignment LRN', consignmentReference);
+        });
+    }
+
+    /**
+     * After submit, verify the standalone consignment reached "Awaiting arrival" and
+     * report the final status.
+     */
+    async verifyStandaloneConsignmentSubmitted(): Promise<void> {
+        await ReportLog.step('Verify standalone consignment submitted', async () => {
+            const status = await this.consignmentOverviewPage.waitForStatusAwaitingArrival();
+            ReportLog.setParameter('Consignment status', status);
+        });
+    }
+
     /** From the goods-item overview, return to the consignment overview via the
      *  breadcrumb and submit the consignment. */
     async submitConsignment(): Promise<void> {

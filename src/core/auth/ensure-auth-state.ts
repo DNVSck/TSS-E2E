@@ -3,37 +3,9 @@ import { OTP_ENABLED, ENV, BASE_URL } from '../../../config/environment';
 import { PortalPage } from '../../page-object/portal-page';
 import { SignInPage } from '../../page-object/sign-in-page';
 import { authStatePath, isAuthStateFresh, AUTH_STATE_TTL_MINUTES } from './auth-state';
-import { COMPANY_PROFILE, CompanyProfile, UserCredentials, getCredentialsPool } from './credentials';
+import { CompanyProfile, UserCredentials, getCredentialsPool, profilesToAuthenticate } from './credentials';
 
 const SIGN_IN_TIMEOUT_MS = 60_000;
-
-/**
- * Profiles to sign in for this run.
- *
- * Only AGENT by default: signing into an account no test uses costs time and
- * lets an unrelated expired password block the whole suite. Widen it per run
- * when a test needs another company:
- *
- *     AUTH_PROFILES=AGENT,HAULIER
- */
-export function profilesToAuthenticate(): CompanyProfile[] {
-    const raw = process.env.AUTH_PROFILES?.trim();
-
-    if (!raw) return [COMPANY_PROFILE.AGENT];
-
-    const known = Object.values(COMPANY_PROFILE) as string[];
-    const requested = raw.split(',').map(p => p.trim().toUpperCase());
-
-    const unknown = requested.filter(p => !known.includes(p));
-    if (unknown.length) {
-        throw new Error(
-            `AUTH_PROFILES contains unknown company profile(s): ${unknown.join(', ')}. ` +
-            `Valid values: ${known.join(', ')}.`
-        );
-    }
-
-    return requested as CompanyProfile[];
-}
 
 /**
  * Signs in one account per parallel worker (per requested profile) and caches
