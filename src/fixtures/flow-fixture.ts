@@ -14,6 +14,7 @@ import { AddNewGoodsItemFlow } from '../flows/add-new-goods-item-flow';
 import { GoodsOverviewFlow } from '../flows/goods-overview-flow';
 import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
 import { RepresentTraderFlow } from '../flows/represent-trader-flow';
+import { Ics2NotificationFlow } from '../flows/ics2-notification-flow';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
 
 export type FlowFixtureType = {
@@ -34,6 +35,9 @@ export type FlowFixtureType = {
     addNewStandaloneGoodsItemFlow: AddNewStandaloneGoodsItemFlow;
 
     // Common Flows for ENS integrated flow: ENS Only, ENS-SFD, ENS-IMMI, ENS-EIDR
+    ics2NotificationFlow: Ics2NotificationFlow;
+
+    // Common Flows
     createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow;
     // One flow for IMMI / SFD / FFD - the journey is chosen by the consignment data
     // the spec passes, not by which fixture it asks for.
@@ -83,6 +87,10 @@ export const flowFixture: ExtendParams[0] = {
         await use(new AddNewGMRFlow(movementOverviewPage, gmrDeclarePage, gmrDetailsPage));
     },
 
+    ics2NotificationFlow: async ({ browser }, use) => {
+        await use(new Ics2NotificationFlow());
+    },
+
     createAndSubmitEnsDeclarationFlow: async ({
         portalAccessFlow,
         initialFormDeclarationFlow,
@@ -124,4 +132,5 @@ export const flowFixture: ExtendParams[0] = {
             addNewStandaloneGoodsItemFlow, consignmentOverviewFlow, goodsOverviewFlow, authAccount
         ));
     },
+};
 };

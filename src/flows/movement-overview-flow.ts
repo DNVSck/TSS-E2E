@@ -27,15 +27,16 @@ export class MovementOverviewFlow {
      * detail returns an MRN opening with the ENS country code. No consignment-level
      * status is checked here. All value checks are soft.
      */
-    async verifyEnsConsignmentDetail(): Promise<void> {
-        await ReportLog.step('Validate ENS consignment MRN after submission', async () => {
+    async verifyEnsConsignmentDetail(): Promise<string> {
+        return ReportLog.step('Validate ENS consignment MRN after submission', async () => {
             const opened = await this.movementOverviewPage.openEnsConsignmentDetail();
             expect.soft(opened, 'ENS consignment listed').toBe(true);
-            if (!opened) return;
+            if (!opened) return '';
 
             const ensMrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();
             ReportLog.setParameter('ENS MRN', ensMrn);
             expect.soft(ensMrn, 'ENS MRN').toMatch(mrnPrefix(MRN_COUNTRY_CODE.ENS));
+            return ensMrn;
         });
     }
 

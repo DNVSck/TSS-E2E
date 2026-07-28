@@ -42,7 +42,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
         movementOverrides?: Partial<MovementData>;
         consignmentOverrides?: Partial<ConsignmentData>;
         goodsItemOverrides?: Partial<GoodsData>;
-    }): Promise<void> {
+    }): Promise<{ transportDocumentNumber: string; ensMrn: string }> {
         const { testInfo, url } = options;
 
         await this.reportTestAccount();
@@ -79,7 +79,8 @@ export class CreateAndSubmitEnsDeclarationFlow {
         // Goods-item work done: return to the consignment overview via the breadcrumb
         // and submit the consignment.
         await this.consignmentOverviewFlow.submitConsignment();
-        await this.verifyPostSubmit(goodsJourney);
+        const ensMrn = await this.verifyPostSubmit(goodsJourney);
+        return { transportDocumentNumber: consignmentData.transportDocumentNumber, ensMrn };
     }
 
     /**
@@ -93,9 +94,8 @@ export class CreateAndSubmitEnsDeclarationFlow {
      * with NO MRN (it is never authorised with one). Verify whichever applies, then
      * confirm the ENS consignment MRN is returned (the smoke proof-of-life).
      */
-    private async verifyPostSubmit(goodsJourney: GoodsJourneyContext): Promise<void> {
+    private async verifyPostSubmit(goodsJourney: GoodsJourneyContext): Promise<string> {
         await this.movementOverviewFlow.waitForSubmittedMovementOverview();
-
         if (goodsJourney.useIMMI) {
             await this.movementOverviewFlow.verifyImmiConsignmentDetail();
         } else if (goodsJourney.isControlledGoods) {
@@ -105,7 +105,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
             await this.movementOverviewFlow.verifyEidrConsignmentDetail();
         }
         // Submitting auto-returns to the movement overview.
-        await this.movementOverviewFlow.verifyEnsConsignmentDetail();
+        return this.movementOverviewFlow.verifyEnsConsignmentDetail();
     }
 
     /**
