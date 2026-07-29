@@ -136,10 +136,13 @@ export class MovementOverviewPage extends BasePage {
 
     /**
      * Both checks are soft so one run reports every mismatch, rather than hiding
-     * the status behind a reference-number failure.
+     * the status behind a reference-number failure. Soft costs no strictness - the
+     * test still fails; it only defers the stop so the rest of the body runs.
      *
      * Returns the validated local reference number so callers can surface it (in
-     * the report, logs, ...) without a second read of the page.
+     * the report, logs, ...) without a second read of the page - which is the other
+     * reason neither check is hard: a hard failure would throw before the return,
+     * and the reference would never reach the report.
      */
     async assertDraftMovementOverview(): Promise<string> {
         const localReferenceNumber = await this.getMovementLocalReferenceNumber();
@@ -151,7 +154,7 @@ export class MovementOverviewPage extends BasePage {
         expect.soft(localReferenceNumber, 'Local reference number')
             .toMatch(LOCAL_REFERENCE.ENS_PREFIX);
 
-        expect(declarationStatus, 'Declaration status').toBe(expectedStatus);
+        expect.soft(declarationStatus, 'Declaration status').toBe(expectedStatus);
 
         return localReferenceNumber;
     }

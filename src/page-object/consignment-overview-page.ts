@@ -106,7 +106,7 @@ export class ConsignmentOverviewPage extends BasePage {
         const expectedStatus = this.t!('status.draft');
 
         expect.soft(consignmentReference, 'Consignment reference').toMatch(LOCAL_REFERENCE.DEC_PREFIX);
-        expect(declarationStatus, 'Consignment status').toBe(expectedStatus);
+        expect.soft(declarationStatus, 'Consignment status').toBe(expectedStatus);
 
         return consignmentReference;
     }
