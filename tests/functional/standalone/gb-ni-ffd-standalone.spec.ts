@@ -2,6 +2,7 @@
 import { getBaseUrl, test } from '../../test-hooks';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { IMPORTER_COMPANY_NAME } from '../../../config/environment';
+import { ffdStandaloneGoodsItem } from '../../../src/test-data/ffd-standalone-goods-item-data';
 
 
 test.describe('GB to NI RoRo FFD Standalone Declaration Process - Agent Represents Trader', () => {
@@ -18,6 +19,7 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Agent Represen
     await createAndSubmitFfdStandaloneFlow.completeFfdStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
+      goodsItemOverrides: ffdStandaloneGoodsItem(),
     });
   });
 });
@@ -39,6 +41,7 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Importer Decla
     await createAndSubmitFfdStandaloneFlow.completeFfdStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
+      goodsItemOverrides: ffdStandaloneGoodsItem(),
     });
   });
 }); 

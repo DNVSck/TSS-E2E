@@ -1,6 +1,7 @@
 ﻿import { ReportLog } from '../../../src/core/report/report-log';
 import { getBaseUrl, test } from '../../test-hooks';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
+import { sfdStandaloneGoodsItem } from '../../../src/test-data/sfd-standalone-goods-item-data';
 
 test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represents Trader', () => {
   // Runs as the Agent's OWN company: standalone journeys do NOT represent a trader.
@@ -15,6 +16,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
     await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
+      goodsItemOverrides: sfdStandaloneGoodsItem(),
     });
   });
 });

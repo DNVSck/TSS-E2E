@@ -1,12 +1,8 @@
-﻿import { ReportLog } from '../../../src/core/report/report-log';
+import { ReportLog } from '../../../src/core/report/report-log';
 import { getBaseUrl, test } from '../../test-hooks';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { IMPORTER_COMPANY_NAME } from '../../../config/environment';
-import { previousDocument } from '../../../src/test-data/previous-document-data';
-import { documentReference } from '../../../src/test-data/document-reference-data';
-import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
-import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
-import { PREVIOUS_DOCUMENT_TYPE } from '../../../src/constant/previous-document-type-constant';
+import { immiStandaloneGoodsItem } from '../../../src/test-data/immi-standalone-goods-item-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
@@ -29,21 +25,8 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
       consignmentOverrides: {
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         representationType: REPRESENTATION_TYPE.DIRECT,
-        headerPreviousDocuments: [
-          previousDocument({ documentReference: '4GBXI553202734852-20240501' }),
-        ],
       },
-      goodsItemOverrides: {
-        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
-        documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XIUKIM15045448908220240124160138' }),
-          documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XI896458895023' }),
-          documentReference({ documentCode: DOCUMENT_CODE.N705, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' })
-        ],
-        previousDocuments: [
-          previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '24GB34F7Y1O2CX8PT4' }),
-        ],
-      },
+      goodsItemOverrides: immiStandaloneGoodsItem(),
     });
   });
 
@@ -55,21 +38,10 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
       consignmentOverrides: {
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
         representationType: REPRESENTATION_TYPE.INDIRECT,
-        headerPreviousDocuments: [
-          previousDocument({ documentReference: '4GBXI553202734852-20240501' }),
-        ],
       },
-      goodsItemOverrides: {
+      goodsItemOverrides: immiStandaloneGoodsItem({
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EN,
-        documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XIUKIM15045448908220240124160138' }),
-          documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XI896458895023' }),
-          documentReference({ documentCode: DOCUMENT_CODE.N705, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
-        ],
-        previousDocuments: [
-          previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '24GB34F7Y1O2CX8PT4' }),
-        ],
-      },
+      }),
     });
   });
 });
@@ -92,21 +64,8 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
       consignmentOverrides: {
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         representationType: undefined,
-        headerPreviousDocuments: [
-          previousDocument({ documentReference: '4GBXI553202734852-20240501' }),
-        ],
       },
-      goodsItemOverrides: {
-        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
-        documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XIUKIM15045448908220240124160138' }),
-          documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XI896458895023' }),
-          documentReference({ documentCode: DOCUMENT_CODE.N705, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
-        ],
-        previousDocuments: [
-          previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '24GB34F7Y1O2CX8PT4' }),
-        ],
-      },
+      goodsItemOverrides: immiStandaloneGoodsItem(),
     });
   });
 });

@@ -3,7 +3,7 @@ import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { REPRESENTATION_TYPE } from '../constant/representation-type-constant';
-import { PreviousDocumentData } from './previous-document-data';
+import { PreviousDocumentData, previousDocument } from './previous-document-data';
 import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
 
 /**
@@ -43,9 +43,10 @@ export interface ImmiStandaloneConsignmentData {
     invoiceCurrency: string;
 
     /**
-     * Consignment-overview tabs, each a list of records. Empty by default so a
-     * journey that declares none is unaffected; a spec opts in with entries and the
-     * overview flow replays the matching wizard once per element.
+     * Consignment-overview tabs, each a list of records - the overview flow replays
+     * the matching wizard once per element. headerPreviousDocuments carries the ENS
+     * declaration this consignment moves under, which every IMMI standalone journey
+     * needs, so it has a default; a spec that wants none passes an empty array.
      */
     headerPreviousDocuments: PreviousDocumentData[];
     holdersOfAuthorisation: HolderOfAuthorisationData[];
@@ -71,7 +72,9 @@ const defaults: ImmiStandaloneConsignmentData = {
     traderReference: 'STD-AUTO-001',
     invoiceCurrency: ITEM_CURRENCY.POUNDS_STERLING,
 
-    headerPreviousDocuments: [],
+    headerPreviousDocuments: [
+        previousDocument({ documentReference: '4GBXI553202734852-20240501' }),
+    ],
     holdersOfAuthorisation: [],
 };
 
