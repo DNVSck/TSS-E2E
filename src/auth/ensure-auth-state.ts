@@ -1,7 +1,7 @@
 import { chromium } from '@playwright/test';
-import { OTP_ENABLED, ENV, BASE_URL } from '../../../config/environment';
-import { PortalPage } from '../../page-object/portal-page';
-import { SignInPage } from '../../page-object/sign-in-page';
+import { OTP_ENABLED, ENV, BASE_URL } from '../../config/environment';
+import { PortalPage } from '../page-object/portal-page';
+import { SignInPage } from '../page-object/sign-in-page';
 import { authStatePath, isAuthStateFresh, AUTH_STATE_TTL_MINUTES } from './auth-state';
 import { CompanyProfile, UserCredentials, getCredentialsPool, profilesToAuthenticate } from './credentials';
 

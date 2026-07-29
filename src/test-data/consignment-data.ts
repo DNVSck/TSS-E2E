@@ -8,7 +8,7 @@ import { CONTAINER_PACKED_STATUS } from '../constant/container-packed-status-con
 import { CONTAINER_SUPPLIER_TYPE } from '../constant/container-supplier-type-constant';
 import { PreviousDocumentData } from './previous-document-data';
 import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
-import { StringUtil } from '../core/util/string-util';
+import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
 
 /**
  * One shape for both consignment journeys.
@@ -215,7 +215,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
 /** The full customs consignment journey. */
 export const consignment = (overrides?: Partial<ConsignmentData>): ConsignmentData => ({
     ...defaults,
-    transportDocumentNumber: StringUtil.generateRandomTransportDocumentNumber(),
+    transportDocumentNumber: generateRandomTransportDocumentNumber(),
     ...overrides,
 });
 
@@ -225,7 +225,7 @@ export const consignment = (overrides?: Partial<ConsignmentData>): ConsignmentDa
  */
 export const ensOnlyConsignment = (overrides?: Partial<ConsignmentData>): ConsignmentData => ({
     ...defaults,
-    transportDocumentNumber: StringUtil.generateRandomTransportDocumentNumber(),
+    transportDocumentNumber: generateRandomTransportDocumentNumber(),
     isEnsOnly: true,
     ensOnlyReason: ENS_ONLY_REASON.STANDALONE_DECLARATION_IN_TSS,
     ...overrides,

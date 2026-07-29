@@ -1,5 +1,5 @@
 import { expect, Locator, Page } from '@playwright/test';
-import { StringUtil } from './string-util';
+import { StringUtil } from '../core/util/string-util';
 
 // This class provides utility functions for interacting with web elements in a consistent way across the test suite. 
 // It can be imported and used in any page object or test file to perform common actions on web elements, such as clicking, filling forms, 
@@ -23,6 +23,29 @@ export function summaryListValue(page: Page, label: string): Locator {
     return page.locator(
         `.govuk-summary-list__row:has(dt:text-is("${label}")) .govuk-summary-list__value`
     );
+}
+
+// Read a summary-list field's text once it has painted. The overview and detail
+// pages are heavy and paint their summary list a beat after load, so a bare
+// innerText() races that paint and fails at the default action timeout - hence the
+// visibility wait. .first() keeps a label rendered more than once (the same row
+// repeated across tab panels) from tripping strict mode, and the value is trimmed
+// because the GOV.UK markup pads it with the row's own whitespace. The timeout is
+// the caller's because how slow a page paints is a fact about that page.
+export async function readFieldWhenVisible(field: Locator, timeout: number): Promise<string> {
+    await field.first().waitFor({ state: 'visible', timeout });
+    return (await field.first().innerText()).trim();
+}
+
+// Read a field that may not have rendered yet as '' instead of throwing - the
+// counterpart to readFieldWhenVisible for values the backend populates
+// asynchronously (MRN, GMR ID, the post-submit status). Callers poll on this and
+// decide themselves when to give up, so it must never wait and never throw.
+export async function readFieldIfPresent(field: Locator): Promise<string> {
+    if (await field.count() === 0) {
+        return '';
+    }
+    return (await field.first().innerText()).trim();
 }
 
 // Utility function to commit a value on a GOV.UK accessible-autocomplete (the

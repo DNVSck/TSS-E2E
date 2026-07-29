@@ -5,7 +5,7 @@ import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-
 import { TRANSPORT_CHARGES_OPTION_CODE } from '../constant/transport-charges-code-constant';
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
-import { DateTimeUtil } from '../core/util/date-time-util';
+import { generateValidArrivalDate } from '../helper/data-generate-helper';
 
 
 export interface MovementData {
@@ -60,7 +60,7 @@ const defaults: Omit<MovementData, 'arrivalDateTime'> = {
 
 export const movement = (overrides?: Partial<MovementData>): MovementData => ({
     ...defaults,
-    arrivalDateTime: DateTimeUtil.generateValidArrivalDate(),
+    arrivalDateTime: generateValidArrivalDate(),
     ...overrides,
 });
 

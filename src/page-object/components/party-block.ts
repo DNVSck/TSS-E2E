@@ -1,6 +1,6 @@
 import { BasePage } from '../base-page';
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue } from '../../core/util/element-helper';
+import { selectDropdownValue } from '../../helper/element-helper';
 
 /**
  * A trade party involved in a consignment. Consignment declaration repeats the

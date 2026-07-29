@@ -2,7 +2,7 @@ import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
-import { summaryListValue } from '../core/util/element-helper';
+import { summaryListValue, readFieldWhenVisible } from '../helper/element-helper';
 import { StringUtil } from '../core/util/string-util';
 
 /** URL path segments used to build and await movement routes. */
@@ -11,6 +11,8 @@ const OVERVIEW_SEGMENT = 'overview';
 
 /** Waits (ms). */
 const NAV_TIMEOUT = 30_000;
+/** This heavy overview paints its summary list a beat after load. */
+const SUMMARY_READ_TIMEOUT = 20_000;
 const CONSIGNMENT_VIEW_TIMEOUT = 30_000;
 /**
  * SFD, IMMI and EIDR share this longer wait: each is a linked consignment the
@@ -124,17 +126,12 @@ export class MovementOverviewPage extends BasePage {
         await this.associateConsignmentBtn.click();
     }
 
-    async getTextLocalReferenceNumber(): Promise<string> {
-        // This overview is heavy and paints its summary list a beat after load; on
-        // this slow env a bare innerText can race that paint and time out at the
-        // default action timeout. Wait for the field to be visible first.
-        await this.localReferenceNumber.first().waitFor({ state: 'visible', timeout: 20_000 });
-        return await this.localReferenceNumber.innerText();
+    async getMovementLocalReferenceNumber(): Promise<string> {
+        return readFieldWhenVisible(this.localReferenceNumber, SUMMARY_READ_TIMEOUT);
     }
 
-    async getTextDeclarationStatus(): Promise<string> {
-        await this.declarationStatus.first().waitFor({ state: 'visible', timeout: 20_000 });
-        return await this.declarationStatus.innerText();
+    async getMovementDeclarationStatus(): Promise<string> {
+        return readFieldWhenVisible(this.declarationStatus, SUMMARY_READ_TIMEOUT);
     }
 
     /**
@@ -145,8 +142,8 @@ export class MovementOverviewPage extends BasePage {
      * the report, logs, ...) without a second read of the page.
      */
     async assertDraftMovementOverview(): Promise<string> {
-        const localReferenceNumber = await this.getTextLocalReferenceNumber();
-        const declarationStatus = await this.getTextDeclarationStatus();
+        const localReferenceNumber = await this.getMovementLocalReferenceNumber();
+        const declarationStatus = await this.getMovementDeclarationStatus();
         const expectedStatus = this.t!('status.draft');
 
         // Asserting the string, not a boolean: a failure then reports the actual

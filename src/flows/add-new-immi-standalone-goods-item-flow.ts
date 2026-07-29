@@ -4,19 +4,24 @@ import { GoodsData } from '../test-data/goods-data';
 import { ReportLog } from '../core/report/report-log';
 
 /**
- * One goods item on the standalone journeys, via the shared
- * `base-standalone-goods-item-journey`. A short, fixed sequence (no TGP /
- * controlled / dangerous / container branching), so it reuses GoodsDeclarePage
- * directly rather than the branch-heavy ENS AddNewGoodsItemFlow.
+ * One goods item on the IMMI standalone journey.
+ *
+ * The screen list is a fact about this journey, so it is the method order below.
+ * IMMI is the journey that asks about TGP at goods level; that screen goes here when
+ * it is modelled, which is why IMMI owns its own goods wizard rather than sharing one
+ * behind a flag.
+ *
+ * Reuses GoodsDeclarePage directly rather than the branch-heavy ENS
+ * AddNewGoodsItemFlow, whose controlled/dangerous/container branching does not apply.
  */
-export class AddNewStandaloneGoodsItemFlow {
+export class AddNewImmiStandaloneGoodsItemFlow {
     constructor(
         private readonly consignmentOverviewPage: ConsignmentOverviewPage,
         private readonly goodsDeclarePage: GoodsDeclarePage,
     ) { }
 
-    async addNewStandaloneGoodsItem(input: GoodsData): Promise<void> {
-        await ReportLog.step('Add new standalone goods item', async () => {
+    async addNewImmiStandaloneGoodsItem(input: GoodsData): Promise<void> {
+        await ReportLog.step('Add new IMMI standalone goods item', async () => {
             await this.consignmentOverviewPage.openNewGoodsRecord();
             await this.goodsDeclarePage.selectGoodsProcedureCode(input.goodsProcedureCode);
             await this.goodsDeclarePage.selectAdditionalProcedureCode(input.additionalProcedureCode);

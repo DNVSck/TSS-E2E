@@ -1,8 +1,7 @@
 ﻿import { ReportLog } from '../../../src/core/report/report-log';
 import { getBaseUrl, test } from '../../test-hooks';
-import { COMPANY_PROFILE } from '../../../src/core/auth/credentials';
+import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { IMPORTER_COMPANY_NAME } from '../../../config/environment';
-import { immiStandaloneConsignment } from '../../../src/test-data/immi-standalone-consignment-data';
 import { previousDocument } from '../../../src/test-data/previous-document-data';
 import { documentReference } from '../../../src/test-data/document-reference-data';
 import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
@@ -22,18 +21,18 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct is created and submitted successfully', { tag: ['@smoke' , '@regression' , '@e2e'] }, async ({ createAndSubmitStandaloneFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct is created and submitted successfully', { tag: ['@smoke' , '@regression' , '@e2e'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct');
-    await createAndSubmitStandaloneFlow.completeStandaloneFlow({
+    await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
-      consignmentData: immiStandaloneConsignment({
+      consignmentOverrides: {
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         representationType: REPRESENTATION_TYPE.DIRECT,
         headerPreviousDocuments: [
           previousDocument({ documentReference: '4GBXI553202734852-20240501' }),
         ],
-      }),
+      },
       goodsItemOverrides: {
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
         documentReferences: [
@@ -48,18 +47,18 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     });
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Indirect is created and submitted successfully', { tag: ['@smoke', '@regression', '@e2e'] }, async ({ createAndSubmitStandaloneFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Indirect is created and submitted successfully', { tag: ['@smoke', '@regression', '@e2e'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Indirect');
-    await createAndSubmitStandaloneFlow.completeStandaloneFlow({
+    await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
-      consignmentData: immiStandaloneConsignment({
+      consignmentOverrides: {
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
         representationType: REPRESENTATION_TYPE.INDIRECT,
         headerPreviousDocuments: [
           previousDocument({ documentReference: '4GBXI553202734852-20240501' }),
         ],
-      }),
+      },
       goodsItemOverrides: {
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EN,
         documentReferences: [
@@ -75,7 +74,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
   });
 });
 
-test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Declrare by themself', () => {
+test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Declare by themself', () => {
   // The importer signs in as their OWN company, so there is NO representation:
   // no representTrader here, and representationType is left undefined so the flow
   // skips the "Representation information" screen.
@@ -85,18 +84,18 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
     await ReportLog.setFeature('GB to NI IMMI Standalone Declaration Process');
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declrare by themself is created and submitted successfully', { tag: ['@regression' , '@e2e'] }, async ({ createAndSubmitStandaloneFlow }, testInfo) => {
-    await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declrare by themself');
-    await createAndSubmitStandaloneFlow.completeStandaloneFlow({
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully', { tag: ['@regression' , '@e2e'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+    await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
+    await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
-      consignmentData: immiStandaloneConsignment({
+      consignmentOverrides: {
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         representationType: undefined,
         headerPreviousDocuments: [
           previousDocument({ documentReference: '4GBXI553202734852-20240501' }),
         ],
-      }),
+      },
       goodsItemOverrides: {
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
         documentReferences: [

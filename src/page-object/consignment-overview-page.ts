@@ -1,7 +1,10 @@
 import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
-import { clickLinkAndWaitForRoute, switchToTabAndClickNew, summaryListValue } from '../core/util/element-helper';
+import {
+    clickLinkAndWaitForRoute, switchToTabAndClickNew, summaryListValue,
+    readFieldWhenVisible, readFieldIfPresent,
+} from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 
 /** The overview summary list paints a beat after the draft is created. */
@@ -82,14 +85,12 @@ export class ConsignmentOverviewPage extends BasePage {
         await clickLinkAndWaitForRoute(this.page, this.consignmentBreadcrumbLink);
     }
 
-    private async getTextLocalReferenceNumber(): Promise<string> {
-        await this.localReferenceNumber.first().waitFor({ state: 'visible', timeout: SUMMARY_READ_TIMEOUT });
-        return (await this.localReferenceNumber.first().innerText()).trim();
+    private async getConsignmentLocalReferenceNumber(): Promise<string> {
+        return readFieldWhenVisible(this.localReferenceNumber, SUMMARY_READ_TIMEOUT);
     }
 
-    private async getTextStatus(): Promise<string> {
-        await this.status.first().waitFor({ state: 'visible', timeout: SUMMARY_READ_TIMEOUT });
-        return (await this.status.first().innerText()).trim();
+    private async getConsignmentStatus(): Promise<string> {
+        return readFieldWhenVisible(this.status, SUMMARY_READ_TIMEOUT);
     }
 
     /**
@@ -100,8 +101,8 @@ export class ConsignmentOverviewPage extends BasePage {
      * page reads and asserts, the flow reports. All checks are soft.
      */
     async assertDraftConsignment(): Promise<string> {
-        const consignmentReference = await this.getTextLocalReferenceNumber();
-        const declarationStatus = await this.getTextStatus();
+        const consignmentReference = await this.getConsignmentLocalReferenceNumber();
+        const declarationStatus = await this.getConsignmentStatus();
         const expectedStatus = this.t!('status.draft');
 
         expect.soft(consignmentReference, 'Consignment reference').toMatch(LOCAL_REFERENCE.DEC_PREFIX);
@@ -123,17 +124,9 @@ export class ConsignmentOverviewPage extends BasePage {
      * asserted here because the standalone overview shows it only after submit.
      */
     async assertDraftStandaloneConsignment(expectedPrefix: RegExp): Promise<string> {
-        const consignmentReference = await this.getTextLocalReferenceNumber();
+        const consignmentReference = await this.getConsignmentLocalReferenceNumber();
         expect.soft(consignmentReference, 'Consignment LRN').toMatch(expectedPrefix);
         return consignmentReference;
-    }
-
-    /** Read the status row, or '' if it has not painted yet (never throws). */
-    private async readStatusOrEmpty(): Promise<string> {
-        if (await this.status.count() === 0) {
-            return '';
-        }
-        return (await this.status.first().innerText()).trim();
     }
 
     /**
@@ -146,7 +139,7 @@ export class ConsignmentOverviewPage extends BasePage {
         const expected = this.t!('status.awaitingArrival');
         let status = '';
         await expect(async () => {
-            status = await this.readStatusOrEmpty();
+            status = await readFieldIfPresent(this.status);
             if (status !== expected) {
                 await this.page.reload();
             }

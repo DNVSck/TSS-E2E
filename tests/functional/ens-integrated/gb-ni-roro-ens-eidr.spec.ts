@@ -1,7 +1,7 @@
 ﻿import { ReportLog } from '../../../src/core/report/report-log';
 import { getBaseUrl, test } from '../../test-hooks';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
-import { COMPANY_PROFILE } from '../../../src/core/auth/credentials';
+import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { HAULIER_COMPANY_NAME } from '../../../config/environment';
 import { gmrData } from '../../../src/test-data/gmr-data';
 

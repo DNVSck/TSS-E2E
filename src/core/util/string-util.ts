@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { TRANSPORT_DOCUMENT_FORMAT, TypeOfMovementKey } from '../../constant/type-of-movement-code-constant';
 
 export class StringUtil {
     
@@ -131,20 +130,6 @@ export class StringUtil {
             length: { min: minLength, max: maxLength },
             allowLeadingZeros: false,
         });
-    }
-
-    /**
-     * A transport document number shaped like the reference a real trader would
-     * enter, chosen by transport mode (defaults to Road/RoRo — the common case):
-     *   Road/RoRo  CMR1234567890   Maritime  B/L987654321   Air  AWB0123456789
-     *
-     * The service rejects a number it has already seen, so call this per
-     * consignment rather than holding on to the result.
-     */
-    static generateRandomTransportDocumentNumber(movement: TypeOfMovementKey = 'RORO_ACCOMPANIED'): string {
-        const { prefix, digits } = TRANSPORT_DOCUMENT_FORMAT[movement];
-        const serial = faker.string.numeric({ length: digits});
-        return `${prefix}${serial}`;
     }
 
     /**

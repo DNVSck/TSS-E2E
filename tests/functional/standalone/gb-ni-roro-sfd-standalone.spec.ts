@@ -1,7 +1,6 @@
 ﻿import { ReportLog } from '../../../src/core/report/report-log';
 import { getBaseUrl, test } from '../../test-hooks';
-import { COMPANY_PROFILE } from '../../../src/core/auth/credentials';
-import { sfdStandaloneConsignment } from '../../../src/test-data/sfd-standalone-consignment-data';
+import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 
 test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represents Trader', () => {
   // Runs as the Agent's OWN company: standalone journeys do NOT represent a trader.
@@ -11,12 +10,11 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
     await ReportLog.setFeature('GB to NI SFD Standalone Declaration Process');
   });
 
-  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitStandaloneFlow }, testInfo) => {
+  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Prelodged - RoRo (Accompanied)');
-    await createAndSubmitStandaloneFlow.completeStandaloneFlow({
+    await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
-      consignmentData: sfdStandaloneConsignment(),
     });
   });
 });

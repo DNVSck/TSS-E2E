@@ -1,4 +1,5 @@
-import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
+import { reportTestCaseLink } from '../../src/helper/report-helper';
+import { COMPANY_PROFILE } from '../../src/auth/credentials';
 import { ReportLog } from '../../src/core/report/report-log';
 import { ensOnlyConsignment } from '../../src/test-data/consignment-data';
 import { documentReference } from '../../src/test-data/document-reference-data';
@@ -34,7 +35,7 @@ test.describe('GB to NI ENS Declaration Process', () => {
 
   test('UI-SMOKE-TC03-TSS-Portal-ENS-ONLY: Verify ENS Only flow', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('UI-SMOKE-TC03-TSS-Portal-ENS-ONLY: Verify ENS Only flow (controlled goods = No)');
-    ReportLog.setTestCaseLink(ENS_ONLY);
+    reportTestCaseLink(ENS_ONLY);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
@@ -45,7 +46,7 @@ test.describe('GB to NI ENS Declaration Process', () => {
 
   test('UI-SMOKE-TC03-TSS-Portal-ENS-SFD-GMR: Verify ENS triggers SFD with GMR', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
     await ReportLog.setStory('UI-SMOKE-TC03-TSS-Portal-ENS-SFD-GMR: Verify ENS triggers SFD with GMR');
-    ReportLog.setTestCaseLink(ENS_SFD_GMR);
+    reportTestCaseLink(ENS_SFD_GMR);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
@@ -75,7 +76,7 @@ test.describe('GB to NI ENS Declaration Process', () => {
     createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied without TGP');
-    ReportLog.setTestCaseLink(ENS_IMMI_GMR_NO_TGP);
+    reportTestCaseLink(ENS_IMMI_GMR_NO_TGP);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
@@ -109,7 +110,7 @@ test.describe('GB to NI ENS Declaration Process', () => {
 
   test('UI-SMOKE-TC03-TSS-Portal-ENS-EIDR-GMR: Verify ENS triggers EIDR with GMR', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow, ics2NotificationFlow, createAndSubmitGmrFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied (controlled goods = No)');
-    ReportLog.setTestCaseLink(ENS_EIDR_GMR);
+    reportTestCaseLink(ENS_EIDR_GMR);
     const { transportDocumentNumber, ensMrn } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),

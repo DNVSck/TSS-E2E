@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { AUTH_REUSE_SESSION, ENV } from '../../../config/environment';
+import { AUTH_REUSE_SESSION, ENV } from '../../config/environment';
 import { CompanyProfile } from './credentials';
 
 /**

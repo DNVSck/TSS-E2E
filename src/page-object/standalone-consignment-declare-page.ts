@@ -1,5 +1,5 @@
 import { Page, Locator } from '@playwright/test';
-import { checkRadioByValue } from '../core/util/element-helper';
+import { checkRadioByValue } from '../helper/element-helper';
 import { BasePage } from './base-page';
 
 /**

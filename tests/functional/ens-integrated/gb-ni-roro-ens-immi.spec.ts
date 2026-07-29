@@ -1,7 +1,8 @@
 ﻿import { PREVIOUS_DOCUMENT_TYPE } from '../../../src/constant/previous-document-type-constant';
+import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
 import { getBaseUrl, test } from '../../test-hooks';
-import { COMPANY_PROFILE } from '../../../src/core/auth/credentials';
+import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
 import { documentReference } from '../../../src/test-data/document-reference-data';
 import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
@@ -31,7 +32,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
   }, testInfo) => {
     test.fixme(true, 'TGP screen does not skip step for Commodity code.');
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied with TGP');
-    ReportLog.setTestCaseLink(TGP_TC_ID);
+    reportTestCaseLink(TGP_TC_ID);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
@@ -66,7 +67,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied without TGP');
-    ReportLog.setTestCaseLink(NO_TGP_TC_ID);
+    reportTestCaseLink(NO_TGP_TC_ID);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),

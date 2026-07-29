@@ -1,7 +1,7 @@
 import { BasePage } from './base-page';
 import { Page, Locator, expect } from '@playwright/test';
 import { generateTotpCode } from '../core/util/totp-auth';
-import { UserCredentials } from '../core/auth/credentials';
+import { UserCredentials } from '../auth/credentials';
 
 /** How many TOTP windows to try before giving up. */
 const MAX_TOTP_ATTEMPTS = 5;

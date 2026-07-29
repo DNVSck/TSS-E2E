@@ -1,7 +1,7 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { PartyBlock, PartyAddress } from './components/party-block';
-import { selectDropdownValue, checkRadioByValue } from '../core/util/element-helper';
+import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
 
 /** How long the app may take to leave the EORI screen after Continue. */
 const EORI_OUTCOME_TIMEOUT_MS = 15_000;

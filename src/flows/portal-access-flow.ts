@@ -18,7 +18,7 @@ export class PortalAccessFlow {
      * Open the portal and start the service journey.
      *
      * The browser context already carries a signed-in session, restored from the
-     * `storageState` captured in globalSetup — see src/core/auth/ensure-auth-state.ts.
+     * `storageState` captured in globalSetup — see src/auth/ensure-auth-state.ts.
      * Nothing here signs in: a TOTP code is bound to a 30-second window, so a
      * per-test sign-in of the same account would replay a code Keycloak rejects.
      */

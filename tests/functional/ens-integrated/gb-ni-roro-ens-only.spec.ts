@@ -3,7 +3,7 @@ import { ensOnlyConsignment } from '../../../src/test-data/consignment-data';
 import { getBaseUrl, test } from '../../test-hooks';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { ENS_ONLY_REASON } from '../../../src/constant/ens-only-reason-constant';
-import { COMPANY_PROFILE } from '../../../src/core/auth/credentials';
+import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { HAULIER_COMPANY_NAME } from '../../../config/environment';
 
 

@@ -1,6 +1,6 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectAutocompleteValue } from '../core/util/element-helper';
+import { selectAutocompleteValue } from '../helper/element-helper';
 import { AdditionalInformationData } from '../test-data/additional-information-data';
 
 /**

@@ -1,9 +1,9 @@
 import { test } from '@playwright/test';
 import {
     CompanyProfile, UserCredentials, accountFor, profilesToAuthenticate, isSingleAccountProfile,
-} from '../core/auth/credentials';
-import { authStatePath } from '../core/auth/auth-state';
-import { acquireAccountLock } from '../core/auth/account-lock';
+} from '../auth/credentials';
+import { authStatePath } from '../auth/auth-state';
+import { acquireAccountLock } from '../auth/account-lock';
 
 export type WorkerAuthFixtureType = {
     /**
@@ -45,7 +45,7 @@ function assertProfileAuthenticated(profile: CompanyProfile): void {
         `Any ${profile} session on disk is left over from an earlier run and would be replayed ` +
         `expired. Include the profile:\n\n` +
         `    AUTH_PROFILES=${[...authenticated, profile].join(',')}\n\n` +
-        `If every run needs it, add it to DEFAULT_AUTH_PROFILES in src/core/auth/credentials.ts instead.`
+        `If every run needs it, add it to DEFAULT_AUTH_PROFILES in src/auth/credentials.ts instead.`
     );
 }
 

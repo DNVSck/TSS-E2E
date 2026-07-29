@@ -81,7 +81,7 @@ export class MovementOverviewFlow {
 
             // The LRN is EIDR's only identifier here — it is never authorised with
             // an MRN, so that row renders "-" and carries nothing to report.
-            const lrn = await this.consignmentDetailPage.getLocalReferenceNumber();
+            const lrn = await this.consignmentDetailPage.getConsignmentLocalReferenceNumber();
             ReportLog.setParameter('EIDR LRN', lrn);
 
             // Asserts the MRN row renders "-"; its value is not recorded (there is none).
@@ -105,7 +105,7 @@ export class MovementOverviewFlow {
             if (!opened) return;
 
             // Report the LRN (the identifier used to find this consignment in the service);
-            const lrn = await this.consignmentDetailPage.getLocalReferenceNumber();
+            const lrn = await this.consignmentDetailPage.getConsignmentLocalReferenceNumber();
             const mrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();
             await this.consignmentDetailPage.assertStatusAwaitingArrival();
             ReportLog.setParameter(`${label} LRN`, lrn);

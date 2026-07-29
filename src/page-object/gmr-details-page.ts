@@ -1,7 +1,7 @@
 import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
-import { summaryListValue } from '../core/util/element-helper';
+import { summaryListValue, readFieldWhenVisible, readFieldIfPresent } from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 
 /** The GMR detail summary list can be slow to paint under parallel load. */
@@ -57,30 +57,12 @@ export class GmrDetailsPage extends BasePage {
         await this.externalContactsTab.click();
     }
 
-    private async getStatus(): Promise<string> {
-        await this.status.first().waitFor({ state: 'visible', timeout: DETAIL_READ_TIMEOUT });
-        return (await this.status.first().innerText()).trim();
+    private async getGmrStatus(): Promise<string> {
+        return readFieldWhenVisible(this.status, DETAIL_READ_TIMEOUT);
     }
 
-    private async getLocalReferenceNumber(): Promise<string> {
-        await this.localReferenceNumber.first().waitFor({ state: 'visible', timeout: DETAIL_READ_TIMEOUT });
-        return (await this.localReferenceNumber.first().innerText()).trim();
-    }
-
-    /** Read the GMR ID row, or '' if it is not present yet (never throws). */
-    private async readGmrId(): Promise<string> {
-        if (await this.gmrId.count() === 0) {
-            return '';
-        }
-        return (await this.gmrId.first().innerText()).trim();
-    }
-
-    /** Read the status row, or '' if it is not present yet (never throws). */
-    private async readStatus(): Promise<string> {
-        if (await this.status.count() === 0) {
-            return '';
-        }
-        return (await this.status.first().innerText()).trim();
+    private async getGmrLocalReferenceNumber(): Promise<string> {
+        return readFieldWhenVisible(this.localReferenceNumber, DETAIL_READ_TIMEOUT);
     }
 
     /**
@@ -89,8 +71,8 @@ export class GmrDetailsPage extends BasePage {
      * Mirrors the draft checks on the movement- and consignment-overview pages.
      */
     async assertDraftGmr(): Promise<string> {
-        const localReferenceNumber = await this.getLocalReferenceNumber();
-        const status = await this.getStatus();
+        const localReferenceNumber = await this.getGmrLocalReferenceNumber();
+        const status = await this.getGmrStatus();
 
         expect.soft(localReferenceNumber, 'GMR local reference number')
             .toMatch(LOCAL_REFERENCE.GMR_PREFIX);
@@ -111,8 +93,8 @@ export class GmrDetailsPage extends BasePage {
         let status = '';
 
         await expect(async () => {
-            status = await this.readStatus();
-            gmrId = await this.readGmrId();
+            status = await readFieldIfPresent(this.status);
+            gmrId = await readFieldIfPresent(this.gmrId);
             if (status !== openLabel || !LOCAL_REFERENCE.GMR_PREFIX.test(gmrId)) {
                 await this.page.reload();
             }

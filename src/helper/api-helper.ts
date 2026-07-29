@@ -1,4 +1,9 @@
-import { StringUtil } from "./string-util";
+import { StringUtil } from '../core/util/string-util';
+
+// Builders for the API/message payloads this service exchanges. Named for the role
+// (an api helper) rather than for today's only subject, so the next payload builder
+// joins it here instead of starting another file - same reason as report-helper.
+// Each builder keeps a name that says exactly what it builds.
 
 const ICS2_EXCHANGE = 'ics2-exchange';
 const ICS2_ROUTING_KEY = 'portal.ics2.notification';

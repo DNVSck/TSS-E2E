@@ -26,8 +26,12 @@ export class MovementHeaderDeclarationFlow {
 
     private async inputTransportDetails(input: MovementData): Promise<void> {
         await ReportLog.step('Submit transport details', async () => {
+            // chooseTypeOfMovement selects AND continues, so the IMO screen is already
+            // open here. Do not add a Continue: it would submit the IMO screen blind,
+            // which only fails validation (and so looks harmless) while the screen is
+            // empty - the moment the app pre-fills an IMO the extra Continue succeeds,
+            // the wizard advances a screen, and the fill below cannot find the field.
             await this.movementDeclarePage.chooseTypeOfMovement(input.typeOfMovement);
-            await this.movementDeclarePage.clickContinueButton();
 
             await this.movementDeclarePage.inputImoAndNationalityOfMeanOfTransport(input.imoNumber, input.nationalityOfMeanOfTransport);
             await this.movementDeclarePage.clickContinueButton();
