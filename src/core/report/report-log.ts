@@ -10,7 +10,6 @@ import {
     story,
     tags,
 } from 'allure-js-commons';
-import { TEST_LINK_CONFIG } from '../../constant/test-link.constant';
 
 /**
  * The single facade the test body and flows use to talk to Allure.
@@ -79,13 +78,14 @@ export class ReportLog {
         await tags(...tagList);
     }
 
-    /** Links the test to its case in the test management system. */
-    public static setTestCaseLink(testCaseId: string): void {
-        link(
-            `${TEST_LINK_CONFIG.TEST_CASES_URL}${testCaseId}`,
-            `Test case ${testCaseId}`,
-            'tms'
-        );
+    /**
+     * Links the test to its case in the test management system. Takes the full URL
+     * rather than composing it from a hard-coded base: which tracker a project uses
+     * is the project's business, not this wrapper's - see helper/report-helper for
+     * the caller that knows this service's tracker.
+     */
+    public static setTestCaseLink(testCaseId: string, url: string): void {
+        link(url, `Test case ${testCaseId}`, 'tms');
     }
 
     /**

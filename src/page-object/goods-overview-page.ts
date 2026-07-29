@@ -1,6 +1,6 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { switchToTabAndClickNew } from '../core/util/element-helper';
+import { switchToTabAndClickNew } from '../helper/element-helper';
 
 export class GoodsOverviewPage extends BasePage {
     

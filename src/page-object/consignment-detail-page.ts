@@ -1,12 +1,20 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './base-page';
 import { TFunction } from '../fixtures/locale-fixture';
-import { summaryListValue } from '../core/util/element-helper';
+import { summaryListValue, readFieldWhenVisible, readFieldIfPresent } from '../helper/element-helper';
 
 /** This heavy detail page can be slow to paint under parallel load. */
 const DETAIL_READ_TIMEOUT = 15_000;
 /** The MRN is populated asynchronously after the consignment is authorised. */
 const MRN_POLL_TIMEOUT = 60_000;
+
+/**
+ * The MRN reduced to its alphanumeric characters. The service injects zero-width
+ * spaces (U+200B) into the rendered MRN as line-break hints, so the raw text is
+ * e.g. "26X<zwsp>I…" and never compares equal on its own. The same reduction also
+ * flattens the "-" placeholder an unauthorised consignment shows to ''.
+ */
+const alphanumericOnly = (raw: string): string => raw.replaceAll(/[^A-Za-z0-9]/g, '');
 
 /**
  * A consignment's detail page, reached via the "View" button on a consignment
@@ -26,23 +34,17 @@ export class ConsignmentDetailPage extends BasePage {
         this.status = summaryListValue(page, this.t!('common.status'));
     }
 
-    async getLocalReferenceNumber(): Promise<string> {
-        await this.localReferenceNumber.first().waitFor({ state: 'visible', timeout: DETAIL_READ_TIMEOUT });
-        return (await this.localReferenceNumber.first().innerText()).trim();
+    async getConsignmentLocalReferenceNumber(): Promise<string> {
+        return readFieldWhenVisible(this.localReferenceNumber, DETAIL_READ_TIMEOUT);
     }
 
     /**
-     * Read the MRN, reduced to its alphanumeric characters — the service injects
-     * zero-width spaces (U+200B) into the rendered MRN as line-break hints, so the
-     * raw text is e.g. "26X<zwsp>I…". Returns '' if the row is not present yet
-     * (never throws), so a poll can decide whether to wait.
+     * Read the MRN, reduced to its alphanumeric characters (see alphanumericOnly).
+     * Returns '' if the row is not present yet (never throws), so a poll can decide
+     * whether to wait.
      */
     private async readMovementReferenceNumber(): Promise<string> {
-        if (await this.movementReferenceNumber.count() === 0) {
-            return '';
-        }
-        const raw = await this.movementReferenceNumber.innerText();
-        return raw.replaceAll(/[^A-Za-z0-9]/g, '');
+        return alphanumericOnly(await readFieldIfPresent(this.movementReferenceNumber));
     }
 
     /**
@@ -66,14 +68,13 @@ export class ConsignmentDetailPage extends BasePage {
         return mrn;
     }
 
-    async getStatus(): Promise<string> {
-        await this.status.first().waitFor({ state: 'visible', timeout: DETAIL_READ_TIMEOUT });
-        return (await this.status.innerText()).trim();
+    async getConsignmentStatus(): Promise<string> {
+        return readFieldWhenVisible(this.status, DETAIL_READ_TIMEOUT);
     }
 
     /** Soft-assert the consignment status is "Awaiting arrival"; returns the actual status. */
     async assertStatusAwaitingArrival(): Promise<string> {
-        const status = await this.getStatus();
+        const status = await this.getConsignmentStatus();
         expect.soft(status, 'Consignment status').toBe(this.t!('status.awaitingArrival'));
         return status;
     }
@@ -87,11 +88,9 @@ export class ConsignmentDetailPage extends BasePage {
      */
     async assertNoMovementReferenceNumber(): Promise<string> {
         // Ensure the summary list has painted before reading the MRN row.
-        await this.status.first().waitFor({ state: 'visible', timeout: DETAIL_READ_TIMEOUT });
-        const raw = await this.movementReferenceNumber.count()
-            ? (await this.movementReferenceNumber.innerText()).trim()
-            : '';
-        expect.soft(raw.replaceAll(/[^A-Za-z0-9]/g, ''), 'EIDR MRN (should be absent)').toBe('');
+        await readFieldWhenVisible(this.status, DETAIL_READ_TIMEOUT);
+        const raw = await readFieldIfPresent(this.movementReferenceNumber);
+        expect.soft(alphanumericOnly(raw), 'EIDR MRN (should be absent)').toBe('');
         return raw;
     }
 }

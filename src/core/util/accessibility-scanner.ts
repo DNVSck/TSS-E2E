@@ -1,6 +1,6 @@
 import type { AxeResults } from 'axe-core';
 import type { TestInfo } from '@playwright/test';
-import { attachViolationDetailsToReport } from '../../fixtures/axe-fixture';
+import { attachViolationDetailsToReport } from '../report/accessibility-report';
 
 type AccessibilityCheckOptions = {
   makeAxeBuilder: () => any;

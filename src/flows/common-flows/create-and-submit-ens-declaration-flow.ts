@@ -11,8 +11,8 @@ import { consignment, ConsignmentData } from '../../test-data/consignment-data';
 import { AddNewGoodsItemFlow, GoodsJourneyContext } from '../add-new-goods-item-flow';
 import { GoodsOverviewFlow } from '../goods-overview-flow';
 import { goods, GoodsData } from '../../test-data/goods-data';
-import { ReportLog } from '../../core/report/report-log';
-import { UserCredentials } from '../../core/auth/credentials';
+import { UserCredentials } from '../../auth/credentials';
+import { reportTestAccount } from '../../helper/report-helper';
 
 export class CreateAndSubmitEnsDeclarationFlow {
     constructor(
@@ -45,7 +45,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
     }): Promise<{ transportDocumentNumber: string; ensMrn: string }> {
         const { testInfo, url } = options;
 
-        await this.reportTestAccount();
+        reportTestAccount(this.authAccount, 'completeEnsDeclarationFlow');
 
         const routeData = initialFormData(options.initialFormOverrides);
         const movementData = movement(options.movementOverrides);
@@ -106,26 +106,6 @@ export class CreateAndSubmitEnsDeclarationFlow {
         }
         // Submitting auto-returns to the movement overview.
         return this.movementOverviewFlow.verifyEnsConsignmentDetail();
-    }
-
-    /**
-     * Surface the account this journey runs as in the report (for tracking). Reads
-     * the account the auth fixture actually assigned — the same one whose session
-     * `storageState` replayed — so the report can never name a different account
-     * than the test signed in as. A spec running this flow is always signed in, so
-     * a null account means it forgot `test.use({ authProfile })`.
-     */
-    private async reportTestAccount(): Promise<void> {
-        if (!this.authAccount) {
-            throw new Error(
-                'completeEnsDeclarationFlow ran without an authenticated account — ' +
-                'the spec must set test.use({ authProfile: ... }).'
-            );
-        }
-
-        const { username, profile, accountNumber } = this.authAccount;
-        const account = `${username} (${profile} account ${accountNumber ?? 1})`;
-        ReportLog.setParameter('Test account', account);
     }
 
     /**

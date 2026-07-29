@@ -1,8 +1,8 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue } from '../core/util/element-helper';
+import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue } from '../helper/element-helper';
 
-
+const COMMODITY_SUBMIT_TIMEOUT = 45_000;
 
 export class GoodsDeclarePage extends BasePage {
 
@@ -228,7 +228,7 @@ export class GoodsDeclarePage extends BasePage {
     async enterGoodsDescriptionAndCommodityCode(goodsDescription: string, commodityCode: string): Promise<void> {
         await this.selectCommodityCode(commodityCode);
         await this.inputGoodsDescription(goodsDescription);
-        await this.clickContinueButton();
+        await this.clickContinueButton(COMMODITY_SUBMIT_TIMEOUT);
     }
 
     /**

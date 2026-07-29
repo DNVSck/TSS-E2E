@@ -1,6 +1,6 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue, checkRadioByValue } from '../core/util/element-helper';
+import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
 import { PreviousDocumentData } from '../test-data/previous-document-data';
 
 /**

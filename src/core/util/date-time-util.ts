@@ -249,18 +249,12 @@ export class DateTimeUtil {
     }
 
     /**
-     * A valid arrival date/time for TSS forms: the current UTC (UTC+0) date and
-     * time plus 30 minutes, formatted as `YYYY-MM-DDTHH:mm` for the
-     * datetime-local input. The 30-minute lead keeps it safely in the future
-     * without tripping the form's far-future validation.
+     * `YYYY-MM-DDTHH:mm` in UTC (UTC+0) — the shape an HTML datetime-local input
+     * takes. `toISOString` is always UTC. Public because the value a given form
+     * considers valid is a domain rule, so those generators live outside this class
+     * (see test-data/data-generate-helper) and compose this formatting.
      */
-    static generateValidArrivalDate(): string {
-        const arrival = new Date(Date.now() + 30 * 60 * 1000);
-        return this.formatUtcDateTimeLocal(arrival);
-    }
-
-    /** `YYYY-MM-DDTHH:mm` in UTC (UTC+0) — `toISOString` is always UTC. */
-    private static formatUtcDateTimeLocal(date: Date): string {
+    static formatUtcDateTimeLocal(date: Date): string {
         return date.toISOString().slice(0, 16);
     }
 

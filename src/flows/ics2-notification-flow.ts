@@ -1,7 +1,7 @@
 import { APIRequestContext } from '@playwright/test';
 import { ReportLog } from '../core/report/report-log';
 import { IS_ISC2_MOCK } from '../../config/environment';
-import { buildIe3n03PublishBody, PUBLISH_ENDPOINT } from '../core/util/ics2-payload-builder';
+import { buildIe3n03PublishBody, PUBLISH_ENDPOINT } from '../helper/api-helper';
 
 export class Ics2NotificationFlow {
     constructor(private readonly rmq: APIRequestContext) {}

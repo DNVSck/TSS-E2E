@@ -3,7 +3,7 @@ import { FullConfig } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { initAllureResults, getAllureResultsDir } from '../src/core/report/allure-report-manager';
-import { ensureAuthState } from '../src/core/auth/ensure-auth-state';
+import { ensureAuthState } from '../src/auth/ensure-auth-state';
 import { LOCALE } from './environment';
 
 async function globalSetup(config: FullConfig) {

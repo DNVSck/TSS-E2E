@@ -2,8 +2,8 @@ import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { ROLE_IN_MOVEMENT } from "../constant/role-in-movement-constant";
 import { SEPARATE_HAULIER } from "../constant/separate-haulier-constant";
-import { DateTimeUtil } from '../core/util/date-time-util.js';
-import { selectDropdownValue, checkRadioByValue } from '../core/util/element-helper';
+import { generateValidArrivalDate } from '../helper/data-generate-helper';
+import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
 
 
 
@@ -155,7 +155,7 @@ export class MovementDeclarePage extends BasePage {
     }
 
     async inputArrivalDateTime(arrivalDateTime?: string): Promise<void> {
-        const value = arrivalDateTime ?? DateTimeUtil.generateValidArrivalDate();
+        const value = arrivalDateTime ?? generateValidArrivalDate();
 
         const [, month, day, hour, minute] = value.split(/[-T:]/);
 

@@ -1,7 +1,7 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { PartyBlock, PartyAddress } from './components/party-block';
-import { selectDropdownValue, checkRadioByValue } from '../core/util/element-helper';
+import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
 
 /** How long the app may take to leave the EORI screen after Continue. */
 const EORI_OUTCOME_TIMEOUT_MS = 15_000;
@@ -133,9 +133,7 @@ export class ConsignmentDeclarePage extends BasePage {
      * It asks whenever the EORI is blank or new; a registered EORI skips it.
      */
     private async enterPartyEoriAndAddress(party: PartyBlock, eori: string, address: PartyAddress): Promise<void> {
-        if (await party.submitEori(eori, EORI_OUTCOME_TIMEOUT_MS) === 'address') {
-            await party.enterAddress(address);
-        }
+        await party.enterEoriThenAddressIfAsked(eori, address, EORI_OUTCOME_TIMEOUT_MS);
     }
 
     // ===================== Buyer =====================

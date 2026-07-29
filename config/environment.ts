@@ -12,7 +12,7 @@ function boolOrDefault(value: string | undefined, fallback = false): boolean {
   return value.trim().toLowerCase() === 'true';
 }
 
-export const ENV = process.env.ENV as string;
+export const ENV = process.env.ENV!;
 
 /** Whether the environment requires the TOTP/OTP step during sign in. */
 export const OTP_ENABLED = boolOrDefault(process.env.OTP_ENABLED);

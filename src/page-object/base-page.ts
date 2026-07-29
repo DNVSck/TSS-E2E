@@ -61,8 +61,8 @@ export class BasePage {
 
     }
 
-    async clickContinueButton(): Promise<void> {
-        await this.commonContinueButton.click();
+    async clickContinueButton(timeout?: number): Promise<void> {
+        await this.commonContinueButton.click({ timeout });
     }
 
     async clickFinishButton(): Promise<void> {

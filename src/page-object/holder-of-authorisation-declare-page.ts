@@ -1,6 +1,6 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue } from '../core/util/element-helper';
+import { selectDropdownValue } from '../helper/element-helper';
 import { HolderOfAuthorisationData } from '../test-data/holder-of-authorisation-data';
 
 /**
