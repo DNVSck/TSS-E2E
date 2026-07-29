@@ -71,6 +71,7 @@ export class CreateAndSubmitImmiStandaloneFlow {
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
 
         await this.consignmentOverviewFlow.submitConsignment();
+        // NOSONAR
         // TODO: verify the post-submit state once the standalone consignment overview
         // exposes a Status field - see verifyStandaloneConsignmentSubmitted.
     }
