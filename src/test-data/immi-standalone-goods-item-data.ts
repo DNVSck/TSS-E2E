@@ -32,7 +32,7 @@ export const immiStandaloneGoodsItem = (
         documentReference({
             documentCode: DOCUMENT_CODE['1UKI'],
             documentStatus: DOCUMENT_STATUS.AC,
-            documentReference: 'XIUKIM15045448908220240124160138',
+            documentReference: 'XIUKIM89645889502320240124160138',
         }),
         documentReference({
             documentCode: DOCUMENT_CODE.C672,

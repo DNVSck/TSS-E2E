@@ -19,8 +19,8 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct is created and submitted successfully', { tag: ['@smoke' , '@regression' , '@e2e'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
-    await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct');
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct without TGP is created and submitted successfully', { tag: ['@smoke' , '@regression' , '@e2e'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+    await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct without TGP');
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
@@ -30,6 +30,8 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
       },
       goodsItemOverrides: immiStandaloneGoodsItem(),
     });
+
+    console.log('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct flow completed successfully');
   });
 
   test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
