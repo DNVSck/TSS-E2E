@@ -108,27 +108,24 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     /**
-     * The "use TGP?" screen is the first goods screen, but it appears only for IMMI
-     * goods when the signed-in trader has a TGP profile — a fact about the
-     * environment, so it is detected rather than declared in the test data. Waits
-     * for whichever screen the app lands on (the TGP question, or the goods domestic
-     * status screen that immediately follows when TGP is absent) and answers the TGP
-     * question only when it is actually shown.
+     * The "use TGP?" screen is the first goods screen on IMMI, but it only appears
+     * when the signed-in trader has a TGP profile — a fact about the environment, so
+     * it is detected rather than declared in the test data. When TGP is absent the app
+     * lands straight on the procedure-code screen, so wait for whichever arrives and
+     * report which one it was.
      *
-     * Returns whether the screen was present and answered.
+     * Detection is separate from answering so the caller can leave the Allure step
+     * unopened when the screen does not exist - see GoodsItemSteps.declareTgp.
      */
-    async answerUseTgpIfPresent(useTGP: boolean): Promise<boolean> {
-        // On IMMI the TGP screen is first; when the trader has no TGP profile the app
-        // lands straight on the procedure-code screen, so wait for whichever shows.
+    async isUseTgpQuestionShown(): Promise<boolean> {
         await this.useTgpYesOption.or(this.goodsProcedureCodeDropdown).first().waitFor({ state: 'visible' });
+        return this.useTgpYesOption.isVisible();
+    }
 
-        if (!(await this.useTgpYesOption.isVisible())) {
-            return false;
-        }
-
+    /** Answer the TGP question. Only call once isUseTgpQuestionShown() has said yes. */
+    async answerUseTgp(useTGP: boolean): Promise<void> {
         await (useTGP ? this.useTgpYesOption : this.useTgpNoOption).check();
         await this.clickContinueButton();
-        return true;
     }
 
     /**

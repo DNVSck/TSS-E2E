@@ -46,22 +46,28 @@ export class GoodsItemSteps {
      * about the environment — so its presence is detected rather than declared. A
      * test that asked for TGP but never saw the screen fails: its TGP path was not
      * exercised, so a green result would be misleading.
+     *
+     * Detection happens OUTSIDE the Allure step on purpose. Wrapping it would emit a
+     * step named "Answer ..." even on an account that was never asked the question,
+     * recording an answer that was never given.
      */
     async declareTgp(input: GoodsData): Promise<boolean> {
-        const shown = await ReportLog.step(
-            'Answer "Do you want to use a Trader Goods Profile?"',
-            async () => this.goodsDeclarePage.answerUseTgpIfPresent(input.useTGP)
-        );
-
-        if (!shown) {
+        if (!await this.goodsDeclarePage.isUseTgpQuestionShown()) {
             if (input.useTGP) {
                 throw new Error(
-                    'Requested useTGP=true but the TGP screen never appeared — the signed-in ' +
-                    'profile has no TGP set up, so the TGP path was not exercised.'
+                    'Test data sets "useTGP" but the app never asked the TGP question, so the ' +
+                    'TGP path was not exercised. Two things produce this, in the order worth ' +
+                    'checking: the signed-in trader has no TGP profile set up, OR the trader ' +
+                    'does have one and the app failed to offer the screen - which is a product ' +
+                    'defect, not a test-data problem.'
                 );
             }
             return false;
         }
+
+        await ReportLog.step('Answer "Do you want to use a Trader Goods Profile?"', async () => {
+            await this.goodsDeclarePage.answerUseTgp(input.useTGP);
+        });
 
         if (!input.useTGP) {
             return false;

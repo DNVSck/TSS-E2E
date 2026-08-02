@@ -28,7 +28,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
   });
 
   test('Verify ENS-IMMI - RoRo (Accompanied) with TGP is created and submitted successfully', { tag: ['@smoke'] }, async ({
-    createAndSubmitEnsDeclarationFlow,
+    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied with TGP');
     reportTestCaseLink(TGP_TC_ID);
@@ -60,6 +60,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
       
     });
 
+    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });
 
   test('Verify ENS-IMMI - RoRo (Unaccompanied) without TGP is created and submitted successfully', { tag: ['@smoke'] }, async ({
