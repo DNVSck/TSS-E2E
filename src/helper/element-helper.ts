@@ -48,14 +48,23 @@ export async function readFieldIfPresent(field: Locator): Promise<string> {
     return (await field.first().innerText()).trim();
 }
 
-// Utility function to commit a value on a GOV.UK accessible-autocomplete (the
-// combobox used by commodity code, additional-information code, ...). A plain fill()
-// leaves the hidden value empty — the typed text is only a "query" that the component
-// discards on blur unless a suggestion is picked. So type the value to fire the
-// lookup, wait for the first suggestion, then commit it by keyboard (ArrowDown
-// highlights it, Enter selects — a click races the re-render). Suggestions can be
-// fetched live (e.g. the NI tariff) and the request is occasionally slow or dropped,
-// so re-type and retry a few times before giving up.
+
+// Commit a value on a GOV.UK accessible-autocomplete (commodity code, TGP number,
+// additional-information code, ...). A plain fill() leaves the component's value
+// empty - the typed text is only a query until a suggestion is picked.
+//
+// The suggestion is committed by CLICKING it. Do not "simplify" this back to the
+// keyboard: locator.press() focuses its element first, so input.press('ArrowDown')
+// moves focus onto the option and a following input.press('Enter') pulls focus back
+// to the input - the highlight is lost and nothing is selected. That was the original
+// implementation and it went unnoticed for a long time, because the commodity screen
+// types a value the service also accepts as a bare query; the TGP screen, which needs
+// a real record, rejected it outright.
+//
+// Suggestions can be fetched live (e.g. the NI tariff) and the request is sometimes
+// slow or dropped, so re-type and retry before giving up. Clicking does not race that
+// re-render: Playwright re-resolves the locator per action and retries the click when
+// the element is replaced mid-flight.
 export async function selectAutocompleteValue(
     input: Locator,
     firstOption: Locator,
@@ -65,10 +74,13 @@ export async function selectAutocompleteValue(
         await input.click();
         await input.fill('');
         await input.pressSequentially(value, { delay: 120 });
+
         try {
-            await firstOption.waitFor({ state: 'attached', timeout: 8000 });
-            await input.press('ArrowDown');
-            await input.press('Enter');
+            await firstOption.waitFor({ state: 'visible', timeout: 8000 });
+            await firstOption.click();
+            // The open list overlays whatever sits below it — the Continue button,
+            // typically — and swallows the next click, so see it close before moving on.
+            await firstOption.waitFor({ state: 'hidden' });
             return;
         } catch {
             if (attempt === 3) {

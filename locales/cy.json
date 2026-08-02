@@ -10,12 +10,34 @@
     "submitButton": "Mewngofnodi"
   },
   "common": {
-    "localReferenceNumber": "Rhif cyfeirnod lleol"
+    "localReferenceNumber": "Rhif cyfeirnod lleol",
+    "status": "Statws",
+    "yes": "Iawn",
+    "no": "Na",
+    "notProvided": "Heb ei ddarparu"
+  },
+  "goodsItemOverview": {
+    "useTraderGoodsProfile": "A ydych am ddefnyddio Proffil Nwyddau Masnachwr?",
+    "chosenTraderGoodsProfile": "Dewiswch y TGP rydych am ei ddefnyddio",
+    "commodityCode": "Cod nwydd",
+    "goodsDescription": "Disgrifiad o'r nwyddau",
+    "supplementaryUnits": "Unedau atodol (dewisol)",
+    "countryOfOrigin": "Gwlad wreiddiol"
   },
   "movementHeaderOverview": {
     "declarationStatus": "Status y datganiad"
   },
+  "consignmentDetail": {
+    "movementReferenceNumber": "Rhif cyfeirnod symud"
+  },
+  "gmrDetail": {
+    "gmrId": "ID GMR"
+  },
   "status": {
-    "draft": "Drafft"
+    "draft": "Drafft",
+    "authorised": "Awdurdodedig",
+    "awaitingArrival": "Yn aros i gyrraedd",
+    "arrived": "Wedi cyrraedd",
+    "open": "Ar agor"
   }
 }

@@ -1,0 +1,44 @@
+import { ReportLog } from '../../core/report/report-log';
+import { GoodsData } from '../../test-data/goods-data';
+import { GoodsItemSteps } from './goods-item-steps';
+
+/**
+ * One goods item on the IMMI standalone journey.
+ *
+ * IMMI is the standalone journey that asks about TGP at goods level, and answering
+ * yes puts the app on its own route: the record supplies the commodity code, the
+ * goods description and the country of origin, so both of those screens are skipped.
+ */
+export class AddNewImmiStandaloneGoodsItemFlow {
+    constructor(private readonly steps: GoodsItemSteps) { }
+
+    /**
+     * Returns whether the item was declared from a TGP record — the caller needs it
+     * to know whether the overview should carry TGP-populated values.
+     */
+    async addNewImmiStandaloneGoodsItem(input: GoodsData): Promise<boolean> {
+        return ReportLog.step('Add new IMMI standalone goods item', async () => {
+            await this.steps.openNewGoodsRecord();
+
+            const usesTgp = await this.steps.declareTgp(input);
+
+            await this.steps.selectGoodsProcedureCode(input);
+            await this.steps.selectAdditionalProcedureCode(input);
+
+            if (!usesTgp) {
+                await this.steps.enterCommodityInformation(input);
+            }
+
+            await this.steps.enterStandalonePackagingDetails(input);
+            await this.steps.enterWeightInformation(input);
+            await this.steps.enterItemPrice(input);
+
+            if (!usesTgp) {
+                await this.steps.enterCountryOfOrigin(input);
+            }
+
+            await this.steps.finishGoodsItemDeclaration();
+            return usesTgp;
+        });
+    }
+}

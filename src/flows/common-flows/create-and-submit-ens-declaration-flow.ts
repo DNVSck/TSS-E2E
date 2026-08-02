@@ -1,15 +1,15 @@
-import { PortalAccessFlow } from '../portal-access-flow';
+﻿import { PortalAccessFlow } from '../portal-access-flow';
 import { InitialFormDeclarationFlow } from '../initial-form-declaration-flow';
-import { MovementHeaderDeclarationFlow } from '../movement-header-declaration-flow';
-import { MovementOverviewFlow } from '../movement-overview-flow';
+import { MovementHeaderDeclarationFlow } from '../movement/movement-header-declaration-flow';
+import { MovementOverviewFlow } from '../movement/movement-overview-flow';
 import { initialFormData, InitialFormData } from '../../test-data/initial-form-data';
 import { movement, MovementData } from '../../test-data/movements-data';
 import { TestInfo } from '@playwright/test';
-import { AddNewConsignmentFlow } from '../add-new-consignment-flow';
-import { ConsignmentOverviewFlow } from '../consignment-overview-flow';
+import { AddNewEnsConsignmentFlow } from '../consignment/add-new-ens-consignment-flow';
+import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import { consignment, ConsignmentData } from '../../test-data/consignment-data';
-import { AddNewGoodsItemFlow, GoodsJourneyContext } from '../add-new-goods-item-flow';
-import { GoodsOverviewFlow } from '../goods-overview-flow';
+import { AddNewEnsGoodsItemFlow, GoodsJourneyContext } from '../goods-item/add-new-ens-goods-item-flow';
+import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import { goods, GoodsData } from '../../test-data/goods-data';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount } from '../../helper/report-helper';
@@ -20,11 +20,11 @@ export class CreateAndSubmitEnsDeclarationFlow {
         private readonly routeFlow: InitialFormDeclarationFlow,
         private readonly movementHeaderFlow: MovementHeaderDeclarationFlow,
         private readonly movementOverviewFlow: MovementOverviewFlow,
-        private readonly addNewConsignmentFlow: AddNewConsignmentFlow,
+        private readonly addNewConsignmentFlow: AddNewEnsConsignmentFlow,
         private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
-        private readonly addNewGoodsItemFlow: AddNewGoodsItemFlow,
+        private readonly addNewGoodsItemFlow: AddNewEnsGoodsItemFlow,
         private readonly goodsOverviewFlow: GoodsOverviewFlow,
-        // The account this worker was actually assigned by the auth fixture — the
+        // The account this worker was actually assigned by the auth fixture â€” the
         // same source of truth that picked the replayed session, so reporting can
         // never drift from the account the test really runs as.
         private readonly authAccount: UserCredentials | null,
@@ -32,7 +32,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
 
     /**
      * The signed-in company profile is chosen by the spec through
-     * `test.use({ storageState: authStatePath(PROFILE) })`, not here — the sign-in
+     * `test.use({ storageState: authStatePath(PROFILE) })`, not here â€” the sign-in
      * itself happens once, in globalSetup.
      */
     async completeEnsDeclarationFlow(options: {
@@ -67,7 +67,11 @@ export class CreateAndSubmitEnsDeclarationFlow {
         await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
         // Declaring those tabs leaves the overview on the tab's own route; return to
         // the consignment overview (Goods records tab) before adding the goods item.
-        await this.addNewGoodsItemFlow.addNewGoodsItem(goodsData, goodsJourney);
+        const usedTgp = await this.addNewGoodsItemFlow.addNewGoodsItem(goodsData, goodsJourney);
+        // A TGP item never typed its commodity code, description or supplementary
+        // units — the service copied them from the record — so the overview is the
+        // only place that proves the record was applied. No-op on every other journey.
+        await this.goodsOverviewFlow.verifyTgpPopulatedFields(usedTgp ? goodsData.tgpRecord : undefined);
         // Goods-item overview tabs (e.g. document references). No-op unless the goods
         // data supplies entries, so existing journeys are unaffected.
         await this.goodsOverviewFlow.declareDocumentReferences(goodsData.documentReferences);

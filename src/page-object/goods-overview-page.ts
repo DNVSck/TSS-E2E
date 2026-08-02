@@ -1,9 +1,23 @@
 import { BasePage } from "./base-page";
-import { Page, Locator } from '@playwright/test';
-import { switchToTabAndClickNew } from '../helper/element-helper';
+import { Page, Locator, expect } from '@playwright/test';
+import { TFunction } from '../fixtures/locale-fixture';
+import { switchToTabAndClickNew, summaryListValue, readFieldWhenVisible } from '../helper/element-helper';
+import { TgpRecordData } from "../test-data/tgp-record-data";
+import { COUNTRY_NAME } from "../constant/country-code-dropdown-constant";
+
+/** The goods-item overview summary list paints a beat after the item is created. */
+const SUMMARY_READ_TIMEOUT = 20_000;
 
 export class GoodsOverviewPage extends BasePage {
-    
+
+    // Summary-list rows the service populates from the chosen TGP record.
+    private readonly useTraderGoodsProfile: Locator;
+    private readonly chosenTraderGoodsProfile: Locator;
+    private readonly commodityCode: Locator;
+    private readonly goodsDescription: Locator;
+    private readonly supplementaryUnits: Locator;
+    private readonly countryOfOrigin: Locator;
+
     private readonly documentTab: Locator;
     private readonly newDocumentRefButton: Locator;
 
@@ -22,8 +36,15 @@ export class GoodsOverviewPage extends BasePage {
     private readonly nationalAdditionalCodesTab: Locator;
     private readonly newNationalAdditionalCodeButton: Locator;
 
-    constructor(page: Page) {
-        super(page);
+    constructor(page: Page, t: TFunction) {
+        super(page, t);
+
+        this.useTraderGoodsProfile = summaryListValue(page, t('goodsItemOverview.useTraderGoodsProfile'));
+        this.chosenTraderGoodsProfile = summaryListValue(page, t('goodsItemOverview.chosenTraderGoodsProfile'));
+        this.commodityCode = summaryListValue(page, t('goodsItemOverview.commodityCode'));
+        this.goodsDescription = summaryListValue(page, t('goodsItemOverview.goodsDescription'));
+        this.supplementaryUnits = summaryListValue(page, t('goodsItemOverview.supplementaryUnits'));
+        this.countryOfOrigin = summaryListValue(page, t('goodsItemOverview.countryOfOrigin'));
 
         //Tab list
         this.documentTab = page.locator("//a[contains(@href, '/overview/#overview-tab')]");
@@ -39,6 +60,35 @@ export class GoodsOverviewPage extends BasePage {
         this.newAdditionalInformationButton = page.locator("form[action*='/additional-information'] button[value='new-record']");
         this.newTaricAdditionalCodeButton = page.locator("form[action*='/taric-additional-codes'] button[value='new-record']");
         this.newNationalAdditionalCodeButton = page.locator("form[action*='/national-additional-codes'] button[value='new-record']");
+    }
+
+    /**
+     * Assert the goods-item fields the service fills in from the chosen TGP record.
+     * The test never types these — that is the point of TGP — so this is the only
+     * check that the record was applied rather than merely selected.
+     *
+     * Soft, and every field is read before any of them is asserted, so one wrong
+     * value neither hides the others nor stops the journey completing.
+     */
+    async assertTgpPopulatedFields(record: TgpRecordData): Promise<void> {
+        const useTgp = await readFieldWhenVisible(this.useTraderGoodsProfile, SUMMARY_READ_TIMEOUT);
+        const chosenTgp = await readFieldWhenVisible(this.chosenTraderGoodsProfile, SUMMARY_READ_TIMEOUT);
+        const commodityCode = await readFieldWhenVisible(this.commodityCode, SUMMARY_READ_TIMEOUT);
+        const goodsDescription = await readFieldWhenVisible(this.goodsDescription, SUMMARY_READ_TIMEOUT);
+        const countryOfOrigin = await readFieldWhenVisible(this.countryOfOrigin, SUMMARY_READ_TIMEOUT);
+        const supplementaryUnits = await readFieldWhenVisible(this.supplementaryUnits, SUMMARY_READ_TIMEOUT);
+
+        expect.soft(useTgp, 'Use a Trader Goods Profile').toBe(this.t!('common.yes'));
+        expect.soft(chosenTgp, 'Chosen TGP record').toBe(record.recordId);
+        expect.soft(commodityCode, 'Commodity code from TGP').toBe(record.commodityCode);
+        expect.soft(goodsDescription, 'Goods description from TGP').toBe(record.goodsDescription);
+        // The record holds the code; the summary list prints the name.
+        expect.soft(countryOfOrigin, 'Country of origin from TGP').toBe(COUNTRY_NAME[record.countryOfOrigin]);
+        // Supplementary units are optional on the record. The row is rendered either
+        // way, showing "Not provided" when the record carries none - so that absence
+        // is asserted too rather than skipped.
+        expect.soft(supplementaryUnits, 'Supplementary units from TGP')
+            .toBe(record.supplementaryUnits || this.t!('common.notProvided'));
     }
 
     async declareNewDocumentReference(): Promise<void> {

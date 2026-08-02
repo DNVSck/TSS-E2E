@@ -11,7 +11,18 @@
   },
   "common": {
     "localReferenceNumber": "Local reference number",
-    "status": "Status"
+    "status": "Status",
+    "yes": "Yes",
+    "no": "No",
+    "notProvided": "Not provided"
+  },
+  "goodsItemOverview": {
+    "useTraderGoodsProfile": "Do you want to use a Trader Goods Profile?",
+    "chosenTraderGoodsProfile": "Choose the TGP that you want to use",
+    "commodityCode": "Commodity code",
+    "goodsDescription": "Goods description",
+    "supplementaryUnits": "Supplementary units (optional)",
+    "countryOfOrigin": "Country of origin"
   },
   "movementHeaderOverview": {
     "declarationStatus": "Declaration status"

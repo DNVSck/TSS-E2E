@@ -47,9 +47,13 @@ export interface ConsignmentData {
     buyerPostCode: string;
     buyerCountryCode: string;
 
-    /** Not asked on the ENS-only journey. */
+    /**
+     * Not asked on the ENS-only journey, and not asked at all unless IMMI is
+     * enabled on `importerEORI` — that is environment setup, not test data, so a
+     * journey that sets this needs an importer that has it.
+     */
     useIMMI: boolean;
-    /** Only asked when IMMI is declined. */
+    /** Asked when IMMI is declined, and when the importer was never offered it. */
     isControlledGoods: boolean;
 
     /**

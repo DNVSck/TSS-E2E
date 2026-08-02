@@ -30,7 +30,6 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
   test('Verify ENS-IMMI - RoRo (Accompanied) with TGP is created and submitted successfully', { tag: ['@smoke'] }, async ({
     createAndSubmitEnsDeclarationFlow,
   }, testInfo) => {
-    test.fixme(true, 'TGP screen does not skip step for Commodity code.');
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied with TGP');
     reportTestCaseLink(TGP_TC_ID);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({

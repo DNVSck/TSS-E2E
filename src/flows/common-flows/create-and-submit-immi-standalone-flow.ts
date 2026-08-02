@@ -1,10 +1,10 @@
-import { TestInfo } from '@playwright/test';
+﻿import { TestInfo } from '@playwright/test';
 import { PortalAccessFlow } from '../portal-access-flow';
 import { InitialFormDeclarationFlow } from '../initial-form-declaration-flow';
-import { AddNewImmiStandaloneConsignmentFlow } from '../add-new-immi-standalone-consignment-flow';
-import { AddNewImmiStandaloneGoodsItemFlow } from '../add-new-immi-standalone-goods-item-flow';
-import { ConsignmentOverviewFlow } from '../consignment-overview-flow';
-import { GoodsOverviewFlow } from '../goods-overview-flow';
+import { AddNewImmiStandaloneConsignmentFlow } from '../consignment/add-new-immi-standalone-consignment-flow';
+import { AddNewImmiStandaloneGoodsItemFlow } from '../goods-item/add-new-immi-standalone-goods-item-flow';
+import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
+import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import {
     ImmiStandaloneConsignmentData, immiStandaloneConsignment,
 } from '../../test-data/immi-standalone-consignment-data';
@@ -65,7 +65,11 @@ export class CreateAndSubmitImmiStandaloneFlow {
         await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
         await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
 
-        await this.addGoodsItemFlow.addNewImmiStandaloneGoodsItem(goodsData);
+        const usedTgp = await this.addGoodsItemFlow.addNewImmiStandaloneGoodsItem(goodsData);
+        // A TGP item never typed its commodity code, description or country of origin —
+        // the service copied them from the record — so the overview is the only place
+        // that proves the record was applied. No-op when the item did not use TGP.
+        await this.goodsOverviewFlow.verifyTgpPopulatedFields(usedTgp ? goodsData.tgpRecord : undefined);
         // Goods-item-overview tabs, declared while on the goods item's overview.
         await this.goodsOverviewFlow.declareDocumentReferences(goodsData.documentReferences);
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);

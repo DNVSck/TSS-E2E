@@ -1,23 +1,27 @@
-import { test } from '@playwright/test';
+﻿import { test } from '@playwright/test';
 import { PortalAccessFlow } from '../flows/portal-access-flow';
 import { InitialFormDeclarationFlow } from '../flows/initial-form-declaration-flow';
-import { MovementHeaderDeclarationFlow } from '../flows/movement-header-declaration-flow';
-import { MovementOverviewFlow } from '../flows/movement-overview-flow';
+import { MovementHeaderDeclarationFlow } from '../flows/movement/movement-header-declaration-flow';
+import { MovementSteps } from '../flows/movement/movement-steps';
+import { ConsignmentSteps } from '../flows/consignment/consignment-steps';
+import { StandaloneConsignmentSteps } from '../flows/consignment/standalone-consignment-steps';
+import { MovementOverviewFlow } from '../flows/movement/movement-overview-flow';
 import { PageFixtureType } from './page-fixture';
 import { CreateAndSubmitEnsDeclarationFlow } from '../flows/common-flows/create-and-submit-ens-declaration-flow';
 import { CreateAndSubmitImmiStandaloneFlow } from '../flows/common-flows/create-and-submit-immi-standalone-flow';
 import { CreateAndSubmitSfdStandaloneFlow } from '../flows/common-flows/create-and-submit-sfd-standalone-flow';
 import { CreateAndSubmitFfdStandaloneFlow } from '../flows/common-flows/create-and-submit-ffd-standalone-flow';
-import { AddNewImmiStandaloneConsignmentFlow } from '../flows/add-new-immi-standalone-consignment-flow';
-import { AddNewSfdStandaloneConsignmentFlow } from '../flows/add-new-sfd-standalone-consignment-flow';
-import { AddNewFfdStandaloneConsignmentFlow } from '../flows/add-new-ffd-standalone-consignment-flow';
-import { AddNewImmiStandaloneGoodsItemFlow } from '../flows/add-new-immi-standalone-goods-item-flow';
-import { AddNewSfdStandaloneGoodsItemFlow } from '../flows/add-new-sfd-standalone-goods-item-flow';
-import { AddNewFfdStandaloneGoodsItemFlow } from '../flows/add-new-ffd-standalone-goods-item-flow';
-import { AddNewConsignmentFlow } from '../flows/add-new-consignment-flow';
-import { ConsignmentOverviewFlow } from '../flows/consignment-overview-flow';
-import { AddNewGoodsItemFlow } from '../flows/add-new-goods-item-flow';
-import { GoodsOverviewFlow } from '../flows/goods-overview-flow';
+import { AddNewImmiStandaloneConsignmentFlow } from '../flows/consignment/add-new-immi-standalone-consignment-flow';
+import { AddNewSfdStandaloneConsignmentFlow } from '../flows/consignment/add-new-sfd-standalone-consignment-flow';
+import { AddNewFfdStandaloneConsignmentFlow } from '../flows/consignment/add-new-ffd-standalone-consignment-flow';
+import { AddNewImmiStandaloneGoodsItemFlow } from '../flows/goods-item/add-new-immi-standalone-goods-item-flow';
+import { AddNewSfdStandaloneGoodsItemFlow } from '../flows/goods-item/add-new-sfd-standalone-goods-item-flow';
+import { AddNewFfdStandaloneGoodsItemFlow } from '../flows/goods-item/add-new-ffd-standalone-goods-item-flow';
+import { GoodsItemSteps } from '../flows/goods-item/goods-item-steps';
+import { AddNewEnsConsignmentFlow } from '../flows/consignment/add-new-ens-consignment-flow';
+import { ConsignmentOverviewFlow } from '../flows/consignment/consignment-overview-flow';
+import { AddNewEnsGoodsItemFlow } from '../flows/goods-item/add-new-ens-goods-item-flow';
+import { GoodsOverviewFlow } from '../flows/goods-item/goods-overview-flow';
 import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
 import { RepresentTraderFlow } from '../flows/represent-trader-flow';
 import { Ics2NotificationFlow } from '../flows/ics2-notification-flow';
@@ -31,9 +35,16 @@ export type FlowFixtureType = {
     initialFormDeclarationFlow: InitialFormDeclarationFlow;
     movementHeaderDeclarationFlow: MovementHeaderDeclarationFlow;
     movementOverviewFlow: MovementOverviewFlow;
-    addNewConsignmentFlow: AddNewConsignmentFlow;
+    addNewConsignmentFlow: AddNewEnsConsignmentFlow;
     consignmentOverviewFlow: ConsignmentOverviewFlow;
-    addNewGoodsItemFlow: AddNewGoodsItemFlow;
+    // One step library per declare page: the steps say what a screen means, the flows
+    // say which screens a journey visits and in what order. Standalone has a single
+    // wizard where ENS has two, so its flows draw from all three.
+    movementSteps: MovementSteps;
+    consignmentSteps: ConsignmentSteps;
+    standaloneConsignmentSteps: StandaloneConsignmentSteps;
+    goodsItemSteps: GoodsItemSteps;
+    addNewGoodsItemFlow: AddNewEnsGoodsItemFlow;
     goodsOverviewFlow: GoodsOverviewFlow;
     createAndSubmitGmrFlow: AddNewGMRFlow; // This flow is added here as it relies on multiple other flows, and it will be used in multiple places, so it makes sense to have it as a common flow
 
@@ -65,24 +76,40 @@ export const flowFixture: ExtendParams[0] = {
         await use(new InitialFormDeclarationFlow(initialFormDeclaraPage));
     },
 
-    movementHeaderDeclarationFlow: async ({ goodsMovementTaskListPage, movementDeclarePage }, use) => {
-        await use(new MovementHeaderDeclarationFlow(goodsMovementTaskListPage, movementDeclarePage));
+    movementSteps: async ({ goodsMovementTaskListPage, movementDeclarePage }, use) => {
+        await use(new MovementSteps(goodsMovementTaskListPage, movementDeclarePage));
+    },
+
+    consignmentSteps: async ({ movementOverviewPage, consignmentDeclarePage }, use) => {
+        await use(new ConsignmentSteps(movementOverviewPage, consignmentDeclarePage));
+    },
+
+    standaloneConsignmentSteps: async ({ standaloneConsignmentDeclarePage }, use) => {
+        await use(new StandaloneConsignmentSteps(standaloneConsignmentDeclarePage));
+    },
+
+    movementHeaderDeclarationFlow: async ({ movementSteps }, use) => {
+        await use(new MovementHeaderDeclarationFlow(movementSteps));
     },
 
     movementOverviewFlow: async ({ movementOverviewPage, consignmentDetailPage }, use) => {
         await use(new MovementOverviewFlow(movementOverviewPage, consignmentDetailPage));
     },
 
-    addNewConsignmentFlow: async ({ movementOverviewPage, consignmentDeclarePage }, use) => {
-        await use(new AddNewConsignmentFlow(movementOverviewPage, consignmentDeclarePage));
+    addNewConsignmentFlow: async ({ consignmentSteps }, use) => {
+        await use(new AddNewEnsConsignmentFlow(consignmentSteps));
     },
 
     consignmentOverviewFlow: async ({ consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage }, use) => {
         await use(new ConsignmentOverviewFlow(consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage));
     },
 
-    addNewGoodsItemFlow: async ({ consignmentOverviewPage, goodsItemDeclarePage }, use) => {
-        await use(new AddNewGoodsItemFlow(consignmentOverviewPage, goodsItemDeclarePage));
+    goodsItemSteps: async ({ consignmentOverviewPage, goodsItemDeclarePage }, use) => {
+        await use(new GoodsItemSteps(consignmentOverviewPage, goodsItemDeclarePage));
+    },
+
+    addNewGoodsItemFlow: async ({ goodsItemSteps }, use) => {
+        await use(new AddNewEnsGoodsItemFlow(goodsItemSteps));
     },
 
     goodsOverviewFlow: async ({ goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage }, use) => {
@@ -123,14 +150,13 @@ export const flowFixture: ExtendParams[0] = {
 
     createAndSubmitImmiStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
-        consignmentTaskListPage, standaloneConsignmentDeclarePage, movementDeclarePage, consignmentDeclarePage,
-        consignmentOverviewPage, goodsItemDeclarePage,
+        standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
         consignmentOverviewFlow, goodsOverviewFlow, authAccount
     }, use) => {
         const addConsignment = new AddNewImmiStandaloneConsignmentFlow(
-            consignmentTaskListPage, standaloneConsignmentDeclarePage, movementDeclarePage, consignmentDeclarePage
+            standaloneConsignmentSteps, movementSteps, consignmentSteps
         );
-        const addGoodsItem = new AddNewImmiStandaloneGoodsItemFlow(consignmentOverviewPage, goodsItemDeclarePage);
+        const addGoodsItem = new AddNewImmiStandaloneGoodsItemFlow(goodsItemSteps);
         await use(new CreateAndSubmitImmiStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,
             addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
@@ -139,14 +165,13 @@ export const flowFixture: ExtendParams[0] = {
 
     createAndSubmitSfdStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
-        consignmentTaskListPage, standaloneConsignmentDeclarePage, movementDeclarePage, consignmentDeclarePage,
-        consignmentOverviewPage, goodsItemDeclarePage,
+        standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
         consignmentOverviewFlow, goodsOverviewFlow, authAccount
     }, use) => {
         const addConsignment = new AddNewSfdStandaloneConsignmentFlow(
-            consignmentTaskListPage, standaloneConsignmentDeclarePage, movementDeclarePage, consignmentDeclarePage
+            standaloneConsignmentSteps, movementSteps, consignmentSteps
         );
-        const addGoodsItem = new AddNewSfdStandaloneGoodsItemFlow(consignmentOverviewPage, goodsItemDeclarePage);
+        const addGoodsItem = new AddNewSfdStandaloneGoodsItemFlow(goodsItemSteps);
         await use(new CreateAndSubmitSfdStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,
             addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
@@ -155,14 +180,13 @@ export const flowFixture: ExtendParams[0] = {
 
     createAndSubmitFfdStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
-        consignmentTaskListPage, standaloneConsignmentDeclarePage, movementDeclarePage, consignmentDeclarePage,
-        consignmentOverviewPage, goodsItemDeclarePage,
+        standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
         consignmentOverviewFlow, goodsOverviewFlow, authAccount
     }, use) => {
         const addConsignment = new AddNewFfdStandaloneConsignmentFlow(
-            consignmentTaskListPage, standaloneConsignmentDeclarePage, movementDeclarePage, consignmentDeclarePage
+            standaloneConsignmentSteps, movementSteps, consignmentSteps
         );
-        const addGoodsItem = new AddNewFfdStandaloneGoodsItemFlow(consignmentOverviewPage, goodsItemDeclarePage);
+        const addGoodsItem = new AddNewFfdStandaloneGoodsItemFlow(goodsItemSteps);
         await use(new CreateAndSubmitFfdStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,
             addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount

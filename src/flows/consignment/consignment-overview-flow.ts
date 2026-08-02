@@ -1,9 +1,9 @@
-import { ReportLog } from '../core/report/report-log';
-import { ConsignmentOverviewPage } from "../page-object/consignment-overview-page";
-import { PreviousDocumentDeclarePage } from "../page-object/header-previous-documents-declare-page";
-import { HolderOfAuthorisationDeclarePage } from "../page-object/holder-of-authorisation-declare-page";
-import { PreviousDocumentData } from "../test-data/previous-document-data";
-import { HolderOfAuthorisationData } from "../test-data/holder-of-authorisation-data";
+﻿import { ReportLog } from '../../core/report/report-log';
+import { ConsignmentOverviewPage } from "../../page-object/consignment-overview-page";
+import { PreviousDocumentDeclarePage } from "../../page-object/header-previous-documents-declare-page";
+import { HolderOfAuthorisationDeclarePage } from "../../page-object/holder-of-authorisation-declare-page";
+import { PreviousDocumentData } from "../../test-data/previous-document-data";
+import { HolderOfAuthorisationData } from "../../test-data/holder-of-authorisation-data";
 
 /**
  * Declares the consignment-overview tabs that each hold a list of records

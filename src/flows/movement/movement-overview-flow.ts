@@ -1,8 +1,8 @@
-import { expect } from '@playwright/test';
-import { ReportLog } from '../core/report/report-log';
-import { MovementOverviewPage } from "../page-object/movement-overview-page";
-import { ConsignmentDetailPage } from "../page-object/consignment-detail-page";
-import { MRN_COUNTRY_CODE, MrnCountryCode, mrnPrefix } from '../constant/local-reference-constants';
+﻿import { expect } from '@playwright/test';
+import { ReportLog } from '../../core/report/report-log';
+import { MovementOverviewPage } from "../../page-object/movement-overview-page";
+import { ConsignmentDetailPage } from "../../page-object/consignment-detail-page";
+import { MRN_COUNTRY_CODE, MrnCountryCode, mrnPrefix } from '../../constant/local-reference-constants';
 
 export class MovementOverviewFlow {
     constructor(

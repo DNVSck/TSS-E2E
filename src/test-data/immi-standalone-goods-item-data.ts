@@ -22,6 +22,12 @@ export const immiStandaloneGoodsItem = (
 ): Partial<GoodsData> => ({
     additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
 
+    // IMMI asks "Do you want to use a Trader Goods Profile?" on every goods item, so
+    // the answer is stated here rather than left to the shared default: on this
+    // journey it is a screen the test really answers, not an unused flag. A TGP test
+    // overrides it to true and supplies the record.
+    useTGP: false,
+
     documentReferences: [
         documentReference({
             documentCode: DOCUMENT_CODE['1UKI'],

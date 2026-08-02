@@ -1,10 +1,10 @@
-import { TestInfo } from '@playwright/test';
+﻿import { TestInfo } from '@playwright/test';
 import { PortalAccessFlow } from '../portal-access-flow';
 import { InitialFormDeclarationFlow } from '../initial-form-declaration-flow';
-import { AddNewSfdStandaloneConsignmentFlow } from '../add-new-sfd-standalone-consignment-flow';
-import { AddNewSfdStandaloneGoodsItemFlow } from '../add-new-sfd-standalone-goods-item-flow';
-import { ConsignmentOverviewFlow } from '../consignment-overview-flow';
-import { GoodsOverviewFlow } from '../goods-overview-flow';
+import { AddNewSfdStandaloneConsignmentFlow } from '../consignment/add-new-sfd-standalone-consignment-flow';
+import { AddNewSfdStandaloneGoodsItemFlow } from '../goods-item/add-new-sfd-standalone-goods-item-flow';
+import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
+import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import {
     SfdStandaloneConsignmentData, sfdStandaloneConsignment,
 } from '../../test-data/sfd-standalone-consignment-data';

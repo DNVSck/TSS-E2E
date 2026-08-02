@@ -8,6 +8,8 @@ export class GoodsDeclarePage extends BasePage {
 
     private readonly useTgpYesOption: Locator;
     private readonly useTgpNoOption: Locator;
+    private readonly tgpNumberInput: Locator;
+    private readonly tgpNumberFirstOption: Locator;
 
     private readonly noControlledGoodsOption: Locator;
     private readonly yesControlledGoodsOption: Locator;
@@ -48,6 +50,11 @@ export class GoodsDeclarePage extends BasePage {
         // "Do you want to use TGP?" — the first goods screen, IMMI goods only.
         this.useTgpYesOption = page.locator("input#useTgp-yesNoOptions-yes");
         this.useTgpNoOption = page.locator("input#useTgp-yesNoOptions-no");
+
+        // "Enter your Trader Goods Profile number" — reached only after answering the
+        // TGP question yes. Another accessible-autocomplete, like the commodity code.
+        this.tgpNumberInput = page.locator("#tgpNumber");
+        this.tgpNumberFirstOption = page.locator("#tgpNumber__option--0");
 
         // Goods domestic status and additional risk status have no goods-item screens
         // — the app carries them over from the consignment — so no locators here.
@@ -122,6 +129,17 @@ export class GoodsDeclarePage extends BasePage {
         await (useTGP ? this.useTgpYesOption : this.useTgpNoOption).check();
         await this.clickContinueButton();
         return true;
+    }
+
+    /**
+     * "Enter your Trader Goods Profile number" — a GOV.UK accessible-autocomplete,
+     * so the same type-then-commit dance as the commodity code applies (a plain
+     * fill leaves the hidden value empty). The lookup matches the record id, the
+     * trader reference or the commodity code, so the caller picks whichever it holds.
+     */
+    async selectTgpNumber(lookup: string): Promise<void> {
+        await selectAutocompleteValue(this.tgpNumberInput, this.tgpNumberFirstOption, lookup);
+        await this.clickContinueButton();
     }
 
     async selectGoodsControlledYes(): Promise<void> {

@@ -6,6 +6,8 @@ import { immiStandaloneGoodsItem } from '../../../src/test-data/immi-standalone-
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
+import { tgpRecord } from '../../../src/test-data/tgp-record-data';
+import { COUNTRY_CODE } from '../../../src/constant/country-code-dropdown-constant';
 
 test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represents Trader', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
@@ -27,6 +29,33 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         representationType: REPRESENTATION_TYPE.DIRECT,
       },
       goodsItemOverrides: immiStandaloneGoodsItem(),
+    });
+  });
+
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+    await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP');
+    await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
+      testInfo,
+      url: getBaseUrl(),
+      consignmentOverrides: {
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+        representationType: REPRESENTATION_TYPE.DIRECT,
+      },
+      // The commodity code, goods description and country of origin are NOT declared
+      // here: the TGP record supplies them and the app skips those screens. They are
+      // asserted on the goods-item overview instead.
+      goodsItemOverrides: immiStandaloneGoodsItem({
+        useTGP: true,
+        tgpRecord: tgpRecord({
+          recordId: 'aab0b5bd-6557-4831-ae57-930611e6a302',
+          traderRef: 'TGP456',
+          lookup: 'TGP456',
+          commodityCode: '8485100000',
+          goodsDescription: 'Machinery and mechanical appliances; electrical equipment; parts thereof, sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles',
+          supplementaryUnits: '100',
+          countryOfOrigin: COUNTRY_CODE.UNITED_KINGDOM,
+        }),
+      }),
     });
   });
 

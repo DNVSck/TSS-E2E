@@ -11,6 +11,7 @@ import { CONTAINER_SUPPLIER_TYPE } from "../constant/container-supplier-type-con
 import { DocumentReferenceData } from "./document-reference-data";
 import { AdditionalInformationData } from "./additional-information-data";
 import { PreviousDocumentData } from "./previous-document-data";
+import { TgpRecordData, tgpRecord } from "./tgp-record-data";
 
 
 export interface GoodsData {
@@ -20,6 +21,12 @@ export interface GoodsData {
      * other journey, where the screen never shows.
      */
     useTGP: boolean;
+    /**
+     * The TGP record to declare against, used only when `useTGP` is answered yes.
+     * It drives the lookup on the "Enter your Trader Goods Profile number" screen
+     * AND the values the goods-item overview must then show — see TgpRecordData.
+     */
+    tgpRecord: TgpRecordData;
     goodsDomesticStatus: string;
     additionalRiskStatus: string;
     areGooodsControlled: boolean;
@@ -71,6 +78,9 @@ export interface GoodsData {
 const defaults: GoodsData = {
     // "Do you want to use TGP?" — IMMI goods only; false = "without TGP".
     useTGP: false,
+    // The only TGP record set up on the environment. Carried by every journey so a
+    // spec opting into TGP has nothing extra to remember; ignored when useTGP is false.
+    tgpRecord: tgpRecord(),
     // "Enter goods domestic status"
     goodsDomesticStatus: GOODS_DOMESTIC_STATUS.NIDOM,
     // "Additional risk status"

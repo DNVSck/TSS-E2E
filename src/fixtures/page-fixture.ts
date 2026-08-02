@@ -103,8 +103,8 @@ export const pageFixture: ExtendParams[0] = {
         await use(new GoodsDeclarePage(page));
     },
 
-    goodsOverviewPage: async ({ page }, use) => {
-        await use(new GoodsOverviewPage(page));
+    goodsOverviewPage: async ({ page, t }, use) => {
+        await use(new GoodsOverviewPage(page, t));
     },
 
     gmrDeclarePage: async ({ page }, use) => {
