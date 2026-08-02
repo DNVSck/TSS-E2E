@@ -31,7 +31,6 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
       goodsItemOverrides: immiStandaloneGoodsItem(),
     });
 
-    console.log('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct flow completed successfully');
   });
 
   test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
