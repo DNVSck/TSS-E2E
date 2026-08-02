@@ -69,8 +69,7 @@ export class CreateAndSubmitSfdStandaloneFlow {
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
 
         await this.consignmentOverviewFlow.submitConsignment();
-        // NOSONAR
-        // TODO: submitting an SFD standalone consignment also auto-generates a linked
+        // NOSONAR TODO: submitting an SFD standalone consignment also auto-generates a linked
         // EIDR consignment. Verify it here (the ENS flow's verifyPostSubmit is the
         // model) once it is known where a standalone journey surfaces it - there is no
         // movement overview to reach it from.

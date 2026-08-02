@@ -73,8 +73,7 @@ export class CreateAndSubmitFfdStandaloneFlow {
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
 
         await this.consignmentOverviewFlow.submitConsignment();
-        // NOSONAR
-        // TODO: verify the post-submit state - what FFD is expected to produce (an MRN
+        // NOSONAR TODO: verify the post-submit state - what FFD is expected to produce (an MRN
         // like SFD/IMMI, or something else) is not yet confirmed.
     }
 }
