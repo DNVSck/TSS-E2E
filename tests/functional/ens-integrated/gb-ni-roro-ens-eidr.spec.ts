@@ -18,7 +18,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
     await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
   });
 
-  test('Verify ENS-EIDR - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
+  test('Verify ENS-EIDR - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied (controlled goods = No)');
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
@@ -32,7 +32,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });
 
-  test('Verify ENS-EIDR - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
+  test('Verify ENS-EIDR - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Unaccompanied (controlled goods = No)');
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
@@ -46,7 +46,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });
 
-  test('Verify ENS-EIDR - RoRo (Accompanied), goods item requires container details, is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
+  test('Verify ENS-EIDR - RoRo (Accompanied), goods item requires container details, is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied with a goods item declaring its own container');
     // Different containers on the consignment makes each goods item declare its own
     // container details.

@@ -25,7 +25,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
     await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
   });
 
-  test('Verify ENS-SFD - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
+  test('Verify ENS-SFD - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
     await ReportLog.setStory('ENS SFD - GB to NI RoRo Simplified Customs Declaration Accompanied');
     reportTestCaseLink(TEST_CASE_ID);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
@@ -49,7 +49,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });
 
-  test('Verify ENS-SFD - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
+  test('Verify ENS-SFD - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
     await ReportLog.setStory('ENS SFD - GB to NI RoRo Simplified Customs Declaration UnAccompanied');
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,

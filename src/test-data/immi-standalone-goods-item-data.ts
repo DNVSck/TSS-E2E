@@ -5,6 +5,7 @@ import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { PREVIOUS_DOCUMENT_TYPE } from '../constant/previous-document-type-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
+import { IMPORTER_EORI, IMPORTER_UKIMS } from '../../config/environment';
 
 /**
  * The goods item an IMMI standalone consignment declares: the document set the
@@ -25,19 +26,20 @@ export const immiStandaloneGoodsItem = (
     // IMMI asks "Do you want to use a Trader Goods Profile?" on every goods item, so
     // the answer is stated here rather than left to the shared default: on this
     // journey it is a screen the test really answers, not an unused flag. A TGP test
-    // overrides it to true and supplies the record.
+    // overrides it to true and names a record from TGP_RECORD.
     useTGP: false,
 
     documentReferences: [
         documentReference({
             documentCode: DOCUMENT_CODE['1UKI'],
             documentStatus: DOCUMENT_STATUS.AC,
-            documentReference: 'XIUKIM89645889502320240124160138',
+            documentReference: IMPORTER_UKIMS,
         }),
+        // C672 carries the importer's own EORI, so it follows the environment.
         documentReference({
             documentCode: DOCUMENT_CODE.C672,
             documentStatus: DOCUMENT_STATUS.AC,
-            documentReference: 'XI896458895023',
+            documentReference: IMPORTER_EORI,
         }),
         documentReference({
             documentCode: DOCUMENT_CODE.N705,

@@ -3,6 +3,7 @@ import { getBaseUrl, test } from '../../test-hooks';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { IMPORTER_COMPANY_NAME } from '../../../config/environment';
 import { ffdStandaloneGoodsItem } from '../../../src/test-data/ffd-standalone-goods-item-data';
+import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 
 
 test.describe('GB to NI RoRo FFD Standalone Declaration Process - Agent Represents Trader', () => {
@@ -14,11 +15,28 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Agent Represen
     await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
   });
 
-  test('Verify FFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitFfdStandaloneFlow }, testInfo) => {
+  test('Verify FFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitFfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('FFD Standalone - Prelodged - RoRo (Accompanied)');
     await createAndSubmitFfdStandaloneFlow.completeFfdStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
+      consignmentOverrides: {
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+      },
+      goodsItemOverrides: ffdStandaloneGoodsItem(),
+    });
+  });
+
+  // Accompanied and unaccompanied differ by one screen: the vehicle registration
+  // becomes the trailer registration. Everything after it is the same journey.
+  test('Verify FFD Standalone - Prelodged - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitFfdStandaloneFlow }, testInfo) => {
+    await ReportLog.setStory('FFD Standalone - Prelodged - RoRo (Unaccompanied)');
+    await createAndSubmitFfdStandaloneFlow.completeFfdStandaloneFlow({
+      testInfo,
+      url: getBaseUrl(),
+      consignmentOverrides: {
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
+      },
       goodsItemOverrides: ffdStandaloneGoodsItem(),
     });
   });
@@ -36,11 +54,18 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Importer Decla
     await ReportLog.setFeature('GB to NI FFD Standalone Declaration Process');
   });
 
-  test('Verify FFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully', { tag: ['@regression'] }, async ({ createAndSubmitFfdStandaloneFlow }, testInfo) => {
+  test('Verify FFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitFfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('FFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
     await createAndSubmitFfdStandaloneFlow.completeFfdStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
+      consignmentOverrides: {
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+        // Signed in as the importer's own company, so the app never shows the
+        // representation screen. The default is DIRECT, so it must be cleared here -
+        // the same override the IMMI standalone self-login test carries.
+        representationType: undefined,
+      },
       goodsItemOverrides: ffdStandaloneGoodsItem(),
     });
   });

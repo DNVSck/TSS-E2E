@@ -13,7 +13,7 @@ import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { UserCredentials } from '../../auth/credentials';
-import { reportTestAccount } from '../../helper/report-helper';
+import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
 
 /**
  * Create and submit an FFD standalone consignment. One flow per standalone journey:
@@ -51,6 +51,7 @@ export class CreateAndSubmitFfdStandaloneFlow {
         const goodsData = goods(options.goodsItemOverrides);
 
         reportTestAccount(this.authAccount, 'completeFfdStandaloneFlow');
+        reportDeclarationCodes(goodsData);
 
         await this.accessFlow.openService({ baseUrl: url, testInfo });
         await this.initialFormFlow.completeInitialFormDeclaration(initialFormData({

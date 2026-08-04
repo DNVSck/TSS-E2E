@@ -11,7 +11,7 @@ import { gmrData } from '../../src/test-data/gmr-data';
 import { DOCUMENT_CODE } from '../../src/constant/document-code-constant';
 import { PREVIOUS_DOCUMENT_TYPE } from '../../src/constant/previous-document-type-constant';
 import { AUTHORISATION_TYPE_CODE } from '../../src/constant/authorisation-type-code-constant';
-import { HAULIER_COMPANY_NAME} from '../../config/environment';
+import { HAULIER_COMPANY_NAME, IMPORTER_EORI, IMPORTER_UKIMS, IMPORTER_SDE } from '../../config/environment';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../src/constant/type-of-movement-code-constant';
 
 
@@ -33,7 +33,7 @@ test.describe('GB to NI ENS Declaration Process', () => {
     await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
   });
 
-  test('UI-SMOKE-TC03-TSS-Portal-ENS-ONLY: Verify ENS Only flow', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
+  test('UI-SMOKE-TC03-TSS-Portal-ENS-ONLY: Verify ENS Only flow', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('UI-SMOKE-TC03-TSS-Portal-ENS-ONLY: Verify ENS Only flow (controlled goods = No)');
     reportTestCaseLink(ENS_ONLY);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
@@ -44,7 +44,7 @@ test.describe('GB to NI ENS Declaration Process', () => {
     });
   });
 
-  test('UI-SMOKE-TC03-TSS-Portal-ENS-SFD-GMR: Verify ENS triggers SFD with GMR', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
+  test('UI-SMOKE-TC03-TSS-Portal-ENS-SFD-GMR: Verify ENS triggers SFD with GMR', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
     await ReportLog.setStory('UI-SMOKE-TC03-TSS-Portal-ENS-SFD-GMR: Verify ENS triggers SFD with GMR');
     reportTestCaseLink(ENS_SFD_GMR);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
@@ -64,7 +64,7 @@ test.describe('GB to NI ENS Declaration Process', () => {
       goodsItemOverrides: {
         documentReferences: [
           documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
-          documentReference({ documentCode: DOCUMENT_CODE.C512, documentStatus: undefined, documentReference: 'XISDE896458895023I20231019133850' }),
+          documentReference({ documentCode: DOCUMENT_CODE.C512, documentStatus: undefined, documentReference: IMPORTER_SDE }),
         ],
       },
     });
@@ -72,7 +72,7 @@ test.describe('GB to NI ENS Declaration Process', () => {
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });
 
-  test('UI-SMOKE-TC03-TSS-Portal-ENS-IMMI-GMR: Verify ENS triggers IMMI with GMR', { tag: ['@smoke'] }, async ({
+  test('UI-SMOKE-TC03-TSS-Portal-ENS-IMMI-GMR: Verify ENS triggers IMMI with GMR', { tag: ['@smoke', '@happyPath'] }, async ({
     createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied without TGP');
@@ -87,7 +87,7 @@ test.describe('GB to NI ENS Declaration Process', () => {
           previousDocument({ documentReference: '4GBXI553202734852-20240501' })
         ],
         holdersOfAuthorisation: [
-          holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME, roleId: 'XI896458895023' })
+          holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME, roleId: IMPORTER_EORI })
         ],
       },
       goodsItemOverrides: {
@@ -95,8 +95,8 @@ test.describe('GB to NI ENS Declaration Process', () => {
         additionalProcedureCode: '1SG',
         // "1UKI" is inputted by user, checking the code list and input manually step.
         documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XIUKIM89645889502320240124160138' }),
-          documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XI896458895023' }),
+          documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
+          documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_EORI }),
           documentReference({ documentCode: DOCUMENT_CODE.N705, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
         ],
         previousDocuments: [
@@ -108,7 +108,7 @@ test.describe('GB to NI ENS Declaration Process', () => {
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });
 
-  test('UI-SMOKE-TC03-TSS-Portal-ENS-EIDR-GMR: Verify ENS triggers EIDR with GMR', { tag: ['@smoke'] }, async ({ createAndSubmitEnsDeclarationFlow, ics2NotificationFlow, createAndSubmitGmrFlow }, testInfo) => {
+  test('UI-SMOKE-TC03-TSS-Portal-ENS-EIDR-GMR: Verify ENS triggers EIDR with GMR', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, ics2NotificationFlow, createAndSubmitGmrFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied (controlled goods = No)');
     reportTestCaseLink(ENS_EIDR_GMR);
     const { transportDocumentNumber, ensMrn } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({

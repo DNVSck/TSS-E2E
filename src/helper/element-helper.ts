@@ -1,5 +1,6 @@
 import { expect, Locator, Page } from '@playwright/test';
 import { StringUtil } from '../core/util/string-util';
+import { ReportLog } from '../core/report/report-log';
 
 // This class provides utility functions for interacting with web elements in a consistent way across the test suite. 
 // It can be imported and used in any page object or test file to perform common actions on web elements, such as clicking, filling forms, 
@@ -60,23 +61,24 @@ export async function readFieldIfPresent(field: Locator): Promise<string> {
 // implementation and it went unnoticed for a long time, because the commodity screen
 // types a value the service also accepts as a bare query; the TGP screen, which needs
 // a real record, rejected it outright.
-//
-// Suggestions can be fetched live (e.g. the NI tariff) and the request is sometimes
-// slow or dropped, so re-type and retry before giving up. Clicking does not race that
-// re-render: Playwright re-resolves the locator per action and retries the click when
-// the element is replaced mid-flight.
+
+const AUTOCOMPLETE_ENHANCED_TIMEOUT = 25_000;
+const AUTOCOMPLETE_SUGGESTIONS_TIMEOUT = 8_000;
+
 export async function selectAutocompleteValue(
     input: Locator,
     firstOption: Locator,
     value: string
 ): Promise<void> {
+    await expect(input).toHaveAttribute('role', 'combobox', { timeout: AUTOCOMPLETE_ENHANCED_TIMEOUT });
+
     for (let attempt = 1; attempt <= 3; attempt++) {
         await input.click();
         await input.fill('');
         await input.pressSequentially(value, { delay: 120 });
 
         try {
-            await firstOption.waitFor({ state: 'visible', timeout: 8000 });
+            await firstOption.waitFor({ state: 'visible', timeout: AUTOCOMPLETE_SUGGESTIONS_TIMEOUT });
             await firstOption.click();
             // The open list overlays whatever sits below it — the Continue button,
             // typically — and swallows the next click, so see it close before moving on.
@@ -89,6 +91,9 @@ export async function selectAutocompleteValue(
         }
     }
 }
+
+
+const ROUTE_LANDING_TIMEOUT = 20_000;
 
 // Click a GOV.UK link that navigates to another server route (an overview tab, a
 // breadcrumb, ...) and wait until the page has actually landed on that route. These
@@ -111,12 +116,22 @@ export async function clickLinkAndWaitForRoute(page: Page, link: Locator): Promi
     // Strip the "#overview-tab" anchor and any trailing slash, then match the URL
     // path exactly (so the root tab's "/overview" is not satisfied by a sub-route).
     const route = StringUtil.stripTrailingSlashes(href.split('#')[0]);
-    await page.waitForURL(url => StringUtil.stripTrailingSlashes(url.pathname) === route);
+    // Wait only for the route to be committed and parsed, NOT for the page to finish
+    // loading. waitForURL defaults to "load", and these overview pages keep requests in
+    // flight well after the panel is usable — so a page that did arrive still burns the
+    // full navigation timeout. What comes next is gated on a real element anyway.
+    await page.waitForURL(
+        url => StringUtil.stripTrailingSlashes(url.pathname) === route,
+        { waitUntil: 'domcontentloaded', timeout: ROUTE_LANDING_TIMEOUT }
+    );
 }
 
 // How long to wait for a tab's "add new record" button after the tab has become
-// active — the panel paints a beat after the tab's route settles.
+// active — the panel paints a beat after the tab's route settles. Also bounds the
+// click, so an unactionable button fails on this budget rather than the ambient
+// action timeout, and the retries below stay well inside the test timeout.
 const NEW_RECORD_BUTTON_TIMEOUT = 15_000;
+const TAB_SWITCH_ATTEMPTS = 3;
 
 // Utility function to switch to a GOV.UK overview tab and click its "add new record"
 // button. Composes clickLinkAndWaitForRoute (which waits for the tab's route to become
@@ -128,9 +143,29 @@ export async function switchToTabAndClickNew(
     tab: Locator,
     newButton: Locator
 ): Promise<void> {
-    await clickLinkAndWaitForRoute(page, tab);
-    await newButton.waitFor({ state: 'visible', timeout: NEW_RECORD_BUTTON_TIMEOUT });
-    await newButton.click();
+    for (let attempt = 1; attempt <= TAB_SWITCH_ATTEMPTS; attempt++) {
+        try {
+            await clickLinkAndWaitForRoute(page, tab);
+            await newButton.waitFor({ state: 'visible', timeout: NEW_RECORD_BUTTON_TIMEOUT });
+            await newButton.click({ timeout: NEW_RECORD_BUTTON_TIMEOUT });
+            return;
+        } catch (error) {
+            // Carry the last underlying failure. A tab that never opened, a panel that
+            // never painted and a button that is genuinely absent all end up here, and
+            // only the original message tells the reader which one it was.
+            if (attempt === TAB_SWITCH_ATTEMPTS) {
+                throw new Error(
+                    `Could not open a new record from this tab after ${TAB_SWITCH_ATTEMPTS} attempts; ` +
+                    `the page is on "${new URL(page.url()).pathname}". Last failure: ${(error as Error).message}`
+                );
+            }
+            // Say so in the report. A retry that passes silently reads as a clean run,
+            // and the app needing a second tab click is worth someone knowing about.
+            await ReportLog.info(
+                `Tab did not open on attempt ${attempt}; clicking it again and retrying.`
+            );
+        }
+    }
 }
 
 // Utility function to tick a radio button identified by its `name` and `value`.

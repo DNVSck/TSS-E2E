@@ -9,6 +9,7 @@ import { CONTAINER_SUPPLIER_TYPE } from '../constant/container-supplier-type-con
 import { PreviousDocumentData } from './previous-document-data';
 import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
 import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
+import { IMPORTER_EORI, BUYER_EORI, CONSIGNOR_EORI, CONSIGNEE_EORI, SELLER_EORI } from '../../config/environment';
 
 /**
  * One shape for both consignment journeys.
@@ -134,7 +135,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
     //Importer profile.
     // The importer's EORI must already exist in TSS — the app rejects an unknown
     // one outright — so it comes from the environment rather than a literal.
-    importerEORI: process.env.IMPORTER_EORI ?? 'XI896458895023',
+    importerEORI: IMPORTER_EORI,
     importerName: 'John Doe',
     importerStreetName: 'Main Street',
     importerStreetNumber: '123',
@@ -144,7 +145,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
 
     //Buyer profile
     isBuyerSameAsImporter: false,
-    buyerEORI: 'XI363127805000',
+    buyerEORI: BUYER_EORI,
     buyerName: 'John Doe',
     buyerStreetName: 'Main Street',
     buyerStreetNumber: '1234',
@@ -161,7 +162,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
     destinationCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Consignor profile
-    consignorEORI: 'XI363127805000',
+    consignorEORI: CONSIGNOR_EORI,
     consignorName: 'John Doe',
     consignorStreetName: 'Main Street',
     consignorStreetNumber: '1235',
@@ -170,7 +171,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
     consignorCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Consignee profile
-    consigneeEORI: 'XI363127805000',
+    consigneeEORI: CONSIGNEE_EORI,
     consigneeName: 'John Doe',
     consigneeStreetName: 'Main Street',
     consigneeStreetNumber: '1236',
@@ -189,7 +190,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
 
     //Seller profile
     isSellerSameAsExporter: false,
-    sellerEORI: 'XI363127805000',
+    sellerEORI: SELLER_EORI,
     sellerName: 'John Doe',
     sellerStreetName: 'Main Street',
     sellerStreetNumber: '1237',

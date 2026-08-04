@@ -13,7 +13,7 @@ import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { UserCredentials } from '../../auth/credentials';
-import { reportTestAccount } from '../../helper/report-helper';
+import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
 
 /**
  * Create and submit an IMMI standalone consignment. One flow per standalone journey:
@@ -48,6 +48,7 @@ export class CreateAndSubmitImmiStandaloneFlow {
         const goodsData = goods(options.goodsItemOverrides);
 
         reportTestAccount(this.authAccount, 'completeImmiStandaloneFlow');
+        reportDeclarationCodes(goodsData);
 
         await this.accessFlow.openService({ baseUrl: url, testInfo });
         await this.initialFormFlow.completeInitialFormDeclaration(initialFormData({
@@ -70,9 +71,15 @@ export class CreateAndSubmitImmiStandaloneFlow {
         // the service copied them from the record — so the overview is the only place
         // that proves the record was applied. No-op when the item did not use TGP.
         await this.goodsOverviewFlow.verifyTgpPopulatedFields(usedTgp ? goodsData.tgpRecord : undefined);
-        // Goods-item-overview tabs, declared while on the goods item's overview.
+        // Goods-item-overview tabs, declared while on the goods item's overview. All six
+        // tabs the IMMI goods item shows are wired, each a no-op on an empty list, so a
+        // test opting into one only has to supply its data - same set as the ENS flow.
         await this.goodsOverviewFlow.declareDocumentReferences(goodsData.documentReferences);
+        await this.goodsOverviewFlow.declareAdditionalInformations(goodsData.additionalInformations);
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
+        await this.goodsOverviewFlow.declareAdditionalProcedureCodes(goodsData.additionalProcedureCodes);
+        await this.goodsOverviewFlow.declareTaricAdditionalCodes(goodsData.taricAdditionalCodes);
+        await this.goodsOverviewFlow.declareNationalAdditionalCodes(goodsData.nationalAdditionalCodes);
 
         await this.consignmentOverviewFlow.submitConsignment();
         // NOSONAR TODO: verify the post-submit state once the standalone consignment overview

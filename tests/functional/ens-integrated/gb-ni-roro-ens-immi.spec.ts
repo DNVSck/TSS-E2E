@@ -10,9 +10,10 @@ import { previousDocument } from '../../../src/test-data/previous-document-data'
 import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
 import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
-import { HAULIER_COMPANY_NAME } from '../../../config/environment';
+import { HAULIER_COMPANY_NAME, IMPORTER_EORI, IMPORTER_UKIMS } from '../../../config/environment';
 import { gmrData } from '../../../src/test-data/gmr-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
+import { TGP_RECORD } from '../../../src/test-data/tgp-record-data';
 
 const TGP_TC_ID = '2793';
 const NO_TGP_TC_ID = '2809';
@@ -27,7 +28,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
   });
 
-  test('Verify ENS-IMMI - RoRo (Accompanied) with TGP is created and submitted successfully', { tag: ['@smoke'] }, async ({
+  test('Verify ENS-IMMI - RoRo (Accompanied) with TGP is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({
     createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied with TGP');
@@ -42,15 +43,16 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
             previousDocument({ documentReference: '4GBXI553202734852-20240501' })
         ],
         holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME, roleId: 'XI896458895023' })
+            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME, roleId: IMPORTER_EORI })
         ],
       },
       goodsItemOverrides: {
         useTGP: true,
+        tgpRecord: TGP_RECORD.TEXTILES_TGP123,
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EN,
         // "1UKI" is not inputted by user, but it is automatically added by system inside generated IMMI Consignment.
         documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE.C672,   documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XI896458895023' }),
+          documentReference({ documentCode: DOCUMENT_CODE.C672,   documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_EORI }),
           documentReference({ documentCode: DOCUMENT_CODE.N705,   documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
         ],
         previousDocuments: [
@@ -63,7 +65,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });
 
-  test('Verify ENS-IMMI - RoRo (Unaccompanied) without TGP is created and submitted successfully', { tag: ['@smoke'] }, async ({
+  test('Verify ENS-IMMI - RoRo (Unaccompanied) without TGP is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({
     createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied without TGP');
@@ -78,7 +80,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
             previousDocument({ documentReference: '4GBXI553202734852-20240501' })
         ],
         holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME, roleId: 'XI896458895023' })
+            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME, roleId: IMPORTER_EORI })
         ],
       },
       goodsItemOverrides: {
@@ -86,8 +88,8 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
         // "1UKI" is inputted by user, checking the code list and input manually step.
         documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XIUKIM89645889502320240124160138' }),
-          documentReference({ documentCode: DOCUMENT_CODE.C672,   documentStatus: DOCUMENT_STATUS.AC, documentReference: 'XI896458895023' }),
+          documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
+          documentReference({ documentCode: DOCUMENT_CODE.C672,   documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_EORI }),
           documentReference({ documentCode: DOCUMENT_CODE.N705,   documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
         ],
          previousDocuments: [

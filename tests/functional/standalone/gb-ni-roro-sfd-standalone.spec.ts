@@ -11,7 +11,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
     await ReportLog.setFeature('GB to NI SFD Standalone Declaration Process');
   });
 
-  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Prelodged - RoRo (Accompanied)');
     await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
       testInfo,

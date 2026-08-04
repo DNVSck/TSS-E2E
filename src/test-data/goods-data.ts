@@ -11,7 +11,7 @@ import { CONTAINER_SUPPLIER_TYPE } from "../constant/container-supplier-type-con
 import { DocumentReferenceData } from "./document-reference-data";
 import { AdditionalInformationData } from "./additional-information-data";
 import { PreviousDocumentData } from "./previous-document-data";
-import { TgpRecordData, tgpRecord } from "./tgp-record-data";
+import { TgpRecordData } from "./tgp-record-data";
 
 
 export interface GoodsData {
@@ -22,11 +22,16 @@ export interface GoodsData {
      */
     useTGP: boolean;
     /**
-     * The TGP record to declare against, used only when `useTGP` is answered yes.
-     * It drives the lookup on the "Enter your Trader Goods Profile number" screen
-     * AND the values the goods-item overview must then show — see TgpRecordData.
+     * The TGP record to declare against — see TGP_RECORD for the ones that exist.
+     * Optional and NOT defaulted: which records exist depends on the environment and
+     * on the trader being declared for, so there is no record that is right for every
+     * test. Answering yes without naming one is a test-data mistake, and declareTgp
+     * fails on it rather than picking a record nobody chose.
+     *
+     * Read twice. It drives the lookup on the "Enter your Trader Goods Profile
+     * number" screen, and the values the goods-item overview must afterwards show.
      */
-    tgpRecord: TgpRecordData;
+    tgpRecord?: TgpRecordData;
     goodsDomesticStatus: string;
     additionalRiskStatus: string;
     areGooodsControlled: boolean;
@@ -78,9 +83,10 @@ export interface GoodsData {
 const defaults: GoodsData = {
     // "Do you want to use TGP?" — IMMI goods only; false = "without TGP".
     useTGP: false,
-    // The only TGP record set up on the environment. Carried by every journey so a
-    // spec opting into TGP has nothing extra to remember; ignored when useTGP is false.
-    tgpRecord: tgpRecord(),
+    // Deliberately no default record: which records exist depends on the environment and
+    // the trader, so a default would let a test that forgot to name one run silently
+    // against whichever record happened to sit here.
+    tgpRecord: undefined,
     // "Enter goods domestic status"
     goodsDomesticStatus: GOODS_DOMESTIC_STATUS.NIDOM,
     // "Additional risk status"

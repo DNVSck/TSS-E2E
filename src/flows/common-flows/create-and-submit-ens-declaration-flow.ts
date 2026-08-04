@@ -12,7 +12,7 @@ import { AddNewEnsGoodsItemFlow, GoodsJourneyContext } from '../goods-item/add-n
 import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import { goods, GoodsData } from '../../test-data/goods-data';
 import { UserCredentials } from '../../auth/credentials';
-import { reportTestAccount } from '../../helper/report-helper';
+import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
 
 export class CreateAndSubmitEnsDeclarationFlow {
     constructor(
@@ -52,6 +52,8 @@ export class CreateAndSubmitEnsDeclarationFlow {
         const consignmentData = consignment(options.consignmentOverrides);
         const goodsData = goods(options.goodsItemOverrides);
         const goodsJourney = this.buildGoodsJourney(consignmentData);
+
+        reportDeclarationCodes(goodsData);
 
         // Each flow reports its own top-level step; re-wrapping here would add a
         // redundant nesting level with a second name for the same phase.

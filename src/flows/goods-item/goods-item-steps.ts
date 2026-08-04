@@ -52,6 +52,28 @@ export class GoodsItemSteps {
      * recording an answer that was never given.
      */
     async declareTgp(input: GoodsData): Promise<boolean> {
+        const record = input.tgpRecord;
+
+        // The answer and the record are separate fields, so they can disagree. Check
+        // that BEFORE touching the page: a mis-specified test should fail on its own
+        // mistake, named plainly, rather than on whatever the app does next - which
+        // reads like a product problem and sends the reader to the wrong place.
+        if (input.useTGP && !record) {
+            throw new Error(
+                'Test data sets "useTGP" but names no "tgpRecord". Pick one from TGP_RECORD. ' +
+                'There is deliberately no default: which records exist depends on the ' +
+                'environment and on the trader being declared for, so a default would run ' +
+                'this test against a record nobody chose.'
+            );
+        }
+        if (!input.useTGP && record) {
+            throw new Error(
+                `Test data names the TGP record "${record.traderRef}" but leaves "useTGP" false, ` +
+                'so the record would be ignored and the goods item declared without TGP. Set ' +
+                'useTGP to true, or drop the record.'
+            );
+        }
+
         if (!await this.goodsDeclarePage.isUseTgpQuestionShown()) {
             if (input.useTGP) {
                 throw new Error(
@@ -69,12 +91,13 @@ export class GoodsItemSteps {
             await this.goodsDeclarePage.answerUseTgp(input.useTGP);
         });
 
-        if (!input.useTGP) {
+        // Guarded above: useTGP and a record now agree, so this also ends the no branch.
+        if (!record) {
             return false;
         }
 
         await ReportLog.step('Enter the Trader Goods Profile number', async () => {
-            await this.goodsDeclarePage.selectTgpNumber(input.tgpRecord.lookup);
+            await this.goodsDeclarePage.selectTgpNumber(record.lookup);
         });
 
         return true;

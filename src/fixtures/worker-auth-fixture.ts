@@ -77,7 +77,12 @@ export const workerAuthFixture: ExtendParams[0] = {
 
         // Waiting for the turn must not come out of the test's own budget - without
         // this the queue eats the timeout and the LAST test in it fails, not the slow one.
-        if (lock.waitedMs > 0) {
+        //
+        // A timeout of 0 means NO timeout (playwright test --debug, and the VS Code
+        // debug runner, both set it). Adding to it would turn "unlimited" into the few
+        // milliseconds the lock file took to create, and the test dies in beforeEach
+        // with "Test timeout of 2ms exceeded" - which reads like anything but this.
+        if (lock.waitedMs > 0 && testInfo.timeout > 0) {
             testInfo.setTimeout(testInfo.timeout + lock.waitedMs);
         }
 
