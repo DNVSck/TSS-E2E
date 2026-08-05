@@ -172,8 +172,12 @@ export class GoodsDeclarePage extends BasePage {
         await selectDropdownValue(this.countryOfOriginDropdown, countryOfOrigin);
     }
 
-    async inputSupplementaryUnits(supplementaryUnits: string): Promise<void> {
-        await this.supplementaryUnitsInput.fill(supplementaryUnits);
+    /**
+     * "Supplementary units" (Optional field) — shares the commodity screen. Filling it
+     * blank is how a test declares none: the overview then shows "Not provided".
+     */
+    async inputSupplementaryUnits(supplementaryUnits?: string): Promise<void> {
+        await this.supplementaryUnitsInput.fill(supplementaryUnits ?? '');
     }
 
     async inputCusCode(cusCode: string): Promise<void> {
@@ -239,10 +243,18 @@ export class GoodsDeclarePage extends BasePage {
         await selectAutocompleteValue(this.commodityCodeInput, this.commodityCodeFirstOption, commodityCode);
     }
 
-    /** The goods-item commodity screen: the tariff commodity code plus a description. */
-    async enterGoodsDescriptionAndCommodityCode(goodsDescription: string, commodityCode: string): Promise<void> {
+    /**
+     * The goods-item commodity screen: the tariff commodity code, a description and
+     * supplementary units.
+     */
+    async enterGoodsDescriptionAndCommodityCode(
+        goodsDescription: string,
+        commodityCode: string,
+        supplementaryUnits?: string
+    ): Promise<void> {
         await this.selectCommodityCode(commodityCode);
         await this.inputGoodsDescription(goodsDescription);
+        await this.inputSupplementaryUnits(supplementaryUnits);
         await this.clickContinueButton(COMMODITY_SUBMIT_TIMEOUT);
     }
 

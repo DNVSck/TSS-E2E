@@ -8,7 +8,9 @@ import { CONTAINER_PACKED_STATUS } from '../constant/container-packed-status-con
 import { CONTAINER_SUPPLIER_TYPE } from '../constant/container-supplier-type-constant';
 import { PreviousDocumentData } from './previous-document-data';
 import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
-import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
+import {
+    generateRandomTransportDocumentNumber, generateRandomContainerIdentifierNumber,
+} from '../helper/data-generate-helper';
 import { IMPORTER_EORI, BUYER_EORI, CONSIGNOR_EORI, CONSIGNEE_EORI, SELLER_EORI } from '../../config/environment';
 
 /**
@@ -126,10 +128,11 @@ export interface ConsignmentData {
     holdersOfAuthorisation: HolderOfAuthorisationData[];
 }
 
-// `transportDocumentNumber` is deliberately absent: generating it here would
-// freeze one value at module import and every consignment in the run would reuse
-// it, which the service rejects. Omit<> makes the compiler demand it below.
-const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
+// `transportDocumentNumber` and `containerIdentifierNumber` are deliberately absent:
+// generating either here would freeze one value at module import and every consignment
+// in the run would reuse it - which the service rejects outright for the transport
+// document. Omit<> makes the compiler demand both from the factories below.
+const defaults: Omit<ConsignmentData, 'transportDocumentNumber' | 'containerIdentifierNumber'> = {
     isEnsOnly: false,
 
     //Importer profile.
@@ -204,7 +207,6 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
     isSameContainer: false,
 
     //Container identification
-    containerIdentifierNumber: '1',
     containerSize: CONTAINER_SIZE.TRAILER,
     containerPackedStatus: CONTAINER_PACKED_STATUS.NOT_EMPTY,
     containerSupplierType: CONTAINER_SUPPLIER_TYPE.SHIPPER_SUPPLIED,
@@ -221,6 +223,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
 export const consignment = (overrides?: Partial<ConsignmentData>): ConsignmentData => ({
     ...defaults,
     transportDocumentNumber: generateRandomTransportDocumentNumber(),
+    containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
     ...overrides,
 });
 
@@ -231,6 +234,7 @@ export const consignment = (overrides?: Partial<ConsignmentData>): ConsignmentDa
 export const ensOnlyConsignment = (overrides?: Partial<ConsignmentData>): ConsignmentData => ({
     ...defaults,
     transportDocumentNumber: generateRandomTransportDocumentNumber(),
+    containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
     isEnsOnly: true,
     ensOnlyReason: ENS_ONLY_REASON.STANDALONE_DECLARATION_IN_TSS,
     ...overrides,

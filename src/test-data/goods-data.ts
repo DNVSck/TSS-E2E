@@ -12,6 +12,7 @@ import { DocumentReferenceData } from "./document-reference-data";
 import { AdditionalInformationData } from "./additional-information-data";
 import { PreviousDocumentData } from "./previous-document-data";
 import { TgpRecordData } from "./tgp-record-data";
+import { generateRandomContainerIdentifierNumber } from "../helper/data-generate-helper";
 
 
 export interface GoodsData {
@@ -50,7 +51,7 @@ export interface GoodsData {
     numberOfPieces?: string;
     grossMass: string;
     netMass?: string;
-    goodsProcedureCode: string;
+    procedureCode: string;
     additionalProcedureCode: string;
     invoiceNumber?: string;
     itemCurrency: string;
@@ -80,7 +81,10 @@ export interface GoodsData {
     nationalAdditionalCodes: string[];
 }
 
-const defaults: GoodsData = {
+// `containerIdentifierNumber` is deliberately absent: generating it here would freeze
+// one value at module import, so every goods item in the run would declare the same
+// container. Omit<> makes the compiler demand it from the factory below.
+const defaults: Omit<GoodsData, 'containerIdentifierNumber'> = {
     // "Do you want to use TGP?" — IMMI goods only; false = "without TGP".
     useTGP: false,
     // Deliberately no default record: which records exist depends on the environment and
@@ -124,7 +128,7 @@ const defaults: GoodsData = {
     // "Net mass" — optional on some journeys, required on others; kept <= gross mass.
     netMass: '90',
     // "Goods procedure code"
-    goodsProcedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+    procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
     // "Additional procedure code"
     additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.NO_OTHER_ADDITIONAL_CODE_000,
     // "Invoice number" (Optional field)
@@ -135,8 +139,6 @@ const defaults: GoodsData = {
     itemPriceAmount: '1000',
 
     // Per-item container details (only used when goods are in different containers)
-    // Value of Container Identifier Number must follow ISO standard
-    containerIdentifierNumber: 'MSKU3988348',
     containerSize: CONTAINER_SIZE.TRAILER,
     containerStatus: CONTAINER_PACKED_STATUS.NOT_EMPTY,
     containerSupplierType: CONTAINER_SUPPLIER_TYPE.SHIPPER_SUPPLIED,
@@ -152,5 +154,6 @@ const defaults: GoodsData = {
 
 export const goods = (overrides?: Partial<GoodsData>): GoodsData => ({
     ...defaults,
+    containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
     ...overrides,
 });

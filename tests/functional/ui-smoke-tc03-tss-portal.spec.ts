@@ -87,7 +87,7 @@ test.describe('GB to NI ENS Declaration Process', () => {
           previousDocument({ documentReference: '4GBXI553202734852-20240501' })
         ],
         holdersOfAuthorisation: [
-          holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME, roleId: IMPORTER_EORI })
+          holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM })
         ],
       },
       goodsItemOverrides: {

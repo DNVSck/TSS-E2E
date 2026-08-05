@@ -14,8 +14,8 @@ import { StandaloneConsignmentSteps } from './standalone-consignment-steps';
  * movement type and arrival screens are the ENS movement screens, and the exporter,
  * trader reference and invoice currency are the ENS consignment screens.
  *
- * IMMI has NO vehicle screen, and its arrival screen asks for the port only: no
- * date/time, pre-lodged or arrived.
+ * IMMI has NO vehicle screen. It DOES ask when the goods arrive - on both the
+ * pre-lodged and the arrived branch - and then for the port.
  */
 export class AddNewImmiStandaloneConsignmentFlow {
     constructor(
@@ -36,6 +36,10 @@ export class AddNewImmiStandaloneConsignmentFlow {
             }
 
             await this.movementSteps.chooseTypeOfMovement(input.typeOfMovement);
+            // Asked on both branches, unlike FFD, which skips it once the goods have
+            // arrived. The pre-lodged/arrived difference is in the VALUE, and the data
+            // factory has already resolved it - see ImmiStandaloneConsignmentData.
+            await this.movementSteps.inputArrivalDateTime(input.arrivalDateTime);
             await this.movementSteps.selectPortOfArrival(input.portOfArrival);
 
             await this.consignmentSteps.fillExporterDetails(input.exporterEORI, exporterAddress(input));

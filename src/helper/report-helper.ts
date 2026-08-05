@@ -53,7 +53,7 @@ export function reportTestAccount(authAccount: UserCredentials | null, flowName:
  * Shared by all four common flows, which is what earns it a place here.
  */
 export function reportDeclarationCodes(goods: GoodsData): void {
-    ReportLog.setParameter('Procedure code', goods.goodsProcedureCode);
+    ReportLog.setParameter('Procedure code', goods.procedureCode);
     ReportLog.setParameter('Additional procedure code', goods.additionalProcedureCode);
 
     // Omitted rather than reported empty: most journeys declare none, and a column of

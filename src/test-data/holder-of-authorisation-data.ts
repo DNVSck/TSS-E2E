@@ -14,7 +14,7 @@ export interface HolderOfAuthorisationData {
 }
 
 const defaults: HolderOfAuthorisationData = {
-    typeCode: AUTHORISATION_TYPE_CODE.SIMPLIFIED_DECLARATION_PROCEDURE,
+    typeCode: AUTHORISATION_TYPE_CODE.SIMPLIFIED_DECLARATION_PROCEDURE_SDE,
     // The authorisation is held by the importer being declared for, so its EORI is
     // environment data - see IMPORTER_EORI.
     roleId: IMPORTER_EORI,

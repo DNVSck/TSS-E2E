@@ -107,7 +107,7 @@ export class GoodsItemSteps {
 
     async selectGoodsProcedureCode(input: GoodsData): Promise<void> {
         await ReportLog.step('Select the goods procedure code', async () => {
-            await this.goodsDeclarePage.selectGoodsProcedureCode(input.goodsProcedureCode);
+            await this.goodsDeclarePage.selectGoodsProcedureCode(input.procedureCode);
         });
     }
 
@@ -153,7 +153,8 @@ export class GoodsItemSteps {
         await ReportLog.step('Fill Commodity Information', async () => {
             await this.goodsDeclarePage.enterGoodsDescriptionAndCommodityCode(
                 input.goodsDescription,
-                input.commodityCode
+                input.commodityCode,
+                input.supplementaryUnits
             );
         });
     }

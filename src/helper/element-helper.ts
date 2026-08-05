@@ -131,6 +131,8 @@ export async function clickLinkAndWaitForRoute(page: Page, link: Locator): Promi
 // click, so an unactionable button fails on this budget rather than the ambient
 // action timeout, and the retries below stay well inside the test timeout.
 const NEW_RECORD_BUTTON_TIMEOUT = 15_000;
+/** How long the record wizard gets to open once its button has been clicked. */
+const WIZARD_OPEN_TIMEOUT = 10_000;
 const TAB_SWITCH_ATTEMPTS = 3;
 
 // Utility function to switch to a GOV.UK overview tab and click its "add new record"
@@ -147,12 +149,27 @@ export async function switchToTabAndClickNew(
         try {
             await clickLinkAndWaitForRoute(page, tab);
             await newButton.waitFor({ state: 'visible', timeout: NEW_RECORD_BUTTON_TIMEOUT });
+
+            const tabRoute = StringUtil.stripTrailingSlashes(new URL(page.url()).pathname);
             await newButton.click({ timeout: NEW_RECORD_BUTTON_TIMEOUT });
+
+            // The wizard lives on its own route, so still being on the tab means the
+            // click was SWALLOWED - dispatched, accepted by Playwright, ignored by the
+            // app. Without this the run carries on and dies a screen later, hunting for
+            // a field of a wizard that never opened.
+            //
+            // Retrying is safe precisely because nothing happened: a click that did not
+            // navigate created no record, so clicking again cannot duplicate one.
+            await page.waitForURL(
+                url => StringUtil.stripTrailingSlashes(url.pathname) !== tabRoute,
+                { waitUntil: 'domcontentloaded', timeout: WIZARD_OPEN_TIMEOUT }
+            );
             return;
         } catch (error) {
             // Carry the last underlying failure. A tab that never opened, a panel that
-            // never painted and a button that is genuinely absent all end up here, and
-            // only the original message tells the reader which one it was.
+            // never painted, a button that is genuinely absent and a click the app
+            // ignored all end up here, and only the original message tells the reader
+            // which one it was.
             if (attempt === TAB_SWITCH_ATTEMPTS) {
                 throw new Error(
                     `Could not open a new record from this tab after ${TAB_SWITCH_ATTEMPTS} attempts; ` +
