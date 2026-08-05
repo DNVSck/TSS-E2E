@@ -259,6 +259,22 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     /**
+     * The same screen on a journey that does NOT collect supplementary units — EIDR.
+     *
+     * A separate method rather than a flag on the one above: the two are different
+     * screens, and touching a field that is not rendered costs the full action timeout
+     * before failing on a message about an input, saying nothing about the journey.
+     */
+    async enterGoodsDescriptionAndCommodityCodeOnly(
+        goodsDescription: string,
+        commodityCode: string
+    ): Promise<void> {
+        await this.selectCommodityCode(commodityCode);
+        await this.inputGoodsDescription(goodsDescription);
+        await this.clickContinueButton(COMMODITY_SUBMIT_TIMEOUT);
+    }
+
+    /**
      * The country of origin is a native select on its own screen, before the
      * commodity screen — but only on some journeys: on IMMI the app skips it and
      * lands straight on the commodity screen. Wait for whichever appears and answer

@@ -116,8 +116,8 @@ export const flowFixture: ExtendParams[0] = {
         await use(new GoodsOverviewFlow(goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage));
     },
 
-    createAndSubmitGmrFlow: async ({ movementOverviewPage, gmrDeclarePage, gmrDetailsPage }, use) => {
-        await use(new AddNewGMRFlow(movementOverviewPage, gmrDeclarePage, gmrDetailsPage));
+    createAndSubmitGmrFlow: async ({ movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage }, use) => {
+        await use(new AddNewGMRFlow(movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage));
     },
 
     ics2NotificationFlow: async ({ rmqApiRequest }, use) => {
@@ -180,11 +180,13 @@ export const flowFixture: ExtendParams[0] = {
 
     createAndSubmitFfdStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
-        standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
+        standaloneConsignmentSteps, movementSteps, consignmentSteps,
+        ffdStandaloneConsignmentDeclarePage, goodsItemSteps,
         consignmentOverviewFlow, goodsOverviewFlow, authAccount
     }, use) => {
         const addConsignment = new AddNewFfdStandaloneConsignmentFlow(
-            standaloneConsignmentSteps, movementSteps, consignmentSteps
+            standaloneConsignmentSteps, movementSteps, consignmentSteps,
+            ffdStandaloneConsignmentDeclarePage
         );
         const addGoodsItem = new AddNewFfdStandaloneGoodsItemFlow(goodsItemSteps);
         await use(new CreateAndSubmitFfdStandaloneFlow(

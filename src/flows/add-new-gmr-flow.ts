@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import { MovementOverviewPage } from "../page-object/movement-overview-page";
 import { GmrDeclarePage } from "../page-object/gmr-declare-page";
 import { GmrDetailsPage } from "../page-object/gmr-details-page";
+import { ExternalContactDeclarePage } from "../page-object/external-contact-declare-page";
 import { ReportLog } from '../core/report/report-log';
 import { GmrData } from "../test-data/gmr-data";
 
@@ -10,7 +11,8 @@ export class AddNewGMRFlow {
     constructor(
         private readonly movementOverviewPage: MovementOverviewPage,
         private readonly gmrDeclarePage: GmrDeclarePage,
-        private readonly gmrDetailsPage: GmrDetailsPage
+        private readonly gmrDetailsPage: GmrDetailsPage,
+        private readonly externalContactDeclarePage: ExternalContactDeclarePage
     ) {}
 
     async addNewGmrAndSubmit(input: GmrData): Promise<void> {
@@ -18,6 +20,7 @@ export class AddNewGMRFlow {
         await this.goToCreateNewGMR();
         await this.chooseRouteId(input);
         await this.finishGMRCreation();
+        await this.declareExternalContacts(input.external_contacts_list);
         await this.verifyDraftGmr();
         await this.submitGMR();
         await this.verifyGmrOpen();
@@ -49,6 +52,29 @@ export class AddNewGMRFlow {
     private async finishGMRCreation(): Promise<void> {
         await ReportLog.step('Click Finish Button at "GMR Check your answer page"', async () => {
             await this.gmrDetailsPage.clickFinishButton();
+        });
+    }
+
+    /**
+     * The GMR overview's "External Contacts" tab, one wizard per address. A no-op on
+     * an empty list, so a GMR that names no contact is unaffected.
+     *
+     * Same shape as the consignment overview's holder-of-authorisation and previous-
+     * document tabs: switch to the tab, click its "new record" button, fill the wizard,
+     * and land back on the tab for the next one.
+     */
+    private async declareExternalContacts(contacts: string[] = []): Promise<void> {
+        if (contacts.length === 0) {
+            return;
+        }
+
+        await ReportLog.step('Declare external contacts', async () => {
+            for (const [index, contactEmail] of contacts.entries()) {
+                await ReportLog.step(`Add external contact ${index + 1} of ${contacts.length}`, async () => {
+                    await this.gmrDetailsPage.declareNewExternalContact();
+                    await this.externalContactDeclarePage.addNewExternalContact(contactEmail);
+                });
+            }
         });
     }
 

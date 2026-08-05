@@ -129,6 +129,8 @@ export class CreateAndSubmitEnsDeclarationFlow {
             hasDangerousGoods: consignmentData.isEnsOnly || (!consignmentData.useIMMI && consignmentData.isControlledGoods),
             hasGoodsContainer: consignmentData.isGoodsCrossEUBorder && !consignmentData.isSameContainer,
             hasInvoiceDetails: !consignmentData.isEnsOnly && (consignmentData.useIMMI || consignmentData.isControlledGoods),
+            hasSupplementaryUnits: !consignmentData.isEnsOnly
+                && (consignmentData.useIMMI || consignmentData.isControlledGoods),
         };
     }
 }

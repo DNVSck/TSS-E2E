@@ -16,12 +16,14 @@ import { HolderOfAuthorisationDeclarePage } from '../page-object/holder-of-autho
 import { DocumentReferenceDeclarePage } from '../page-object/document-reference-declare-page';
 import { AdditionalInformationDeclarePage } from '../page-object/additional-information-declare-page';
 import { AdditionalProcedureCodeDeclarePage } from '../page-object/additional-procedure-code-declare-page';
+import { ExternalContactDeclarePage } from '../page-object/external-contact-declare-page';
 import { TaricAdditionalCodeDeclarePage } from '../page-object/taric-additional-code-declare-page';
 import { NationalAdditionalCodeDeclarePage } from '../page-object/national-additional-code-declare-page';
 import { RepresentTraderPage } from '../page-object/represent-trader-page';
 import { AgentBanner } from '../page-object/components/agent-banner';
 import { ConsignmentDetailPage } from '../page-object/consignment-detail-page';
 import { StandaloneConsignmentDeclarePage } from '../page-object/standalone-consignment-declare-page';
+import { FfdStandaloneConsignmentDeclarePage } from '../page-object/ffd-standalone-consignment-declare-page';
 import { TaskListPage } from '../page-object/task-list-page';
 
 
@@ -46,9 +48,12 @@ export type PageFixtureType = {
     documentReferenceDeclarePage: DocumentReferenceDeclarePage;
     additionalInformationDeclarePage: AdditionalInformationDeclarePage;
     additionalProcedureCodeDeclarePage: AdditionalProcedureCodeDeclarePage;
+    externalContactDeclarePage: ExternalContactDeclarePage;
     taricAdditionalCodeDeclarePage: TaricAdditionalCodeDeclarePage;
     nationalAdditionalCodeDeclarePage: NationalAdditionalCodeDeclarePage;
     standaloneConsignmentDeclarePage: StandaloneConsignmentDeclarePage;
+    // The FFD-only screens. Empty until they are built - see the page object.
+    ffdStandaloneConsignmentDeclarePage: FfdStandaloneConsignmentDeclarePage;
     consignmentTaskListPage: TaskListPage;
 }
 
@@ -135,6 +140,10 @@ export const pageFixture: ExtendParams[0] = {
         await use(new AdditionalProcedureCodeDeclarePage(page));
     },
 
+    externalContactDeclarePage: async ({ page }, use) => {
+        await use(new ExternalContactDeclarePage(page));
+    },
+
     taricAdditionalCodeDeclarePage: async ({ page }, use) => {
         await use(new TaricAdditionalCodeDeclarePage(page));
     },
@@ -145,6 +154,10 @@ export const pageFixture: ExtendParams[0] = {
 
     standaloneConsignmentDeclarePage: async ({ page }, use) => {
         await use(new StandaloneConsignmentDeclarePage(page));
+    },
+
+    ffdStandaloneConsignmentDeclarePage: async ({ page }, use) => {
+        await use(new FfdStandaloneConsignmentDeclarePage(page));
     },
 
     consignmentTaskListPage: async ({ page }, use) => {

@@ -1,7 +1,9 @@
 import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
-import { summaryListValue, readFieldWhenVisible, readFieldIfPresent } from '../helper/element-helper';
+import {
+    summaryListValue, readFieldWhenVisible, readFieldIfPresent, switchToTabAndClickNew,
+} from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 
 /** The GMR detail summary list can be slow to paint under parallel load. */
@@ -22,6 +24,7 @@ export class GmrDetailsPage extends BasePage {
     private readonly generateBarcodeButton: Locator;
 
     private readonly externalContactsTab: Locator;
+    private readonly newExternalContactButton: Locator;
 
     // Summary-list fields, matched by their translated label (see t()).
     private readonly localReferenceNumber: Locator;
@@ -35,6 +38,8 @@ export class GmrDetailsPage extends BasePage {
         this.generateBarcodeButton = page.locator("button[value='generate-barcode']");
 
         this.externalContactsTab = page.locator("//a[contains(@href, '/external-contacts#overview-tab')]");
+
+        this.newExternalContactButton = page.locator("form[action*='/external-contacts'] button[value='new-record']");
 
         this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
         this.gmrId = summaryListValue(page, this.t!('gmrDetail.gmrId'));
@@ -55,6 +60,11 @@ export class GmrDetailsPage extends BasePage {
 
     async clickExternalContactsTab(): Promise<void> {
         await this.externalContactsTab.click();
+    }
+
+    /** Open the "New external contact" wizard from the External Contacts tab. */
+    async declareNewExternalContact(): Promise<void> {
+        await switchToTabAndClickNew(this.page, this.externalContactsTab, this.newExternalContactButton);
     }
 
     private async getGmrStatus(): Promise<string> {

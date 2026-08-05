@@ -4,6 +4,7 @@ import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-move
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { HAULIER_COMPANY_NAME } from '../../../config/environment';
 import { gmrData } from '../../../src/test-data/gmr-data';
+import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
 
 
 test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader', () => {
@@ -18,9 +19,9 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
     await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
   });
 
-  test('Verify ENS-EIDR - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
+  test('Verify ENS-EIDR - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied (controlled goods = No)');
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+    const { transportDocumentNumber, ensMrn } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
       movementOverrides: {
@@ -29,12 +30,14 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
       consignmentOverrides: { isControlledGoods: false },
     });
 
-    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
+    await ics2NotificationFlow.authoriseForMovementIfMocked(ensMrn, transportDocumentNumber);
+
+    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData({route_id: ROUTE_ID_CONSTANT.GB_TO_NI.LIVERPOOL_WARRENPOINT_SEATRUCK_FERRIES,}));
   });
 
-  test('Verify ENS-EIDR - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
+  test('Verify ENS-EIDR - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Unaccompanied (controlled goods = No)');
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+    const { transportDocumentNumber, ensMrn } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
       movementOverrides: { 
@@ -43,14 +46,16 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
       consignmentOverrides: { isControlledGoods: false },
     });
 
+    await ics2NotificationFlow.authoriseForMovementIfMocked(ensMrn, transportDocumentNumber);
+
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });
 
-  test('Verify ENS-EIDR - RoRo (Accompanied), goods item requires container details, is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {
+  test('Verify ENS-EIDR - RoRo (Accompanied), goods item requires container details, is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied with a goods item declaring its own container');
     // Different containers on the consignment makes each goods item declare its own
     // container details.
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+    const { transportDocumentNumber, ensMrn } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
       movementOverrides: {
@@ -58,6 +63,8 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
       },
       consignmentOverrides: { isControlledGoods: false, isGoodsCrossEUBorder: true, isSameContainer: false },
     });
+
+    await ics2NotificationFlow.authoriseForMovementIfMocked(ensMrn, transportDocumentNumber);
 
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });

@@ -159,6 +159,21 @@ export class GoodsItemSteps {
         });
     }
 
+    /**
+     * The commodity screen on a journey that does not ask for supplementary units.
+     * Two methods rather than one with a flag, for the same reason enterPackagingDetails
+     * and enterStandalonePackagingDetails are separate: the screens differ, so a failure
+     * names the one the journey actually showed.
+     */
+    async enterCommodityInformationWithoutSupplementaryUnits(input: GoodsData): Promise<void> {
+        await ReportLog.step('Fill Commodity Information', async () => {
+            await this.goodsDeclarePage.enterGoodsDescriptionAndCommodityCodeOnly(
+                input.goodsDescription,
+                input.commodityCode
+            );
+        });
+    }
+
     /** The ENS packaging screen, which also asks for the number of pieces. */
     async enterPackagingDetails(input: GoodsData): Promise<void> {
         await ReportLog.step('Fill Packaging Information', async () => {

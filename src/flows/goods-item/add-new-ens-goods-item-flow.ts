@@ -20,6 +20,8 @@ export interface GoodsJourneyContext {
     readonly hasDangerousGoods: boolean;
     readonly hasGoodsContainer: boolean;
     readonly hasInvoiceDetails: boolean;
+    /** The commodity screen collects supplementary units on SFD and IMMI only. */
+    readonly hasSupplementaryUnits: boolean;
 }
 
 /**
@@ -72,8 +74,15 @@ export class AddNewEnsGoodsItemFlow {
 
             // A TGP item skips the commodity screen outright — the record already
             // supplies the commodity code, description and supplementary units.
+            //
+            // SFD and IMMI then collect supplementary units on that screen; ENS-only and
+            // EIDR do not render the field. Two separate steps, not one with a flag.
             if (!usesTgp) {
-                await this.steps.enterCommodityInformation(input);
+                if (journey.hasSupplementaryUnits) {
+                    await this.steps.enterCommodityInformation(input);
+                } else {
+                    await this.steps.enterCommodityInformationWithoutSupplementaryUnits(input);
+                }
             }
 
             await this.steps.enterPackagingDetails(input);
