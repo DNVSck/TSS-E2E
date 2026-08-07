@@ -10,12 +10,13 @@ import { previousDocument } from '../../../src/test-data/previous-document-data'
 import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
 import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
-import { HAULIER_COMPANY_NAME, IMPORTER_EORI, IMPORTER_UKIMS, IMPORTER_EXW } from '../../../config/environment';
+import { HAULIER_COMPANY_NAME, IMPORTER_UKIMS, IMPORTER_EXW } from '../../../config/environment';
 import { gmrData } from '../../../src/test-data/gmr-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
 import { TGP_RECORD } from '../../../src/test-data/tgp-record-data';
 import { additionalInformation } from '../../../src/test-data/additional-information-data';
+import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
 
 const TGP_TC_ID = '2793';
 const NO_TGP_TC_ID = '2809';
@@ -53,10 +54,6 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
         tgpRecord: TGP_RECORD.TEXTILES_TGP123,
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EN,
         // "1UKI" is not inputted by user, but it is automatically added by system inside generated IMMI Consignment.
-        documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE.C672,   documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_EORI }),
-          documentReference({ documentCode: DOCUMENT_CODE.N705,   documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
-        ],
         previousDocuments: [
            previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '24GB34F7Y1O2CX8PT4' }),
         ],
@@ -64,7 +61,13 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
       
     });
 
-    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
+    await createAndSubmitGmrFlow.addNewGmrAndSubmit(
+      gmrData(
+      {
+        route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES,
+        external_contacts_list: ['adam3.taylor@nifreight.co.uk', 'ledt@nifreight.co.uk'],
+      }
+    ));
   });
 
   test('Verify ENS-IMMI - RoRo (Unaccompanied) without TGP is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({
@@ -94,8 +97,6 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
         // "1UKI" is inputted by user, checking the code list and input manually step.
         documentReferences: [
           documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
-          documentReference({ documentCode: DOCUMENT_CODE.C672,   documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_EORI }),
-          documentReference({ documentCode: DOCUMENT_CODE.N705,   documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
           documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW}),
         ],
          previousDocuments: [

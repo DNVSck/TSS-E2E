@@ -12,6 +12,7 @@
     "test:report": "pnpm test && pnpm report:open",
     "test:smoke:sit": "cross-env ENV=sit playwright test --grep '@smoke' --workers=4 --project=chromium-en",
     "test:smoke:test": "cross-env ENV=test playwright test --grep '@smoke' --workers=4 --project=chromium-en",
+    "test:smoke:dev": "cross-env ENV=dev playwright test --grep '@smoke' --workers=4 --project=chromium-en",
     "test:functional:sit": "cross-env ENV=sit playwright test tests/functional --workers=4 --project=chromium-en",
     "test:functional:test": "cross-env ENV=test playwright test tests/functional --workers=4 --project=chromium-en",
     "test:standalone:sit": "cross-env ENV=sit playwright test tests/functional/standalone --workers=4 --project=chromium-en",

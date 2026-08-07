@@ -9,6 +9,7 @@ import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
 import { HAULIER_COMPANY_NAME } from '../../../config/environment';
 import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
 import { gmrData } from '../../../src/test-data/gmr-data';
+import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
 
 
 const TEST_CASE_ID = '2423';
@@ -46,7 +47,13 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
       },
     });
 
-    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
+    await createAndSubmitGmrFlow.addNewGmrAndSubmit(
+      gmrData(
+        {
+          route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES,
+          external_contacts_list: ['adam1.taylor@nifreight.co.uk', 'ledt1@nifreight.co.uk'],
+        }
+    ));
   });
 
   test('Verify ENS-SFD - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow }, testInfo) => {

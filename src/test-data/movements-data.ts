@@ -44,7 +44,7 @@ const defaults: Omit<MovementData, 'arrivalDateTime'> = {
     conveyanceReferenceNumber: '',
     nationalityOfMeanOfTransport: COUNTRY_CODE.UNITED_KINGDOM,
     sealNumber: '',
-    portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+    portOfArrival: PORT_OF_ARRIVAL.BELFAST_GVMS_PORT,
     placeOfLoading: 'London',
     placeOfUnloading: 'Belfast',
     isSamePlaceOfLoading: true,

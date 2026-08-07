@@ -32,7 +32,10 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
 
     await ics2NotificationFlow.authoriseForMovementIfMocked(ensMrn, transportDocumentNumber);
 
-    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData({route_id: ROUTE_ID_CONSTANT.GB_TO_NI.LIVERPOOL_WARRENPOINT_SEATRUCK_FERRIES,}));
+    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData({
+      route_id: ROUTE_ID_CONSTANT.GB_TO_NI.LIVERPOOL_WARRENPOINT_SEATRUCK_FERRIES,
+      external_contacts_list: ['adam1.taylor@nifreight.co.uk', 'john.doe@nifreight.co.uk'],
+    }));
   });
 
   test('Verify ENS-EIDR - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
