@@ -139,12 +139,12 @@ export class MovementOverviewPage extends BasePage {
      * the status behind a reference-number failure. Soft costs no strictness - the
      * test still fails; it only defers the stop so the rest of the body runs.
      *
-     * Returns the validated local reference number so callers can surface it (in
-     * the report, logs, ...) without a second read of the page - which is the other
-     * reason neither check is hard: a hard failure would throw before the return,
-     * and the reference would never reach the report.
+     * Returns both read values so callers can surface them (in the report, logs, ...)
+     * without a second read of the page - which is the other reason neither check is
+     * hard: a hard failure would throw before the return, and neither value would
+     * ever reach the report.
      */
-    async assertDraftMovementOverview(): Promise<string> {
+    async assertDraftMovementOverview(): Promise<{ localReferenceNumber: string; declarationStatus: string }> {
         const localReferenceNumber = await this.getMovementLocalReferenceNumber();
         const declarationStatus = await this.getMovementDeclarationStatus();
         const expectedStatus = this.t!('status.draft');
@@ -156,7 +156,7 @@ export class MovementOverviewPage extends BasePage {
 
         expect.soft(declarationStatus, 'Declaration status').toBe(expectedStatus);
 
-        return localReferenceNumber;
+        return { localReferenceNumber, declarationStatus };
     }
 
     /**

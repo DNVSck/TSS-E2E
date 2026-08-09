@@ -35,7 +35,11 @@ export class ConsignmentOverviewPage extends BasePage {
     constructor(page: Page, t: TFunction) {
         super(page, t);
 
-        this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
+        // The FFD standalone overview spells the row out as "... (LRN)" where every
+        // other overview stops at "Local reference number", so match either rather
+        // than making the caller say which journey it is on.
+        this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'))
+            .or(summaryListValue(page, this.t!('common.localReferenceNumberWithLrn')));
         this.status = summaryListValue(page, this.t!('common.status'));
 
         // ENS consignments reference starts "DEC"; standalone consignments use a
@@ -95,12 +99,13 @@ export class ConsignmentOverviewPage extends BasePage {
 
     /**
      * Soft-assert the freshly-created draft consignment — its reference opens with
-     * "DEC" and its status is "Draft" — and return the reference. Both are read from
-     * the consignment-overview summary list, which paints as soon as the draft is
+     * "DEC" and its status is "Draft" — and return both. They are read from the
+     * consignment-overview summary list, which paints as soon as the draft is
      * created. Mirrors {@link MovementOverviewPage.assertDraftMovementOverview}: the
-     * page reads and asserts, the flow reports. All checks are soft.
+     * page reads and asserts, the flow reports. All checks are soft, so a mismatch
+     * still reaches the report rather than throwing the values away.
      */
-    async assertDraftConsignment(): Promise<string> {
+    async assertDraftConsignment(): Promise<{ consignmentReference: string; declarationStatus: string }> {
         const consignmentReference = await this.getConsignmentLocalReferenceNumber();
         const declarationStatus = await this.getConsignmentStatus();
         const expectedStatus = this.t!('status.draft');
@@ -108,7 +113,7 @@ export class ConsignmentOverviewPage extends BasePage {
         expect.soft(consignmentReference, 'Consignment reference').toMatch(LOCAL_REFERENCE.DEC_PREFIX);
         expect.soft(declarationStatus, 'Consignment status').toBe(expectedStatus);
 
-        return consignmentReference;
+        return { consignmentReference, declarationStatus };
     }
 
     async clickConfirmAndSubmit(): Promise<void> {
@@ -117,16 +122,24 @@ export class ConsignmentOverviewPage extends BasePage {
 
     /**
      * Soft-assert the freshly-created standalone consignment's reference and return
-     * it. Each journey stamps its own prefix (IMMI "GLR", SFD "SFD", FFD "FFD"), so
-     * the caller passes the one it expects - asserting the journey that actually ran,
-     * not merely that some standalone reference exists. Mirrors
-     * {@link assertDraftConsignment} (the ENS "DEC" variant); the status is not
-     * asserted here because the standalone overview shows it only after submit.
+     * it with whatever status the overview shows. Each journey stamps its own prefix
+     * (IMMI "GLR", SFD "SFD", FFD "FFD"), so the caller passes the one it expects -
+     * asserting the journey that actually ran, not merely that some standalone
+     * reference exists. Mirrors {@link assertDraftConsignment} (the ENS "DEC" variant).
+     *
+     * The status is READ but not asserted: the standalone overview only renders a
+     * Status row once the consignment has been submitted, so the read must tolerate
+     * its absence - '' then tells the caller there is nothing to report yet. Reading
+     * it without waiting is safe here because the reference above already waited for
+     * the same summary list to paint.
      */
-    async assertDraftStandaloneConsignment(expectedPrefix: RegExp): Promise<string> {
+    async assertDraftStandaloneConsignment(
+        expectedPrefix: RegExp
+    ): Promise<{ consignmentReference: string; declarationStatus: string }> {
         const consignmentReference = await this.getConsignmentLocalReferenceNumber();
+        const declarationStatus = await readFieldIfPresent(this.status);
         expect.soft(consignmentReference, 'Consignment LRN').toMatch(expectedPrefix);
-        return consignmentReference;
+        return { consignmentReference, declarationStatus };
     }
 
     /**

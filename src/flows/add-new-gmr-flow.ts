@@ -84,8 +84,9 @@ export class AddNewGMRFlow {
      */
     private async verifyDraftGmr(): Promise<void> {
         await ReportLog.step('Validate GMR is Draft with a GMR reference', async () => {
-            const reference = await this.gmrDetailsPage.assertDraftGmr();
-            ReportLog.setParameter('GMR reference', reference);
+            const { localReferenceNumber, status } = await this.gmrDetailsPage.assertDraftGmr();
+            ReportLog.setParameter('GMR reference', localReferenceNumber);
+            ReportLog.setParameter('GMR status (draft)', status);
         });
     }
 
@@ -106,8 +107,9 @@ export class AddNewGMRFlow {
             expect.soft(opened, 'GMR detail opened').toBe(true);
             if (!opened) return;
 
-            const { gmrId } = await this.gmrDetailsPage.waitForGmrOpen();
+            const { gmrId, status } = await this.gmrDetailsPage.waitForGmrOpen();
             ReportLog.setParameter('GMR ID', gmrId);
+            ReportLog.setParameter('GMR status (submitted)', status);
         });
     }
 }

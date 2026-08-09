@@ -30,8 +30,10 @@ export class ConsignmentOverviewFlow {
      */
     async verifyDraftConsignment(): Promise<void> {
         await ReportLog.step('Validate draft ENS consignment', async () => {
-            const consignmentReference = await this.consignmentOverviewPage.assertDraftConsignment();
+            const { consignmentReference, declarationStatus } =
+                await this.consignmentOverviewPage.assertDraftConsignment();
             ReportLog.setParameter('ENS Consignment reference', consignmentReference);
+            ReportLog.setParameter('ENS Consignment status (draft)', declarationStatus);
         });
     }
 
@@ -43,9 +45,15 @@ export class ConsignmentOverviewFlow {
      */
     async verifyStandaloneConsignmentLrn(expectedPrefix: RegExp): Promise<void> {
         await ReportLog.step('Validate standalone consignment LRN', async () => {
-            const consignmentReference =
+            const { consignmentReference, declarationStatus } =
                 await this.consignmentOverviewPage.assertDraftStandaloneConsignment(expectedPrefix);
             ReportLog.setParameter('Consignment LRN', consignmentReference);
+            // Only once submitted does this overview carry a Status row; reporting an
+            // empty parameter before then would read as "status unknown/blank" rather
+            // than "not yet shown".
+            if (declarationStatus) {
+                ReportLog.setParameter('Consignment status (draft)', declarationStatus);
+            }
         });
     }
 
@@ -56,7 +64,7 @@ export class ConsignmentOverviewFlow {
     async verifyStandaloneConsignmentSubmitted(): Promise<void> {
         await ReportLog.step('Verify standalone consignment submitted', async () => {
             const status = await this.consignmentOverviewPage.waitForStatusAwaitingArrival();
-            ReportLog.setParameter('Consignment status', status);
+            ReportLog.setParameter('Consignment status (submitted)', status);
         });
     }
 

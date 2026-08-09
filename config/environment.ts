@@ -2,11 +2,6 @@ import { LOCALES_CONSTANT } from '../src/constant/locales-constant';
 
 export type Locale = 'all' | 'en' | 'cy';
 
-function numberOrDefault(value: string | undefined, fallback: number): number {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : fallback;
-}
-
 function boolOrDefault(value: string | undefined, fallback = false): boolean {
   if (value === undefined) return fallback;
   return value.trim().toLowerCase() === 'true';
@@ -135,21 +130,3 @@ export const RMQ_HOST     = process.env.RMQ_HOST     ?? '';
 export const RMQ_USERNAME = process.env.RMQ_USERNAME ?? '';
 export const RMQ_PWD      = process.env.RMQ_PWD      ?? '';
 
-export const NAVIGATION_TIMEOUT = numberOrDefault(
-  process.env.NAVIGATION_TIMEOUT,
-  5000
-);
-
-const MAX_WIDTH = numberOrDefault(process.env.MAX_WIDTH, 1920);
-const MAX_HEIGHT = numberOrDefault(process.env.MAX_HEIGHT, 1080);
-
-export const ENVIRONMENT_INFO = {
-  currentEnv: ENV,
-  currentLocale: LOCALE,
-  baseUrl: BASE_URL,
-  defaultTimeout: NAVIGATION_TIMEOUT,
-  viewport: {
-    width: MAX_WIDTH,
-    height: MAX_HEIGHT
-  }
-};

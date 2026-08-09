@@ -77,10 +77,11 @@ export class GmrDetailsPage extends BasePage {
 
     /**
      * On the GMR "Check your answers" page (before submit): soft-assert the GMR is a
-     * Draft and its local reference opens with "GMR", and return that reference.
-     * Mirrors the draft checks on the movement- and consignment-overview pages.
+     * Draft and its local reference opens with "GMR", and return both. Mirrors the
+     * draft checks on the movement- and consignment-overview pages; the checks are
+     * soft so a mismatch still reaches the report rather than throwing the values away.
      */
-    async assertDraftGmr(): Promise<string> {
+    async assertDraftGmr(): Promise<{ localReferenceNumber: string; status: string }> {
         const localReferenceNumber = await this.getGmrLocalReferenceNumber();
         const status = await this.getGmrStatus();
 
@@ -88,7 +89,7 @@ export class GmrDetailsPage extends BasePage {
             .toMatch(LOCAL_REFERENCE.GMR_PREFIX);
         expect.soft(status, 'GMR status').toBe(this.t!('status.draft'));
 
-        return localReferenceNumber;
+        return { localReferenceNumber, status };
     }
 
     /**

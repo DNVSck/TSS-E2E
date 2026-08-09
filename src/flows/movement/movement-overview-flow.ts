@@ -16,16 +16,20 @@ export class MovementOverviewFlow {
 
     async verifyDraftMovementOverview(): Promise<void> {
         await ReportLog.step('Validate goods movement overview', async () => {
-            const localReferenceNumber = await this.movementOverviewPage.assertDraftMovementOverview();
+            const { localReferenceNumber, declarationStatus } =
+                await this.movementOverviewPage.assertDraftMovementOverview();
             ReportLog.setParameter('Movement LRN', localReferenceNumber);
+            ReportLog.setParameter('Movement status', declarationStatus);
         });
     }
 
     /**
      * Post-submit proof-of-life on every journey: the mock authorises the movement
      * (submit auto-returns to the movement overview), then the ENS consignment
-     * detail returns an MRN opening with the ENS country code. No consignment-level
-     * status is checked here. All value checks are soft.
+     * detail returns an MRN opening with the ENS country code. The status reached
+     * after submit is REPORTED but not asserted - which value is correct depends on
+     * how far the mock has taken the declaration, so pinning one would flake. All
+     * value checks are soft.
      */
     async verifyEnsConsignmentDetail(): Promise<string> {
         return ReportLog.step('Validate ENS consignment MRN after submission', async () => {
@@ -34,7 +38,12 @@ export class MovementOverviewFlow {
             if (!opened) return '';
 
             const ensMrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();
+            const status = await this.consignmentDetailPage.getConsignmentStatus();
+            // Report before asserting, so the values are in the report whether the
+            // assertion below passes or fails.
             ReportLog.setParameter('ENS MRN', ensMrn);
+            ReportLog.setParameter('ENS Consignment status (submitted)', status);
+
             expect.soft(ensMrn, 'ENS MRN').toMatch(mrnPrefix(MRN_COUNTRY_CODE.ENS));
             return ensMrn;
         });
@@ -82,7 +91,9 @@ export class MovementOverviewFlow {
             // The LRN is EIDR's only identifier here — it is never authorised with
             // an MRN, so that row renders "-" and carries nothing to report.
             const lrn = await this.consignmentDetailPage.getConsignmentLocalReferenceNumber();
+            const status = await this.consignmentDetailPage.getConsignmentStatus();
             ReportLog.setParameter('EIDR LRN', lrn);
+            ReportLog.setParameter('EIDR status', status);
 
             // Asserts the MRN row renders "-"; its value is not recorded (there is none).
             await this.consignmentDetailPage.assertNoMovementReferenceNumber();
@@ -104,11 +115,14 @@ export class MovementOverviewFlow {
             expect.soft(opened, `${label} consignment auto-generated`).toBe(true);
             if (!opened) return;
 
-            // Report the LRN (the identifier used to find this consignment in the service);
+            // Report the LRN (the identifier used to find this consignment in the
+            // service) and the status the consignment actually reached. Both are set
+            // BEFORE the assertions, so a run that fails its checks still carries them.
             const lrn = await this.consignmentDetailPage.getConsignmentLocalReferenceNumber();
             const mrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();
-            await this.consignmentDetailPage.assertStatusAwaitingArrival();
+            const status = await this.consignmentDetailPage.assertStatusAwaitingArrival();
             ReportLog.setParameter(`${label} LRN`, lrn);
+            ReportLog.setParameter(`${label} status`, status);
 
             expect.soft(mrn, `${label} MRN`).toMatch(mrnPrefix(mrnCode));
         });

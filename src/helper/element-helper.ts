@@ -93,7 +93,16 @@ export async function selectAutocompleteValue(
 }
 
 
-const ROUTE_LANDING_TIMEOUT = 20_000;
+/** How long the link itself gets to render, and to be actionable once it has. */
+const LINK_VISIBLE_TIMEOUT = 15_000;
+/**
+ * How long ONE click gets to land on the target route. Deliberately short: a
+ * navigation that is going to happen commits well inside this, so a longer wait only
+ * buys time for the failure this retries — a click the app swallowed, which no amount
+ * of waiting will fix. Short budget x several clicks beats one long wait x one click.
+ */
+const ROUTE_LANDING_TIMEOUT = 8_000;
+const ROUTE_CLICK_ATTEMPTS = 3;
 
 // Click a GOV.UK link that navigates to another server route (an overview tab, a
 // breadcrumb, ...) and wait until the page has actually landed on that route. These
@@ -102,28 +111,55 @@ const ROUTE_LANDING_TIMEOUT = 20_000;
 // races that paint and flakes). The expected route is read from the link's own href,
 // so callers do not repeat it. Named generically because it drives both the overview
 // tabs and the "DEC…" consignment breadcrumb.
+//
+// STRICTLY for links that only navigate: the click is retried, so a link that also
+// changes state (deletes a record, submits a form) does not belong here.
 export async function clickLinkAndWaitForRoute(page: Page, link: Locator): Promise<void> {
     // Wait for the link to render first: it arrives with the overview after the
     // previous step's navigation, which under load can take longer than the default
     // action timeout — so reading/clicking it straight away can race that.
-    await link.waitFor({ state: 'visible', timeout: 15_000 });
+    await link.waitFor({ state: 'visible', timeout: LINK_VISIBLE_TIMEOUT });
 
     const href = await link.getAttribute('href');
-    await link.click();
     if (!href) {
+        await link.click({ timeout: LINK_VISIBLE_TIMEOUT });
         return;
     }
-    // Strip the "#overview-tab" anchor and any trailing slash, then match the URL
-    // path exactly (so the root tab's "/overview" is not satisfied by a sub-route).
-    const route = StringUtil.stripTrailingSlashes(href.split('#')[0]);
-    // Wait only for the route to be committed and parsed, NOT for the page to finish
-    // loading. waitForURL defaults to "load", and these overview pages keep requests in
-    // flight well after the panel is usable — so a page that did arrive still burns the
-    // full navigation timeout. What comes next is gated on a real element anyway.
-    await page.waitForURL(
-        url => StringUtil.stripTrailingSlashes(url.pathname) === route,
-        { waitUntil: 'domcontentloaded', timeout: ROUTE_LANDING_TIMEOUT }
-    );
+    // Resolve against the current URL, which drops the "#overview-tab" anchor and any
+    // query, and copes with an absolute href as readily as a relative one. Trailing
+    // slashes go too, then the path is matched exactly (so the root tab's "/overview"
+    // is not satisfied by a sub-route).
+    const route = StringUtil.stripTrailingSlashes(new URL(href, page.url()).pathname);
+
+    for (let attempt = 1; attempt <= ROUTE_CLICK_ATTEMPTS; attempt++) {
+        try {
+            await link.click({ timeout: LINK_VISIBLE_TIMEOUT });
+            // Wait only for the route to be committed and parsed, NOT for the page to
+            // finish loading. waitForURL defaults to "load", and these overview pages
+            // keep requests in flight well after the panel is usable — so a page that
+            // did arrive still burns the full navigation timeout. What comes next is
+            // gated on a real element anyway.
+            await page.waitForURL(
+                url => StringUtil.stripTrailingSlashes(url.pathname) === route,
+                { waitUntil: 'domcontentloaded', timeout: ROUTE_LANDING_TIMEOUT }
+            );
+            return;
+        } catch (error) {
+            // Report where the page actually is. "Timeout exceeded" alone cannot tell
+            // a swallowed click (still on the old route) from a link that led somewhere
+            // unexpected, and those want opposite fixes.
+            if (attempt === ROUTE_CLICK_ATTEMPTS) {
+                throw new Error(
+                    `Link did not reach "${route}" after ${ROUTE_CLICK_ATTEMPTS} clicks; ` +
+                    `the page is on "${new URL(page.url()).pathname}". ` +
+                    `Last failure: ${(error as Error).message}`
+                );
+            }
+            await ReportLog.info(
+                `Link did not navigate on attempt ${attempt}; clicking it again and retrying.`
+            );
+        }
+    }
 }
 
 // How long to wait for a tab's "add new record" button after the tab has become
