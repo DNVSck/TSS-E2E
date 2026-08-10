@@ -39,6 +39,8 @@ export class GoodsDeclarePage extends BasePage {
     private readonly goodsProcedureCodeDropdown: Locator;
 
     private readonly additionalProcedureCodeDropdown: Locator;
+    private readonly warehouseTypeDropdown: Locator;
+    private readonly warehouseIdentifierInput: Locator;
 
     private readonly invoiceNumberInput: Locator;
     private readonly itemCurrencyDropdown: Locator;
@@ -98,6 +100,11 @@ export class GoodsDeclarePage extends BasePage {
 
         // "Additional procedure code"
         this.additionalProcedureCodeDropdown = page.locator("select#additionalProcedureCode");
+
+        // "Warehouse identifier" - inserted into the procedure journey only for the
+        // procedure codes that declare warehoused goods (see requiresWarehouseIdentifier).
+        this.warehouseTypeDropdown = page.locator("select#warehouseType");
+        this.warehouseIdentifierInput = page.locator("input#warehouseIdentifier");
 
         // "Enter invoice details"
         this.invoiceNumberInput = page.locator("input#invoiceNumber");
@@ -223,6 +230,16 @@ export class GoodsDeclarePage extends BasePage {
 
     async selectAdditionalProcedureCode(additionalProcedureCode: string): Promise<void> {
         await selectDropdownValue(this.additionalProcedureCodeDropdown, additionalProcedureCode);
+        await this.clickContinueButton();
+    }
+
+    /**
+     * "Warehouse identifier" — where the goods being imported are held. Two fields on
+     * one screen: the warehouse type, then its identifier.
+     */
+    async enterWarehouseIdentifier(warehouseType: string, warehouseIdentifier: string): Promise<void> {
+        await selectDropdownValue(this.warehouseTypeDropdown, warehouseType);
+        await this.warehouseIdentifierInput.fill(warehouseIdentifier);
         await this.clickContinueButton();
     }
 

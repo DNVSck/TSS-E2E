@@ -4,6 +4,7 @@ import {COUNTRY_CODE} from "../constant/country-code-dropdown-constant";
 import {TYPE_OF_PACKAGES} from "../constant/type-of-packages-constant";
 import { PROCEDURE_CODES } from "../constant/procedure-codes-constant";
 import { ADDITIONAL_PROCEDURE_CODES } from "../constant/additional-procedure-codes-constant";
+import { WAREHOUSE_TYPE } from "../constant/warehouse-type-constant";
 import { ITEM_CURRENCY } from "../constant/item-currency-constant";
 import { CONTAINER_SIZE } from "../constant/container-size-constant";
 import { CONTAINER_PACKED_STATUS } from "../constant/container-packed-status-constant";
@@ -12,7 +13,7 @@ import { DocumentReferenceData } from "./document-reference-data";
 import { AdditionalInformationData } from "./additional-information-data";
 import { PreviousDocumentData } from "./previous-document-data";
 import { TgpRecordData } from "./tgp-record-data";
-import { generateRandomContainerIdentifierNumber } from "../helper/data-generate-helper";
+import { generateRandomContainerIdentifierNumber, generateRandomWarehouseIdentifier } from "../helper/data-generate-helper";
 
 
 export interface GoodsData {
@@ -53,6 +54,8 @@ export interface GoodsData {
     netMass?: string;
     procedureCode: string;
     additionalProcedureCode: string;
+    warehouseType: string;
+    warehouseIdentifier: string;
     invoiceNumber?: string;
     itemCurrency: string;
     itemPriceAmount: string;
@@ -84,7 +87,7 @@ export interface GoodsData {
 // `containerIdentifierNumber` is deliberately absent: generating it here would freeze
 // one value at module import, so every goods item in the run would declare the same
 // container. Omit<> makes the compiler demand it from the factory below.
-const defaults: Omit<GoodsData, 'containerIdentifierNumber'> = {
+const defaults: Omit<GoodsData, 'containerIdentifierNumber' | 'warehouseIdentifier'> = {
     // "Do you want to use TGP?" — IMMI goods only; false = "without TGP".
     useTGP: false,
     // Deliberately no default record: which records exist depends on the environment and
@@ -131,6 +134,8 @@ const defaults: Omit<GoodsData, 'containerIdentifierNumber'> = {
     procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
     // "Additional procedure code"
     additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.NO_OTHER_ADDITIONAL_CODE_000,
+
+    warehouseType: WAREHOUSE_TYPE.NON_CUSTOMS_WAREHOUSE,
     // "Invoice number" (Optional field)
     invoiceNumber: '',
     // "Item currency"
@@ -155,5 +160,6 @@ const defaults: Omit<GoodsData, 'containerIdentifierNumber'> = {
 export const goods = (overrides?: Partial<GoodsData>): GoodsData => ({
     ...defaults,
     containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
+    warehouseIdentifier: generateRandomWarehouseIdentifier(),
     ...overrides,
 });

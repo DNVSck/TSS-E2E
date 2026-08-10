@@ -120,27 +120,19 @@ export function generateRandomContainerIdentifierNumber(): string {
 const WAREHOUSE_AUTHORISATION_DIGITS = 7;
 
 /**
- * A customs warehouse identifier: the authorising country, the warehouse type letter,
- * and an authorisation number.
+ * A warehouse identifier for the "Warehouse identifier" screen: an authorisation
+ * number followed by the authorising country.
  *
- *     GB U 1234567
- *     ^^ ^ ^^^^^^^ authorisation number assigned by the customs authority
- *     |  warehouse type
- *     authorising country
+ *     1234567 GB
+ *     ^^^^^^^ ^^ authorising country
+ *     authorisation number assigned by the customs authority
  *
- * The type letter is a PARAMETER, not a random pick, because it has to be the same
- * letter the "What type of warehouse is used for the goods?" screen was just answered
- * with. Generating it independently produces an identifier that contradicts the
- * declaration carrying it - a GBR... identifier on a declaration that said U - which
- * the form may well accept and no assertion would catch.
- *
- * Taking the letter rather than choosing from R/U/Y also covers every option the app
- * actually offers: WAREHOUSE_TYPE has five (R, S, T, U, Y), not three.
+ * It carries NO warehouse type letter, unlike an earlier version of this function.
+ * The screen now asks for the type in its own dropdown, so putting the letter in the
+ * identifier as well would be stating it twice - and the two could disagree, giving a
+ * declaration whose identifier contradicts the type beside it. One field, one answer.
  */
-export function generateRandomWarehouseIdentifier(
-    warehouseType: string,
-    countryCode = 'GB'
-): string {
+export function generateRandomWarehouseIdentifier(countryCode = 'GB'): string {
     const authorisationNumber = faker.string.numeric({ length: WAREHOUSE_AUTHORISATION_DIGITS });
-    return `${countryCode}${warehouseType}${authorisationNumber}`;
+    return `${authorisationNumber}${countryCode}`;
 }

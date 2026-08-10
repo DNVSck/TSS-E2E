@@ -50,6 +50,7 @@ export class AddNewEnsGoodsItemFlow {
             if (!journey.isEnsOnly) {
                 await this.steps.selectGoodsProcedureCode(input);
                 await this.steps.selectAdditionalProcedureCode(input);
+                await this.steps.enterWarehouseIdentifierIfAsked(input);
             }
 
             // The goods-level "are the goods controlled?" question only appears when

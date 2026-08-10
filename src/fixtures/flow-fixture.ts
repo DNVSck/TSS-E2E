@@ -1,5 +1,7 @@
 ﻿import { test } from '@playwright/test';
 import { PortalAccessFlow } from '../flows/portal-access-flow';
+import { SignInFlow } from '../flows/sign-in-flow';
+import { CompanyProfileFlow } from '../flows/company-profile-flow';
 import { InitialFormDeclarationFlow } from '../flows/initial-form-declaration-flow';
 import { MovementHeaderDeclarationFlow } from '../flows/movement/movement-header-declaration-flow';
 import { MovementSteps } from '../flows/movement/movement-steps';
@@ -31,6 +33,10 @@ import { APIFixtureType } from './api-fixture';
 export type FlowFixtureType = {
     // Business Flows
     portalAccessFlow: PortalAccessFlow;
+    // Drives the sign-in screens directly. Only the authentication specs use it -
+    // every other flow arrives already signed in via storageState.
+    signInFlow: SignInFlow;
+    companyProfileFlow: CompanyProfileFlow;
     representTraderFlow: RepresentTraderFlow;
     initialFormDeclarationFlow: InitialFormDeclarationFlow;
     movementHeaderDeclarationFlow: MovementHeaderDeclarationFlow;
@@ -66,6 +72,14 @@ type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureT
 export const flowFixture: ExtendParams[0] = {
     portalAccessFlow: async ({ basePage, portalPage }, use) => {
         await use(new PortalAccessFlow(basePage, portalPage));
+    },
+
+    signInFlow: async ({ basePage, portalPage, signInPage }, use) => {
+        await use(new SignInFlow(basePage, portalPage, signInPage));
+    },
+
+    companyProfileFlow: async ({ navigationMenu, companyProfilePage, companyProfileUsersPage }, use) => {
+        await use(new CompanyProfileFlow(navigationMenu, companyProfilePage, companyProfileUsersPage));
     },
 
     representTraderFlow: async ({ agentBanner, representTraderPage }, use) => {

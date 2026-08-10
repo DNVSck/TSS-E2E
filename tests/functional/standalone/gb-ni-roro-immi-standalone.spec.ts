@@ -39,6 +39,9 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
       },
       goodsItemOverrides: immiStandaloneGoodsItem(
         {
+          procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
+          additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EL,
+          supplementaryUnits: '12',
           documentReferences: [
           documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
           documentReference({ documentCode: DOCUMENT_CODE.N730, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),

@@ -1,5 +1,9 @@
 import { test } from '@playwright/test';
 import { PortalPage } from '../page-object/portal-page'
+import { SignInPage } from '../page-object/sign-in-page';
+import { CompanyProfilePage } from '../page-object/company-profile-page';
+import { CompanyProfileUsersPage } from '../page-object/company-profile-users-page';
+import { NavigationMenu } from '../page-object/components/navigation-menu';
 import { BasePage } from '../page-object/base-page';
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
@@ -30,6 +34,10 @@ import { TaskListPage } from '../page-object/task-list-page';
 export type PageFixtureType = {
     basePage: BasePage;
     portalPage: PortalPage;
+    signInPage: SignInPage;
+    companyProfilePage: CompanyProfilePage;
+    companyProfileUsersPage: CompanyProfileUsersPage;
+    navigationMenu: NavigationMenu;
     representTraderPage: RepresentTraderPage;
     agentBanner: AgentBanner;
     consignmentDetailPage: ConsignmentDetailPage;
@@ -66,6 +74,22 @@ export const pageFixture: ExtendParams[0] = {
 
     portalPage: async ({ page }, use) => {
         await use(new PortalPage(page));
+    },
+
+    signInPage: async ({ page }, use) => {
+        await use(new SignInPage(page));
+    },
+
+    companyProfilePage: async ({ page }, use) => {
+        await use(new CompanyProfilePage(page));
+    },
+
+    companyProfileUsersPage: async ({ page }, use) => {
+        await use(new CompanyProfileUsersPage(page));
+    },
+
+    navigationMenu: async ({ page }, use) => {
+        await use(new NavigationMenu(page));
     },
 
     representTraderPage: async ({ page }, use) => {

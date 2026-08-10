@@ -2,6 +2,7 @@ import { ConsignmentOverviewPage } from '../../page-object/consignment-overview-
 import { GoodsDeclarePage } from '../../page-object/goods-declare-page';
 import { GoodsData } from '../../test-data/goods-data';
 import { ReportLog } from '../../core/report/report-log';
+import { requiresWarehouseIdentifier } from '../../helper/procedure-code-helper';
 
 /**
  * One method per goods-item wizard screen: binds the test data to the page object
@@ -114,6 +115,28 @@ export class GoodsItemSteps {
     async selectAdditionalProcedureCode(input: GoodsData): Promise<void> {
         await ReportLog.step('Select the additional procedure code', async () => {
             await this.goodsDeclarePage.selectAdditionalProcedureCode(input.additionalProcedureCode);
+        });
+    }
+
+    /**
+     * "Warehouse identifier", which the wizard inserts after the procedure codes only
+     * for warehousing procedure codes.
+     *
+     * Whether to visit it is decided HERE rather than by the journey flows, from the
+     * procedure code the item is being declared under. Every journey gets the rule for
+     * free that way, and a journey cannot forget it: the screen appears because of the
+     * procedure code, so that is the only thing worth asking.
+     */
+    async enterWarehouseIdentifierIfAsked(input: GoodsData): Promise<void> {
+        if (!requiresWarehouseIdentifier(input.procedureCode)) {
+            return;
+        }
+
+        await ReportLog.step('Enter the warehouse identifier', async () => {
+            await this.goodsDeclarePage.enterWarehouseIdentifier(
+                input.warehouseType,
+                input.warehouseIdentifier
+            );
         });
     }
 
