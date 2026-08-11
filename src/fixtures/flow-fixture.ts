@@ -114,8 +114,8 @@ export const flowFixture: ExtendParams[0] = {
         await use(new AddNewEnsConsignmentFlow(consignmentSteps));
     },
 
-    consignmentOverviewFlow: async ({ consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage }, use) => {
-        await use(new ConsignmentOverviewFlow(consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage));
+    consignmentOverviewFlow: async ({ consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage, consignmentDetailPage}, use) => {
+        await use(new ConsignmentOverviewFlow(consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage, consignmentDetailPage));
     },
 
     goodsItemSteps: async ({ consignmentOverviewPage, goodsItemDeclarePage }, use) => {

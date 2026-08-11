@@ -11,9 +11,9 @@ import {
 import { GoodsData, goods } from '../../test-data/goods-data';
 import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
-import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
+import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 
 /**
  * Create and submit an SFD standalone consignment. One flow per standalone journey:
@@ -59,20 +59,40 @@ export class CreateAndSubmitSfdStandaloneFlow {
         // Report the LRN as soon as the draft exists, before anything that could fail.
         // The "SFD" prefix asserts the journey that actually ran rather than merely
         // that some standalone draft exists.
-        await this.consignmentOverviewFlow.verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.SFD_PREFIX);
-        // Consignment-overview tabs, declared before the goods item (no-op on empty lists).
+        await this.consignmentOverviewFlow.verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.DEC_PREFIX);
         await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
         await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
 
-        await this.addGoodsItemFlow.addNewSfdStandaloneGoodsItem(goodsData);
+        await this.addGoodsItemFlow.addNewSfdStandaloneGoodsItem(goodsData, {
+            isControlledConsignment: consignmentData.isControlledGoods,
+        });
         // Goods-item-overview tabs, declared while on the goods item's overview.
         await this.goodsOverviewFlow.declareDocumentReferences(goodsData.documentReferences);
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
 
         await this.consignmentOverviewFlow.submitConsignment();
-        // NOSONAR TODO: submitting an SFD standalone consignment also auto-generates a linked
+        await this.verifyPostSubmit(consignmentData);
+        // NOSONAR
+        // TODO: submitting an SFD standalone consignment also auto-generates a linked
         // EIDR consignment. Verify it here (the ENS flow's verifyPostSubmit is the
         // model) once it is known where a standalone journey surfaces it - there is no
         // movement overview to reach it from.
+    }
+
+    /**
+     * Post-submit verification for standalone SFD. The standalone consignment should
+     * reach "Awaiting arrival" status and be assigned an MRN. On the controlled-goods
+     * = No branch (SFD-EIDR).
+     */
+    private async verifyPostSubmit(consignmentData: SfdStandaloneConsignmentData): Promise<void> {
+        // All SFD submissions should reach "Awaiting arrival" status and get an MRN
+        await this.consignmentOverviewFlow.verifyStandaloneConsignmentSubmitted();
+        await this.consignmentOverviewFlow.verifySfdConsignmentMrn();
+
+        // On the SFD-EIDR branch (controlled goods = No), also verify the linked
+        // EIDR consignment's declaration type and MRN
+        if (!consignmentData.isControlledGoods) {
+            await this.consignmentOverviewFlow.verifySfdEidrDeclarationTypeAndMrn();
+        }
     }
 }

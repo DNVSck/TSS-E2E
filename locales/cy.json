@@ -14,7 +14,11 @@
     "status": "Statws",
     "yes": "Iawn",
     "no": "Na",
-    "notProvided": "Heb ei ddarparu"
+    "notProvided": "Heb ei ddarparu",
+    "declarationType": "Math y datganiad"
+  },
+  "declarationType": {
+    "eidr": "Cofnod yn Cofnodion y Datganwr (EIDR)"
   },
   "goodsItemOverview": {
     "useTraderGoodsProfile": "A ydych am ddefnyddio Proffil Nwyddau Masnachwr?",

@@ -11,7 +11,6 @@ export const LOCAL_REFERENCE = {
     GMR_PREFIX: /^GMR/,
     SUP_PREFIX: /^SUP/,
     GLR_PREFIX: /^GLR/,
-    SFD_PREFIX: /^SFD/,
     FFD_PREFIX: /^FFD/,
 } as const;
 

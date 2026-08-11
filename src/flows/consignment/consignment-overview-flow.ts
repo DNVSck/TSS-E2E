@@ -1,7 +1,9 @@
-﻿import { ReportLog } from '../../core/report/report-log';
+import { expect } from '@playwright/test';
+import { ReportLog } from '../../core/report/report-log';
 import { ConsignmentOverviewPage } from "../../page-object/consignment-overview-page";
 import { PreviousDocumentDeclarePage } from "../../page-object/header-previous-documents-declare-page";
 import { HolderOfAuthorisationDeclarePage } from "../../page-object/holder-of-authorisation-declare-page";
+import { ConsignmentDetailPage } from '../../page-object/consignment-detail-page';
 import { PreviousDocumentData } from "../../test-data/previous-document-data";
 import { HolderOfAuthorisationData } from "../../test-data/holder-of-authorisation-data";
 
@@ -15,6 +17,7 @@ export class ConsignmentOverviewFlow {
         private readonly consignmentOverviewPage: ConsignmentOverviewPage,
         private readonly previousDocumentDeclarePage: PreviousDocumentDeclarePage,
         private readonly holderOfAuthorisationDeclarePage: HolderOfAuthorisationDeclarePage,
+        private readonly consignmentDetailPage: ConsignmentDetailPage,
     ) { }
 
     /** Return to the consignment overview (e.g. after adding a goods item, which
@@ -65,6 +68,34 @@ export class ConsignmentOverviewFlow {
         await ReportLog.step('Verify standalone consignment submitted', async () => {
             const status = await this.consignmentOverviewPage.waitForStatusAwaitingArrival();
             ReportLog.setParameter('Consignment status (submitted)', status);
+        });
+    }
+
+    /**
+         * After SFD-EIDR submit, verify the consignment's declaration type is
+         * "Entry in the Declarant's Records (EIDR)" and that an MRN is assigned.
+         */
+    async verifySfdEidrDeclarationTypeAndMrn(): Promise<void> {
+        await ReportLog.step('Verify EIDR declaration type and MRN', async () => {
+            const declarationType = await this.consignmentOverviewPage.assertEidrDeclarationType();
+            ReportLog.setParameter('Declaration type', declarationType);
+
+            const mrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();
+            expect.soft(mrn, 'EIDR MRN assigned').not.toBe('');
+            ReportLog.setParameter('EIDR MRN', mrn);
+        });
+    }
+
+    /**
+ * After SFD submit, verify the consignment's status is "Awaiting arrival" and
+ * that an MRN is assigned. SFD consignments (unlike EIDR) always get an MRN
+ * when authorised.
+ */
+    async verifySfdConsignmentMrn(): Promise<void> {
+        await ReportLog.step('Verify SFD MRN', async () => {
+            const mrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();
+            expect.soft(mrn, 'SFD MRN assigned').not.toBe('');
+            ReportLog.setParameter('SFD MRN', mrn);
         });
     }
 

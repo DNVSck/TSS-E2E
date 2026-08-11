@@ -14,7 +14,11 @@
     "status": "Status",
     "yes": "Yes",
     "no": "No",
-    "notProvided": "Not provided"
+    "notProvided": "Not provided",
+    "declarationType": "Declaration type"
+  },
+  "declarationType": {
+    "eidr": "Entry in the Declarant's Records (EIDR)"
   },
   "goodsItemOverview": {
     "useTraderGoodsProfile": "Do you want to use a Trader Goods Profile?",
