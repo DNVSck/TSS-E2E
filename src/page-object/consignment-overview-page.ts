@@ -1,11 +1,12 @@
 import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
-import { TFunction } from '../fixtures/locale-fixture';
+import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
     clickLinkAndWaitForRoute, switchToTabAndClickNew, summaryListValue,
     readFieldWhenVisible, readFieldIfPresent,
 } from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
+import { isTraderInputRequiredConsignmentStatus } from '../helper/consignment-status-helper';
 
 /** The overview summary list paints a beat after the draft is created. */
 const SUMMARY_READ_TIMEOUT = 20_000;
@@ -149,26 +150,28 @@ export class ConsignmentOverviewPage extends BasePage {
     async assertDraftStandaloneConsignment(
         expectedPrefix: RegExp
     ): Promise<{ consignmentReference: string; declarationStatus: string }> {
-        const consignmentReference = await this.getConsignmentLocalReferenceNumber();
+        const consignmentReference = await readFieldIfPresent(this.localReferenceNumber);
         const declarationStatus = await readFieldIfPresent(this.status);
         expect.soft(consignmentReference, 'Consignment LRN').toMatch(expectedPrefix);
         return { consignmentReference, declarationStatus };
     }
 
-    /**
-     * After submit, wait for the consignment status to become "Awaiting arrival".
-     * It lands asynchronously and the page does not auto-refresh, so reload until it
-     * appears. Non-throwing: on timeout it returns the last-read status so the caller
-     * can soft-assert (and report) it rather than the test aborting here.
-     */
-    async waitForStatusAwaitingArrival(): Promise<string> {
-        const expected = this.t!('status.awaitingArrival');
+
+    async waitForSubmittedStatus(expectedStatusKey: TranslationKey): Promise<string> {
+        const expected = this.t!(expectedStatusKey);
         let status = '';
         await expect(async () => {
             status = await readFieldIfPresent(this.status);
-            if (status !== expected) {
-                await this.page.reload();
+
+            // Returning without throwing ends the poll. Both cases below are settled:
+            // the expected status arrived, or the consignment came to rest somewhere it
+            // will not leave on its own, so no amount of reloading changes the answer.
+            // The soft assertion after the poll still reports the mismatch.
+            if (status === expected || isTraderInputRequiredConsignmentStatus(status, this.t!)) {
+                return;
             }
+
+            await this.page.reload();
             expect(status, 'Consignment status').toBe(expected);
         })
             .toPass({ timeout: SUBMIT_STATUS_POLL_TIMEOUT, intervals: [2_000, 3_000, 5_000] })

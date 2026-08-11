@@ -122,7 +122,11 @@ export const ICS2_DECLARANT_ID = required('ICS2_DECLARANT_ID');
 
 reportMissingEnv();
 
-/** Whether the current run targets the SIT environment. */
+/**
+ * Whether this environment runs against a MOCK ICS2 server. The mock authorises a
+ * movement by itself, so the suite publishes the IE3N03 message only where this is
+ * false - see Ics2NotificationFlow.authoriseForMovementUnlessMocked.
+ */
 export const IS_ISC2_MOCK = boolOrDefault(process.env.ISC2_MOCK_SERVER);
 
 /** RabbitMQ management API — only populated and used in SIT. */

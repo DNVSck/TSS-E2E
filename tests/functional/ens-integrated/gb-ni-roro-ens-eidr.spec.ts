@@ -33,7 +33,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
       consignmentOverrides: { isControlledGoods: false },
     });
 
-    await ics2NotificationFlow.authoriseForMovementIfMocked(ensMrn, transportDocumentNumber);
+    await ics2NotificationFlow.authoriseForMovementUnlessMocked(ensMrn, transportDocumentNumber);
 
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData({
       route_id: ROUTE_ID_CONSTANT.GB_TO_NI.LIVERPOOL_WARRENPOINT_SEATRUCK_FERRIES,
@@ -53,7 +53,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
       consignmentOverrides: { isControlledGoods: false },
     });
 
-    await ics2NotificationFlow.authoriseForMovementIfMocked(ensMrn, transportDocumentNumber);
+    await ics2NotificationFlow.authoriseForMovementUnlessMocked(ensMrn, transportDocumentNumber);
 
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });
@@ -71,7 +71,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
       consignmentOverrides: { isControlledGoods: false, isGoodsCrossEUBorder: true, isSameContainer: false },
     });
 
-    await ics2NotificationFlow.authoriseForMovementIfMocked(ensMrn, transportDocumentNumber);
+    await ics2NotificationFlow.authoriseForMovementUnlessMocked(ensMrn, transportDocumentNumber);
 
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
   });

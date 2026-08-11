@@ -10,7 +10,10 @@ export class Ics2NotificationFlow {
      * Publishes an IE3N03 "Authorised for Movement" message to the ICS2 exchange
      * via the RabbitMQ management HTTP API.
      *
-     * Only call this when running against SIT — guard with `IS_SIT` at the call site.
+     * Skipped where a mock ICS2 server is deployed (`ISC2_MOCK_SERVER=true`): the mock
+     * issues the authorisation itself, so publishing a second one would be the test
+     * standing in for a service that is already doing the job. Only an environment
+     * wired to the real ICS2 needs the message built and sent from here.
      *
      * Throws if `ensMrn` is empty (i.e. the MRN poll timed out before this call),
      * since publishing an IE3N03 without a valid MRN is meaningless.
@@ -18,9 +21,9 @@ export class Ics2NotificationFlow {
      * @param ensMrn  - ENS MRN returned from completeEnsDeclarationFlow
      * @param ensN730 - transportDocumentNumber (N730) used during consignment declaration
      */
-    async authoriseForMovementIfMocked(ensMrn: string, ensN730: string): Promise<void> {
-        if (!IS_ISC2_MOCK) {
-            await ReportLog.step('ICS2 authorise-for-movement - skipped (real-ICS2 environment)', async () => {});
+    async authoriseForMovementUnlessMocked(ensMrn: string, ensN730: string): Promise<void> {
+        if (IS_ISC2_MOCK) {
+            await ReportLog.step('ICS2 authorise-for-movement - skipped (mock ICS2 server)', async () => {});
             return;
         }
 

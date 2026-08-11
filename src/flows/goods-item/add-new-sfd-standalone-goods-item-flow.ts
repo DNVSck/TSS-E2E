@@ -25,6 +25,8 @@ export interface SfdStandaloneGoodsJourney {
  *
  * Otherwise (the SFD-EIDR branch): commodity -> packaging -> weight, and nothing
  * else - the service does not ask this branch for country of origin or item price.
+ * Its commodity screen is also a screen short of the other one: no supplementary
+ * units, verified on sit 2026-08-11.
  */
 export class AddNewSfdStandaloneGoodsItemFlow {
     constructor(private readonly steps: GoodsItemSteps) { }
@@ -40,11 +42,16 @@ export class AddNewSfdStandaloneGoodsItemFlow {
             await this.steps.enterWarehouseIdentifierIfAsked(input);
 
             if (journey.isControlledConsignment) {
-                await this.declareControls(input);
+                await this.steps.declareControlledAndDangerousGoods(input);
                 await this.steps.enterCountryOfOrigin(input);
+                await this.steps.enterCommodityInformation(input);
+            } else {
+                // The EIDR branch's commodity screen does not render the supplementary
+                // units field, so it uses the step that does not touch it - the same
+                // split the ENS journeys already make for ENS-only and EIDR.
+                await this.steps.enterCommodityInformationWithoutSupplementaryUnits(input);
             }
 
-            await this.steps.enterCommodityInformation(input);
             await this.steps.enterStandalonePackagingDetails(input);
 
             // Gross and net are one screen; the page fills net only when the screen
@@ -59,22 +66,4 @@ export class AddNewSfdStandaloneGoodsItemFlow {
         });
     }
 
-    /**
-     * The goods-level control questions, each of which only exists because the answer
-     * before it opened it: dangerous goods is asked only of controlled goods, and the
-     * UN codes only of dangerous ones.
-     */
-    private async declareControls(input: GoodsData): Promise<void> {
-        await this.steps.declareControlledGoods(input);
-
-        if (!input.areGoodsControlled) {
-            return;
-        }
-
-        await this.steps.declareDangerousGoods(input);
-
-        if (input.isDangerousGoods) {
-            await this.steps.declareDangerousGoodsCodes(input);
-        }
-    }
 }

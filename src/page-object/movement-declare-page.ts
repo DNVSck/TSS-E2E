@@ -10,6 +10,7 @@ import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper
 export class MovementDeclarePage extends BasePage {
 
     private readonly imoNumberInput: Locator;
+    private readonly iataFlightNumberInput: Locator;
     private readonly nationalityOfMeanOfTransportInput: Locator;
 
     private readonly typeOfPassiveTransportDropdown: Locator;
@@ -54,6 +55,7 @@ export class MovementDeclarePage extends BasePage {
 
         // "Enter transport details" screen
         this.imoNumberInput = page.locator("input#imoNumber");
+        this.iataFlightNumberInput = page.locator("input#iataFlightNumber");
         this.nationalityOfMeanOfTransportInput = page.locator("select#nationalityMeansOfTransport");
 
         this.typeOfPassiveTransportDropdown = page.locator("select#typeOfPassiveTransport");
@@ -116,6 +118,39 @@ export class MovementDeclarePage extends BasePage {
 
     async inputVehicleRegistrationNumber(vehicleRegistrationNumber?: string): Promise<void> {
         await this.vehicleRegistrationNumberInput.fill(vehicleRegistrationNumber ?? '');
+    }
+
+    /**
+     * The standalone "Enter vehicle details" screen, which asks for the registration
+     * AND the nationality together. ENS splits the two: it asks the nationality on the
+     * IMO screen and the registration on its own, so this is a third screen rather
+     * than a combination of the two above.
+     */
+    async enterVehicleDetails(vehicleRegistrationNumber: string, nationality: string): Promise<void> {
+        await this.vehicleRegistrationNumberInput.fill(vehicleRegistrationNumber);
+        await selectDropdownValue(this.nationalityOfMeanOfTransportInput, nationality);
+        await this.clickContinueButton();
+    }
+
+    /** The unaccompanied twin of the screen above: a trailer instead of a vehicle. */
+    async enterTrailerDetails(trailerRegistrationNumber: string, nationality: string): Promise<void> {
+        await this.trailerRegistrationNumberInput.fill(trailerRegistrationNumber);
+        await selectDropdownValue(this.nationalityOfMeanOfTransportInput, nationality);
+        await this.clickContinueButton();
+    }
+
+    /** The ILP Air twin: a flight number instead of a registration. */
+    async enterFlightDetails(iataFlightNumber: string, nationality: string): Promise<void> {
+        await this.iataFlightNumberInput.fill(iataFlightNumber);
+        await selectDropdownValue(this.nationalityOfMeanOfTransportInput, nationality);
+        await this.clickContinueButton();
+    }
+
+    /** The ILP Maritime twin: an IMO number (exactly 7 digits) instead of a registration. */
+    async enterVesselDetails(imoNumber: string, nationality: string): Promise<void> {
+        await this.imoNumberInput.fill(imoNumber);
+        await selectDropdownValue(this.nationalityOfMeanOfTransportInput, nationality);
+        await this.clickContinueButton();
     }
 
     async inputTrailerRegistrationNumber(trailerRegistrationNumber?: string): Promise<void> {

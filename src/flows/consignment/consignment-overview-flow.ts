@@ -6,6 +6,8 @@ import { HolderOfAuthorisationDeclarePage } from "../../page-object/holder-of-au
 import { ConsignmentDetailPage } from '../../page-object/consignment-detail-page';
 import { PreviousDocumentData } from "../../test-data/previous-document-data";
 import { HolderOfAuthorisationData } from "../../test-data/holder-of-authorisation-data";
+import { TranslationKey, TFunction } from '../../fixtures/locale-fixture';
+import { isTraderInputRequiredConsignmentStatus, traderInputRequiredError } from '../../helper/consignment-status-helper';
 
 /**
  * Declares the consignment-overview tabs that each hold a list of records
@@ -18,6 +20,11 @@ export class ConsignmentOverviewFlow {
         private readonly previousDocumentDeclarePage: PreviousDocumentDeclarePage,
         private readonly holderOfAuthorisationDeclarePage: HolderOfAuthorisationDeclarePage,
         private readonly consignmentDetailPage: ConsignmentDetailPage,
+        // Whether a status means "handed back to the trader" is a comparison against
+        // translated text, but the decision it feeds - can this journey carry on? - is
+        // this layer's. So the flow holds t and asks the question itself, rather than
+        // each page answering it for whichever flow happens to call.
+        private readonly t: TFunction,
     ) { }
 
     /** Return to the consignment overview (e.g. after adding a goods item, which
@@ -64,33 +71,36 @@ export class ConsignmentOverviewFlow {
      * After submit, verify the standalone consignment reached "Awaiting arrival" and
      * report the final status.
      */
-    async verifyStandaloneConsignmentSubmitted(): Promise<void> {
+    async verifyStandaloneConsignmentSubmitted(expectedStatusKey: TranslationKey): Promise<void> {
         await ReportLog.step('Verify standalone consignment submitted', async () => {
-            const status = await this.consignmentOverviewPage.waitForStatusAwaitingArrival();
+            const status = await this.consignmentOverviewPage.waitForSubmittedStatus(expectedStatusKey);
             ReportLog.setParameter('Consignment status (submitted)', status);
+
+            // Reported first, then thrown: a journey that expected an authorisation
+            // cannot do anything meaningful with a consignment the service handed back,
+            // so it stops here - but the report still carries the status that stopped it.
+            // Guarded on the expectation, so a journey that legitimately ends in this
+            // state (as the ENS EIDR one does) would pass rather than fail here.
+            const expectedIt = expectedStatusKey === 'status.traderInputRequired';
+            if (!expectedIt && isTraderInputRequiredConsignmentStatus(status, this.t)) {
+                throw traderInputRequiredError('The standalone consignment', status);
+            }
         });
     }
 
-    /**
-         * After SFD-EIDR submit, verify the consignment's declaration type is
-         * "Entry in the Declarant's Records (EIDR)" and that an MRN is assigned.
-         */
-    async verifySfdEidrDeclarationTypeAndMrn(): Promise<void> {
-        await ReportLog.step('Verify EIDR declaration type and MRN', async () => {
+
+    async verifySfdEidrDeclarationType(): Promise<void> {
+        await ReportLog.step('Verify EIDR declaration type', async () => {
             const declarationType = await this.consignmentOverviewPage.assertEidrDeclarationType();
             ReportLog.setParameter('Declaration type', declarationType);
-
-            const mrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();
-            expect.soft(mrn, 'EIDR MRN assigned').not.toBe('');
-            ReportLog.setParameter('EIDR MRN', mrn);
         });
     }
 
     /**
- * After SFD submit, verify the consignment's status is "Awaiting arrival" and
- * that an MRN is assigned. SFD consignments (unlike EIDR) always get an MRN
- * when authorised.
- */
+     * After SFD submit, verify a movement reference number was assigned. Only presence
+     * is asserted: unlike the EIDR row above, this one carries a service-generated MRN,
+     * and its shape is not a contract this suite defends.
+     */
     async verifySfdConsignmentMrn(): Promise<void> {
         await ReportLog.step('Verify SFD MRN', async () => {
             const mrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();

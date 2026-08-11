@@ -8,7 +8,9 @@ import { CONTAINER_SIZE } from '../constant/container-size-constant';
 import { CONTAINER_SUPPLIER_TYPE } from '../constant/container-supplier-type-constant';
 import { CONTAINER_PACKED_STATUS } from '../constant/container-packed-status-constant';
 import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
-import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
+import {
+    generateRandomTransportDocumentNumber, generateRandomContainerIdentifierNumber,
+} from '../helper/data-generate-helper';
 
 /**
  * The SFD standalone consignment (the app's "Simplified Declaration").
@@ -49,16 +51,14 @@ export interface SfdStandaloneConsignmentData {
 
     traderReference: string;
 
-    isGoodsCrossEUBorder: boolean;
+    isTransportingInContainers: boolean;
     isSameContainer: boolean;
 
-
-    // The "Container identification number" screen asks for all four of these.
+    /** `container-information~container-identification-number` asks all four at once. */
     containerIdentifierNumber: string;
     containerSize: string;
     containerPackedStatus: string;
     containerSupplierType: string;
-
 
     invoiceCurrency: string;
 
@@ -71,6 +71,7 @@ export interface SfdStandaloneConsignmentData {
     holdersOfAuthorisation: HolderOfAuthorisationData[];
 
     transportDocumentNumber: string;
+
     goodsDomesticStatus: string;
 }
 
@@ -93,11 +94,12 @@ const defaults: SfdStandaloneConsignmentData = {
     exporterCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     traderReference: 'STD-AUTO-001',
-    isGoodsCrossEUBorder: false,
+    isTransportingInContainers: false,
     isSameContainer: false,
 
-    //Container identification
-    containerIdentifierNumber: '1',
+    // Container identification. Only reached when BOTH answers above are Yes; the
+    // identifier itself is generated per consignment by the factory below.
+    containerIdentifierNumber: '',
     containerSize: CONTAINER_SIZE.TRAILER,
     containerPackedStatus: CONTAINER_PACKED_STATUS.NOT_EMPTY,
     containerSupplierType: CONTAINER_SUPPLIER_TYPE.SHIPPER_SUPPLIED,
@@ -107,7 +109,7 @@ const defaults: SfdStandaloneConsignmentData = {
     headerPreviousDocuments: [],
     holdersOfAuthorisation: [],
 
-    transportDocumentNumber: generateRandomTransportDocumentNumber(),
+    transportDocumentNumber: '',
     goodsDomesticStatus: CONSIGNMENT_GOODS_DOMESTIC_STATUS.NIDOM,
 };
 
@@ -119,5 +121,9 @@ export const sfdStandaloneConsignment = (
     overrides?: Partial<SfdStandaloneConsignmentData>
 ): SfdStandaloneConsignmentData => ({
     ...defaults,
+    // Generated per call, not once in `defaults`: two consignments declared in the
+    // same worker would otherwise carry the same references.
+    transportDocumentNumber: generateRandomTransportDocumentNumber(),
+    containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
     ...overrides,
 });

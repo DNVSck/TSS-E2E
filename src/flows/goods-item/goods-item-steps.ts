@@ -170,6 +170,41 @@ export class GoodsItemSteps {
         });
     }
 
+    /**
+     * The dangerous-goods screen and the UN-code screen the answer Yes opens behind it.
+     *
+     * One method because the second screen exists only as a consequence of the first:
+     * every journey that reaches this pair reaches both halves under the same rule, and
+     * spelling the rule out per flow is how the two copies of it drifted apart.
+     */
+    async declareDangerousGoodsWithCodes(input: GoodsData): Promise<void> {
+        await this.declareDangerousGoods(input);
+
+        if (input.isDangerousGoods) {
+            await this.declareDangerousGoodsCodes(input);
+        }
+    }
+
+    /**
+     * The goods-level control questions in the order the service asks them: are the
+     * goods controlled, and - only when that was answered Yes - are they dangerous.
+     * Answering No sends the wizard straight on to the country of origin.
+     *
+     * For the journeys where the two questions are NOT that chain, see
+     * AddNewEnsGoodsItemFlow: on ENS-only the dangerous question is asked with no
+     * controlled question before it, and on IMMI the controlled question is asked with
+     * no dangerous question after it. Those call the halves directly.
+     */
+    async declareControlledAndDangerousGoods(input: GoodsData): Promise<void> {
+        await this.declareControlledGoods(input);
+
+        if (!input.areGoodsControlled) {
+            return;
+        }
+
+        await this.declareDangerousGoodsWithCodes(input);
+    }
+
     // ===================== The goods themselves =====================
 
     async enterCommodityInformation(input: GoodsData): Promise<void> {

@@ -11,7 +11,9 @@ import { WAREHOUSE_TYPE } from '../constant/warehouse-type-constant';
 import { DECLARATION_PROCEDURE } from '../constant/declaration-procedure-constant';
 import { NATURE_OF_GOODS } from '../constant/nature-of-goods-constant';
 import { BUYER_EORI, EXPORTER_EORI } from '../../config/environment';
-import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
+import {
+    generateRandomTransportDocumentNumber, generateRandomWarehouseIdentifier,
+} from '../helper/data-generate-helper';
 import { PreviousDocumentData } from './previous-document-data';
 import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
 
@@ -219,7 +221,8 @@ const defaults: Omit<FfdStandaloneConsignmentData, 'transportDocumentNumber'> = 
 export const CUSTOMS_WAREHOUSING = {
     declarationProcedure: DECLARATION_PROCEDURE.CUSTOMS_WAREHOUSING,
     warehouseType: WAREHOUSE_TYPE.PRIVATE_CUSTOMS_WAREHOUSE,
-    warehouseIdentifier: 'GBCW1234567',
+    // No warehouseIdentifier: the factory derives one from the type above, so the two
+    // cannot disagree. State it here only to pin a specific authorisation number.
 } as const;
 
 /**
@@ -228,8 +231,26 @@ export const CUSTOMS_WAREHOUSING = {
  */
 export const ffdStandaloneConsignment = (
     overrides?: Partial<FfdStandaloneConsignmentData>
-): FfdStandaloneConsignmentData => ({
-    ...defaults,
-    transportDocumentNumber: generateRandomTransportDocumentNumber(),
-    ...overrides,
-});
+): FfdStandaloneConsignmentData => {
+    const data = {
+        ...defaults,
+        transportDocumentNumber: generateRandomTransportDocumentNumber(),
+        ...overrides,
+    };
+
+    return {
+        ...data,
+        // Derived AFTER the overrides are applied, because the identifier CARRIES the
+        // warehouse type letter (GB + U + 1234567). Computing it any earlier would let a
+        // spec change the type and be left with an identifier still naming the old one -
+        // two screens of the same declaration contradicting each other, which the form
+        // would likely accept and no assertion here would catch.
+        //
+        // Undefined when no warehouse tail was chosen: every other declaration procedure
+        // never reaches the warehouse screens.
+        warehouseIdentifier: data.warehouseIdentifier
+            ?? (data.warehouseType
+                ? generateRandomWarehouseIdentifier(data.warehouseType)
+                : undefined),
+    };
+};

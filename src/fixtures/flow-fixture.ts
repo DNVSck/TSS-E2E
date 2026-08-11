@@ -27,6 +27,7 @@ import { GoodsOverviewFlow } from '../flows/goods-item/goods-overview-flow';
 import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
 import { RepresentTraderFlow } from '../flows/represent-trader-flow';
 import { Ics2NotificationFlow } from '../flows/ics2-notification-flow';
+import { LocaleFixtureType } from './locale-fixture';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
 import { APIFixtureType } from './api-fixture';
 
@@ -67,7 +68,9 @@ export type FlowFixtureType = {
     createAndSubmitFfdStandaloneFlow: CreateAndSubmitFfdStandaloneFlow;
 }
 
-type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType & APIFixtureType>>;
+// LocaleFixtureType is in the union because two flows take `t` themselves - deciding
+// what a translated status means for a journey is flow-level, not page-level.
+type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType & APIFixtureType & LocaleFixtureType>>;
 
 export const flowFixture: ExtendParams[0] = {
     portalAccessFlow: async ({ basePage, portalPage }, use) => {
@@ -106,16 +109,16 @@ export const flowFixture: ExtendParams[0] = {
         await use(new MovementHeaderDeclarationFlow(movementSteps));
     },
 
-    movementOverviewFlow: async ({ movementOverviewPage, consignmentDetailPage }, use) => {
-        await use(new MovementOverviewFlow(movementOverviewPage, consignmentDetailPage));
+    movementOverviewFlow: async ({ movementOverviewPage, consignmentDetailPage, t }, use) => {
+        await use(new MovementOverviewFlow(movementOverviewPage, consignmentDetailPage, t));
     },
 
     addNewConsignmentFlow: async ({ consignmentSteps }, use) => {
         await use(new AddNewEnsConsignmentFlow(consignmentSteps));
     },
 
-    consignmentOverviewFlow: async ({ consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage, consignmentDetailPage}, use) => {
-        await use(new ConsignmentOverviewFlow(consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage, consignmentDetailPage));
+    consignmentOverviewFlow: async ({ consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage, consignmentDetailPage, t}, use) => {
+        await use(new ConsignmentOverviewFlow(consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage, consignmentDetailPage, t));
     },
 
     goodsItemSteps: async ({ consignmentOverviewPage, goodsItemDeclarePage }, use) => {

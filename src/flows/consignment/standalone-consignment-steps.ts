@@ -2,7 +2,7 @@ import { StandaloneConsignmentDeclarePage } from '../../page-object/standalone-c
 import { ReportLog } from '../../core/report/report-log';
 
 /**
- * The two screens that exist only on the standalone journeys. Everything else those
+ * The screens that exist only on the standalone journeys. Everything else those
  * wizards show is a screen the ENS journeys also have, so it comes from MovementSteps
  * or ConsignmentSteps — which is exactly why a standalone flow draws from all three.
  *
@@ -35,6 +35,28 @@ export class StandaloneConsignmentSteps {
     async selectRepresentationType(representationType: string): Promise<void> {
         await ReportLog.step('Select representation type', async () => {
             await this.standalonePage.selectRepresentationType(representationType);
+        });
+    }
+
+    /**
+     * "Enter goods domestic status" as a screen of its own. Only the SFD standalone
+     * journey shows it that way; every other journey asks the same question as one
+     * field of "Transport and destination details" (ConsignmentSteps
+     * .fillSfdTransportAndDestination), which is why both spellings exist.
+     */
+    async selectGoodsDomesticStatus(goodsDomesticStatus: string): Promise<void> {
+        await ReportLog.step('Select goods domestic status', async () => {
+            await this.standalonePage.selectGoodsDomesticStatus(goodsDomesticStatus);
+        });
+    }
+
+    /**
+     * "Container information". Shared by the FFD and SFD standalone journeys, which is
+     * why it sits here rather than beside the FFD-only screens where it started.
+     */
+    async declareTransportingInContainers(isTransportingInContainers: boolean): Promise<void> {
+        await ReportLog.step('Answer "Are the goods transported in containers?"', async () => {
+            await this.standalonePage.selectTransportingInContainers(isTransportingInContainers);
         });
     }
 

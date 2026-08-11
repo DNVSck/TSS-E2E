@@ -59,12 +59,17 @@ export class AddNewEnsGoodsItemFlow {
                 await this.steps.declareControlledGoods(input);
             }
 
-            // The dangerous-goods question follows on every journey except EIDR.
-            if (journey.hasDangerousGoods) {
-                await this.steps.declareDangerousGoods(input);
-                if (input.isDangerousGoods) {
-                    await this.steps.declareDangerousGoodsCodes(input);
-                }
+            // Two gates, and neither implies the other on these journeys: IMMI asks the
+            // controlled question but never the dangerous one, while ENS-only asks the
+            // dangerous one without a controlled question before it. So the journey
+            // decides whether the screen exists at all, and the goods-level answer -
+            // when there was one - decides whether it is reached: answering "not
+            // controlled" sends the wizard straight on to the country of origin.
+            const asksDangerousGoods = journey.hasDangerousGoods
+                && (!journey.isControlledGoods || input.areGoodsControlled);
+
+            if (asksDangerousGoods) {
+                await this.steps.declareDangerousGoodsWithCodes(input);
             }
 
             // On SFD the country-of-origin screen precedes the commodity screen. IMMI

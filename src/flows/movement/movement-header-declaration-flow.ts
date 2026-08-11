@@ -22,7 +22,7 @@ export class MovementHeaderDeclarationFlow {
 
             await this.steps.chooseTypeOfMovement(input.typeOfMovement);
             await this.steps.inputMeansOfTransport(input.imoNumber, input.nationalityOfMeanOfTransport);
-            await this.identifyVehicleOrTrailer(input);
+            await this.identifyMethodOfTransport(input);
 
             await this.steps.declareResponsibleForMovement(
                 input.roleInThisMovement, input.haulierSeparateThisMovement
@@ -58,7 +58,7 @@ export class MovementHeaderDeclarationFlow {
      * Unaccompanied RoRo identifies the trailer on one screen; accompanied RoRo first
      * asks what is being towed, then identifies the towing vehicle.
      */
-    private async identifyVehicleOrTrailer(input: MovementData): Promise<void> {
+    private async identifyMethodOfTransport(input: MovementData): Promise<void> {
         switch (input.typeOfMovement) {
             case TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED:
                 await this.steps.inputTrailerRegistrationNumber(input.trailerRegistrationNumber);

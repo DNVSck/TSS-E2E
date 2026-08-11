@@ -11,6 +11,11 @@ import { StandaloneConsignmentSteps } from './standalone-consignment-steps';
  * SFD is the only standalone journey with NO "Representation information" screen; it
  * does have the vehicle screen, and its arrival date/time is its own screen, asked
  * only for a pre-lodged movement.
+ *
+ * "Does this consignment contain controlled goods?" splits the wizard into two routes
+ * that never rejoin - the app even changes the URL segment, `sfd-standalone-journey~`
+ * for Yes and `eidr-journey~` for No - so the tail is written out as two private
+ * methods rather than one list with conditionals.
  */
 export class AddNewSfdStandaloneConsignmentFlow {
     constructor(
@@ -35,11 +40,69 @@ export class AddNewSfdStandaloneConsignmentFlow {
             await this.movementSteps.selectPortOfArrival(input.portOfArrival);
 
             await this.consignmentSteps.declareControlledGoods(input.isControlledGoods);
-            await this.consignmentSteps.fillExporterDetails(input.exporterEORI, toPartyAddress('exporter', input));
-            await this.consignmentSteps.fillTraderReference(input.traderReference);
-            await this.consignmentSteps.selectInvoiceCurrency(input.invoiceCurrency);
+
+            if (input.isControlledGoods) {
+                await this.declareSfdRoute(input);
+            } else {
+                await this.declareEidrRoute(input);
+            }
 
             await this.standaloneSteps.finishStandaloneConsignment();
         });
+    }
+
+    /**
+     * Controlled goods = Yes (`sfd-standalone-journey~`). The goods domestic status is
+     * a screen of its own here, sitting between the trader reference and the container
+     * question - unlike every other journey, which asks it as one field of "Transport
+     * and destination details".
+     */
+    private async declareSfdRoute(input: SfdStandaloneConsignmentData): Promise<void> {
+        await this.consignmentSteps.fillExporterDetails(input.exporterEORI, toPartyAddress('exporter', input));
+        await this.consignmentSteps.fillTraderReference(input.traderReference);
+        await this.standaloneSteps.selectGoodsDomesticStatus(input.goodsDomesticStatus);
+        await this.declareContainerInformation(input);
+        await this.consignmentSteps.selectInvoiceCurrency(input.invoiceCurrency);
+    }
+
+    /**
+     * Controlled goods = No (`eidr-journey~`). Two screens and nothing else: it asks
+     * for the transport document and the goods domestic status together, then the
+     * container question, then goes straight to "Check your answers". Being the reduced
+     * journey it skips what the controlled-goods route asks for either side of them -
+     * the exporter, the trader reference and the invoice currency.
+     */
+    private async declareEidrRoute(input: SfdStandaloneConsignmentData): Promise<void> {
+        await this.consignmentSteps.fillSfdTransportAndDestination(
+            input.transportDocumentNumber, input.goodsDomesticStatus
+        );
+        await this.declareContainerInformation(input);
+    }
+
+    /**
+     * "Container information", the one part both routes share: three screens, each
+     * opened by answering Yes to the one before it. Only the first is standalone's own -
+     * the other two are the ENS journey's screens, reached here through a different
+     * opening question, so their steps are reused rather than copied.
+     */
+    private async declareContainerInformation(input: SfdStandaloneConsignmentData): Promise<void> {
+        await this.standaloneSteps.declareTransportingInContainers(input.isTransportingInContainers);
+
+        if (!input.isTransportingInContainers) {
+            return;
+        }
+
+        await this.consignmentSteps.declareAllGoodsInSameContainer(input.isSameContainer);
+
+        if (!input.isSameContainer) {
+            return;
+        }
+
+        await this.consignmentSteps.fillContainerIdentification(
+            input.containerIdentifierNumber,
+            input.containerSize,
+            input.containerPackedStatus,
+            input.containerSupplierType
+        );
     }
 }

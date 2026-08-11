@@ -2,6 +2,7 @@ import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './base-page';
 import { TFunction } from '../fixtures/locale-fixture';
 import { summaryListValue, readFieldWhenVisible, readFieldIfPresent } from '../helper/element-helper';
+import { isTraderInputRequiredConsignmentStatus } from '../helper/consignment-status-helper';
 
 /** This heavy detail page can be slow to paint under parallel load. */
 const DETAIL_READ_TIMEOUT = 15_000;
@@ -52,14 +53,26 @@ export class ConsignmentDetailPage extends BasePage {
      * page does not auto-refresh, so reload until it appears. Non-throwing: on
      * timeout it returns the last-read value ('' if none), so the caller can
      * soft-assert the (possibly missing) MRN rather than the test aborting here.
+     *
+     * An MRN is only ever assigned to an authorised consignment, so a status the
+     * service will not move on from is also the answer to this question: there is no
+     * MRN coming. Reading the status costs one locator per attempt and saves the whole
+     * remaining timeout on the runs that need the report soonest - the failing ones.
      */
     async waitForMovementReferenceNumber(): Promise<string> {
         let mrn = '';
         await expect(async () => {
             mrn = await this.readMovementReferenceNumber();
-            if (!mrn) {
-                await this.page.reload();
+            if (mrn) {
+                return;
             }
+
+            const status = await readFieldIfPresent(this.status);
+            if (isTraderInputRequiredConsignmentStatus(status, this.t!)) {
+                return;
+            }
+
+            await this.page.reload();
             expect(mrn, 'MRN populated').not.toBe('');
         })
             .toPass({ timeout: MRN_POLL_TIMEOUT, intervals: [2_000, 3_000, 5_000] })

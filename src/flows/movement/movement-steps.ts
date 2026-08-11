@@ -67,6 +67,37 @@ export class MovementSteps {
         });
     }
 
+    /**
+     * The standalone "Enter vehicle details" screen — registration AND nationality on
+     * one screen. ENS asks those two on separate screens, so this is its own step.
+     */
+    async enterVehicleDetails(vehicleRegistrationNumber: string, nationality: string): Promise<void> {
+        await ReportLog.step('Enter vehicle details', async () => {
+            await this.movementDeclarePage.enterVehicleDetails(vehicleRegistrationNumber, nationality);
+        });
+    }
+
+    /** The unaccompanied twin of the step above: a trailer instead of a vehicle. */
+    async enterTrailerDetails(trailerRegistrationNumber: string, nationality: string): Promise<void> {
+        await ReportLog.step('Enter trailer details', async () => {
+            await this.movementDeclarePage.enterTrailerDetails(trailerRegistrationNumber, nationality);
+        });
+    }
+
+    /** The ILP Air twin: a flight number instead of a registration. */
+    async enterFlightDetails(iataFlightNumber: string, nationality: string): Promise<void> {
+        await ReportLog.step('Enter flight details', async () => {
+            await this.movementDeclarePage.enterFlightDetails(iataFlightNumber, nationality);
+        });
+    }
+
+    /** The ILP Maritime twin: an IMO number instead of a registration. */
+    async enterVesselDetails(imoNumber: string, nationality: string): Promise<void> {
+        await ReportLog.step('Enter vessel details', async () => {
+            await this.movementDeclarePage.enterVesselDetails(imoNumber, nationality);
+        });
+    }
+
     async inputVehicleRegistrationNumber(vehicleRegistrationNumber?: string): Promise<void> {
         await ReportLog.step('Input the vehicle registration number', async () => {
             await this.movementDeclarePage.inputVehicleRegistrationNumber(vehicleRegistrationNumber);

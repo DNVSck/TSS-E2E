@@ -11,6 +11,7 @@
   },
   "common": {
     "localReferenceNumber": "Rhif cyfeirnod lleol",
+    "localReferenceNumberWithLrn": "Rhif cyfeirnod lleol (LRN)",
     "status": "Statws",
     "yes": "Iawn",
     "no": "Na",
@@ -42,6 +43,7 @@
     "authorised": "Awdurdodedig",
     "awaitingArrival": "Yn aros i gyrraedd",
     "arrived": "Wedi cyrraedd",
-    "open": "Ar agor"
+    "open": "Ar agor",
+    "traderInputRequired": "Mewnbwn Masnachwr sy'n Ofynnol"
   }
 }

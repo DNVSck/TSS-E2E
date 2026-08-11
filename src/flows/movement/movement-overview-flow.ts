@@ -3,11 +3,17 @@ import { ReportLog } from '../../core/report/report-log';
 import { MovementOverviewPage } from "../../page-object/movement-overview-page";
 import { ConsignmentDetailPage } from "../../page-object/consignment-detail-page";
 import { MRN_COUNTRY_CODE, MrnCountryCode, mrnPrefix } from '../../constant/local-reference-constants';
+import { isTraderInputRequiredConsignmentStatus, traderInputRequiredError } from '../../helper/consignment-status-helper';
+import { TFunction } from '../../fixtures/locale-fixture';
 
 export class MovementOverviewFlow {
     constructor(
         private readonly movementOverviewPage: MovementOverviewPage,
         private readonly consignmentDetailPage: ConsignmentDetailPage,
+        // Held for the same reason as in ConsignmentOverviewFlow: the comparison is
+        // against translated text, but deciding what a terminal status means for the
+        // journey belongs to this layer, not to a page.
+        private readonly t: TFunction,
     ) { }
 
     async waitForSubmittedMovementOverview(): Promise<void> {
@@ -125,6 +131,15 @@ export class MovementOverviewFlow {
             ReportLog.setParameter(`${label} status`, status);
 
             expect.soft(mrn, `${label} MRN`).toMatch(mrnPrefix(mrnCode));
+
+            // Everything recorded, then stop: an SFD or IMMI consignment handed back to
+            // the trader is never authorised, so the GMR the journey builds next has
+            // nothing to move. The soft results above already name what was wrong; going
+            // on would only add their consequences. The EIDR check is deliberately not
+            // routed through here - that journey ends in this state legitimately.
+            if (isTraderInputRequiredConsignmentStatus(status, this.t)) {
+                throw traderInputRequiredError(`The auto-generated ${label} consignment`, status);
+            }
         });
     }
 

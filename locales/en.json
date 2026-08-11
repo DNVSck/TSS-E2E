@@ -11,6 +11,7 @@
   },
   "common": {
     "localReferenceNumber": "Local reference number",
+    "localReferenceNumberWithLrn": "Local reference number (LRN)",
     "status": "Status",
     "yes": "Yes",
     "no": "No",
@@ -42,6 +43,7 @@
     "authorised": "Authorised",
     "awaitingArrival": "Awaiting arrival",
     "arrived": "Arrived",
-    "open": "Open"
+    "open": "Open",
+    "traderInputRequired": "Trader Input Required"
   }
 }

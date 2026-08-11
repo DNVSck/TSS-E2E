@@ -9,6 +9,7 @@ import { ITEM_CURRENCY } from "../constant/item-currency-constant";
 import { CONTAINER_SIZE } from "../constant/container-size-constant";
 import { CONTAINER_PACKED_STATUS } from "../constant/container-packed-status-constant";
 import { CONTAINER_SUPPLIER_TYPE } from "../constant/container-supplier-type-constant";
+import { UN_DANGEROUS_GOODS_CODE } from "../constant/un-dangerous-goods-code-constant";
 import { DocumentReferenceData } from "./document-reference-data";
 import { AdditionalInformationData } from "./additional-information-data";
 import { PreviousDocumentData } from "./previous-document-data";
@@ -38,6 +39,7 @@ export interface GoodsData {
     additionalRiskStatus: string;
     areGoodsControlled: boolean;
     isDangerousGoods: boolean;
+    /** A UN number - see UN_DANGEROUS_GOODS_CODE. Only read when isDangerousGoods. */
     dangerousGoodsCodes: string;
     commodityCode: string;
     goodsDescription: string;
@@ -103,7 +105,7 @@ const defaults: Omit<GoodsData, 'containerIdentifierNumber' | 'warehouseIdentifi
     // "Dangerous goods"
     isDangerousGoods: false,
     // "Dangerous goods codes"
-    dangerousGoodsCodes: '1234',
+    dangerousGoodsCodes: UN_DANGEROUS_GOODS_CODE.GASOLINE,
     // "Commodity code"
     commodityCode: '2404199000',
     // "Goods description"
