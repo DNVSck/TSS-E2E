@@ -5,7 +5,9 @@ import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { HAULIER_COMPANY_NAME } from '../../../config/environment';
 import { gmrData } from '../../../src/test-data/gmr-data';
 import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
+import { reportTestCaseLink } from '../../../src/helper/report-helper';
 
+const ENS_EIDR_GMR = '4438';
 
 test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader', () => {
   // Runs as AGENT: this worker replays its own AGENT account's cached session
@@ -21,6 +23,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
 
   test('Verify ENS-EIDR - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied (controlled goods = No)');
+    reportTestCaseLink(ENS_EIDR_GMR);
     const { transportDocumentNumber, ensMrn } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
@@ -40,6 +43,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
 
   test('Verify ENS-EIDR - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Unaccompanied (controlled goods = No)');
+    reportTestCaseLink(ENS_EIDR_GMR);
     const { transportDocumentNumber, ensMrn } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),

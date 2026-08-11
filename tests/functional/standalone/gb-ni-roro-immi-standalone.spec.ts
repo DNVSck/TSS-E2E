@@ -16,7 +16,10 @@ import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant'
 import { additionalInformation } from '../../../src/test-data/additional-information-data';
 import { previousDocument } from '../../../src/test-data/previous-document-data';
 import { PREVIOUS_DOCUMENT_TYPE } from '../../../src/constant/previous-document-type-constant';
+import { reportTestCaseLink } from '../../../src/helper/report-helper';
 
+const IMMI_PRELODGED = '4442';
+const IMMI_ARRIVED = '4443';
 
 test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represents Trader', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
@@ -30,6 +33,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
 
   test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct without TGP is created and submitted successfully', { tag: ['@smoke' , '@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct without TGP');
+    reportTestCaseLink(IMMI_PRELODGED);
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
@@ -53,6 +57,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
 
   test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP');
+    reportTestCaseLink(IMMI_PRELODGED);
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
@@ -72,6 +77,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
 
   test('Verify IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Indirect is created and submitted successfully', { tag: ['@smoke', '@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Indirect');
+    reportTestCaseLink(IMMI_PRELODGED);
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
@@ -88,6 +94,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
 
   test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath', '@smoke'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Direct - 4000 - 1LG');
+    reportTestCaseLink(IMMI_ARRIVED);
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
       url: getBaseUrl(),
@@ -153,6 +160,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
 
   test('Verify IMMI Standalone - Arrived - RoRo (Unaccompanied) - Indirect is created and submitted successfully', { tag: ['@smoke', '@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Unaccompanied) - Indirect - 0751 - 1EL');
+    reportTestCaseLink(IMMI_ARRIVED);
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
       url: getBaseUrl(),

@@ -18,8 +18,7 @@ import { TGP_RECORD } from '../../../src/test-data/tgp-record-data';
 import { additionalInformation } from '../../../src/test-data/additional-information-data';
 import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
 
-const TGP_TC_ID = '2793';
-const NO_TGP_TC_ID = '2809';
+const ENS_IMMI_GMR = '4437';
 
 test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () => {
   // Runs as AGENT: this worker replays its own AGENT account's cached session
@@ -35,7 +34,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied with TGP');
-    reportTestCaseLink(TGP_TC_ID);
+    reportTestCaseLink(ENS_IMMI_GMR);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
@@ -74,7 +73,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied without TGP');
-    reportTestCaseLink(NO_TGP_TC_ID);
+    reportTestCaseLink(ENS_IMMI_GMR);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
