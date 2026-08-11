@@ -4,6 +4,11 @@ import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { PreviousDocumentData } from './previous-document-data';
 import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
+import { CONTAINER_SIZE } from '../constant/container-size-constant';
+import { CONTAINER_SUPPLIER_TYPE } from '../constant/container-supplier-type-constant';
+import { CONTAINER_PACKED_STATUS } from '../constant/container-packed-status-constant';
+import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
+import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
 
 /**
  * The SFD standalone consignment (the app's "Simplified Declaration").
@@ -43,6 +48,18 @@ export interface SfdStandaloneConsignmentData {
     exporterCountryCode: string;
 
     traderReference: string;
+
+    isGoodsCrossEUBorder: boolean;
+    isSameContainer: boolean;
+
+
+    // The "Container identification number" screen asks for all four of these.
+    containerIdentifierNumber: string;
+    containerSize: string;
+    containerPackedStatus: string;
+    containerSupplierType: string;
+
+
     invoiceCurrency: string;
 
     /**
@@ -52,6 +69,9 @@ export interface SfdStandaloneConsignmentData {
      */
     headerPreviousDocuments: PreviousDocumentData[];
     holdersOfAuthorisation: HolderOfAuthorisationData[];
+
+    transportDocumentNumber: string;
+    goodsDomesticStatus: string;
 }
 
 const defaults: SfdStandaloneConsignmentData = {
@@ -73,10 +93,22 @@ const defaults: SfdStandaloneConsignmentData = {
     exporterCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     traderReference: 'STD-AUTO-001',
+    isGoodsCrossEUBorder: false,
+    isSameContainer: false,
+
+    //Container identification
+    containerIdentifierNumber: '1',
+    containerSize: CONTAINER_SIZE.TRAILER,
+    containerPackedStatus: CONTAINER_PACKED_STATUS.NOT_EMPTY,
+    containerSupplierType: CONTAINER_SUPPLIER_TYPE.SHIPPER_SUPPLIED,
+
     invoiceCurrency: ITEM_CURRENCY.POUNDS_STERLING,
 
     headerPreviousDocuments: [],
     holdersOfAuthorisation: [],
+
+    transportDocumentNumber: generateRandomTransportDocumentNumber(),
+    goodsDomesticStatus: CONSIGNMENT_GOODS_DOMESTIC_STATUS.NIDOM,
 };
 
 /**

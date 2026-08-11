@@ -2,6 +2,7 @@ import { ConsignmentOverviewPage } from '../page-object/consignment-overview-pag
 import { GoodsDeclarePage } from '../page-object/goods-declare-page';
 import { GoodsData } from '../test-data/goods-data';
 import { ReportLog } from '../core/report/report-log';
+import { GoodsItemCommonSteps } from './common-flows/goods-item-common-steps';
 
 /**
  * One goods item on the SFD standalone journey.
@@ -13,36 +14,67 @@ import { ReportLog } from '../core/report/report-log';
  *
  * Reuses GoodsDeclarePage directly rather than the branch-heavy ENS
  * AddNewGoodsItemFlow, whose controlled/dangerous/TGP branching does not apply.
+ *
+ * Steps shared with other goods-item flows (standalone packaging) are delegated
+ * to GoodsItemCommonSteps.
  */
 export class AddNewSfdStandaloneGoodsItemFlow {
     constructor(
         private readonly consignmentOverviewPage: ConsignmentOverviewPage,
         private readonly goodsDeclarePage: GoodsDeclarePage,
+        private readonly commonSteps: GoodsItemCommonSteps =
+            new GoodsItemCommonSteps(goodsDeclarePage),
     ) { }
 
-    async addNewSfdStandaloneGoodsItem(input: GoodsData): Promise<void> {
+    async addNewSfdStandaloneGoodsItem(input: GoodsData, options: { isControlledConsignment: boolean }): Promise<void> {
         await ReportLog.step('Add new SFD standalone goods item', async () => {
             await this.consignmentOverviewPage.openNewGoodsRecord();
             await this.goodsDeclarePage.selectGoodsProcedureCode(input.goodsProcedureCode);
             await this.goodsDeclarePage.selectAdditionalProcedureCode(input.additionalProcedureCode);
-            await this.goodsDeclarePage.enterGoodsDescriptionAndCommodityCode(input.goodsDescription, input.commodityCode);
-            await this.fillPackaging(input);
-            await this.goodsDeclarePage.enterWeightInformation(input.grossMass, input.netMass);
-            await this.goodsDeclarePage.enterItemPrice(input.itemPriceAmount);
-            await this.goodsDeclarePage.enterCountryOfOrigin(input.countryOfOrigin);
+            if (options.isControlledConsignment) {
+                // SFD path: controlled → dangerous (conditional) → country → commodity → packaging → weight (gross+net) → invoice
+                await this.fillControlledGoods(input);
+                await this.goodsDeclarePage.enterCountryOfOrigin(input.countryOfOrigin);
+                await this.goodsDeclarePage.enterGoodsDescriptionAndCommodityCode(input.goodsDescription, input.commodityCode);
+                await this.commonSteps.fillStandalonePackaging(input);
+                await this.goodsDeclarePage.enterWeightInformation(input.grossMass, input.netMass);
+                await this.goodsDeclarePage.enterItemPrice(input.itemPriceAmount);
+            } else {
+                // EIDR path: commodity → packaging → weight (gross only)
+                await this.goodsDeclarePage.enterGoodsDescriptionAndCommodityCode(input.goodsDescription, input.commodityCode);
+                await this.commonSteps.fillStandalonePackaging(input);
+                await this.goodsDeclarePage.enterWeightInformation(input.grossMass);
+            }
             await this.goodsDeclarePage.clickFinishButton();
         });
     }
 
     /**
-     * The standalone packaging screen has no "number of pieces" field, so the three
-     * fields it shows are filled individually rather than via the ENS
-     * enterPackagingDetails helper (which also fills number of pieces).
+     * Decision-tree rule: the goods-level controlled screen only appears when the
+     * consignment-level controlled answer is Yes.
      */
-    private async fillPackaging(input: GoodsData): Promise<void> {
-        await this.goodsDeclarePage.inputShippingMarks(input.shippingMarks);
-        await this.goodsDeclarePage.selectTypeOfPackages(input.typeOfPackages);
-        await this.goodsDeclarePage.inputNumberOfPackages(input.numberOfPackages);
-        await this.goodsDeclarePage.clickContinueButton();
+    private async fillControlledGoods(input: GoodsData): Promise<void> {
+        await ReportLog.step('Define if the goods are controlled', async () => {
+            if (input.areGoodsControlled) {
+                await this.goodsDeclarePage.selectGoodsControlledYes();
+                await this.fillDangerousGoods(input);
+            } else {
+                await this.goodsDeclarePage.selectGoodsControlledNo();
+            }
+        });
+    }
+
+    /**
+     * Decision-tree rule: dangerous-goods is only asked when goods are controlled.
+     */
+    private async fillDangerousGoods(input: GoodsData): Promise<void> {
+        await ReportLog.step('Define if the goods are dangerous', async () => {
+            if (input.isDangerousGoods) {
+                await this.goodsDeclarePage.selectDangerousGoodsYes();
+                await this.goodsDeclarePage.inputDangerousGoodsCodes(input.dangerousGoodsCodes);
+            } else {
+                await this.goodsDeclarePage.selectDangerousGoodsNo();
+            }
+        });
     }
 }

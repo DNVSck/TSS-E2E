@@ -10,7 +10,12 @@
     "submitButton": "Mewngofnodi"
   },
   "common": {
-    "localReferenceNumber": "Rhif cyfeirnod lleol"
+    "localReferenceNumber": "Rhif cyfeirnod lleol",
+        "status": "Status",
+    "declarationType": "Math y datganiad"
+  },
+  "declarationType": {
+    "eidr": "Cofnod yn Cofnodion y Datganwr (EIDR)"
   },
   "movementHeaderOverview": {
     "declarationStatus": "Status y datganiad"

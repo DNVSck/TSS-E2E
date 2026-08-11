@@ -1,7 +1,8 @@
 import { ReportLog } from '../core/report/report-log';
-import {ConsignmentOverviewPage} from "../page-object/consignment-overview-page";
-import {GoodsDeclarePage} from "../page-object/goods-declare-page";
-import  {GoodsData} from  "../test-data/goods-data";
+import { ConsignmentOverviewPage } from "../page-object/consignment-overview-page";
+import { GoodsDeclarePage } from "../page-object/goods-declare-page";
+import { GoodsData } from "../test-data/goods-data";
+import { GoodsItemCommonSteps } from './common-flows/goods-item-common-steps';
 
 /**
  * Which of the conditional goods-item screens a journey reaches. Derived from the
@@ -27,6 +28,8 @@ export class AddNewGoodsItemFlow {
     constructor(
         private readonly consignmentOverviewPage: ConsignmentOverviewPage,
         private readonly goodsDeclarePage: GoodsDeclarePage,
+        private readonly commonSteps: GoodsItemCommonSteps =
+            new GoodsItemCommonSteps(goodsDeclarePage),
     ) { }
 
     async addNewGoodsItem(input: GoodsData, journey: GoodsJourneyContext): Promise<void> {
@@ -42,8 +45,10 @@ export class AddNewGoodsItemFlow {
     /** Conditional screens shown, in order, before the commodity screen. */
     private async declarePreCommodityScreens(input: GoodsData, journey: GoodsJourneyContext): Promise<void> {
         // The TGP screen is the first goods screen, but only on the IMMI journey.
+        // handleTgpFlow is shared with AddNewImmiStandaloneGoodsItemFlow via
+        // GoodsItemCommonSteps — the error message is now a single source of truth.
         if (journey.useIMMI) {
-            await this.handleTgpFlow(input);
+            await this.commonSteps.handleTgpFlow(input);
         }
 
         // ENS-only has no procedure codes; every other journey starts here.
@@ -102,24 +107,6 @@ export class AddNewGoodsItemFlow {
         });
     }
 
-    /**
-     * The "use TGP?" screen only appears for IMMI goods when the signed-in trader
-     * has a TGP profile, so it is detected at runtime; when absent there is nothing
-     * to answer. A test that asked to use TGP but never saw the screen fails —
-     * its TGP path was not actually exercised, so a green result would be misleading.
-     */
-    private async handleTgpFlow(input: GoodsData): Promise<void> {
-        await ReportLog.step('Answer "Do you want to use TGP?" (IMMI goods only)', async () => {
-            const shown = await this.goodsDeclarePage.answerUseTgpIfPresent(input.useTGP);
-            if (!shown && input.useTGP) {
-                throw new Error(
-                    'Requested useTGP=true but the TGP screen never appeared — the signed-in ' +
-                    'profile has no TGP set up, so the TGP path was not exercised.'
-                );
-            }
-        });
-    }
-
     private async fillProcedureCodesFlow(input: GoodsData): Promise<void> {
         await ReportLog.step('Fill Procedure Codes', async () => {
             await this.goodsDeclarePage.selectGoodsProcedureCode(input.goodsProcedureCode);
@@ -130,7 +117,7 @@ export class AddNewGoodsItemFlow {
     /** The "are the goods controlled?" question, on its own screen. */
     private async fillControlledGoodsFlow(input: GoodsData): Promise<void> {
         await ReportLog.step('Define if the goods are controlled', async () => {
-            if (input.areGooodsControlled) {
+            if (input.areGoodsControlled) {
                 await this.goodsDeclarePage.selectGoodsControlledYes();
             } else {
                 await this.goodsDeclarePage.selectGoodsControlledNo();
@@ -161,6 +148,9 @@ export class AddNewGoodsItemFlow {
 
     private async fillPackagingFlow(input: GoodsData): Promise<void> {
         await ReportLog.step('Fill Packaging Information', async () => {
+            // ENS uses enterPackagingDetails (which also fills numberOfPieces),
+            // not the standalone fillStandalonePackaging helper in GoodsItemCommonSteps,
+            // because the ENS packaging screen has the extra field.
             await this.goodsDeclarePage.enterPackagingDetails(
                 input.shippingMarks,
                 input.typeOfPackages,

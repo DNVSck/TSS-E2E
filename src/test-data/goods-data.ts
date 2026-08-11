@@ -22,7 +22,7 @@ export interface GoodsData {
     useTGP: boolean;
     goodsDomesticStatus: string;
     additionalRiskStatus: string;
-    areGooodsControlled: boolean;
+    areGoodsControlled: boolean;
     isDangerousGoods: boolean;
     dangerousGoodsCodes: string;
     commodityCode: string;
@@ -76,7 +76,7 @@ const defaults: GoodsData = {
     // "Additional risk status"
     additionalRiskStatus: ADDITIONAL_RISK_STATUS.NO_ADDITIONAL_RISK_STATUS,
     // "Are these goods controlled?"
-    areGooodsControlled: true,
+    areGoodsControlled: true,
     // "Dangerous goods"
     isDangerousGoods: false,
     // "Dangerous goods codes"

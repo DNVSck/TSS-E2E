@@ -3,8 +3,8 @@ import { StandaloneConsignmentDeclarePage } from '../page-object/standalone-cons
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
 import { ConsignmentDeclarePage } from '../page-object/consignment-declare-page';
 import { SfdStandaloneConsignmentData } from '../test-data/sfd-standalone-consignment-data';
-import { PartyAddress } from '../page-object/components/party-block';
 import { ReportLog } from '../core/report/report-log';
+import { StandaloneConsignmentCommonSteps } from './common-flows/standalone-consignment-common-steps';
 
 /**
  * The SFD standalone "Transport Details" task, from the task list through to Finish
@@ -14,6 +14,11 @@ import { ReportLog } from '../core/report/report-log';
  * SFD is the only standalone journey with NO "Representation information" screen; it
  * does have the vehicle screen, and its arrival screen asks for a date/time when the
  * movement is pre-lodged.
+ *
+ * Steps identical across SFD/FFD/IMMI (pre-lodged/arrived, type of movement,
+ * vehicle, exporter, trader reference, invoice currency, border/container) are
+ * delegated to StandaloneConsignmentCommonSteps; only SFD-specific screens
+ * (controlled goods, arrival date/time, port of arrival) live here.
  */
 export class AddNewSfdStandaloneConsignmentFlow {
     constructor(
@@ -21,51 +26,31 @@ export class AddNewSfdStandaloneConsignmentFlow {
         private readonly standalonePage: StandaloneConsignmentDeclarePage,
         private readonly movementDeclarePage: MovementDeclarePage,
         private readonly consignmentDeclarePage: ConsignmentDeclarePage,
+        private readonly commonSteps: StandaloneConsignmentCommonSteps =
+            new StandaloneConsignmentCommonSteps(standalonePage, movementDeclarePage, consignmentDeclarePage),
     ) { }
 
     async addNewSfdStandaloneConsignment(input: SfdStandaloneConsignmentData): Promise<void> {
         await ReportLog.step('Add new SFD standalone consignment', async () => {
             await this.taskListPage.clickTransportDetails();
-            await this.declarePreLodgedOrArrived(input);
-            await this.chooseTypeOfMovement(input);
-            await this.fillVehicleDetails(input);
+            await this.commonSteps.declarePreLodgedOrArrived(input);
+            await this.commonSteps.chooseTypeOfMovement(input);
+            await this.commonSteps.fillVehicleDetails(input.vehicleRegistration);
             await this.fillArrivalDateTime(input);
             await this.fillPortOfArrival(input);
-            await this.declareControlledGoods(input);
-            await this.fillExporter(input);
-            await this.fillTraderReference(input);
-            await this.fillInvoiceCurrency(input);
-            await this.standalonePage.clickFinishButton();
-        });
-    }
-
-    /**
-     * "Is this a pre-lodged or arrived movement?" opens the wizard. The step name
-     * carries the answer: it also decides whether the arrival screen asks for a
-     * date/time further down - see fillArrival.
-     */
-    private async declarePreLodgedOrArrived(input: SfdStandaloneConsignmentData): Promise<void> {
-        const answer = input.isPreLodged ? 'Pre-lodged' : 'Arrived';
-        await ReportLog.step(`Declare movement as ${answer}`, async () => {
-            if (input.isPreLodged) {
-                await this.standalonePage.selectPreLodged();
+            await this.commonSteps.declareControlledGoods(input.isControlledGoods);
+            if (input.isControlledGoods) {
+                // SFD: exporter → trader ref → currency → transport → border
+                await this.commonSteps.fillExporter(input);
+                await this.commonSteps.fillTraderReference(input.traderReference);
+                await this.commonSteps.fillInvoiceCurrency(input.invoiceCurrency);
+                await this.fillTransportAndDestinationDetails(input);
+                await this.commonSteps.fillBorderAndContainerInformation(input);
             } else {
-                await this.standalonePage.selectArrived();
+                await this.fillTransportAndDestinationDetails(input);
+                await this.commonSteps.fillBorderAndContainerInformation(input);
             }
-        });
-    }
-
-    /** "What type of movement is this?" - chooseTypeOfMovement selects and continues in one step. */
-    private async chooseTypeOfMovement(input: SfdStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Choose type of movement', async () => {
-            await this.movementDeclarePage.chooseTypeOfMovement(input.typeOfMovement);
-        });
-    }
-
-    private async fillVehicleDetails(input: SfdStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Enter transport details (vehicle)', async () => {
-            await this.movementDeclarePage.inputVehicleRegistrationNumber(input.vehicleRegistration);
-            await this.movementDeclarePage.clickContinueButton();
+            await this.standalonePage.clickFinishButton();
         });
     }
 
@@ -92,45 +77,12 @@ export class AddNewSfdStandaloneConsignmentFlow {
         });
     }
 
-    /**
-     * "Does this consignment contain controlled goods?" - its own screen, reached
-     * straight after the port of arrival. selectControlledGoodsYes/No each continue.
-     */
-    private async declareControlledGoods(input: SfdStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Declare controlled goods', async () => {
-            if (input.isControlledGoods) {
-                await this.consignmentDeclarePage.selectControlledGoodsYes();
-            } else {
-                await this.consignmentDeclarePage.selectControlledGoodsNo();
-            }
-        });
-    }
-
-    private async fillExporter(input: SfdStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Fill Exporter information', async () => {
-            await this.consignmentDeclarePage.inputExporterDetails(input.exporterEORI, exporterAddress(input));
-        });
-    }
-
-    /**
-     * Trader reference and invoice currency are two consecutive screens, each with
-     * its own Continue - so they report as two steps rather than one, and a failure
-     * names the screen it happened on.
-     */
-    private async fillTraderReference(input: SfdStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Enter trader reference', async () => {
-            await this.consignmentDeclarePage.inputTraderReference(input.traderReference);
-        });
-    }
-
-    private async fillInvoiceCurrency(input: SfdStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Select invoice currency', async () => {
-            await this.consignmentDeclarePage.selectInvoiceCurrency(input.invoiceCurrency);
+    private async fillTransportAndDestinationDetails(input: SfdStandaloneConsignmentData): Promise<void> {
+        await ReportLog.step('Fill transport and destination details', async () => {
+            await this.consignmentDeclarePage.fillSfdTransportAndDestinationDetails(
+                input.transportDocumentNumber,
+                input.goodsDomesticStatus,
+            );
         });
     }
 }
-
-const exporterAddress = (i: SfdStandaloneConsignmentData): PartyAddress => ({
-    name: i.exporterName, streetName: i.exporterStreetName, streetNumber: i.exporterStreetNumber,
-    city: i.exporterCity, postCode: i.exporterPostCode, country: i.exporterCountryCode,
-});

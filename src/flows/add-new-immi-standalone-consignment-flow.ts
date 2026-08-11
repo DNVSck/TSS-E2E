@@ -3,8 +3,8 @@ import { StandaloneConsignmentDeclarePage } from '../page-object/standalone-cons
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
 import { ConsignmentDeclarePage } from '../page-object/consignment-declare-page';
 import { ImmiStandaloneConsignmentData } from '../test-data/immi-standalone-consignment-data';
-import { PartyAddress } from '../page-object/components/party-block';
 import { ReportLog } from '../core/report/report-log';
+import { StandaloneConsignmentCommonSteps } from './common-flows/standalone-consignment-common-steps';
 
 /**
  * The IMMI standalone "Transport Details" task, from the task list through to Finish
@@ -17,6 +17,11 @@ import { ReportLog } from '../core/report/report-log';
  * The screens themselves are shared with the ENS wizards, so they are driven through
  * MovementDeclarePage and ConsignmentDeclarePage; only Pre-lodged or arrived is
  * standalone-specific.
+ *
+ * Steps identical across SFD/FFD/IMMI (pre-lodged/arrived, type of movement,
+ * exporter, trader reference, invoice currency) are delegated to
+ * StandaloneConsignmentCommonSteps; representation and the port-only arrival
+ * screen remain IMMI-specific here.
  */
 export class AddNewImmiStandaloneConsignmentFlow {
     constructor(
@@ -24,35 +29,22 @@ export class AddNewImmiStandaloneConsignmentFlow {
         private readonly standalonePage: StandaloneConsignmentDeclarePage,
         private readonly movementDeclarePage: MovementDeclarePage,
         private readonly consignmentDeclarePage: ConsignmentDeclarePage,
+        private readonly commonSteps: StandaloneConsignmentCommonSteps =
+            new StandaloneConsignmentCommonSteps(standalonePage, movementDeclarePage, consignmentDeclarePage),
     ) { }
 
     async addNewImmiStandaloneConsignment(input: ImmiStandaloneConsignmentData): Promise<void> {
         await ReportLog.step('Add new IMMI standalone consignment', async () => {
             await this.taskListPage.clickTransportDetails();
-            await this.declarePreLodgedOrArrived(input);
+            await this.commonSteps.declarePreLodgedOrArrived(input);
             await this.fillRepresentation(input);
-            await this.chooseTypeOfMovement(input);
+            await this.commonSteps.chooseTypeOfMovement(input);
+            await this.fillArrivalDateTime(input);
             await this.fillPortOfArrival(input);
-            await this.fillExporter(input);
-            await this.fillTraderReference(input);
-            await this.fillInvoiceCurrency(input);
+            await this.commonSteps.fillExporter(input);
+            await this.commonSteps.fillTraderReference(input.traderReference);
+            await this.commonSteps.fillInvoiceCurrency(input.invoiceCurrency);
             await this.standalonePage.clickFinishButton();
-        });
-    }
-
-    /**
-     * "Is this a pre-lodged or arrived movement?" opens the wizard. The step name
-     * carries the answer, since that is the one thing this screen contributes to the
-     * report. Unlike SFD/FFD the answer shapes nothing further on IMMI.
-     */
-    private async declarePreLodgedOrArrived(input: ImmiStandaloneConsignmentData): Promise<void> {
-        const answer = input.isPreLodged ? 'Pre-lodged' : 'Arrived';
-        await ReportLog.step(`Declare movement as ${answer}`, async () => {
-            if (input.isPreLodged) {
-                await this.standalonePage.selectPreLodged();
-            } else {
-                await this.standalonePage.selectArrived();
-            }
         });
     }
 
@@ -72,13 +64,6 @@ export class AddNewImmiStandaloneConsignmentFlow {
         });
     }
 
-    /** "What type of movement is this?" - chooseTypeOfMovement selects and continues in one step. */
-    private async chooseTypeOfMovement(input: ImmiStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Choose type of movement', async () => {
-            await this.movementDeclarePage.chooseTypeOfMovement(input.typeOfMovement);
-        });
-    }
-
     /**
      * "Where will the goods arrive?" - the only arrival screen IMMI shows. The
      * separate date/time screen SFD and FFD reach is never rendered here, pre-lodged
@@ -91,31 +76,13 @@ export class AddNewImmiStandaloneConsignmentFlow {
         });
     }
 
-    private async fillExporter(input: ImmiStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Fill Exporter information', async () => {
-            await this.consignmentDeclarePage.inputExporterDetails(input.exporterEORI, exporterAddress(input));
-        });
-    }
-
-    /**
-     * Trader reference and invoice currency are two consecutive screens, each with
-     * its own Continue - so they report as two steps rather than one, and a failure
-     * names the screen it happened on.
-     */
-    private async fillTraderReference(input: ImmiStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Enter trader reference', async () => {
-            await this.consignmentDeclarePage.inputTraderReference(input.traderReference);
-        });
-    }
-
-    private async fillInvoiceCurrency(input: ImmiStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Select invoice currency', async () => {
-            await this.consignmentDeclarePage.selectInvoiceCurrency(input.invoiceCurrency);
+    private async fillArrivalDateTime(input: ImmiStandaloneConsignmentData): Promise<void> {
+        if (!input.isPreLodged) {
+            return;
+        }
+        await ReportLog.step('Enter arrival date and time', async () => {
+            await this.movementDeclarePage.inputArrivalDateTime(input.arrivalDateTime);
+            await this.movementDeclarePage.clickContinueButton();
         });
     }
 }
-
-const exporterAddress = (i: ImmiStandaloneConsignmentData): PartyAddress => ({
-    name: i.exporterName, streetName: i.exporterStreetName, streetNumber: i.exporterStreetNumber,
-    city: i.exporterCity, postCode: i.exporterPostCode, country: i.exporterCountryCode,
-});

@@ -31,10 +31,12 @@ export class ConsignmentOverviewPage extends BasePage {
     // "Goods domestic status" row on the same list.
     private readonly localReferenceNumber: Locator;
     private readonly status: Locator;
+    private readonly declarationType: Locator;
 
     constructor(page: Page, t: TFunction) {
         super(page, t);
 
+        this.declarationType = summaryListValue(page, this.t!('common.declarationType'));
         this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
         this.status = summaryListValue(page, this.t!('common.status'));
 
@@ -61,16 +63,16 @@ export class ConsignmentOverviewPage extends BasePage {
 
     /** Open the "New previous document" wizard from the Header previous documents tab. */
     async openNewHeaderPreviousDocument(): Promise<void> {
-        await switchToTabAndClickNew(this.page,this.headerPreviousDocumentTab, this.newPreviousDocumentBtn);
+        await switchToTabAndClickNew(this.page, this.headerPreviousDocumentTab, this.newPreviousDocumentBtn);
     }
 
     /** Open the "New holder of authorisation" wizard from the Holder of authorisation tab. */
     async openNewHolderOfAuthorisation(): Promise<void> {
-        await switchToTabAndClickNew(this.page,this.holderOfAuthorisationTab, this.newHolderOfAuthorisationBtn);
+        await switchToTabAndClickNew(this.page, this.holderOfAuthorisationTab, this.newHolderOfAuthorisationBtn);
     }
 
     async openNewGoodsRecord(): Promise<void> {
-        await switchToTabAndClickNew(this.page,this.goodsRecordTab, this.newGoodsRecordBtn);
+        await switchToTabAndClickNew(this.page, this.goodsRecordTab, this.newGoodsRecordBtn);
     }
 
     /**
@@ -87,6 +89,16 @@ export class ConsignmentOverviewPage extends BasePage {
 
     private async getConsignmentLocalReferenceNumber(): Promise<string> {
         return readFieldWhenVisible(this.localReferenceNumber, SUMMARY_READ_TIMEOUT);
+    }
+
+    async getDeclarationType(): Promise<string> {
+        return readFieldWhenVisible(this.declarationType, SUMMARY_READ_TIMEOUT);
+    }
+
+    async assertEidrDeclarationType(): Promise<string> {
+        const declarationType = await this.getDeclarationType();
+        expect.soft(declarationType, 'Declaration type').toBe(this.t!('declarationType.eidr'));
+        return declarationType;
     }
 
     private async getConsignmentStatus(): Promise<string> {

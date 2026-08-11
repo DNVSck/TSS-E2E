@@ -6,6 +6,9 @@ import { immiStandaloneGoodsItem } from '../../../src/test-data/immi-standalone-
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
+import { reportTestCaseLink } from '../../../src/helper/report-helper';
+
+const IMMI_STANDALONE_PRELODGED = '4442';
 
 test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represents Trader', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
@@ -19,6 +22,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
 
   test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct is created and submitted successfully', { tag: ['@smoke' , '@regression' , '@e2e'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct');
+    reportTestCaseLink(IMMI_STANDALONE_PRELODGED);
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
       url: getBaseUrl(),

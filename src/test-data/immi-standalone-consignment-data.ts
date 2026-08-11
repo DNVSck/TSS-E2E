@@ -30,6 +30,7 @@ export interface ImmiStandaloneConsignmentData {
 
     typeOfMovement: string;
     portOfArrival: string;
+    arrivalDateTime?: string
 
     exporterEORI: string;
     exporterName: string;

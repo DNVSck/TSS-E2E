@@ -3,8 +3,8 @@ import { StandaloneConsignmentDeclarePage } from '../page-object/standalone-cons
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
 import { ConsignmentDeclarePage } from '../page-object/consignment-declare-page';
 import { FfdStandaloneConsignmentData } from '../test-data/ffd-standalone-consignment-data';
-import { PartyAddress } from '../page-object/components/party-block';
 import { ReportLog } from '../core/report/report-log';
+import { StandaloneConsignmentCommonSteps } from './common-flows/standalone-consignment-common-steps';
 
 /**
  * The FFD standalone "Transport Details" task, from the task list through to Finish
@@ -18,6 +18,11 @@ import { ReportLog } from '../core/report/report-log';
  * transport, the intended declaration type, and - only for customs warehousing - the
  * warehouse type. Those are not modelled yet; they go here as they are built, which
  * is why this journey has its own wizard rather than flags on a shared one.
+ *
+ * Steps identical across SFD/FFD/IMMI (pre-lodged/arrived, type of movement,
+ * vehicle, exporter, trader reference, invoice currency) are delegated to
+ * StandaloneConsignmentCommonSteps; representation and arrival remain
+ * FFD-specific here.
  */
 export class AddNewFfdStandaloneConsignmentFlow {
     constructor(
@@ -25,36 +30,22 @@ export class AddNewFfdStandaloneConsignmentFlow {
         private readonly standalonePage: StandaloneConsignmentDeclarePage,
         private readonly movementDeclarePage: MovementDeclarePage,
         private readonly consignmentDeclarePage: ConsignmentDeclarePage,
+        private readonly commonSteps: StandaloneConsignmentCommonSteps =
+            new StandaloneConsignmentCommonSteps(standalonePage, movementDeclarePage, consignmentDeclarePage),
     ) { }
 
     async addNewFfdStandaloneConsignment(input: FfdStandaloneConsignmentData): Promise<void> {
         await ReportLog.step('Add new FFD standalone consignment', async () => {
             await this.taskListPage.clickTransportDetails();
-            await this.declarePreLodgedOrArrived(input);
+            await this.commonSteps.declarePreLodgedOrArrived(input);
             await this.fillRepresentation(input);
-            await this.chooseTypeOfMovement(input);
-            await this.fillVehicleDetails(input);
+            await this.commonSteps.chooseTypeOfMovement(input);
+            await this.commonSteps.fillVehicleDetails(input.vehicleRegistration);
             await this.fillArrival(input);
-            await this.fillExporter(input);
-            await this.fillTraderReference(input);
-            await this.fillInvoiceCurrency(input);
+            await this.commonSteps.fillExporter(input);
+            await this.commonSteps.fillTraderReference(input.traderReference);
+            await this.commonSteps.fillInvoiceCurrency(input.invoiceCurrency);
             await this.standalonePage.clickFinishButton();
-        });
-    }
-
-    /**
-     * "Is this a pre-lodged or arrived movement?" opens the wizard. The step name
-     * carries the answer: it also decides whether the arrival screen asks for a
-     * date/time further down - see fillArrival.
-     */
-    private async declarePreLodgedOrArrived(input: FfdStandaloneConsignmentData): Promise<void> {
-        const answer = input.isPreLodged ? 'Pre-lodged' : 'Arrived';
-        await ReportLog.step(`Declare movement as ${answer}`, async () => {
-            if (input.isPreLodged) {
-                await this.standalonePage.selectPreLodged();
-            } else {
-                await this.standalonePage.selectArrived();
-            }
         });
     }
 
@@ -74,20 +65,6 @@ export class AddNewFfdStandaloneConsignmentFlow {
         });
     }
 
-    /** "What type of movement is this?" - chooseTypeOfMovement selects and continues in one step. */
-    private async chooseTypeOfMovement(input: FfdStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Choose type of movement', async () => {
-            await this.movementDeclarePage.chooseTypeOfMovement(input.typeOfMovement);
-        });
-    }
-
-    private async fillVehicleDetails(input: FfdStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Enter transport details (vehicle)', async () => {
-            await this.movementDeclarePage.inputVehicleRegistrationNumber(input.vehicleRegistration);
-            await this.movementDeclarePage.clickContinueButton();
-        });
-    }
-
     /**
      * "When and where will the goods arrive?" - the port is always asked. The date and
      * time are asked only for a PRE-LODGED movement: goods declared as already arrived
@@ -102,32 +79,4 @@ export class AddNewFfdStandaloneConsignmentFlow {
             await this.movementDeclarePage.clickContinueButton();
         });
     }
-
-    private async fillExporter(input: FfdStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Fill Exporter information', async () => {
-            await this.consignmentDeclarePage.inputExporterDetails(input.exporterEORI, exporterAddress(input));
-        });
-    }
-
-    /**
-     * Trader reference and invoice currency are two consecutive screens, each with
-     * its own Continue - so they report as two steps rather than one, and a failure
-     * names the screen it happened on.
-     */
-    private async fillTraderReference(input: FfdStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Enter trader reference', async () => {
-            await this.consignmentDeclarePage.inputTraderReference(input.traderReference);
-        });
-    }
-
-    private async fillInvoiceCurrency(input: FfdStandaloneConsignmentData): Promise<void> {
-        await ReportLog.step('Select invoice currency', async () => {
-            await this.consignmentDeclarePage.selectInvoiceCurrency(input.invoiceCurrency);
-        });
-    }
 }
-
-const exporterAddress = (i: FfdStandaloneConsignmentData): PartyAddress => ({
-    name: i.exporterName, streetName: i.exporterStreetName, streetNumber: i.exporterStreetNumber,
-    city: i.exporterCity, postCode: i.exporterPostCode, country: i.exporterCountryCode,
-});
