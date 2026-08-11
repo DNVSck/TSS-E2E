@@ -67,7 +67,7 @@ export class AddNewSfdStandaloneGoodsItemFlow {
     private async declareControls(input: GoodsData): Promise<void> {
         await this.steps.declareControlledGoods(input);
 
-        if (!input.areGooodsControlled) {
+        if (!input.areGoodsControlled) {
             return;
         }
 

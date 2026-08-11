@@ -145,7 +145,7 @@ export class GoodsItemSteps {
     /** The goods-level "are these goods controlled?" question, on its own screen. */
     async declareControlledGoods(input: GoodsData): Promise<void> {
         await ReportLog.step('Define if the goods are controlled', async () => {
-            if (input.areGooodsControlled) {
+            if (input.areGoodsControlled) {
                 await this.goodsDeclarePage.selectGoodsControlledYes();
             } else {
                 await this.goodsDeclarePage.selectGoodsControlledNo();

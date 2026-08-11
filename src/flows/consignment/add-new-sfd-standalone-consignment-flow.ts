@@ -1,5 +1,5 @@
 import { SfdStandaloneConsignmentData } from '../../test-data/sfd-standalone-consignment-data';
-import { PartyAddress } from '../../page-object/components/party-block';
+import { toPartyAddress } from '../../page-object/components/party-block';
 import { ReportLog } from '../../core/report/report-log';
 import { MovementSteps } from '../movement/movement-steps';
 import { ConsignmentSteps } from './consignment-steps';
@@ -35,7 +35,7 @@ export class AddNewSfdStandaloneConsignmentFlow {
             await this.movementSteps.selectPortOfArrival(input.portOfArrival);
 
             await this.consignmentSteps.declareControlledGoods(input.isControlledGoods);
-            await this.consignmentSteps.fillExporterDetails(input.exporterEORI, exporterAddress(input));
+            await this.consignmentSteps.fillExporterDetails(input.exporterEORI, toPartyAddress('exporter', input));
             await this.consignmentSteps.fillTraderReference(input.traderReference);
             await this.consignmentSteps.selectInvoiceCurrency(input.invoiceCurrency);
 
@@ -43,8 +43,3 @@ export class AddNewSfdStandaloneConsignmentFlow {
         });
     }
 }
-
-const exporterAddress = (i: SfdStandaloneConsignmentData): PartyAddress => ({
-    name: i.exporterName, streetName: i.exporterStreetName, streetNumber: i.exporterStreetNumber,
-    city: i.exporterCity, postCode: i.exporterPostCode, country: i.exporterCountryCode,
-});

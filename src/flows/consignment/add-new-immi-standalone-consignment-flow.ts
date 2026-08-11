@@ -1,5 +1,5 @@
 import { ImmiStandaloneConsignmentData } from '../../test-data/immi-standalone-consignment-data';
-import { PartyAddress } from '../../page-object/components/party-block';
+import { toPartyAddress } from '../../page-object/components/party-block';
 import { ReportLog } from '../../core/report/report-log';
 import { MovementSteps } from '../movement/movement-steps';
 import { ConsignmentSteps } from './consignment-steps';
@@ -42,7 +42,7 @@ export class AddNewImmiStandaloneConsignmentFlow {
             await this.movementSteps.inputArrivalDateTime(input.arrivalDateTime);
             await this.movementSteps.selectPortOfArrival(input.portOfArrival);
 
-            await this.consignmentSteps.fillExporterDetails(input.exporterEORI, exporterAddress(input));
+            await this.consignmentSteps.fillExporterDetails(input.exporterEORI, toPartyAddress('exporter', input));
             await this.consignmentSteps.fillTraderReference(input.traderReference);
             await this.consignmentSteps.selectInvoiceCurrency(input.invoiceCurrency);
 
@@ -50,8 +50,3 @@ export class AddNewImmiStandaloneConsignmentFlow {
         });
     }
 }
-
-const exporterAddress = (i: ImmiStandaloneConsignmentData): PartyAddress => ({
-    name: i.exporterName, streetName: i.exporterStreetName, streetNumber: i.exporterStreetNumber,
-    city: i.exporterCity, postCode: i.exporterPostCode, country: i.exporterCountryCode,
-});

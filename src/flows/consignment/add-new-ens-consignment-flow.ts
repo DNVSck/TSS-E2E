@@ -1,4 +1,4 @@
-import { PartyAddress } from '../../page-object/components/party-block';
+import { toPartyAddress } from '../../page-object/components/party-block';
 import { ReportLog } from '../../core/report/report-log';
 import { ConsignmentData } from '../../test-data/consignment-data';
 import { ConsignmentSteps } from './consignment-steps';
@@ -28,7 +28,7 @@ export class AddNewEnsConsignmentFlow {
             await this.declareEnsOnlyChoice(input);
 
             if (input.isEnsOnly) {
-                await this.consignmentSteps.fillBuyerDetails(input.buyerEORI, buyerAddress(input));
+                await this.consignmentSteps.fillBuyerDetails(input.buyerEORI, toPartyAddress('buyer', input));
             } else {
                 await this.consignmentSteps.fillImporterEori(input.importerEORI);
                 await this.fillBuyerInformation(input);
@@ -41,8 +41,8 @@ export class AddNewEnsConsignmentFlow {
             }
 
             await this.fillTransportAndDestinationDetails(input);
-            await this.consignmentSteps.fillConsignorDetails(input.consignorEORI, consignorAddress(input));
-            await this.consignmentSteps.fillConsigneeDetails(input.consigneeEORI, consigneeAddress(input));
+            await this.consignmentSteps.fillConsignorDetails(input.consignorEORI, toPartyAddress('consignor', input));
+            await this.consignmentSteps.fillConsigneeDetails(input.consigneeEORI, toPartyAddress('consignee', input));
             await this.fillExporterAndSeller(input, hasExporterAndCurrency);
             await this.consignmentSteps.fillTraderReference(input.traderReference ?? '');
             await this.fillBorderAndContainerInformation(input);
@@ -72,11 +72,11 @@ export class AddNewEnsConsignmentFlow {
         await this.consignmentSteps.declareBuyerSameAsImporter(input.isBuyerSameAsImporter);
 
         if (input.isBuyerSameAsImporter) {
-            await this.consignmentSteps.fillBuyerAddress(buyerAddress(input));
+            await this.consignmentSteps.fillBuyerAddress(toPartyAddress('buyer', input));
             return;
         }
 
-        await this.consignmentSteps.fillBuyerDetails(input.buyerEORI, buyerAddress(input));
+        await this.consignmentSteps.fillBuyerDetails(input.buyerEORI, toPartyAddress('buyer', input));
     }
 
     /** Three journeys, three screens: only the document number is common. */
@@ -106,15 +106,15 @@ export class AddNewEnsConsignmentFlow {
      */
     private async fillExporterAndSeller(input: ConsignmentData, hasExporter: boolean): Promise<void> {
         if (!hasExporter) {
-            await this.consignmentSteps.fillSellerDetails(input.sellerEORI, sellerAddress(input));
+            await this.consignmentSteps.fillSellerDetails(input.sellerEORI, toPartyAddress('seller', input));
             return;
         }
 
-        await this.consignmentSteps.fillExporterDetails(input.exporterEORI, exporterAddress(input));
+        await this.consignmentSteps.fillExporterDetails(input.exporterEORI, toPartyAddress('exporter', input));
         await this.consignmentSteps.declareSellerSameAsExporter(input.isSellerSameAsExporter);
 
         if (!input.isSellerSameAsExporter) {
-            await this.consignmentSteps.fillSellerDetails(input.sellerEORI, sellerAddress(input));
+            await this.consignmentSteps.fillSellerDetails(input.sellerEORI, toPartyAddress('seller', input));
         }
     }
 
@@ -141,27 +141,3 @@ export class AddNewEnsConsignmentFlow {
 
 // The address screens take the same shape for every party, so the mapping from
 // test data lives here rather than being spelled out at each call site.
-const buyerAddress = (i: ConsignmentData): PartyAddress => ({
-    name: i.buyerName, streetName: i.buyerStreetName, streetNumber: i.buyerStreetNumber,
-    city: i.buyerCity, postCode: i.buyerPostCode, country: i.buyerCountryCode,
-});
-
-const consignorAddress = (i: ConsignmentData): PartyAddress => ({
-    name: i.consignorName, streetName: i.consignorStreetName, streetNumber: i.consignorStreetNumber,
-    city: i.consignorCity, postCode: i.consignorPostCode, country: i.consignorCountryCode,
-});
-
-const consigneeAddress = (i: ConsignmentData): PartyAddress => ({
-    name: i.consigneeName, streetName: i.consigneeStreetName, streetNumber: i.consigneeStreetNumber,
-    city: i.consigneeCity, postCode: i.consigneePostCode, country: i.consigneeCountryCode,
-});
-
-const exporterAddress = (i: ConsignmentData): PartyAddress => ({
-    name: i.exporterName, streetName: i.exporterStreetName, streetNumber: i.exporterStreetNumber,
-    city: i.exporterCity, postCode: i.exporterPostCode, country: i.exporterCountryCode,
-});
-
-const sellerAddress = (i: ConsignmentData): PartyAddress => ({
-    name: i.sellerName, streetName: i.sellerStreetName, streetNumber: i.sellerStreetNumber,
-    city: i.sellerCity, postCode: i.sellerPostCode, country: i.sellerCountryCode,
-});
