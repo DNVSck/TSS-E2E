@@ -32,7 +32,7 @@ test.describe('TSS Portal sign-in - negative cases', () => {
     });
 
     test('Verify that an incorrect password is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
-        await reportTestCaseLink(INVALID_EMAIL_PASSWORD);
+        reportTestCaseLink(INVALID_EMAIL_PASSWORD);
         await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
         // Derived from the real password rather than written out, so this stays wrong
@@ -48,7 +48,7 @@ test.describe('TSS Portal sign-in - negative cases', () => {
     });
 
     test('Verify that an incorrect username is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
-        await reportTestCaseLink(INVALID_EMAIL_PASSWORD);
+        reportTestCaseLink(INVALID_EMAIL_PASSWORD);
         await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
         const message = await signInFlow.submitRejectedCredentials(
@@ -62,7 +62,7 @@ test.describe('TSS Portal sign-in - negative cases', () => {
     });
 
     test('Verify that missing password is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
-        await reportTestCaseLink(INVALID_EMAIL_PASSWORD);
+        reportTestCaseLink(INVALID_EMAIL_PASSWORD);
         await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
         const message = await signInFlow.submitRejectedCredentials(
@@ -76,7 +76,7 @@ test.describe('TSS Portal sign-in - negative cases', () => {
     });
 
     test('Verify that missing username is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
-        await reportTestCaseLink(INVALID_EMAIL_PASSWORD);
+        reportTestCaseLink(INVALID_EMAIL_PASSWORD);
         await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
         // The real password, with no username to attach it to. No account is named, so
@@ -93,8 +93,8 @@ test.describe('TSS Portal sign-in - negative cases', () => {
 
     test('Verify that a wrong authenticator code is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
         test.skip(!OTP_ENABLED, 'This environment does not ask for an authenticator code.');
-        await reportTestCaseLink(INVALID_MFA_CODE);
-        
+        reportTestCaseLink(INVALID_MFA_CODE);
+
         await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
         await signInFlow.submitValidCredentials(account);
