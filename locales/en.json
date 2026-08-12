@@ -16,7 +16,8 @@
     "yes": "Yes",
     "no": "No",
     "notProvided": "Not provided",
-    "declarationType": "Declaration type"
+    "declarationType": "Declaration type",
+    "supervisingCustomsOffice": "Supervising customs office"
   },
   "declarationType": {
     "eidr": "Entry in the Declarant's Records (EIDR)"

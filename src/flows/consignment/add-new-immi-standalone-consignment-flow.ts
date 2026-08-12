@@ -40,7 +40,7 @@ export class AddNewImmiStandaloneConsignmentFlow {
             // arrived. The pre-lodged/arrived difference is in the VALUE, and the data
             // factory has already resolved it - see ImmiStandaloneConsignmentData.
             await this.movementSteps.inputArrivalDateTime(input.arrivalDateTime);
-            await this.movementSteps.selectPortOfArrival(input.portOfArrival);
+            await this.enterArrivalLocation(input);
 
             await this.consignmentSteps.fillExporterDetails(input.exporterEORI, toPartyAddress('exporter', input));
             await this.consignmentSteps.fillTraderReference(input.traderReference);
@@ -48,5 +48,20 @@ export class AddNewImmiStandaloneConsignmentFlow {
 
             await this.standaloneSteps.finishStandaloneConsignment();
         });
+    }
+
+    /**
+     * The port screen, which the two branches render differently: goods that have
+     * ALREADY arrived may be somewhere that is not a listed port, so that branch also
+     * offers a free-text alternative. A pre-lodged movement has not arrived anywhere
+     * yet, so it is only asked which port it is heading for.
+     */
+    private async enterArrivalLocation(input: ImmiStandaloneConsignmentData): Promise<void> {
+        if (input.isPreLodged) {
+            await this.movementSteps.selectPortOfArrival(input.portOfArrival);
+            return;
+        }
+
+        await this.movementSteps.enterLocationOfGoods(input.portOfArrival, input.locationOfGoods);
     }
 }

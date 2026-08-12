@@ -13,26 +13,24 @@ import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
-import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
+import { LOCAL_REFERENCE, MRN_COUNTRY_CODE } from '../../constant/local-reference-constants';
 import { TranslationKey } from '../../fixtures/locale-fixture';
+import { standaloneSubmittedStatusKey } from '../../helper/consignment-status-helper';
 
 /**
- * The status a submitted SFD standalone consignment settles on. Confirmed with the
- * business 2026-08-11:
+ * The status a submitted SFD standalone consignment settles on.
  *
- *   - controlled goods = No (the EIDR route): always "Authorised", whether the
- *     movement was pre-lodged or arrived - EIDR has no arrival to wait for;
- *   - controlled goods = Yes (the SFD route): "Awaiting arrival" when pre-lodged,
- *     "Arrived" when the goods have already arrived.
- *
- * Stated here, beside the journey that produces it, rather than inside the page that
- * polls for it: it is a fact about this journey, and the page serves all of them.
+ * The EIDR route (controlled goods = No) is this journey's ONE exception to the rule
+ * every standalone journey otherwise follows: it is authorised outright, whether the
+ * movement was pre-lodged or arrived, because it has no arrival to wait for. Only that
+ * exception is stated here; the rest defers to standaloneSubmittedStatusKey, so the
+ * shared rule has one home and this file says only what is peculiar to SFD.
  */
 function submittedStatusKey(data: SfdStandaloneConsignmentData): TranslationKey {
     if (!data.isControlledGoods) {
         return 'status.authorised';
     }
-    return data.isPreLodged ? 'status.awaitingArrival' : 'status.arrived';
+    return standaloneSubmittedStatusKey(data.isPreLodged);
 }
 
 /**
@@ -106,7 +104,7 @@ export class CreateAndSubmitSfdStandaloneFlow {
         // has no MRN check yet (see verifySfdEidrDeclarationType); calling the SFD one
         // for it would read the same row and report whatever it holds as "SFD MRN".
         if (consignmentData.isControlledGoods) {
-            await this.consignmentOverviewFlow.verifySfdConsignmentMrn();
+            await this.consignmentOverviewFlow.verifyStandaloneConsignmentMrn('SFD', MRN_COUNTRY_CODE.SFD);
             return;
         }
         await this.consignmentOverviewFlow.verifySfdEidrDeclarationType();

@@ -42,6 +42,18 @@ export interface ImmiStandaloneConsignmentData {
     arrivalDateTime?: string;
     portOfArrival: string;
 
+    /**
+     * "Location of Goods (if not in list above)" - free text beside the port dropdown,
+     * offered ONLY on the arrived branch, for goods that are not at a listed port (an
+     * Inward Processing holder's premises, say - build it with locationOfGoodsOfOther).
+     *
+     * It REPLACES portOfArrival rather than accompanying it: the app rejects a screen
+     * that answers both. Left undefined, so the port above is used and the field stays
+     * blank. Setting it on a pre-lodged movement has no effect - that branch never
+     * shows the field.
+     */
+    locationOfGoods?: string;
+
     exporterEORI: string;
     exporterName: string;
     exporterStreetName: string;

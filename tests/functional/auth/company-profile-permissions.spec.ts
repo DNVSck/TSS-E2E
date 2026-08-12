@@ -12,7 +12,7 @@ test.describe('TSS Portal company profile - edit permissions', () => {
     }
 
 
-    test('An account holder can edit the company profile and its users @auth @authorisation', async ({ signInFlow, companyProfileFlow }, testInfo) => {
+    test('An account holder can edit the company profile and its users', { tag: ['@auth', '@authorisation'] }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
         const account = credentialsFor(COMPANY_PROFILE.PRIMARY_HOLDER, 'PRIMARY_HOLDER_USER_NAME');
 
         await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });
@@ -38,7 +38,7 @@ test.describe('TSS Portal company profile - edit permissions', () => {
     });
 
 
-    test('A user who is not the account holder gets view-only @auth @authorisation', async ({ signInFlow, companyProfileFlow }, testInfo) => {
+    test('A user who is not the account holder gets view-only', { tag: ['@auth', '@authorisation'] }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
         const account = credentialsFor(COMPANY_PROFILE.NON_PRIMARY_HOLDER, 'NON_PRIMARY_HOLDER_USER_NAME');
 
         await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });

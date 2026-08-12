@@ -149,6 +149,33 @@ export class MovementSteps {
     }
 
     /**
+     * The arrived branch's arrival screen (`arrival-details-others`), which asks where
+     * the goods are in one of TWO ways: pick a listed port, or type an alternative one.
+     *
+     * They are mutually EXCLUSIVE, and the app enforces it - answering both is rejected
+     * with "Select a port of arrival from the list or enter an alternative port below,
+     * but not both" (measured on sit 2026-08-12). So the alternative, when a journey
+     * supplies one, REPLACES the dropdown rather than adding to it.
+     *
+     * A separate step rather than an optional argument on selectPortOfArrival above,
+     * because the second field only EXISTS here - the shared step serves ENS, SFD and
+     * FFD, where filling it would spend the full action timeout on a missing input.
+     */
+    async enterLocationOfGoods(
+        portOfArrival: string,
+        alternativePort?: string
+    ): Promise<void> {
+        await ReportLog.step('Enter the location of goods', async () => {
+            if (alternativePort) {
+                await this.movementDeclarePage.inputPortOfArrivalOthers(alternativePort);
+            } else {
+                await this.movementDeclarePage.selectPortOfArrival(portOfArrival);
+            }
+            await this.movementDeclarePage.clickContinueButton();
+        });
+    }
+
+    /**
      * The FFD standalone arrival screen, which asks for the date/time AND the port
      * together — elsewhere they are two screens with a Continue each. A separate
      * method rather than a flag on the two above, because it really is a third screen.

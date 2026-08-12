@@ -16,7 +16,7 @@ export const immiStandaloneGoodsItem = (
     // journey it is a screen the test really answers, not an unused flag. A TGP test
     // overrides it to true and names a record from TGP_RECORD.
     useTGP: false,
-
+    commodityCode: '6306290000',
     documentReferences: [
         documentReference({
             documentCode: DOCUMENT_CODE.N730,

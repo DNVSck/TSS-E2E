@@ -1,4 +1,4 @@
-import { BasePage } from "./base-page";
+import { ConsignmentSummaryPage } from "./consignment-summary-page";
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
@@ -13,7 +13,7 @@ const SUMMARY_READ_TIMEOUT = 20_000;
 /** After submit, the status flips to "Awaiting arrival" asynchronously. */
 const SUBMIT_STATUS_POLL_TIMEOUT = 60_000;
 
-export class ConsignmentOverviewPage extends BasePage {
+export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
 
     // Locators. NOTE: tab links use href-based xpath (not text), reasonably stable.
     private readonly goodsRecordTab: Locator;
@@ -141,15 +141,27 @@ export class ConsignmentOverviewPage extends BasePage {
      * asserting the journey that actually ran, not merely that some standalone
      * reference exists. Mirrors {@link assertDraftConsignment} (the ENS "DEC" variant).
      *
-     * The status is READ but not asserted: the standalone overview only renders a
-     * Status row once the consignment has been submitted, so the read must tolerate
-     * its absence - '' then tells the caller there is nothing to report yet. Reading
-     * it without waiting is safe here because the reference above already waited for
-     * the same summary list to paint.
+     * BOTH rows are read without throwing, because either can be legitimately absent:
+     * the Status row only appears once the consignment has been submitted, and the SFD
+     * (controlled goods) overview is missing its LRN row outright (defect 1239).
+     *
+     * Which is why the wait below is not optional. These pages paint their summary list
+     * a beat after load (see readFieldWhenVisible), so reading immediately cannot tell
+     * "this row does not exist" from "nothing has painted yet" - it returns '' for both,
+     * and the journey that really does have an LRN fails at random. Waiting for the
+     * list, rather than for either row, is what makes the tolerance safe.
+     *
+     * And the wait is deliberately allowed to THROW. Every loaded overview has a summary
+     * list, whatever rows it happens to carry, so failing here means the page is not the
+     * one we think it is - a lost session, a redirect, a page that never rendered.
+     * Swallowing that would report it as an empty LRN, which is exactly what the missing
+     * row above looks like: one real defect and one broken run, indistinguishable.
      */
     async assertDraftStandaloneConsignment(
         expectedPrefix: RegExp
     ): Promise<{ consignmentReference: string; declarationStatus: string }> {
+        await this.contentRows.first().waitFor({ state: 'visible', timeout: SUMMARY_READ_TIMEOUT });
+
         const consignmentReference = await readFieldIfPresent(this.localReferenceNumber);
         const declarationStatus = await readFieldIfPresent(this.status);
         expect.soft(consignmentReference, 'Consignment LRN').toMatch(expectedPrefix);

@@ -35,6 +35,7 @@ export class MovementDeclarePage extends BasePage {
     private readonly arrivalTimeMinuteInput: Locator;
 
     private readonly portOfArrivalInput: Locator;
+    private readonly portOfArrivalOthersInput: Locator;
 
     private readonly placeOfLoadingInput: Locator;
 
@@ -88,6 +89,9 @@ export class MovementDeclarePage extends BasePage {
 
         //"Select port of arrival"
         this.portOfArrivalInput = page.locator('select#portOfArrival');
+        // "Location of Goods (if not in list above)" - the free-text fallback beside
+        // the dropdown above. Rendered only on the IMMI arrived branch's arrival screen.
+        this.portOfArrivalOthersInput = page.locator('input#portOfArrivalOthers');
 
         //"Enter place of loading place details" screen
         this.placeOfLoadingInput = page.locator("input#placeOfLoading");
@@ -187,6 +191,11 @@ export class MovementDeclarePage extends BasePage {
 
     async selectPortOfArrival(portCode: string): Promise<void> {
         await selectDropdownValue(this.portOfArrivalInput, portCode);
+    }
+
+    /** Blank leaves the field as the app renders it, which is the usual case. */
+    async inputPortOfArrivalOthers(locationOfGoods: string): Promise<void> {
+        await this.portOfArrivalOthersInput.fill(locationOfGoods);
     }
 
     async inputArrivalDateTime(arrivalDateTime?: string): Promise<void> {

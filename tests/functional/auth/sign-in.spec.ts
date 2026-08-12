@@ -2,6 +2,10 @@ import { COMPANY_PROFILE, getCredentials, UserCredentials } from '../../../src/a
 import { OTP_ENABLED } from '../../../config/environment';
 import { MESSAGE_CONSTANTS } from '../../../src/constant/messages-constants';
 import { test, expect, getBaseUrl } from '../../test-hooks';
+import { reportTestCaseLink } from '../../../src/helper/report-helper';
+
+const INVALID_EMAIL_PASSWORD = '2536';
+const INVALID_MFA_CODE = '2537';
 
 
 test.describe.configure({ mode: 'serial' });
@@ -27,7 +31,8 @@ test.describe('TSS Portal sign-in - negative cases', () => {
         await signInFlow.restoreSignedInState(account, { baseUrl: getBaseUrl(), testInfo });
     });
 
-    test('A wrong password is refused @auth @negative', async ({ signInFlow }, testInfo) => {
+    test('Verify that an incorrect password is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
+        await reportTestCaseLink(INVALID_EMAIL_PASSWORD);
         await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
         // Derived from the real password rather than written out, so this stays wrong
@@ -42,7 +47,8 @@ test.describe('TSS Portal sign-in - negative cases', () => {
             .toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
     });
 
-    test('An unknown username is refused with the same message @auth @negative', async ({ signInFlow }, testInfo) => {
+    test('Verify that an incorrect username is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
+        await reportTestCaseLink(INVALID_EMAIL_PASSWORD);
         await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
         const message = await signInFlow.submitRejectedCredentials(
@@ -55,7 +61,8 @@ test.describe('TSS Portal sign-in - negative cases', () => {
             .toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
     });
 
-    test('A missing password is refused @auth @negative', async ({ signInFlow }, testInfo) => {
+    test('Verify that missing password is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
+        await reportTestCaseLink(INVALID_EMAIL_PASSWORD);
         await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
         const message = await signInFlow.submitRejectedCredentials(
@@ -68,7 +75,8 @@ test.describe('TSS Portal sign-in - negative cases', () => {
             .toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
     });
 
-    test('A missing username is refused @auth @negative', async ({ signInFlow }, testInfo) => {
+    test('Verify that missing username is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
+        await reportTestCaseLink(INVALID_EMAIL_PASSWORD);
         await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
         // The real password, with no username to attach it to. No account is named, so
@@ -83,9 +91,10 @@ test.describe('TSS Portal sign-in - negative cases', () => {
             .toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
     });
 
-    test('A wrong authenticator code is refused @auth @negative', async ({ signInFlow }, testInfo) => {
+    test('Verify that a wrong authenticator code is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
         test.skip(!OTP_ENABLED, 'This environment does not ask for an authenticator code.');
-
+        await reportTestCaseLink(INVALID_MFA_CODE);
+        
         await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
         await signInFlow.submitValidCredentials(account);

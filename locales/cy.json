@@ -16,7 +16,8 @@
     "yes": "Iawn",
     "no": "Na",
     "notProvided": "Heb ei ddarparu",
-    "declarationType": "Math y datganiad"
+    "declarationType": "Math y datganiad",
+    "supervisingCustomsOffice": "Swyddfa dollau oruchwylio"
   },
   "declarationType": {
     "eidr": "Cofnod yn Cofnodion y Datganwr (EIDR)"

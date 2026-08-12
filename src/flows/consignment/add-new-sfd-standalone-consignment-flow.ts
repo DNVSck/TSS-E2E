@@ -10,7 +10,7 @@ import { StandaloneConsignmentSteps } from './standalone-consignment-steps';
  *
  * SFD is the only standalone journey with NO "Representation information" screen; it
  * does have the vehicle screen, and its arrival date/time is its own screen, asked
- * only for a pre-lodged movement.
+ * whether the movement is pre-lodged or arrived.
  *
  * "Does this consignment contain controlled goods?" splits the wizard into two routes
  * that never rejoin - the app even changes the URL segment, `sfd-standalone-journey~`
@@ -32,11 +32,13 @@ export class AddNewSfdStandaloneConsignmentFlow {
             await this.movementSteps.chooseTypeOfMovement(input.typeOfMovement);
             await this.movementSteps.inputVehicleRegistrationNumber(input.vehicleRegistration);
 
-            // Goods declared as already arrived have no future arrival to state, so an
-            // arrived movement goes straight to the port screen.
-            if (input.isPreLodged) {
-                await this.movementSteps.inputArrivalDateTime(input.arrivalDateTime);
-            }
+            // Asked on BOTH branches, like IMMI and unlike FFD: an arrived movement is
+            // still asked when the goods arrived. Measured on sit 2026-08-12 - skipping
+            // it left all four arrived tests stranded on `arrival-information`, then
+            // timing out on a port dropdown that was one screen further on. The
+            // pre-lodged/arrived difference is in the VALUE, which the data factory has
+            // already resolved.
+            await this.movementSteps.inputArrivalDateTime(input.arrivalDateTime);
             await this.movementSteps.selectPortOfArrival(input.portOfArrival);
 
             await this.consignmentSteps.declareControlledGoods(input.isControlledGoods);

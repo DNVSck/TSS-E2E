@@ -1,4 +1,17 @@
-import { TFunction } from '../fixtures/locale-fixture';
+import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
+
+/**
+ * The status a submitted STANDALONE consignment settles on, which the whole family
+ * shares: a pre-lodged movement has not arrived yet so it waits for the goods, an
+ * arrived one is already there. Confirmed with the business 2026-08-11.
+ *
+ * A journey that departs from this rule states its own exception and calls this for
+ * the rest - see the SFD flow, whose EIDR route is authorised outright and never waits
+ * for an arrival at all.
+ */
+export function standaloneSubmittedStatusKey(isPreLodged: boolean): TranslationKey {
+    return isPreLodged ? 'status.awaitingArrival' : 'status.arrived';
+}
 
 /**
  * Whether a consignment status is one the service will not move on from by itself.

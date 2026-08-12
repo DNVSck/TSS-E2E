@@ -17,6 +17,7 @@ import { additionalInformation } from '../../../src/test-data/additional-informa
 import { previousDocument } from '../../../src/test-data/previous-document-data';
 import { PREVIOUS_DOCUMENT_TYPE } from '../../../src/constant/previous-document-type-constant';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
+import { inwardProcessingLocationOfGoods, locationOfGoodsOfOther } from '../../../src/helper/location-of-goods-helper';
 
 const IMMI_PRELODGED = '4442';
 const IMMI_ARRIVED = '4443';
@@ -106,7 +107,6 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
       goodsItemOverrides: immiStandaloneGoodsItem({
         procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_NON_EXCISE_1LG,
-        supplementaryUnits: '12',
         additionalInformations: [
           additionalInformation({ code: 'GEN45', description: '12345' }),
         ],
@@ -123,6 +123,10 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         isPreLodged: false,
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         representationType: REPRESENTATION_TYPE.DIRECT,
+        // The goods sit at the IP authorisation holder's premises, not at a listed
+        // port, so the arrived branch's "Location of Goods" names them: the prefix
+        // followed by the same IPO authorisation the holder and C601 below carry.
+        locationOfGoods: inwardProcessingLocationOfGoods(IMPORTER_IPO),
         holdersOfAuthorisation: [
           holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
         ],
@@ -272,6 +276,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
         isPreLodged: false,
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         representationType: undefined,
+        locationOfGoods: locationOfGoodsOfOther(IMPORTER_CWP),
         holdersOfAuthorisation: [
           holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW }),
           holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.PRIVATE_CUSTOMS_WAREHOUSE_CWP }),

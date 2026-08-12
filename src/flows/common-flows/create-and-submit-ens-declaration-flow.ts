@@ -13,6 +13,8 @@ import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import { goods, GoodsData } from '../../test-data/goods-data';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
+import { requiresWarehouseIdentifier } from '../../helper/procedure-code-helper';
+import { SUPERVISING_CUSTOMS_OFFICE } from '../../constant/supervising-customs-office-constant';
 
 export class CreateAndSubmitEnsDeclarationFlow {
     constructor(
@@ -85,7 +87,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
         // Goods-item work done: return to the consignment overview via the breadcrumb
         // and submit the consignment.
         await this.consignmentOverviewFlow.submitConsignment();
-        const ensMrn = await this.verifyPostSubmit(goodsJourney);
+        const ensMrn = await this.verifyPostSubmit(goodsJourney, goodsData.procedureCode);
         return { transportDocumentNumber: consignmentData.transportDocumentNumber, ensMrn };
     }
 
@@ -100,10 +102,19 @@ export class CreateAndSubmitEnsDeclarationFlow {
      * with NO MRN (it is never authorised with one). Verify whichever applies, then
      * confirm the ENS consignment MRN is returned (the smoke proof-of-life).
      */
-    private async verifyPostSubmit(goodsJourney: GoodsJourneyContext): Promise<string> {
+    private async verifyPostSubmit(
+        goodsJourney: GoodsJourneyContext,
+        goodsProcedureCode: string
+    ): Promise<string> {
         await this.movementOverviewFlow.waitForSubmittedMovementOverview();
         if (goodsJourney.useIMMI) {
-            await this.movementOverviewFlow.verifyImmiConsignmentDetail();
+            // A warehoused procedure code makes the service derive a supervising
+            // customs office; every other code leaves the row off the page entirely.
+            await this.movementOverviewFlow.verifyImmiConsignmentDetail(
+                requiresWarehouseIdentifier(goodsProcedureCode)
+                    ? SUPERVISING_CUSTOMS_OFFICE.GBBEL004
+                    : undefined
+            );
         } else if (goodsJourney.isControlledGoods) {
             await this.movementOverviewFlow.verifySfdConsignmentDetail();
         } else if (!goodsJourney.isEnsOnly) {
