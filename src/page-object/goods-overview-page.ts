@@ -1,7 +1,7 @@
 import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
-import { switchToTabAndClickNew, summaryListValue, readFieldWhenVisible } from '../helper/element-helper';
+import { switchToTabAndClickNew, summaryListValue, readFieldWhenVisible, newRecordButton } from '../helper/element-helper';
 import { TgpRecordData } from "../test-data/tgp-record-data";
 import { COUNTRY_NAME } from "../constant/country-code-dropdown-constant";
 
@@ -54,12 +54,12 @@ export class GoodsOverviewPage extends BasePage {
         this.taricAdditionalCodesTab = page.locator("//a[contains(@href, '/taric-additional-codes/#overview-tab')]");
         this.nationalAdditionalCodesTab = page.locator("//a[contains(@href, '/national-additional-codes/#overview-tab')]");
 
-        this.newDocumentRefButton = page.locator("form[action*='?index'] button[value='new-record']");
-        this.newAdditionalProcedureCodeButton = page.locator("form[action*='/additional-procedure-codes'] button[value='new-record']");
-        this.newPreviousDocumentButton = page.locator("form[action*='/previous-documents'] button[value='new-record']");
-        this.newAdditionalInformationButton = page.locator("form[action*='/additional-information'] button[value='new-record']");
-        this.newTaricAdditionalCodeButton = page.locator("form[action*='/taric-additional-codes'] button[value='new-record']");
-        this.newNationalAdditionalCodeButton = page.locator("form[action*='/national-additional-codes'] button[value='new-record']");
+        this.newDocumentRefButton = newRecordButton(page, '?index');
+        this.newAdditionalProcedureCodeButton = newRecordButton(page, '/additional-procedure-codes');
+        this.newPreviousDocumentButton = newRecordButton(page, '/previous-documents');
+        this.newAdditionalInformationButton = newRecordButton(page, '/additional-information');
+        this.newTaricAdditionalCodeButton = newRecordButton(page, '/taric-additional-codes');
+        this.newNationalAdditionalCodeButton = newRecordButton(page, '/national-additional-codes');
     }
 
     /**

@@ -26,7 +26,7 @@ export class NavigationMenu {
         // visible once the menu is open - and a component should only ever reach into
         // its own markup anyway.
         this.companyProfileLink = page.locator(
-            "#super-navigation-menu a[href='/portal/company-profile']"
+            "#super-navigation-menu a[href$='/company-profile']"
         );
     }
 

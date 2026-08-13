@@ -236,3 +236,15 @@ export async function checkRadioByValue(
 
 
 
+
+/**
+ * The "add a new record" button of an overview tab, found by its form's action.
+ *
+ * The button's `value` is being renamed per record type ("new-record" ->
+ * "new-document-reference", ...) and deploys are mid-flight, so it is matched on the
+ * "new-" prefix and works either way. Each form has one such button, which is what
+ * keeps the prefix unambiguous.
+ */
+export function newRecordButton(page: Page, formAction: string): Locator {
+    return page.locator(`form[action*="${formAction}"] button[value^="new-"]`);
+}

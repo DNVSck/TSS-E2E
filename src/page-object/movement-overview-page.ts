@@ -2,7 +2,7 @@ import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
-import { summaryListValue, readFieldWhenVisible } from '../helper/element-helper';
+import { summaryListValue, readFieldWhenVisible, newRecordButton } from '../helper/element-helper';
 import { StringUtil } from '../core/util/string-util';
 
 /** URL path segments used to build and await movement routes. */
@@ -68,12 +68,12 @@ export class MovementOverviewPage extends BasePage {
         this.gmrDetailsTab = page.locator("//a[contains(@href, '/overview/gmr-details#overview-tab')]");
 
         // ENS Consignment actions
-        this.newENSConsignmentBtn = page.locator("//form[contains(@action,'?index')]//button[@value='new-record']");
+        this.newENSConsignmentBtn = newRecordButton(page, '?index');
         this.uploadCSVBtn = page.locator("//form[contains(@action,'?index')]//button[@value='upload-csv']");
         this.associateConsignmentBtn = page.locator("//form[contains(@action,'?index')]//button[@value='associate-consignment']");
 
         //GMR actions
-        this.createGMRButton = page.locator("//form[contains(@action,'gmr-details')]//button[@value='new-record']");
+        this.createGMRButton = newRecordButton(page, 'gmr-details');
 
         // Summary list fields
         this.localReferenceNumber = summaryListValue(page, localReferenceLabel);
