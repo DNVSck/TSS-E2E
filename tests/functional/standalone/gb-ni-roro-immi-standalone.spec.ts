@@ -46,7 +46,6 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         {
           procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EL,
-          //supplementaryUnits: '12',
           documentReferences: [
           documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
           documentReference({ documentCode: DOCUMENT_CODE.N730, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
@@ -266,7 +265,6 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         tgpRecord: TGP_RECORD.TEXTILES_TGP123,
         procedureCode: PROCEDURE_CODES.FREE_CIRC_FROM_CW_4071,
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_NON_EXCISE_1LG,
-        supplementaryUnits: '2',
         documentReferences: [
           documentReference({ documentCode: DOCUMENT_CODE.N760, documentStatus: DOCUMENT_STATUS.AC,   documentReference: '0054039' }),
           documentReference({ documentCode: DOCUMENT_CODE.C601, documentStatus: undefined,            documentReference: IMPORTER_IPO }),
