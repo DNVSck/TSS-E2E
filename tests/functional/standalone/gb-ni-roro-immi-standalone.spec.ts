@@ -32,7 +32,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct without TGP is created and submitted successfully', { tag: ['@smoke' , '@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct without TGP is created and submitted successfully (0700-1EL)', { tag: ['@smoke' , '@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct without TGP');
     reportTestCaseLink(IMMI_PRELODGED);
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
@@ -46,7 +46,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         {
           procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EL,
-          supplementaryUnits: '12',
+          //supplementaryUnits: '12',
           documentReferences: [
           documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
           documentReference({ documentCode: DOCUMENT_CODE.N730, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
@@ -56,7 +56,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     });
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP is created and submitted successfully (4000-1SG)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP');
     reportTestCaseLink(IMMI_PRELODGED);
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
@@ -66,17 +66,16 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         representationType: REPRESENTATION_TYPE.DIRECT,
       },
-      // The commodity code, goods description and country of origin are NOT declared
-      // here: the TGP record supplies them and the app skips those screens. They are
-      // asserted on the goods-item overview instead.
       goodsItemOverrides: immiStandaloneGoodsItem({
         useTGP: true,
         tgpRecord: TGP_RECORD.MACHINERY_TGP456,
+        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
       }),
     });
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Indirect is created and submitted successfully', { tag: ['@smoke', '@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Indirect is created and submitted successfully (4000-1EN)', { tag: ['@smoke', '@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Indirect');
     reportTestCaseLink(IMMI_PRELODGED);
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
@@ -87,13 +86,58 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         representationType: REPRESENTATION_TYPE.INDIRECT,
       },
       goodsItemOverrides: immiStandaloneGoodsItem({
+        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EN,
       }),
     });
   });
 
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Indirect with TGP is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+    await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Indirect with TGP - 4000 - 1LG');
+    reportTestCaseLink(IMMI_PRELODGED);
+    await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
+      testInfo,
+      url: getBaseUrl(),
+      consignmentOverrides: {
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+        representationType: REPRESENTATION_TYPE.INDIRECT,
+      },
+      goodsItemOverrides: immiStandaloneGoodsItem({
+        useTGP: true,
+        tgpRecord: TGP_RECORD.TEXTILES_TGP123,
+        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_NON_EXCISE_1LG,
+      }),
+    });
+  });
 
-  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath', '@smoke'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+
+  test('Verify IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Direct with TGP and excise warehouse is created and submitted successfully (0700-1EL)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+    await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Direct with TGP and excise warehouse - 0700 - 1EL');
+    reportTestCaseLink(IMMI_PRELODGED);
+    await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
+      testInfo,
+      url: getBaseUrl(),
+      consignmentOverrides: {
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
+        representationType: REPRESENTATION_TYPE.DIRECT,
+      },
+
+      goodsItemOverrides: immiStandaloneGoodsItem({
+        useTGP: true,
+        tgpRecord: TGP_RECORD.MACHINERY_TGP456,
+        procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
+        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EL,
+        documentReferences: [
+          documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
+          documentReference({ documentCode: DOCUMENT_CODE.N730, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
+        ],
+      }),
+    });
+  });
+
+
+  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@e2e', '@happyPath', '@smoke'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Direct - 4000 - 1LG');
     reportTestCaseLink(IMMI_ARRIVED);
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
@@ -114,7 +158,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     });
   });
 
-    test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with Inward Processing is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+    test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with Inward Processing is created and submitted successfully (4051-1EN)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with Inward Processing - 4051 - 1EN');
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
@@ -123,18 +167,12 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         isPreLodged: false,
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         representationType: REPRESENTATION_TYPE.DIRECT,
-        // The goods sit at the IP authorisation holder's premises, not at a listed
-        // port, so the arrived branch's "Location of Goods" names them: the prefix
-        // followed by the same IPO authorisation the holder and C601 below carry.
         locationOfGoods: inwardProcessingLocationOfGoods(IMPORTER_IPO),
         holdersOfAuthorisation: [
           holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
         ],
       },
-      // Procedure 4051 releases goods to free circulation AFTER inward processing, so
-      // the whole item hangs together around one IP authorisation: the IPO holder above,
-      // the C601 document that names it, and the 10200 additional information that
-      // repeats its reference.
+
       goodsItemOverrides: immiStandaloneGoodsItem({
         procedureCode: PROCEDURE_CODES.FREE_CIRC_AFTER_IP_4051,
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EN,
@@ -162,7 +200,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     });
   });
 
-  test('Verify IMMI Standalone - Arrived - RoRo (Unaccompanied) - Indirect is created and submitted successfully', { tag: ['@smoke', '@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Arrived - RoRo (Unaccompanied) - Indirect is created and submitted successfully (0751-1EL)', { tag: ['@smoke', '@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Unaccompanied) - Indirect - 0751 - 1EL');
     reportTestCaseLink(IMMI_ARRIVED);
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
@@ -204,7 +242,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     });
   });
 
-  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with TGP is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with TGP is created and submitted successfully (4071-1LG)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with TGP - 4071 - 1LG');
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
@@ -242,6 +280,50 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
       }),
     });
   });
+
+
+  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Indirect with TGP is created and submitted successfully (4000-1EN)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+    await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Indirect with TGP - 4000 - 1EN');
+    reportTestCaseLink(IMMI_ARRIVED);
+    await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
+      testInfo,
+      url: getBaseUrl(),
+      consignmentOverrides: {
+        isPreLodged: false,
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+        representationType: REPRESENTATION_TYPE.INDIRECT,
+      },
+
+      goodsItemOverrides: immiStandaloneGoodsItem({
+        useTGP: true,
+        tgpRecord: TGP_RECORD.MACHINERY_TGP456,
+        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EN,
+      }),
+    });
+  });
+
+
+  test('Verify IMMI Standalone - Arrived - RoRo (Unaccompanied) - Direct with supplementary units is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+    await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Unaccompanied) - Direct with supplementary units - 4000 - 1LG');
+    reportTestCaseLink(IMMI_ARRIVED);
+    await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
+      testInfo,
+      url: getBaseUrl(),
+      consignmentOverrides: {
+        isPreLodged: false,
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
+        representationType: REPRESENTATION_TYPE.DIRECT,
+      },
+
+      goodsItemOverrides: immiStandaloneGoodsItem({
+        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_NON_EXCISE_1LG,
+        // The answer under test, not incidental data.
+        supplementaryUnits: '12',
+      }),
+    });
+  });
 });
 
 test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Declare by themself', () => {
@@ -254,7 +336,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
     await ReportLog.setFeature('GB to NI IMMI Standalone Declaration Process');
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully', { tag: ['@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-1SG)', { tag: ['@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
@@ -263,11 +345,34 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         representationType: undefined,
       },
-      goodsItemOverrides: immiStandaloneGoodsItem(),
+
+      goodsItemOverrides: immiStandaloneGoodsItem({
+        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
+      }),
     });
   });
 
-   test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully', { tag: ['@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself with TGP is created and submitted successfully (4000-1SG)', { tag: ['@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+    await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself with TGP');
+    await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
+      testInfo,
+      url: getBaseUrl(),
+      consignmentOverrides: {
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+        representationType: undefined,
+      },
+      goodsItemOverrides: immiStandaloneGoodsItem({
+        useTGP: true,
+        tgpRecord: TGP_RECORD.MACHINERY_TGP456,
+        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
+      }),
+    });
+  });
+
+   test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (0771-1EL)', { tag: ['@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself');
     await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
       testInfo,
@@ -304,5 +409,25 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
       })
     });
   });
-  
+
+
+  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself with TGP is created and submitted successfully (4000-1SG)', { tag: ['@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow }, testInfo) => {
+    await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself with TGP');
+    await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
+      testInfo,
+      url: getBaseUrl(),
+      consignmentOverrides: {
+        isPreLodged: false,
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+        representationType: undefined,
+      },
+      goodsItemOverrides: immiStandaloneGoodsItem({
+        useTGP: true,
+        tgpRecord: TGP_RECORD.MACHINERY_TGP456,
+        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
+      }),
+    });
+  });
+
 });

@@ -19,7 +19,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
     await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
   });
 
-  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Prelodged - RoRo (Accompanied)');
     reportTestCaseLink(SFD_STANDALONE);
     await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
@@ -33,7 +33,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
   // An arrived movement is the same declaration minus the arrival date/time screen, and
   // it settles on "Arrived" instead of "Awaiting arrival" - the flow derives both from
   // isPreLodged, so the override below is the only difference from the test above.
-  test('Verify SFD Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Arrived - RoRo (Accompanied)');
     await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
       testInfo,
@@ -46,7 +46,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
     });
   });
 
-  test('Verify SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Prelodged - RoRo (Accompanied)');
     reportTestCaseLink(SFD_EIDR_STANDALONE);
     await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
@@ -64,7 +64,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
   // pre-lodged or arrived, having no arrival to wait for. That makes this test worth
   // running despite reading like the one above - it is the only one that proves the
   // arrived route does NOT settle on "Arrived".
-  test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Arrived - RoRo (Accompanied)');
     await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
       testInfo,
@@ -90,7 +90,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
     await ReportLog.setFeature('GB to NI SFD Standalone Declaration Process');
   });
 
-  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
     await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
       testInfo,
@@ -100,7 +100,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
     });
   });
 
-  test('Verify SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself');
     await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
       testInfo,
@@ -113,7 +113,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
     });
   });
 
-  test('Verify SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
     await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
       testInfo,
@@ -126,7 +126,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
     });
   });
 
-  test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself');
     await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
       testInfo,
