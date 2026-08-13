@@ -16,8 +16,9 @@ export class CompanyProfilePage extends BasePage {
     constructor(page: Page) {
         super(page);
 
-        // By href, not by its "View users" label - the label is translated.
-        this.viewUsersLink = page.locator("a[href='/portal/company-profile/users']");
+        // By href, not by its "View users" label - the label is translated. Matched on
+        // the end of the href so it holds without the "/portal" prefix too.
+        this.viewUsersLink = page.locator("a[href$='/company-profile/users']");
     }
 
     /**

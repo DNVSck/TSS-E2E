@@ -3,7 +3,7 @@ import { Page, Locator, expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
     clickLinkAndWaitForRoute, switchToTabAndClickNew, summaryListValue,
-    readFieldWhenVisible, readFieldIfPresent,
+    readFieldWhenVisible, readFieldIfPresent, newRecordButton,
 } from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 import { isTraderInputRequiredConsignmentStatus } from '../helper/consignment-status-helper';
@@ -57,11 +57,11 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         // The goods-records list is the overview root, whose form action carries the
         // "?index" marker (named tabs post to "/<tab-name>"). Scoped by form action (a
         // URL, locale-independent) not the label — same convention as movement-overview.
-        this.newGoodsRecordBtn = page.locator("form[action*='?index'] button[value='new-record']");
+        this.newGoodsRecordBtn = newRecordButton(page, '?index');
         // Scoped to the "Header previous documents" tab panel so it is not confused
         // with the other tabs' own "new-record" buttons.
-        this.newPreviousDocumentBtn = page.locator("//form[contains(@action,'previous-documents')]//button[@value='new-record']");
-        this.newHolderOfAuthorisationBtn = page.locator("//form[contains(@action,'holder-of-authorisation')]//button[@value='new-record']");
+        this.newPreviousDocumentBtn = newRecordButton(page, 'previous-documents');
+        this.newHolderOfAuthorisationBtn = newRecordButton(page, 'holder-of-authorisation');
         this.documentTab = page.locator("//a[contains(@href, '/documents#overview-tab')]");
         this.confirmAndSubmitButton = page.locator("button[value='submit-consignment']");
     }
