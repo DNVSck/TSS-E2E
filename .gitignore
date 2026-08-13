@@ -35,7 +35,9 @@ Thumbs.db
 .vscode/launch.json
 *.swp
 *.swo
-
 .claude/
 .mcp.json
 .playwright-mcp
+
+# Opencode plans (transient)
+.opencode/plans/
