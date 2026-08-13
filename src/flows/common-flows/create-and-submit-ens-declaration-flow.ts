@@ -22,9 +22,9 @@ export class CreateAndSubmitEnsDeclarationFlow {
         private readonly routeFlow: InitialFormDeclarationFlow,
         private readonly movementHeaderFlow: MovementHeaderDeclarationFlow,
         private readonly movementOverviewFlow: MovementOverviewFlow,
-        private readonly addNewConsignmentFlow: AddNewEnsConsignmentFlow,
+        private readonly addNewEnsConsignmentFlow: AddNewEnsConsignmentFlow,
         private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
-        private readonly addNewGoodsItemFlow: AddNewEnsGoodsItemFlow,
+        private readonly addNewEnsGoodsItemFlow: AddNewEnsGoodsItemFlow,
         private readonly goodsOverviewFlow: GoodsOverviewFlow,
         // The account this worker was actually assigned by the auth fixture â€” the
         // same source of truth that picked the replayed session, so reporting can
@@ -63,7 +63,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
         await this.routeFlow.completeInitialFormDeclaration(routeData);
         await this.movementHeaderFlow.completeNewGoodsMovementDeclaration(movementData);
         await this.movementOverviewFlow.verifyDraftMovementOverview();
-        await this.addNewConsignmentFlow.addNewEnsConsignment(consignmentData);
+        await this.addNewEnsConsignmentFlow.addNewEnsConsignment(consignmentData);
         // Report the consignment reference (DEC…) as soon as its draft exists, so a
         // run captures it even if a later step fails.
         await this.consignmentOverviewFlow.verifyDraftConsignment();
@@ -71,7 +71,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
         await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
         // Declaring those tabs leaves the overview on the tab's own route; return to
         // the consignment overview (Goods records tab) before adding the goods item.
-        const usedTgp = await this.addNewGoodsItemFlow.addNewGoodsItem(goodsData, goodsJourney);
+        const usedTgp = await this.addNewEnsGoodsItemFlow.addNewGoodsItem(goodsData, goodsJourney);
         // A TGP item never typed its commodity code, description or supplementary
         // units — the service copied them from the record — so the overview is the
         // only place that proves the record was applied. No-op on every other journey.

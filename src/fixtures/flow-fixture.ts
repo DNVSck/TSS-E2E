@@ -42,7 +42,7 @@ export type FlowFixtureType = {
     initialFormDeclarationFlow: InitialFormDeclarationFlow;
     movementHeaderDeclarationFlow: MovementHeaderDeclarationFlow;
     movementOverviewFlow: MovementOverviewFlow;
-    addNewConsignmentFlow: AddNewEnsConsignmentFlow;
+    addNewEnsConsignmentFlow: AddNewEnsConsignmentFlow;
     consignmentOverviewFlow: ConsignmentOverviewFlow;
     // One step library per declare page: the steps say what a screen means, the flows
     // say which screens a journey visits and in what order. Standalone has a single
@@ -51,7 +51,7 @@ export type FlowFixtureType = {
     consignmentSteps: ConsignmentSteps;
     standaloneConsignmentSteps: StandaloneConsignmentSteps;
     goodsItemSteps: GoodsItemSteps;
-    addNewGoodsItemFlow: AddNewEnsGoodsItemFlow;
+    addNewEnsGoodsItemFlow: AddNewEnsGoodsItemFlow;
     goodsOverviewFlow: GoodsOverviewFlow;
     createAndSubmitGmrFlow: AddNewGMRFlow; // This flow is added here as it relies on multiple other flows, and it will be used in multiple places, so it makes sense to have it as a common flow
 
@@ -113,7 +113,7 @@ export const flowFixture: ExtendParams[0] = {
         await use(new MovementOverviewFlow(movementOverviewPage, consignmentDetailPage, t));
     },
 
-    addNewConsignmentFlow: async ({ consignmentSteps }, use) => {
+    addNewEnsConsignmentFlow: async ({ consignmentSteps }, use) => {
         await use(new AddNewEnsConsignmentFlow(consignmentSteps));
     },
 
@@ -125,7 +125,7 @@ export const flowFixture: ExtendParams[0] = {
         await use(new GoodsItemSteps(consignmentOverviewPage, goodsItemDeclarePage));
     },
 
-    addNewGoodsItemFlow: async ({ goodsItemSteps }, use) => {
+    addNewEnsGoodsItemFlow: async ({ goodsItemSteps }, use) => {
         await use(new AddNewEnsGoodsItemFlow(goodsItemSteps));
     },
 
@@ -146,9 +146,9 @@ export const flowFixture: ExtendParams[0] = {
         initialFormDeclarationFlow,
         movementHeaderDeclarationFlow,
         movementOverviewFlow,
-        addNewConsignmentFlow,
+        addNewEnsConsignmentFlow,
         consignmentOverviewFlow,
-        addNewGoodsItemFlow,
+        addNewEnsGoodsItemFlow,
         goodsOverviewFlow,
         authAccount
     }, use) => {
@@ -157,9 +157,9 @@ export const flowFixture: ExtendParams[0] = {
             initialFormDeclarationFlow,
             movementHeaderDeclarationFlow,
             movementOverviewFlow,
-            addNewConsignmentFlow,
+            addNewEnsConsignmentFlow,
             consignmentOverviewFlow,
-            addNewGoodsItemFlow,
+            addNewEnsGoodsItemFlow,
             goodsOverviewFlow,
             authAccount
         ));
