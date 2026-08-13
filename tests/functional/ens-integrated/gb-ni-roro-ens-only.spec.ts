@@ -5,7 +5,9 @@ import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-move
 import { ENS_ONLY_REASON } from '../../../src/constant/ens-only-reason-constant';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { HAULIER_COMPANY_NAME } from '../../../config/environment';
+import { reportTestCaseLink } from '../../../src/helper/report-helper';
 
+const ENS_ONLY = '4439';
 
 test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Trader', () => {
   // Runs as AGENT: this worker replays its own AGENT account's cached session
@@ -19,8 +21,9 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
     await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
   });
 
-  test('Verify ENS Only - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@regression' , '@e2e'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
+  test('Verify ENS Only - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS-only - GB to NI RoRo Accompanied');
+    reportTestCaseLink(ENS_ONLY);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
@@ -29,8 +32,9 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
     });
   });
 
-  test('Verify ENS Only - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@regression', '@e2e'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
+  test('Verify ENS Only - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS-only - GB to NI RoRo Unaccompanied');
+    reportTestCaseLink(ENS_ONLY);
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
@@ -41,8 +45,9 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
     });
   });
 
-  test('Verify ENS Only - RoRo (Accompanied), goods item requires container details, is created and submitted successfully', { tag: ['@regression', '@e2e'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
+  test('Verify ENS Only - RoRo (Accompanied), goods item requires container details, is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS-only - GB to NI RoRo Accompanied with a goods item declaring its own container');
+    reportTestCaseLink(ENS_ONLY);
     // Crossing the EU border with goods in DIFFERENT containers makes each goods item
     // declare its own container details.
     await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({

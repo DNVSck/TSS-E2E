@@ -1,18 +1,19 @@
-import { BasePage } from "./base-page";
+import { ConsignmentSummaryPage } from "./consignment-summary-page";
 import { Page, Locator, expect } from '@playwright/test';
-import { TFunction } from '../fixtures/locale-fixture';
+import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
     clickLinkAndWaitForRoute, switchToTabAndClickNew, summaryListValue,
     readFieldWhenVisible, readFieldIfPresent,
 } from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
+import { isTraderInputRequiredConsignmentStatus } from '../helper/consignment-status-helper';
 
 /** The overview summary list paints a beat after the draft is created. */
 const SUMMARY_READ_TIMEOUT = 20_000;
 /** After submit, the status flips to "Awaiting arrival" asynchronously. */
 const SUBMIT_STATUS_POLL_TIMEOUT = 60_000;
 
-export class ConsignmentOverviewPage extends BasePage {
+export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
 
     // Locators. NOTE: tab links use href-based xpath (not text), reasonably stable.
     private readonly goodsRecordTab: Locator;
@@ -37,7 +38,12 @@ export class ConsignmentOverviewPage extends BasePage {
         super(page, t);
 
         this.declarationType = summaryListValue(page, this.t!('common.declarationType'));
-        this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
+
+        // The FFD standalone overview spells the row out as "... (LRN)" where every
+        // other overview stops at "Local reference number", so match either rather
+        // than making the caller say which journey it is on.
+        this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'))
+            .or(summaryListValue(page, this.t!('common.localReferenceNumberWithLrn')));
         this.status = summaryListValue(page, this.t!('common.status'));
 
         // ENS consignments reference starts "DEC"; standalone consignments use a
@@ -107,12 +113,13 @@ export class ConsignmentOverviewPage extends BasePage {
 
     /**
      * Soft-assert the freshly-created draft consignment — its reference opens with
-     * "DEC" and its status is "Draft" — and return the reference. Both are read from
-     * the consignment-overview summary list, which paints as soon as the draft is
+     * "DEC" and its status is "Draft" — and return both. They are read from the
+     * consignment-overview summary list, which paints as soon as the draft is
      * created. Mirrors {@link MovementOverviewPage.assertDraftMovementOverview}: the
-     * page reads and asserts, the flow reports. All checks are soft.
+     * page reads and asserts, the flow reports. All checks are soft, so a mismatch
+     * still reaches the report rather than throwing the values away.
      */
-    async assertDraftConsignment(): Promise<string> {
+    async assertDraftConsignment(): Promise<{ consignmentReference: string; declarationStatus: string }> {
         const consignmentReference = await this.getConsignmentLocalReferenceNumber();
         const declarationStatus = await this.getConsignmentStatus();
         const expectedStatus = this.t!('status.draft');
@@ -120,7 +127,7 @@ export class ConsignmentOverviewPage extends BasePage {
         expect.soft(consignmentReference, 'Consignment reference').toMatch(LOCAL_REFERENCE.DEC_PREFIX);
         expect.soft(declarationStatus, 'Consignment status').toBe(expectedStatus);
 
-        return consignmentReference;
+        return { consignmentReference, declarationStatus };
     }
 
     async clickConfirmAndSubmit(): Promise<void> {
@@ -129,32 +136,54 @@ export class ConsignmentOverviewPage extends BasePage {
 
     /**
      * Soft-assert the freshly-created standalone consignment's reference and return
-     * it. Each journey stamps its own prefix (IMMI "GLR", SFD "SFD", FFD "FFD"), so
-     * the caller passes the one it expects - asserting the journey that actually ran,
-     * not merely that some standalone reference exists. Mirrors
-     * {@link assertDraftConsignment} (the ENS "DEC" variant); the status is not
-     * asserted here because the standalone overview shows it only after submit.
+     * it with whatever status the overview shows. Each journey stamps its own prefix
+     * (IMMI "GLR", SFD "SFD", FFD "FFD"), so the caller passes the one it expects -
+     * asserting the journey that actually ran, not merely that some standalone
+     * reference exists. Mirrors {@link assertDraftConsignment} (the ENS "DEC" variant).
+     *
+     * BOTH rows are read without throwing, because either can be legitimately absent:
+     * the Status row only appears once the consignment has been submitted, and the SFD
+     * (controlled goods) overview is missing its LRN row outright (defect 1239).
+     *
+     * Which is why the wait below is not optional. These pages paint their summary list
+     * a beat after load (see readFieldWhenVisible), so reading immediately cannot tell
+     * "this row does not exist" from "nothing has painted yet" - it returns '' for both,
+     * and the journey that really does have an LRN fails at random. Waiting for the
+     * list, rather than for either row, is what makes the tolerance safe.
+     *
+     * And the wait is deliberately allowed to THROW. Every loaded overview has a summary
+     * list, whatever rows it happens to carry, so failing here means the page is not the
+     * one we think it is - a lost session, a redirect, a page that never rendered.
+     * Swallowing that would report it as an empty LRN, which is exactly what the missing
+     * row above looks like: one real defect and one broken run, indistinguishable.
      */
-    async assertDraftStandaloneConsignment(expectedPrefix: RegExp): Promise<string> {
-        const consignmentReference = await this.getConsignmentLocalReferenceNumber();
+    async assertDraftStandaloneConsignment(
+        expectedPrefix: RegExp
+    ): Promise<{ consignmentReference: string; declarationStatus: string }> {
+        await this.contentRows.first().waitFor({ state: 'visible', timeout: SUMMARY_READ_TIMEOUT });
+
+        const consignmentReference = await readFieldIfPresent(this.localReferenceNumber);
+        const declarationStatus = await readFieldIfPresent(this.status);
         expect.soft(consignmentReference, 'Consignment LRN').toMatch(expectedPrefix);
-        return consignmentReference;
+        return { consignmentReference, declarationStatus };
     }
 
-    /**
-     * After submit, wait for the consignment status to become "Awaiting arrival".
-     * It lands asynchronously and the page does not auto-refresh, so reload until it
-     * appears. Non-throwing: on timeout it returns the last-read status so the caller
-     * can soft-assert (and report) it rather than the test aborting here.
-     */
-    async waitForStatusAwaitingArrival(): Promise<string> {
-        const expected = this.t!('status.awaitingArrival');
+
+    async waitForSubmittedStatus(expectedStatusKey: TranslationKey): Promise<string> {
+        const expected = this.t!(expectedStatusKey);
         let status = '';
         await expect(async () => {
             status = await readFieldIfPresent(this.status);
-            if (status !== expected) {
-                await this.page.reload();
+
+            // Returning without throwing ends the poll. Both cases below are settled:
+            // the expected status arrived, or the consignment came to rest somewhere it
+            // will not leave on its own, so no amount of reloading changes the answer.
+            // The soft assertion after the poll still reports the mismatch.
+            if (status === expected || isTraderInputRequiredConsignmentStatus(status, this.t!)) {
+                return;
             }
+
+            await this.page.reload();
             expect(status, 'Consignment status').toBe(expected);
         })
             .toPass({ timeout: SUBMIT_STATUS_POLL_TIMEOUT, intervals: [2_000, 3_000, 5_000] })

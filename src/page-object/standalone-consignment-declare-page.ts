@@ -50,4 +50,34 @@ export class StandaloneConsignmentDeclarePage extends BasePage {
         await checkRadioByValue(this.page, 'representationType', representationType);
         await this.clickContinueButton();
     }
+
+    /**
+     * `sfd-standalone-journey~goods-domestic-status` - the radios on their own.
+     *
+     * The SAME question the ENS and EIDR journeys ask as one field of their
+     * "Transport and destination details" screen, which is why it shares that
+     * screen's radio name and its D/I codes. On the SFD standalone journey the app
+     * gives it a screen of its own, so it needs a method of its own - see
+     * ConsignmentDeclarePage.fillSfdTransportAndDestinationDetails for the combined
+     * screen the EIDR standalone journey still shows.
+     */
+    async selectGoodsDomesticStatus(goodsDomesticStatusCode: string): Promise<void> {
+        await checkRadioByValue(this.page, 'goodsDomesticStatus', goodsDomesticStatusCode);
+        await this.clickContinueButton();
+    }
+
+    /**
+     * `container-information~container-is-transported` - "Are the goods transported in
+     * containers when crossing the EU's external borders?"
+     *
+     * NOT the ENS container question. ENS asks whether the goods cross the EU border
+     * and then whether they all share a container (`isTheSameContainer`); the
+     * standalone journeys fold both into this one field, so it keeps its own locator.
+     */
+    async selectTransportingInContainers(isTransportingInContainers: boolean): Promise<void> {
+        await checkRadioByValue(
+            this.page, 'isTransportingInContainers', isTransportingInContainers ? 'yes' : 'no'
+        );
+        await this.clickContinueButton();
+    }
 }

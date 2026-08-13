@@ -1,10 +1,10 @@
-import { TestInfo } from '@playwright/test';
+﻿import { TestInfo } from '@playwright/test';
 import { PortalAccessFlow } from '../portal-access-flow';
 import { InitialFormDeclarationFlow } from '../initial-form-declaration-flow';
-import { AddNewFfdStandaloneConsignmentFlow } from '../add-new-ffd-standalone-consignment-flow';
-import { AddNewFfdStandaloneGoodsItemFlow } from '../add-new-ffd-standalone-goods-item-flow';
-import { ConsignmentOverviewFlow } from '../consignment-overview-flow';
-import { GoodsOverviewFlow } from '../goods-overview-flow';
+import { AddNewFfdStandaloneConsignmentFlow } from '../consignment/add-new-ffd-standalone-consignment-flow';
+import { AddNewFfdStandaloneGoodsItemFlow } from '../goods-item/add-new-ffd-standalone-goods-item-flow';
+import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
+import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import {
     FfdStandaloneConsignmentData, ffdStandaloneConsignment,
 } from '../../test-data/ffd-standalone-consignment-data';
@@ -13,7 +13,7 @@ import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { UserCredentials } from '../../auth/credentials';
-import { reportTestAccount } from '../../helper/report-helper';
+import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
 
 /**
  * Create and submit an FFD standalone consignment. One flow per standalone journey:
@@ -51,6 +51,7 @@ export class CreateAndSubmitFfdStandaloneFlow {
         const goodsData = goods(options.goodsItemOverrides);
 
         reportTestAccount(this.authAccount, 'completeFfdStandaloneFlow');
+        reportDeclarationCodes(goodsData);
 
         await this.accessFlow.openService({ baseUrl: url, testInfo });
         await this.initialFormFlow.completeInitialFormDeclaration(initialFormData({
@@ -73,8 +74,7 @@ export class CreateAndSubmitFfdStandaloneFlow {
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
 
         await this.consignmentOverviewFlow.submitConsignment();
-        // NOSONAR
-        // TODO: verify the post-submit state - what FFD is expected to produce (an MRN
+        // NOSONAR TODO: verify the post-submit state - what FFD is expected to produce (an MRN
         // like SFD/IMMI, or something else) is not yet confirmed.
     }
 }

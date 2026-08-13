@@ -28,3 +28,8 @@ export function generateTotpCode(secret: string, options: TotpOptions = {}): str
 
     return totp.generate();
 }
+
+export function generateInvalidTotpCode(secret: string, options: TotpOptions = {}): string {
+    const valid = generateTotpCode(secret, options);
+    return `${(Number(valid[0]) + 1) % 10}${valid.slice(1)}`;
+}

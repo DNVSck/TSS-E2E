@@ -10,33 +10,56 @@ export class InitialFormDeclarationFlow {
 
     async completeInitialFormDeclaration(input: InitialFormData): Promise<void> {
         await ReportLog.step('Complete Initial form', async () => {
-            await this.initialFormDeclaraPage.selectDirectionOfDeclaration(input.directionOfDeclaration);
-            await this.initialFormDeclaraPage.selectTypeOfSubmission(input.typeOfSubmission);
+            await this.selectDirectionOfDeclaration(input);
+            await this.selectTypeOfSubmission(input);
             await this.declareSubmissionDetails(input);
-            await this.initialFormDeclaraPage.clickFinishButton();
+            await this.finishInitialFormDeclaration();
         });
     }
 
+    private async selectDirectionOfDeclaration(input: InitialFormData): Promise<void> {
+        await ReportLog.step('Select the direction of the declaration', async () => {
+            await this.initialFormDeclaraPage.selectDirectionOfDeclaration(input.directionOfDeclaration);
+        });
+    }
+
+    private async selectTypeOfSubmission(input: InitialFormData): Promise<void> {
+        await ReportLog.step('Select the type of submission', async () => {
+            await this.initialFormDeclaraPage.selectTypeOfSubmission(input.typeOfSubmission);
+        });
+    }
+
+    /** Which follow-up screen the type of submission opens - one screen either way. */
     async declareSubmissionDetails(input: InitialFormData): Promise<void> {
         const { TYPE_OF_SUBMISSION } = INITIAL_FORM_DECLARATION;
         const { typeOfSubmission, typeOfEnsSubmission, standaloneDeclarationType } = input;
 
         if (typeOfSubmission === TYPE_OF_SUBMISSION.ENS) {
-            if (!typeOfEnsSubmission) {
-                throw new Error('Test data for an ENS submission must set "typeOfEnsSubmission".');
-            }
-            await this.initialFormDeclaraPage.selectTypeOfEnsSubmission(typeOfEnsSubmission);
+            await ReportLog.step('Select the type of ENS submission', async () => {
+                if (!typeOfEnsSubmission) {
+                    throw new Error('Test data for an ENS submission must set "typeOfEnsSubmission".');
+                }
+                await this.initialFormDeclaraPage.selectTypeOfEnsSubmission(typeOfEnsSubmission);
+            });
             return;
         }
 
         if (typeOfSubmission === TYPE_OF_SUBMISSION.STANDALONE) {
-            if (!standaloneDeclarationType) {
-                throw new Error('Test data for a standalone submission must set "standaloneDeclarationType".');
-            }
-            await this.initialFormDeclaraPage.selectStandaloneDeclarationType(standaloneDeclarationType);
+            await ReportLog.step('Select the standalone declaration type', async () => {
+                if (!standaloneDeclarationType) {
+                    throw new Error('Test data for a standalone submission must set "standaloneDeclarationType".');
+                }
+                await this.initialFormDeclaraPage.selectStandaloneDeclarationType(standaloneDeclarationType);
+            });
             return;
         }
 
         throw new Error(`Unsupported typeOfSubmission: "${typeOfSubmission}".`);
+    }
+
+    private async finishInitialFormDeclaration(): Promise<void> {
+        await ReportLog.step('Finish Initial form declaration', async () => {
+            await this.initialFormDeclaraPage.clickFinishButton();
+        });
     }
 }

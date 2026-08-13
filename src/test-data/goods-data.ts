@@ -4,13 +4,17 @@ import {COUNTRY_CODE} from "../constant/country-code-dropdown-constant";
 import {TYPE_OF_PACKAGES} from "../constant/type-of-packages-constant";
 import { PROCEDURE_CODES } from "../constant/procedure-codes-constant";
 import { ADDITIONAL_PROCEDURE_CODES } from "../constant/additional-procedure-codes-constant";
+import { WAREHOUSE_TYPE } from "../constant/warehouse-type-constant";
 import { ITEM_CURRENCY } from "../constant/item-currency-constant";
 import { CONTAINER_SIZE } from "../constant/container-size-constant";
 import { CONTAINER_PACKED_STATUS } from "../constant/container-packed-status-constant";
 import { CONTAINER_SUPPLIER_TYPE } from "../constant/container-supplier-type-constant";
+import { UN_DANGEROUS_GOODS_CODE } from "../constant/un-dangerous-goods-code-constant";
 import { DocumentReferenceData } from "./document-reference-data";
 import { AdditionalInformationData } from "./additional-information-data";
 import { PreviousDocumentData } from "./previous-document-data";
+import { TgpRecordData } from "./tgp-record-data";
+import { generateRandomContainerIdentifierNumber, generateRandomWarehouseIdentifier } from "../helper/data-generate-helper";
 
 
 export interface GoodsData {
@@ -20,10 +24,22 @@ export interface GoodsData {
      * other journey, where the screen never shows.
      */
     useTGP: boolean;
+    /**
+     * The TGP record to declare against — see TGP_RECORD for the ones that exist.
+     * Optional and NOT defaulted: which records exist depends on the environment and
+     * on the trader being declared for, so there is no record that is right for every
+     * test. Answering yes without naming one is a test-data mistake, and declareTgp
+     * fails on it rather than picking a record nobody chose.
+     *
+     * Read twice. It drives the lookup on the "Enter your Trader Goods Profile
+     * number" screen, and the values the goods-item overview must afterwards show.
+     */
+    tgpRecord?: TgpRecordData;
     goodsDomesticStatus: string;
     additionalRiskStatus: string;
     areGoodsControlled: boolean;
     isDangerousGoods: boolean;
+    /** A UN number - see UN_DANGEROUS_GOODS_CODE. Only read when isDangerousGoods. */
     dangerousGoodsCodes: string;
     commodityCode: string;
     goodsDescription: string;
@@ -38,8 +54,10 @@ export interface GoodsData {
     numberOfPieces?: string;
     grossMass: string;
     netMass?: string;
-    goodsProcedureCode: string;
+    procedureCode: string;
     additionalProcedureCode: string;
+    warehouseType: string;
+    warehouseIdentifier: string;
     invoiceNumber?: string;
     itemCurrency: string;
     itemPriceAmount: string;
@@ -68,9 +86,16 @@ export interface GoodsData {
     nationalAdditionalCodes: string[];
 }
 
-const defaults: GoodsData = {
+// `containerIdentifierNumber` is deliberately absent: generating it here would freeze
+// one value at module import, so every goods item in the run would declare the same
+// container. Omit<> makes the compiler demand it from the factory below.
+const defaults: Omit<GoodsData, 'containerIdentifierNumber' | 'warehouseIdentifier'> = {
     // "Do you want to use TGP?" — IMMI goods only; false = "without TGP".
     useTGP: false,
+    // Deliberately no default record: which records exist depends on the environment and
+    // the trader, so a default would let a test that forgot to name one run silently
+    // against whichever record happened to sit here.
+    tgpRecord: undefined,
     // "Enter goods domestic status"
     goodsDomesticStatus: GOODS_DOMESTIC_STATUS.NIDOM,
     // "Additional risk status"
@@ -80,7 +105,7 @@ const defaults: GoodsData = {
     // "Dangerous goods"
     isDangerousGoods: false,
     // "Dangerous goods codes"
-    dangerousGoodsCodes: '1234',
+    dangerousGoodsCodes: UN_DANGEROUS_GOODS_CODE.GASOLINE,
     // "Commodity code"
     commodityCode: '2404199000',
     // "Goods description"
@@ -108,9 +133,11 @@ const defaults: GoodsData = {
     // "Net mass" — optional on some journeys, required on others; kept <= gross mass.
     netMass: '90',
     // "Goods procedure code"
-    goodsProcedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+    procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
     // "Additional procedure code"
     additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.NO_OTHER_ADDITIONAL_CODE_000,
+
+    warehouseType: WAREHOUSE_TYPE.NON_CUSTOMS_WAREHOUSE,
     // "Invoice number" (Optional field)
     invoiceNumber: '',
     // "Item currency"
@@ -119,8 +146,6 @@ const defaults: GoodsData = {
     itemPriceAmount: '1000',
 
     // Per-item container details (only used when goods are in different containers)
-    // Value of Container Identifier Number must follow ISO standard
-    containerIdentifierNumber: 'MSKU3988348',
     containerSize: CONTAINER_SIZE.TRAILER,
     containerStatus: CONTAINER_PACKED_STATUS.NOT_EMPTY,
     containerSupplierType: CONTAINER_SUPPLIER_TYPE.SHIPPER_SUPPLIED,
@@ -136,5 +161,7 @@ const defaults: GoodsData = {
 
 export const goods = (overrides?: Partial<GoodsData>): GoodsData => ({
     ...defaults,
+    containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
+    warehouseIdentifier: generateRandomWarehouseIdentifier(),
     ...overrides,
 });

@@ -12,6 +12,21 @@ const EXPECT_TIMEOUT = 30_000; // Maximum wait for Playwright assertions: 30 sec
 const ACTION_TIMEOUT = 15_000; // Maximum wait for actions such as click/fill: 15 seconds
 const NAVIGATION_TIMEOUT = 30_000; // Maximum wait for page navigation: 30 seconds
 
+const HEADLESS = process.env.HEADLESS === 'true';
+
+/**
+ * One geometry for the recorded frame and for the page inside it, so the two
+ * cannot drift apart.
+ *
+ * A headed run keeps `viewport: null`, which means "match the real browser
+ * window" — and `--start-maximized` makes that the whole screen. Headless has no
+ * window manager, so `--start-maximized` is a no-op and `viewport: null` leaves
+ * Chromium at its small default: the page renders in GOV.UK's narrow layout, the
+ * screenshot comes out mobile-shaped, and the video letterboxes that postage
+ * stamp into a 1920x1080 frame. Hence an explicit viewport when headless.
+ */
+const RECORDING_SIZE = { width: 1920, height: 1080 };
+
 /**
  * Worker count: an explicit WORKERS wins everywhere; otherwise CI runs serial
  * and local runs use Playwright's default (undefined). Keep WORKERS <= the
@@ -50,7 +65,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL: process.env.BASE_URL,
-    headless: process.env.HEADLESS === 'true',
+    headless: HEADLESS,
     launchOptions: {
       args: ['--start-maximized'],
       slowMo: Number(process.env.SLOW_MO ?? 0),
@@ -61,13 +76,12 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: {
       mode: 'retain-on-failure',
-      size: {
-        width: 1920,
-        height: 1080,
-      },
+      size: RECORDING_SIZE,
     },
     trace: 'retain-on-failure',
-    viewport: null,
+    // Headed: null = fill the real (maximized) window. Headless: there is no window
+    // to fill, so state the size explicitly - see RECORDING_SIZE.
+    viewport: HEADLESS ? RECORDING_SIZE : null,
   },
 
   /* Projects must be static. Selection is done via CLI.

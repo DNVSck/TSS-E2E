@@ -1,14 +1,15 @@
-import { ReportLog } from '../core/report/report-log';
-import { GoodsOverviewPage } from "../page-object/goods-overview-page";
-import { DocumentReferenceDeclarePage } from "../page-object/document-reference-declare-page";
-import { AdditionalInformationDeclarePage } from "../page-object/additional-information-declare-page";
-import { PreviousDocumentDeclarePage } from "../page-object/header-previous-documents-declare-page";
-import { AdditionalProcedureCodeDeclarePage } from "../page-object/additional-procedure-code-declare-page";
-import { TaricAdditionalCodeDeclarePage } from "../page-object/taric-additional-code-declare-page";
-import { NationalAdditionalCodeDeclarePage } from "../page-object/national-additional-code-declare-page";
-import { DocumentReferenceData } from "../test-data/document-reference-data";
-import { AdditionalInformationData } from "../test-data/additional-information-data";
-import { PreviousDocumentData } from "../test-data/previous-document-data";
+﻿import { ReportLog } from '../../core/report/report-log';
+import { GoodsOverviewPage } from "../../page-object/goods-overview-page";
+import { DocumentReferenceDeclarePage } from "../../page-object/document-reference-declare-page";
+import { AdditionalInformationDeclarePage } from "../../page-object/additional-information-declare-page";
+import { PreviousDocumentDeclarePage } from "../../page-object/header-previous-documents-declare-page";
+import { AdditionalProcedureCodeDeclarePage } from "../../page-object/additional-procedure-code-declare-page";
+import { TaricAdditionalCodeDeclarePage } from "../../page-object/taric-additional-code-declare-page";
+import { NationalAdditionalCodeDeclarePage } from "../../page-object/national-additional-code-declare-page";
+import { DocumentReferenceData } from "../../test-data/document-reference-data";
+import { AdditionalInformationData } from "../../test-data/additional-information-data";
+import { PreviousDocumentData } from "../../test-data/previous-document-data";
+import { TgpRecordData } from "../../test-data/tgp-record-data";
 
 /**
  * Declares the goods-item overview tabs that each hold a list of records
@@ -26,6 +27,21 @@ export class GoodsOverviewFlow {
         private readonly taricAdditionalCodeDeclarePage: TaricAdditionalCodeDeclarePage,
         private readonly nationalAdditionalCodeDeclarePage: NationalAdditionalCodeDeclarePage,
     ) { }
+
+    /**
+     * Verify the goods-item fields the service populated from the chosen TGP record.
+     * A no-op unless the item was actually declared from a TGP, so every other
+     * journey is unaffected.
+     */
+    async verifyTgpPopulatedFields(record?: TgpRecordData): Promise<void> {
+        if (!record) {
+            return;
+        }
+
+        await ReportLog.step('Verify the goods item was populated from the TGP record', async () => {
+            await this.goodsOverviewPage.assertTgpPopulatedFields(record);
+        });
+    }
 
     async declareDocumentReferences(items: DocumentReferenceData[]): Promise<void> {
         if (items.length === 0) {

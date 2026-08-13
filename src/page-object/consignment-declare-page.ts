@@ -165,6 +165,16 @@ export class ConsignmentDeclarePage extends BasePage {
 
     // ===================== Use IMMI / controlled goods =====================
 
+    /**
+     * The IMMI question is only put to an IMMI-authorised account; every other
+     * account lands straight on the controlled-goods question instead. Waiting on
+     * whichever radio arrives first tells the two screens apart without a delay.
+     */
+    async isUseImmiQuestionShown(): Promise<boolean> {
+        await this.useIMMINoOption.or(this.controlledGoodsNoOption).first().waitFor();
+        return this.useIMMINoOption.isVisible();
+    }
+
     async selectUseIMMIYes(): Promise<void> {
         await this.useIMMIYesOption.check();
         await this.clickContinueButton();

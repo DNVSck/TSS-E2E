@@ -26,6 +26,49 @@ export interface PartyAddress {
     country: string;
 }
 
+/**
+ * Any test-data object carrying one party's six address fields under a given prefix -
+ * `consignorName`, `consignorStreetName`, and so on.
+ *
+ * Described as a shape rather than an interface the data classes implement, so
+ * toPartyAddress can be called against the real (much larger) *Data classes without
+ * any of them declaring anything: they already have the fields.
+ */
+export type PartyFields<Prefix extends string> = {
+    [K in
+        | `${Prefix}Name`
+        | `${Prefix}StreetName`
+        | `${Prefix}StreetNumber`
+        | `${Prefix}City`
+        | `${Prefix}PostCode`
+        | `${Prefix}CountryCode`]: string;
+};
+
+/**
+ * Map one party's `{prefix}...` fields off a test-data object into a PartyAddress.
+ *
+ * Lives here, beside the type it produces and the prefix convention it shares with
+ * PartyBlock (`input#${party}Name`), rather than in a mapper module of its own. It
+ * replaces the buyer/consignor/consignee/exporter/seller mappers that were copied
+ * verbatim - same six fields, different prefix - across the ENS consignment flow and
+ * each standalone one.
+ *
+ *     toPartyAddress('exporter', input)
+ */
+export function toPartyAddress<Prefix extends string>(
+    prefix: Prefix,
+    data: PartyFields<Prefix>,
+): PartyAddress {
+    return {
+        name: data[`${prefix}Name` as keyof PartyFields<Prefix>],
+        streetName: data[`${prefix}StreetName` as keyof PartyFields<Prefix>],
+        streetNumber: data[`${prefix}StreetNumber` as keyof PartyFields<Prefix>],
+        city: data[`${prefix}City` as keyof PartyFields<Prefix>],
+        postCode: data[`${prefix}PostCode` as keyof PartyFields<Prefix>],
+        country: data[`${prefix}CountryCode` as keyof PartyFields<Prefix>],
+    };
+}
+
 
 function currentStep(url: string): string {
     return new URL(url).pathname.split('~').pop() ?? '';

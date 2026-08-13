@@ -8,6 +8,8 @@ export class GoodsDeclarePage extends BasePage {
 
     private readonly useTgpYesOption: Locator;
     private readonly useTgpNoOption: Locator;
+    private readonly tgpNumberInput: Locator;
+    private readonly tgpNumberFirstOption: Locator;
 
     private readonly noControlledGoodsOption: Locator;
     private readonly yesControlledGoodsOption: Locator;
@@ -37,6 +39,8 @@ export class GoodsDeclarePage extends BasePage {
     private readonly goodsProcedureCodeDropdown: Locator;
 
     private readonly additionalProcedureCodeDropdown: Locator;
+    private readonly warehouseTypeDropdown: Locator;
+    private readonly warehouseIdentifierInput: Locator;
 
     private readonly invoiceNumberInput: Locator;
     private readonly itemCurrencyDropdown: Locator;
@@ -48,6 +52,11 @@ export class GoodsDeclarePage extends BasePage {
         // "Do you want to use TGP?" — the first goods screen, IMMI goods only.
         this.useTgpYesOption = page.locator("input#useTgp-yesNoOptions-yes");
         this.useTgpNoOption = page.locator("input#useTgp-yesNoOptions-no");
+
+        // "Enter your Trader Goods Profile number" — reached only after answering the
+        // TGP question yes. Another accessible-autocomplete, like the commodity code.
+        this.tgpNumberInput = page.locator("#tgpNumber");
+        this.tgpNumberFirstOption = page.locator("#tgpNumber__option--0");
 
         // Goods domestic status and additional risk status have no goods-item screens
         // — the app carries them over from the consignment — so no locators here.
@@ -92,6 +101,11 @@ export class GoodsDeclarePage extends BasePage {
         // "Additional procedure code"
         this.additionalProcedureCodeDropdown = page.locator("select#additionalProcedureCode");
 
+        // "Warehouse identifier" - inserted into the procedure journey only for the
+        // procedure codes that declare warehoused goods (see requiresWarehouseIdentifier).
+        this.warehouseTypeDropdown = page.locator("select#warehouseType");
+        this.warehouseIdentifierInput = page.locator("input#warehouseIdentifier");
+
         // "Enter invoice details"
         this.invoiceNumberInput = page.locator("input#invoiceNumber");
         this.itemCurrencyDropdown = page.locator("select#itemCurrency");
@@ -101,27 +115,35 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     /**
-     * The "use TGP?" screen is the first goods screen, but it appears only for IMMI
-     * goods when the signed-in trader has a TGP profile — a fact about the
-     * environment, so it is detected rather than declared in the test data. Waits
-     * for whichever screen the app lands on (the TGP question, or the goods domestic
-     * status screen that immediately follows when TGP is absent) and answers the TGP
-     * question only when it is actually shown.
+     * The "use TGP?" screen is the first goods screen on IMMI, but it only appears
+     * when the signed-in trader has a TGP profile — a fact about the environment, so
+     * it is detected rather than declared in the test data. When TGP is absent the app
+     * lands straight on the procedure-code screen, so wait for whichever arrives and
+     * report which one it was.
      *
-     * Returns whether the screen was present and answered.
+     * Detection is separate from answering so the caller can leave the Allure step
+     * unopened when the screen does not exist - see GoodsItemSteps.declareTgp.
      */
-    async answerUseTgpIfPresent(useTGP: boolean): Promise<boolean> {
-        // On IMMI the TGP screen is first; when the trader has no TGP profile the app
-        // lands straight on the procedure-code screen, so wait for whichever shows.
+    async isUseTgpQuestionShown(): Promise<boolean> {
         await this.useTgpYesOption.or(this.goodsProcedureCodeDropdown).first().waitFor({ state: 'visible' });
+        return this.useTgpYesOption.isVisible();
+    }
 
-        if (!(await this.useTgpYesOption.isVisible())) {
-            return false;
-        }
-
+    /** Answer the TGP question. Only call once isUseTgpQuestionShown() has said yes. */
+    async answerUseTgp(useTGP: boolean): Promise<void> {
         await (useTGP ? this.useTgpYesOption : this.useTgpNoOption).check();
         await this.clickContinueButton();
-        return true;
+    }
+
+    /**
+     * "Enter your Trader Goods Profile number" — a GOV.UK accessible-autocomplete,
+     * so the same type-then-commit dance as the commodity code applies (a plain
+     * fill leaves the hidden value empty). The lookup matches the record id, the
+     * trader reference or the commodity code, so the caller picks whichever it holds.
+     */
+    async selectTgpNumber(lookup: string): Promise<void> {
+        await selectAutocompleteValue(this.tgpNumberInput, this.tgpNumberFirstOption, lookup);
+        await this.clickContinueButton();
     }
 
     async selectGoodsControlledYes(): Promise<void> {
@@ -157,8 +179,12 @@ export class GoodsDeclarePage extends BasePage {
         await selectDropdownValue(this.countryOfOriginDropdown, countryOfOrigin);
     }
 
-    async inputSupplementaryUnits(supplementaryUnits: string): Promise<void> {
-        await this.supplementaryUnitsInput.fill(supplementaryUnits);
+    /**
+     * "Supplementary units" (Optional field) — shares the commodity screen. Filling it
+     * blank is how a test declares none: the overview then shows "Not provided".
+     */
+    async inputSupplementaryUnits(supplementaryUnits?: string): Promise<void> {
+        await this.supplementaryUnitsInput.fill(supplementaryUnits ?? '');
     }
 
     async inputCusCode(cusCode: string): Promise<void> {
@@ -207,6 +233,16 @@ export class GoodsDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
+    /**
+     * "Warehouse identifier" — where the goods being imported are held. Two fields on
+     * one screen: the warehouse type, then its identifier.
+     */
+    async enterWarehouseIdentifier(warehouseType: string, warehouseIdentifier: string): Promise<void> {
+        await selectDropdownValue(this.warehouseTypeDropdown, warehouseType);
+        await this.warehouseIdentifierInput.fill(warehouseIdentifier);
+        await this.clickContinueButton();
+    }
+
     async inputInvoiceNumber(invoiceNumber: string): Promise<void> {
         await this.invoiceNumberInput.fill(invoiceNumber);
     }
@@ -224,8 +260,32 @@ export class GoodsDeclarePage extends BasePage {
         await selectAutocompleteValue(this.commodityCodeInput, this.commodityCodeFirstOption, commodityCode);
     }
 
-    /** The goods-item commodity screen: the tariff commodity code plus a description. */
-    async enterGoodsDescriptionAndCommodityCode(goodsDescription: string, commodityCode: string): Promise<void> {
+    /**
+     * The goods-item commodity screen: the tariff commodity code, a description and
+     * supplementary units.
+     */
+    async enterGoodsDescriptionAndCommodityCode(
+        goodsDescription: string,
+        commodityCode: string,
+        supplementaryUnits?: string
+    ): Promise<void> {
+        await this.selectCommodityCode(commodityCode);
+        await this.inputGoodsDescription(goodsDescription);
+        await this.inputSupplementaryUnits(supplementaryUnits);
+        await this.clickContinueButton(COMMODITY_SUBMIT_TIMEOUT);
+    }
+
+    /**
+     * The same screen on a journey that does NOT collect supplementary units — EIDR.
+     *
+     * A separate method rather than a flag on the one above: the two are different
+     * screens, and touching a field that is not rendered costs the full action timeout
+     * before failing on a message about an input, saying nothing about the journey.
+     */
+    async enterGoodsDescriptionAndCommodityCodeOnly(
+        goodsDescription: string,
+        commodityCode: string
+    ): Promise<void> {
         await this.selectCommodityCode(commodityCode);
         await this.inputGoodsDescription(goodsDescription);
         await this.clickContinueButton(COMMODITY_SUBMIT_TIMEOUT);

@@ -7,7 +7,7 @@ export interface GmrData {
 
 const defaults: GmrData = {
     route_id: ROUTE_ID_CONSTANT.GB_TO_NI.HEYSHAM_BELFAST_STENA_LINE,
-    external_contacts_list: ["adam1.taylor@nifreight.co.uk", "john.doe@nifreight.co.uk"]
+    external_contacts_list: []
 };
 
 export const gmrData = (overrides?: Partial<GmrData>): GmrData => ({

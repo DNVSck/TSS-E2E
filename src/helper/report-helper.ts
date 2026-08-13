@@ -1,5 +1,6 @@
 import { ReportLog } from '../core/report/report-log';
 import { UserCredentials } from '../auth/credentials';
+import { GoodsData } from '../test-data/goods-data';
 import { TEST_LINK_CONFIG } from '../constant/test-link.constant';
 
 // Helpers that record DOMAIN facts into the report, sitting on top of ReportLog -
@@ -33,6 +34,36 @@ export function reportTestAccount(authAccount: UserCredentials | null, flowName:
 
     const { username, profile, accountNumber } = authAccount;
     ReportLog.setParameter('Test account', `${username} (${profile} account ${accountNumber ?? 1})`);
+}
+
+/**
+ * Surface the procedure codes a goods item declares, so a report can be read without
+ * opening the spec that produced it.
+ *
+ * Parameters rather than log lines: they sit in a table at the head of the test, which
+ * is where someone scanning a run looks, and Allure can group and compare runs by them
+ * - "every 4051 test failed" is visible at a glance, which is the question these codes
+ * are usually asked in.
+ *
+ * The three are reported apart because the app treats them apart, and conflating them
+ * is the usual mistake: the procedure code and the additional procedure code are two
+ * separate screens of the goods wizard, while the third is a LIST declared afterwards
+ * on the goods-item overview tab, on top of the second - not instead of it.
+ *
+ * Shared by all four common flows, which is what earns it a place here.
+ */
+export function reportDeclarationCodes(goods: GoodsData): void {
+    ReportLog.setParameter('Procedure code', goods.procedureCode);
+    ReportLog.setParameter('Additional procedure code', goods.additionalProcedureCode);
+
+    // Omitted rather than reported empty: most journeys declare none, and a column of
+    // blanks buries the few runs where this actually carries something.
+    if (goods.additionalProcedureCodes.length > 0) {
+        ReportLog.setParameter(
+            'Additional procedure codes (tab)',
+            goods.additionalProcedureCodes.join(', ')
+        );
+    }
 }
 
 /**

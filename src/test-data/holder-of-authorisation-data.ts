@@ -1,4 +1,5 @@
 import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
+import { IMPORTER_EORI } from '../../config/environment';
 
 /**
  * One "holder of authorisation" record — the shape behind the consignment's
@@ -13,8 +14,10 @@ export interface HolderOfAuthorisationData {
 }
 
 const defaults: HolderOfAuthorisationData = {
-    typeCode: AUTHORISATION_TYPE_CODE.SIMPLIFIED_DECLARATION_PROCEDURE,
-    roleId: 'XI896458895023',
+    typeCode: AUTHORISATION_TYPE_CODE.SIMPLIFIED_DECLARATION_PROCEDURE_SDE,
+    // The authorisation is held by the importer being declared for, so its EORI is
+    // environment data - see IMPORTER_EORI.
+    roleId: IMPORTER_EORI,
 };
 
 export const holderOfAuthorisation = (overrides?: Partial<HolderOfAuthorisationData>): HolderOfAuthorisationData => ({

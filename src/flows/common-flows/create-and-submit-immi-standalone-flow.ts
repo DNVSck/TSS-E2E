@@ -1,19 +1,22 @@
-import { TestInfo } from '@playwright/test';
+﻿import { TestInfo } from '@playwright/test';
 import { PortalAccessFlow } from '../portal-access-flow';
 import { InitialFormDeclarationFlow } from '../initial-form-declaration-flow';
-import { AddNewImmiStandaloneConsignmentFlow } from '../add-new-immi-standalone-consignment-flow';
-import { AddNewImmiStandaloneGoodsItemFlow } from '../add-new-immi-standalone-goods-item-flow';
-import { ConsignmentOverviewFlow } from '../consignment-overview-flow';
-import { GoodsOverviewFlow } from '../goods-overview-flow';
+import { AddNewImmiStandaloneConsignmentFlow } from '../consignment/add-new-immi-standalone-consignment-flow';
+import { AddNewImmiStandaloneGoodsItemFlow } from '../goods-item/add-new-immi-standalone-goods-item-flow';
+import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
+import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import {
     ImmiStandaloneConsignmentData, immiStandaloneConsignment,
 } from '../../test-data/immi-standalone-consignment-data';
 import { GoodsData, goods } from '../../test-data/goods-data';
 import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
-import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
+import { LOCAL_REFERENCE, MRN_COUNTRY_CODE } from '../../constant/local-reference-constants';
 import { UserCredentials } from '../../auth/credentials';
-import { reportTestAccount } from '../../helper/report-helper';
+import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
+import { standaloneSubmittedStatusKey } from '../../helper/consignment-status-helper';
+import { requiresWarehouseIdentifier } from '../../helper/procedure-code-helper';
+import { SUPERVISING_CUSTOMS_OFFICE } from '../../constant/supervising-customs-office-constant';
 
 /**
  * Create and submit an IMMI standalone consignment. One flow per standalone journey:
@@ -48,6 +51,7 @@ export class CreateAndSubmitImmiStandaloneFlow {
         const goodsData = goods(options.goodsItemOverrides);
 
         reportTestAccount(this.authAccount, 'completeImmiStandaloneFlow');
+        reportDeclarationCodes(goodsData);
 
         await this.accessFlow.openService({ baseUrl: url, testInfo });
         await this.initialFormFlow.completeInitialFormDeclaration(initialFormData({
@@ -65,14 +69,52 @@ export class CreateAndSubmitImmiStandaloneFlow {
         await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
         await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
 
-        await this.addGoodsItemFlow.addNewImmiStandaloneGoodsItem(goodsData);
-        // Goods-item-overview tabs, declared while on the goods item's overview.
+        const usedTgp = await this.addGoodsItemFlow.addNewImmiStandaloneGoodsItem(goodsData);
+        // A TGP item never typed its commodity code, description or country of origin —
+        // the service copied them from the record — so the overview is the only place
+        // that proves the record was applied. No-op when the item did not use TGP.
+        await this.goodsOverviewFlow.verifyTgpPopulatedFields(usedTgp ? goodsData.tgpRecord : undefined);
+        // Goods-item-overview tabs, declared while on the goods item's overview. All six
+        // tabs the IMMI goods item shows are wired, each a no-op on an empty list, so a
+        // test opting into one only has to supply its data - same set as the ENS flow.
         await this.goodsOverviewFlow.declareDocumentReferences(goodsData.documentReferences);
+        await this.goodsOverviewFlow.declareAdditionalInformations(goodsData.additionalInformations);
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
+        await this.goodsOverviewFlow.declareAdditionalProcedureCodes(goodsData.additionalProcedureCodes);
+        await this.goodsOverviewFlow.declareTaricAdditionalCodes(goodsData.taricAdditionalCodes);
+        await this.goodsOverviewFlow.declareNationalAdditionalCodes(goodsData.nationalAdditionalCodes);
+
+        // Checked BEFORE submit, unlike the ENS journey: this consignment carries its
+        // own warehouse, so the service has already derived the office by the time the
+        // goods item is finished - there is nothing to wait for and no reason to let a
+        // wrong one through to submission.
+        //
+        // The navigation is NOT optional. Everything above leaves the browser on the
+        // GOODS ITEM overview (on whichever tab was declared last), and this row lives
+        // on the CONSIGNMENT overview - submitConsignment is what usually walks back up
+        // the breadcrumb, and it runs after this.
+        if (requiresWarehouseIdentifier(goodsData.procedureCode)) {
+            await this.consignmentOverviewFlow.goToConsignmentOverview();
+            await this.consignmentOverviewFlow.verifySupervisingCustomsOffice(
+                SUPERVISING_CUSTOMS_OFFICE.GBBEL004
+            );
+        }
 
         await this.consignmentOverviewFlow.submitConsignment();
-        // NOSONAR
-        // TODO: verify the post-submit state once the standalone consignment overview
-        // exposes a Status field - see verifyStandaloneConsignmentSubmitted.
+        await this.verifyPostSubmit(consignmentData);
+    }
+
+    /**
+     * Post-submit verification for standalone IMMI. Unlike SFD, this journey has no
+     * second route to branch on, so it follows the shared standalone rule outright: a
+     * pre-lodged movement waits for its goods, an arrived one is already there, and the
+     * consignment is assigned an MRN opening with the IMMI country code - the same
+     * check the ENS journey makes of the IMMI consignment it auto-generates.
+     */
+    private async verifyPostSubmit(consignmentData: ImmiStandaloneConsignmentData): Promise<void> {
+        await this.consignmentOverviewFlow.verifyStandaloneConsignmentSubmitted(
+            standaloneSubmittedStatusKey(consignmentData.isPreLodged)
+        );
+        await this.consignmentOverviewFlow.verifyStandaloneConsignmentMrn('IMMI', MRN_COUNTRY_CODE.IMMI);
     }
 }

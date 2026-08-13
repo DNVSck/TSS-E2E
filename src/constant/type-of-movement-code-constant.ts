@@ -1,7 +1,12 @@
+/**
+ * The "What method of transport are you using?" radio. Values read from the screen
+ * itself: "3a" RoRo Accompanied, "1a" RoRo Unaccompanied, "4" ILP Air, "1" ILP
+ * Maritime. AIR previously read "air", which no screen ever offered.
+ */
 export const TYPE_OF_MOVEMENT_OPTION_CODE = {
     RORO_ACCOMPANIED: '3a',
     RORO_UNACCOMPANIED: '1a',
-    AIR: 'air',
+    AIR: '4',
     MARITIME: '1',
 } as const;
 

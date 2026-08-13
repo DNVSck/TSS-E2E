@@ -3,8 +3,16 @@ import { Page, Locator, expect } from '@playwright/test';
 import { generateTotpCode } from '../core/util/totp-auth';
 import { UserCredentials } from '../auth/credentials';
 
-/** How many TOTP windows to try before giving up. */
-const MAX_TOTP_ATTEMPTS = 5;
+// Sized for code REUSE, not for a mistyped code. A TOTP code can be spent once: sign
+// the same account in twice inside one 30-second window and the second attempt
+// generates the same digits, which the provider refuses as already used. Proven on
+// SIT with two clean sign-ins back to back - no failed attempt involved. Waiting for
+// the next window is the fix, and that is what the loop below does.
+// Most refusals clear on the second attempt; the wrong-code spec was seen needing 4.
+const MAX_TOTP_ATTEMPTS = 8;
+
+/** The identity provider is a separate host and can be slow to hand a screen over. */
+const AUTH_SCREEN_TIMEOUT = 30_000;
 
 export class SignInPage extends BasePage {
 
@@ -13,6 +21,7 @@ export class SignInPage extends BasePage {
     private readonly signInButton: Locator;
     private readonly totpCodeInput: Locator;
     private readonly totpErrorMessage: Locator;
+    private readonly errorSummaryMessage: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -22,6 +31,7 @@ export class SignInPage extends BasePage {
         this.totpCodeInput = page.locator("input#otp");
         // Keycloak's "Invalid authenticator code." message on the OTP screen.
         this.totpErrorMessage = page.locator("#input-error-otp-code");
+        this.errorSummaryMessage = page.locator('.govuk-error-summary__list li');
     }
 
     /** Fill in the username/password and submit. */
@@ -29,6 +39,52 @@ export class SignInPage extends BasePage {
         await this.emailAddressInput.fill(credentials.username);
         await this.passwordInput.fill(credentials.password);
         await this.signInButton.click();
+    }
+
+    /**
+     * Submit the sign-in form exactly as given - including blank values, which is a
+     * case a test needs. Kept apart from {@link signIn} because that one takes a
+     * whole account and this one deliberately takes strings that need not identify
+     * any account at all.
+     */
+    async submitCredentials(username: string, password: string): Promise<void> {
+        await this.emailAddressInput.waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
+        await this.emailAddressInput.fill(username);
+        await this.passwordInput.fill(password);
+        await this.signInButton.click();
+        await this.page.waitForLoadState('domcontentloaded');
+    }
+
+    /**
+     * The sign-in error, read once it has rendered. Returned rather than asserted
+     * so the caller can both report the text and assert it - a report that only
+     * says "the assertion failed" cannot say what the service actually told the user.
+     */
+    async getSignInErrorMessage(): Promise<string> {
+        await this.errorSummaryMessage.first()
+            .waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
+        return (await this.errorSummaryMessage.first().innerText()).trim();
+    }
+
+    /** The OTP screen's field-level error, read once it has rendered. */
+    async getAuthenticatorCodeErrorMessage(): Promise<string> {
+        await this.totpErrorMessage
+            .waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
+        return (await this.totpErrorMessage.innerText()).trim();
+    }
+
+    /** Wait until the identity provider has handed over the authenticator-code screen. */
+    async waitForAuthenticatorCodeStep(): Promise<void> {
+        await this.totpCodeInput.waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
+    }
+
+    /**
+     * Submit one specific code. Public so a test can submit a WRONG one; the
+     * correct-code path goes through {@link inputTotp}, which owns the retry across
+     * TOTP windows.
+     */
+    async submitAuthenticatorCode(code: string): Promise<void> {
+        await this.submitCode(code);
     }
 
 
@@ -49,10 +105,25 @@ export class SignInPage extends BasePage {
             if (!(await this.totpErrorMessage.isVisible())) {
                 return;
             }
+
+            // Say so. Otherwise a sign-in waiting out a 30-second window sits there
+            // silently, and the next person to watch a run has no way to tell waiting
+            // from hanging.
+            //
+            // console, not ReportLog: this also runs in globalSetup, where there is
+            // no test for an Allure step to attach to.
+            console.log(
+                `TOTP attempt ${attempt} of ${MAX_TOTP_ATTEMPTS} refused. Waiting for the ` +
+                `next 30-second window. Usually this means the code was already spent by ` +
+                `an earlier sign-in of the same account in this window.`
+            );
         }
 
         throw new Error(
-            `TOTP login failed: Keycloak refused the code on all ${MAX_TOTP_ATTEMPTS} attempts.`
+            `TOTP login failed: Keycloak refused the code on all ${MAX_TOTP_ATTEMPTS} attempts ` +
+            `(about ${MAX_TOTP_ATTEMPTS * 30} seconds of windows). That is far longer than a ` +
+            `spent code takes to roll over, so check the TOTP secret and the machine clock ` +
+            `rather than assuming a busy account.`
         );
     }
 

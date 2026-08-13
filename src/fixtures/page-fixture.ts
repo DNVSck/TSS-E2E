@@ -1,5 +1,9 @@
 import { test } from '@playwright/test';
 import { PortalPage } from '../page-object/portal-page'
+import { SignInPage } from '../page-object/sign-in-page';
+import { CompanyProfilePage } from '../page-object/company-profile-page';
+import { CompanyProfileUsersPage } from '../page-object/company-profile-users-page';
+import { NavigationMenu } from '../page-object/components/navigation-menu';
 import { BasePage } from '../page-object/base-page';
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
@@ -16,18 +20,24 @@ import { HolderOfAuthorisationDeclarePage } from '../page-object/holder-of-autho
 import { DocumentReferenceDeclarePage } from '../page-object/document-reference-declare-page';
 import { AdditionalInformationDeclarePage } from '../page-object/additional-information-declare-page';
 import { AdditionalProcedureCodeDeclarePage } from '../page-object/additional-procedure-code-declare-page';
+import { ExternalContactDeclarePage } from '../page-object/external-contact-declare-page';
 import { TaricAdditionalCodeDeclarePage } from '../page-object/taric-additional-code-declare-page';
 import { NationalAdditionalCodeDeclarePage } from '../page-object/national-additional-code-declare-page';
 import { RepresentTraderPage } from '../page-object/represent-trader-page';
 import { AgentBanner } from '../page-object/components/agent-banner';
 import { ConsignmentDetailPage } from '../page-object/consignment-detail-page';
 import { StandaloneConsignmentDeclarePage } from '../page-object/standalone-consignment-declare-page';
+import { FfdStandaloneConsignmentDeclarePage } from '../page-object/ffd-standalone-consignment-declare-page';
 import { TaskListPage } from '../page-object/task-list-page';
 
 
 export type PageFixtureType = {
     basePage: BasePage;
     portalPage: PortalPage;
+    signInPage: SignInPage;
+    companyProfilePage: CompanyProfilePage;
+    companyProfileUsersPage: CompanyProfileUsersPage;
+    navigationMenu: NavigationMenu;
     representTraderPage: RepresentTraderPage;
     agentBanner: AgentBanner;
     consignmentDetailPage: ConsignmentDetailPage;
@@ -46,9 +56,12 @@ export type PageFixtureType = {
     documentReferenceDeclarePage: DocumentReferenceDeclarePage;
     additionalInformationDeclarePage: AdditionalInformationDeclarePage;
     additionalProcedureCodeDeclarePage: AdditionalProcedureCodeDeclarePage;
+    externalContactDeclarePage: ExternalContactDeclarePage;
     taricAdditionalCodeDeclarePage: TaricAdditionalCodeDeclarePage;
     nationalAdditionalCodeDeclarePage: NationalAdditionalCodeDeclarePage;
     standaloneConsignmentDeclarePage: StandaloneConsignmentDeclarePage;
+    // The FFD-only screens. Empty until they are built - see the page object.
+    ffdStandaloneConsignmentDeclarePage: FfdStandaloneConsignmentDeclarePage;
     consignmentTaskListPage: TaskListPage;
 }
 
@@ -61,6 +74,22 @@ export const pageFixture: ExtendParams[0] = {
 
     portalPage: async ({ page }, use) => {
         await use(new PortalPage(page));
+    },
+
+    signInPage: async ({ page }, use) => {
+        await use(new SignInPage(page));
+    },
+
+    companyProfilePage: async ({ page }, use) => {
+        await use(new CompanyProfilePage(page));
+    },
+
+    companyProfileUsersPage: async ({ page }, use) => {
+        await use(new CompanyProfileUsersPage(page));
+    },
+
+    navigationMenu: async ({ page }, use) => {
+        await use(new NavigationMenu(page));
     },
 
     representTraderPage: async ({ page }, use) => {
@@ -103,8 +132,8 @@ export const pageFixture: ExtendParams[0] = {
         await use(new GoodsDeclarePage(page));
     },
 
-    goodsOverviewPage: async ({ page }, use) => {
-        await use(new GoodsOverviewPage(page));
+    goodsOverviewPage: async ({ page, t }, use) => {
+        await use(new GoodsOverviewPage(page, t));
     },
 
     gmrDeclarePage: async ({ page }, use) => {
@@ -135,6 +164,10 @@ export const pageFixture: ExtendParams[0] = {
         await use(new AdditionalProcedureCodeDeclarePage(page));
     },
 
+    externalContactDeclarePage: async ({ page }, use) => {
+        await use(new ExternalContactDeclarePage(page));
+    },
+
     taricAdditionalCodeDeclarePage: async ({ page }, use) => {
         await use(new TaricAdditionalCodeDeclarePage(page));
     },
@@ -145,6 +178,10 @@ export const pageFixture: ExtendParams[0] = {
 
     standaloneConsignmentDeclarePage: async ({ page }, use) => {
         await use(new StandaloneConsignmentDeclarePage(page));
+    },
+
+    ffdStandaloneConsignmentDeclarePage: async ({ page }, use) => {
+        await use(new FfdStandaloneConsignmentDeclarePage(page));
     },
 
     consignmentTaskListPage: async ({ page }, use) => {

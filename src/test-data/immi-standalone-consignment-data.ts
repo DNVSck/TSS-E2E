@@ -4,15 +4,15 @@ import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { REPRESENTATION_TYPE } from '../constant/representation-type-constant';
 import { PreviousDocumentData, previousDocument } from './previous-document-data';
+import { generateValidArrivalDate, generatePastArrivalDate } from '../helper/data-generate-helper';
 import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
 
 /**
  * The IMMI standalone consignment ("Internal Market Movement Information").
  *
- * Only the fields the IMMI wizard actually asks for. It has NO vehicle screen, and
- * its arrival screen is a port select only - it never asks for an arrival date/time,
- * whether the movement is pre-lodged or arrived. So neither vehicleRegistration nor
- * arrivalDateTime exists here; a spec cannot set a field this journey ignores.
+ * Only the fields the IMMI wizard actually asks for. It has NO vehicle screen, so
+ * vehicleRegistration does not exist here: a spec cannot set a field this journey
+ * ignores.
  */
 export interface ImmiStandaloneConsignmentData {
     /**
@@ -23,14 +23,36 @@ export interface ImmiStandaloneConsignmentData {
     representationType?: string;
 
     /**
-     * "Is this a pre-lodged or arrived movement?" - the first screen of the wizard.
-     * Unlike SFD/FFD it decides nothing further: IMMI asks no arrival date/time either way.
+     * "Is this a pre-lodged or arrived movement?" - the first screen of the wizard, and
+     * the answer the arrival date below has to agree with.
      */
     isPreLodged: boolean;
 
     typeOfMovement: string;
+    /**
+     * "When will the goods arrive?" - day, month, hour and minute, asked on BOTH
+     * branches. Unlike FFD, which skips the screen once the goods have arrived, IMMI
+     * asks either way - but the VALUE differs: a pre-lodged movement has not arrived so
+     * the time must be in the future, an arrived one must be in the past.
+     *
+     * Left undefined so the factory derives whichever the branch needs. Set it only to
+     * pin a specific moment, and then it is the spec's job to keep it on the right side
+     * of now.
+     */
+    arrivalDateTime?: string;
     portOfArrival: string;
-    arrivalDateTime?: string
+
+    /**
+     * "Location of Goods (if not in list above)" - free text beside the port dropdown,
+     * offered ONLY on the arrived branch, for goods that are not at a listed port (an
+     * Inward Processing holder's premises, say - build it with locationOfGoodsOfOther).
+     *
+     * It REPLACES portOfArrival rather than accompanying it: the app rejects a screen
+     * that answers both. Left undefined, so the port above is used and the field stays
+     * blank. Setting it on a pre-lodged movement has no effect - that branch never
+     * shows the field.
+     */
+    locationOfGoods?: string;
 
     exporterEORI: string;
     exporterName: string;
@@ -85,7 +107,16 @@ const defaults: ImmiStandaloneConsignmentData = {
  */
 export const immiStandaloneConsignment = (
     overrides?: Partial<ImmiStandaloneConsignmentData>
-): ImmiStandaloneConsignmentData => ({
-    ...defaults,
-    ...overrides,
-});
+): ImmiStandaloneConsignmentData => {
+    const data = { ...defaults, ...overrides };
+
+    return {
+        ...data,
+        // Derived AFTER the overrides, because it depends on isPreLodged and a spec may
+        // have just changed it. Deriving earlier would leave an arrived movement holding
+        // a future arrival time - the two screens of one declaration disagreeing, which
+        // is exactly the mistake this branch exists to avoid.
+        arrivalDateTime: data.arrivalDateTime
+            ?? (data.isPreLodged ? generateValidArrivalDate() : generatePastArrivalDate()),
+    };
+};

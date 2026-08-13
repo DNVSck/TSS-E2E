@@ -9,17 +9,30 @@ import { GoodsData } from './goods-data';
  * state only what makes that one test different. Pasting the same block into each
  * test is what produced the duplication finding on the IMMI spec.
  *
- * Nothing journey-specific yet: the SFD standalone document set has not been
- * confirmed against the app, and inventing customs document codes/references would
- * be worse than leaving it empty. It returns the shared defaults unchanged until
- * then, so wiring it in now is behaviour-neutral.
+ * Both SFD standalone routes share what is set below - the controlled-goods route and
+ * the SFD-EIDR route declare the same item, and only the CONSIGNMENT answer decides
+ * which screens it passes through. `areGoodsControlled` is deliberately NOT restated
+ * here: the shared `goods()` defaults already answer it, and the EIDR route never asks
+ * the question at all, so a value here would describe only half the journeys it serves.
  *
- * To fill it in, follow immi-standalone-goods-item-data.ts: add the document
- * references, previous documents and additionalProcedureCode the journey requires,
- * keeping `...overrides` last so a spec can still vary one field.
+ * The document set is still missing: the SFD standalone documents have not been
+ * confirmed against the app, and inventing customs document codes/references would be
+ * worse than leaving them out. To fill them in, follow
+ * immi-standalone-goods-item-data.ts and add the document references, previous
+ * documents and additionalProcedureCode the journey requires, keeping `...overrides`
+ * last so a spec can still vary one field.
  */
 export const sfdStandaloneGoodsItem = (
     overrides?: Partial<GoodsData>
 ): Partial<GoodsData> => ({
+    // Chapter 24 tobacco, which is what makes the controlled-goods route meaningful:
+    // the route is only worth testing with a commodity the service treats as
+    // controlled. Not the shared default (2404199000) - that one is nicotine products.
+    commodityCode: '2403199000',
+    // Read on the packaging screen by BOTH routes. Realistic marks rather than the
+    // shared placeholder, so the packaging screen is exercised with what a trader
+    // would really type.
+    shippingMarks: 'Production date 25/08/2025; Lot code LOT GBM-250825-01; Approval no. UK 4312 EC (cutting plant)',
+
     ...overrides,
 });

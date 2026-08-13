@@ -1,4 +1,5 @@
 import { StringUtil } from '../core/util/string-util';
+import { ICS2_DECLARANT_ID, RMQ_HOST } from '../../config/environment';
 
 // Builders for the API/message payloads this service exchanges. Named for the role
 // (an api helper) rather than for today's only subject, so the next payload builder
@@ -8,8 +9,10 @@ import { StringUtil } from '../core/util/string-util';
 const ICS2_EXCHANGE = 'ics2-exchange';
 const ICS2_ROUTING_KEY = 'portal.ics2.notification';
 const ICS2_STATUS_RESPONSE_TYPE = 'nc.uk.hmrc.tss.common.shared.model.adapter.ics2.Ics2StatusResponse';
-const DECLARANT_ID = 'XI553202734852';
-export const PUBLISH_ENDPOINT = `/rmq/api/exchanges/%2F/${ICS2_EXCHANGE}/publish`;
+const DECLARANT_ID = ICS2_DECLARANT_ID;
+
+export const PUBLISH_ENDPOINT =
+  `${StringUtil.stripTrailingSlashes(RMQ_HOST)}/api/exchanges/%2F/${ICS2_EXCHANGE}/publish`;
 
 export function buildIe3n03PublishBody(ensMrn: string, ensN730: string): Record<string, unknown> {
   const jobId = StringUtil.randomUuid();

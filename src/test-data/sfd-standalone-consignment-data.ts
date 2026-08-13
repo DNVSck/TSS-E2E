@@ -8,7 +8,10 @@ import { CONTAINER_SIZE } from '../constant/container-size-constant';
 import { CONTAINER_SUPPLIER_TYPE } from '../constant/container-supplier-type-constant';
 import { CONTAINER_PACKED_STATUS } from '../constant/container-packed-status-constant';
 import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
-import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
+import {
+    generateRandomTransportDocumentNumber, generateRandomContainerIdentifierNumber,
+    generateValidArrivalDate, generatePastArrivalDate,
+} from '../helper/data-generate-helper';
 
 /**
  * The SFD standalone consignment (the app's "Simplified Declaration").
@@ -20,16 +23,23 @@ import { generateRandomTransportDocumentNumber } from '../helper/data-generate-h
  */
 export interface SfdStandaloneConsignmentData {
     /**
-     * "Is this a pre-lodged or arrived movement?" - the first screen of the wizard.
-     * It also decides the arrival screen: a pre-lodged movement is asked when the
-     * goods will arrive, an arrived one is not (it already has).
+     * "Is this a pre-lodged or arrived movement?" - the first screen of the wizard, and
+     * the answer the arrival date below has to agree with.
      */
     isPreLodged: boolean;
 
     typeOfMovement: string;
     vehicleRegistration: string;
     portOfArrival: string;
-    /** Left undefined so the flow generates a valid (within 14 days) date/time. */
+    /**
+     * "When and where will the goods arrive?" - day, month, hour and minute, asked on
+     * BOTH branches. The VALUE is what differs: a pre-lodged movement has not arrived
+     * so the time must be in the future, an arrived one must be in the past.
+     *
+     * Left undefined so the factory derives whichever the branch needs. Set it only to
+     * pin a specific moment, and then it is the spec's job to keep it on the right side
+     * of now.
+     */
     arrivalDateTime?: string;
 
     /**
@@ -49,16 +59,14 @@ export interface SfdStandaloneConsignmentData {
 
     traderReference: string;
 
-    isGoodsCrossEUBorder: boolean;
+    isTransportingInContainers: boolean;
     isSameContainer: boolean;
 
-
-    // The "Container identification number" screen asks for all four of these.
+    /** `container-information~container-identification-number` asks all four at once. */
     containerIdentifierNumber: string;
     containerSize: string;
     containerPackedStatus: string;
     containerSupplierType: string;
-
 
     invoiceCurrency: string;
 
@@ -71,6 +79,7 @@ export interface SfdStandaloneConsignmentData {
     holdersOfAuthorisation: HolderOfAuthorisationData[];
 
     transportDocumentNumber: string;
+
     goodsDomesticStatus: string;
 }
 
@@ -93,11 +102,12 @@ const defaults: SfdStandaloneConsignmentData = {
     exporterCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     traderReference: 'STD-AUTO-001',
-    isGoodsCrossEUBorder: false,
+    isTransportingInContainers: false,
     isSameContainer: false,
 
-    //Container identification
-    containerIdentifierNumber: '1',
+    // Container identification. Only reached when BOTH answers above are Yes; the
+    // identifier itself is generated per consignment by the factory below.
+    containerIdentifierNumber: '',
     containerSize: CONTAINER_SIZE.TRAILER,
     containerPackedStatus: CONTAINER_PACKED_STATUS.NOT_EMPTY,
     containerSupplierType: CONTAINER_SUPPLIER_TYPE.SHIPPER_SUPPLIED,
@@ -107,17 +117,33 @@ const defaults: SfdStandaloneConsignmentData = {
     headerPreviousDocuments: [],
     holdersOfAuthorisation: [],
 
-    transportDocumentNumber: generateRandomTransportDocumentNumber(),
+    transportDocumentNumber: '',
     goodsDomesticStatus: CONSIGNMENT_GOODS_DOMESTIC_STATUS.NIDOM,
 };
 
 /**
  * Pre-lodged is the default; an arrived movement is the same data with
- * `isPreLodged: false`, which also drops the arrival date/time screen.
+ * `isPreLodged: false`, so the two variants stay one factory.
  */
 export const sfdStandaloneConsignment = (
     overrides?: Partial<SfdStandaloneConsignmentData>
-): SfdStandaloneConsignmentData => ({
-    ...defaults,
-    ...overrides,
-});
+): SfdStandaloneConsignmentData => {
+    const data = {
+        ...defaults,
+        // Generated per call, not once in `defaults`: two consignments declared in the
+        // same worker would otherwise carry the same references.
+        transportDocumentNumber: generateRandomTransportDocumentNumber(),
+        containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
+        ...overrides,
+    };
+
+    return {
+        ...data,
+        // Derived AFTER the overrides, because it depends on isPreLodged and a spec may
+        // have just changed it. Deriving earlier would leave an arrived movement holding
+        // a future arrival time - the two screens of one declaration disagreeing, which
+        // is exactly the mistake this branch exists to avoid.
+        arrivalDateTime: data.arrivalDateTime
+            ?? (data.isPreLodged ? generateValidArrivalDate() : generatePastArrivalDate()),
+    };
+};

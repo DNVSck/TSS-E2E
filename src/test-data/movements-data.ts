@@ -6,6 +6,7 @@ import { TRANSPORT_CHARGES_OPTION_CODE } from '../constant/transport-charges-cod
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { generateValidArrivalDate } from '../helper/data-generate-helper';
+import { CARRIER_EORI, HAULIER_EORI } from '../../config/environment';
 
 
 export interface MovementData {
@@ -43,7 +44,7 @@ const defaults: Omit<MovementData, 'arrivalDateTime'> = {
     conveyanceReferenceNumber: '',
     nationalityOfMeanOfTransport: COUNTRY_CODE.UNITED_KINGDOM,
     sealNumber: '',
-    portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+    portOfArrival: PORT_OF_ARRIVAL.BELFAST_GVMS_PORT,
     placeOfLoading: 'London',
     placeOfUnloading: 'Belfast',
     isSamePlaceOfLoading: true,
@@ -53,8 +54,8 @@ const defaults: Omit<MovementData, 'arrivalDateTime'> = {
     typeOfPassiveTransport: PASSIVE_TRANSPORT_TYPE.BUS,
     transportCharges: TRANSPORT_CHARGES_OPTION_CODE.ACCOUNT_HOLDER_WITH_CARRIER,
     trailerRegistrationNumber: 'TR12LER',
-    carrierEori: process.env.CARRIER_EORI ?? 'XI404517186000',
-    haulierEori: process.env.HAULIER_EORI ?? 'XI311281505000',
+    carrierEori: CARRIER_EORI,
+    haulierEori: HAULIER_EORI,
 };
 
 

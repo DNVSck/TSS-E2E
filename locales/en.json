@@ -11,11 +11,24 @@
   },
   "common": {
     "localReferenceNumber": "Local reference number",
+    "localReferenceNumberWithLrn": "Local reference number (LRN)",
     "status": "Status",
-    "declarationType": "Declaration type"
+    "yes": "Yes",
+    "no": "No",
+    "notProvided": "Not provided",
+    "declarationType": "Declaration type",
+    "supervisingCustomsOffice": "Supervising customs office"
   },
   "declarationType": {
     "eidr": "Entry in the Declarant's Records (EIDR)"
+  },
+  "goodsItemOverview": {
+    "useTraderGoodsProfile": "Do you want to use a Trader Goods Profile?",
+    "chosenTraderGoodsProfile": "Choose the TGP that you want to use",
+    "commodityCode": "Commodity code",
+    "goodsDescription": "Goods description",
+    "supplementaryUnits": "Supplementary units (optional)",
+    "countryOfOrigin": "Country of origin"
   },
   "movementHeaderOverview": {
     "declarationStatus": "Declaration status"
@@ -31,6 +44,7 @@
     "authorised": "Authorised",
     "awaitingArrival": "Awaiting arrival",
     "arrived": "Arrived",
-    "open": "Open"
+    "open": "Open",
+    "traderInputRequired": "Trader Input Required"
   }
 }

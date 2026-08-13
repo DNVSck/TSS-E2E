@@ -1,10 +1,10 @@
-import { TestInfo } from '@playwright/test';
+﻿import { TestInfo } from '@playwright/test';
 import { PortalAccessFlow } from '../portal-access-flow';
 import { InitialFormDeclarationFlow } from '../initial-form-declaration-flow';
-import { AddNewSfdStandaloneConsignmentFlow } from '../add-new-sfd-standalone-consignment-flow';
-import { AddNewSfdStandaloneGoodsItemFlow } from '../add-new-sfd-standalone-goods-item-flow';
-import { ConsignmentOverviewFlow } from '../consignment-overview-flow';
-import { GoodsOverviewFlow } from '../goods-overview-flow';
+import { AddNewSfdStandaloneConsignmentFlow } from '../consignment/add-new-sfd-standalone-consignment-flow';
+import { AddNewSfdStandaloneGoodsItemFlow } from '../goods-item/add-new-sfd-standalone-goods-item-flow';
+import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
+import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import {
     SfdStandaloneConsignmentData, sfdStandaloneConsignment,
 } from '../../test-data/sfd-standalone-consignment-data';
@@ -12,8 +12,26 @@ import { GoodsData, goods } from '../../test-data/goods-data';
 import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { UserCredentials } from '../../auth/credentials';
-import { reportTestAccount } from '../../helper/report-helper';
-import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
+import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
+import { LOCAL_REFERENCE, MRN_COUNTRY_CODE } from '../../constant/local-reference-constants';
+import { TranslationKey } from '../../fixtures/locale-fixture';
+import { standaloneSubmittedStatusKey } from '../../helper/consignment-status-helper';
+
+/**
+ * The status a submitted SFD standalone consignment settles on.
+ *
+ * The EIDR route (controlled goods = No) is this journey's ONE exception to the rule
+ * every standalone journey otherwise follows: it is authorised outright, whether the
+ * movement was pre-lodged or arrived, because it has no arrival to wait for. Only that
+ * exception is stated here; the rest defers to standaloneSubmittedStatusKey, so the
+ * shared rule has one home and this file says only what is peculiar to SFD.
+ */
+function submittedStatusKey(data: SfdStandaloneConsignmentData): TranslationKey {
+    if (!data.isControlledGoods) {
+        return 'status.authorised';
+    }
+    return standaloneSubmittedStatusKey(data.isPreLodged);
+}
 
 /**
  * Create and submit an SFD standalone consignment. One flow per standalone journey:
@@ -47,6 +65,7 @@ export class CreateAndSubmitSfdStandaloneFlow {
         const goodsData = goods(options.goodsItemOverrides);
 
         reportTestAccount(this.authAccount, 'completeSfdStandaloneFlow');
+        reportDeclarationCodes(goodsData);
 
         await this.accessFlow.openService({ baseUrl: url, testInfo });
         await this.initialFormFlow.completeInitialFormDeclaration(initialFormData({
@@ -71,27 +90,23 @@ export class CreateAndSubmitSfdStandaloneFlow {
 
         await this.consignmentOverviewFlow.submitConsignment();
         await this.verifyPostSubmit(consignmentData);
-        // NOSONAR
-        // TODO: submitting an SFD standalone consignment also auto-generates a linked
-        // EIDR consignment. Verify it here (the ENS flow's verifyPostSubmit is the
-        // model) once it is known where a standalone journey surfaces it - there is no
-        // movement overview to reach it from.
     }
 
     /**
-     * Post-submit verification for standalone SFD. The standalone consignment should
-     * reach "Awaiting arrival" status and be assigned an MRN. On the controlled-goods
-     * = No branch (SFD-EIDR).
+     * Post-submit verification for standalone SFD: the consignment settles on a status
+     * and is assigned an MRN.
      */
     private async verifyPostSubmit(consignmentData: SfdStandaloneConsignmentData): Promise<void> {
-        // All SFD submissions should reach "Awaiting arrival" status and get an MRN
-        await this.consignmentOverviewFlow.verifyStandaloneConsignmentSubmitted();
-        await this.consignmentOverviewFlow.verifySfdConsignmentMrn();
-
-        // On the SFD-EIDR branch (controlled goods = No), also verify the linked
-        // EIDR consignment's declaration type and MRN
-        if (!consignmentData.isControlledGoods) {
-            await this.consignmentOverviewFlow.verifySfdEidrDeclarationTypeAndMrn();
+        await this.consignmentOverviewFlow.verifyStandaloneConsignmentSubmitted(
+            submittedStatusKey(consignmentData)
+        );
+        // One consignment, so one check - which one depends on the route. The EIDR route
+        // has no MRN check yet (see verifySfdEidrDeclarationType); calling the SFD one
+        // for it would read the same row and report whatever it holds as "SFD MRN".
+        if (consignmentData.isControlledGoods) {
+            await this.consignmentOverviewFlow.verifyStandaloneConsignmentMrn('SFD', MRN_COUNTRY_CODE.SFD);
+            return;
         }
+        await this.consignmentOverviewFlow.verifySfdEidrDeclarationType();
     }
 }

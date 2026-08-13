@@ -1,6 +1,9 @@
 import { BasePage } from "./base-page";
 import { Page, Locator} from '@playwright/test';
 
+/** SIT renders the portal shell client-side and can be slow under load. */
+const PORTAL_RENDER_TIMEOUT = 45_000;
+
 
 export class PortalPage extends BasePage {
 
@@ -26,8 +29,16 @@ export class PortalPage extends BasePage {
         await this.languageSwitcher.click();
     }
 
+    /**
+     * The portal renders client-side, so `goto` returning does not mean the header is
+     * on the page yet. Waiting for the link explicitly - on a budget of its own rather
+     * than the ambient action timeout - is what stops a slow render being reported as
+     * "Sign in link not clickable", which reads like the link is broken when the page
+     * simply had not arrived.
+     */
     async clickSignIn(): Promise<void> {
-        await this.signInBtn.click();
+        await this.signInBtn.waitFor({ state: 'visible', timeout: PORTAL_RENDER_TIMEOUT });
+        await this.signInBtn.click({ timeout: PORTAL_RENDER_TIMEOUT });
     }
 
     async startTssJourney(): Promise<void> {

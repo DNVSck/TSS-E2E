@@ -8,7 +8,10 @@ import { CONTAINER_PACKED_STATUS } from '../constant/container-packed-status-con
 import { CONTAINER_SUPPLIER_TYPE } from '../constant/container-supplier-type-constant';
 import { PreviousDocumentData } from './previous-document-data';
 import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
-import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
+import {
+    generateRandomTransportDocumentNumber, generateRandomContainerIdentifierNumber,
+} from '../helper/data-generate-helper';
+import { IMPORTER_EORI, BUYER_EORI, CONSIGNOR_EORI, CONSIGNEE_EORI, SELLER_EORI } from '../../config/environment';
 
 /**
  * One shape for both consignment journeys.
@@ -47,9 +50,13 @@ export interface ConsignmentData {
     buyerPostCode: string;
     buyerCountryCode: string;
 
-    /** Not asked on the ENS-only journey. */
+    /**
+     * Not asked on the ENS-only journey, and not asked at all unless IMMI is
+     * enabled on `importerEORI` — that is environment setup, not test data, so a
+     * journey that sets this needs an importer that has it.
+     */
     useIMMI: boolean;
-    /** Only asked when IMMI is declined. */
+    /** Asked when IMMI is declined, and when the importer was never offered it. */
     isControlledGoods: boolean;
 
     /**
@@ -121,16 +128,17 @@ export interface ConsignmentData {
     holdersOfAuthorisation: HolderOfAuthorisationData[];
 }
 
-// `transportDocumentNumber` is deliberately absent: generating it here would
-// freeze one value at module import and every consignment in the run would reuse
-// it, which the service rejects. Omit<> makes the compiler demand it below.
-const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
+// `transportDocumentNumber` and `containerIdentifierNumber` are deliberately absent:
+// generating either here would freeze one value at module import and every consignment
+// in the run would reuse it - which the service rejects outright for the transport
+// document. Omit<> makes the compiler demand both from the factories below.
+const defaults: Omit<ConsignmentData, 'transportDocumentNumber' | 'containerIdentifierNumber'> = {
     isEnsOnly: false,
 
     //Importer profile.
     // The importer's EORI must already exist in TSS — the app rejects an unknown
     // one outright — so it comes from the environment rather than a literal.
-    importerEORI: process.env.IMPORTER_EORI ?? 'XI896458895023',
+    importerEORI: IMPORTER_EORI,
     importerName: 'John Doe',
     importerStreetName: 'Main Street',
     importerStreetNumber: '123',
@@ -140,7 +148,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
 
     //Buyer profile
     isBuyerSameAsImporter: false,
-    buyerEORI: 'XI363127805000',
+    buyerEORI: BUYER_EORI,
     buyerName: 'John Doe',
     buyerStreetName: 'Main Street',
     buyerStreetNumber: '1234',
@@ -157,7 +165,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
     destinationCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Consignor profile
-    consignorEORI: 'XI363127805000',
+    consignorEORI: CONSIGNOR_EORI,
     consignorName: 'John Doe',
     consignorStreetName: 'Main Street',
     consignorStreetNumber: '1235',
@@ -166,7 +174,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
     consignorCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     //Consignee profile
-    consigneeEORI: 'XI363127805000',
+    consigneeEORI: CONSIGNEE_EORI,
     consigneeName: 'John Doe',
     consigneeStreetName: 'Main Street',
     consigneeStreetNumber: '1236',
@@ -185,7 +193,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
 
     //Seller profile
     isSellerSameAsExporter: false,
-    sellerEORI: 'XI363127805000',
+    sellerEORI: SELLER_EORI,
     sellerName: 'John Doe',
     sellerStreetName: 'Main Street',
     sellerStreetNumber: '1237',
@@ -199,7 +207,6 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
     isSameContainer: false,
 
     //Container identification
-    containerIdentifierNumber: '1',
     containerSize: CONTAINER_SIZE.TRAILER,
     containerPackedStatus: CONTAINER_PACKED_STATUS.NOT_EMPTY,
     containerSupplierType: CONTAINER_SUPPLIER_TYPE.SHIPPER_SUPPLIED,
@@ -216,6 +223,7 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber'> = {
 export const consignment = (overrides?: Partial<ConsignmentData>): ConsignmentData => ({
     ...defaults,
     transportDocumentNumber: generateRandomTransportDocumentNumber(),
+    containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
     ...overrides,
 });
 
@@ -226,6 +234,7 @@ export const consignment = (overrides?: Partial<ConsignmentData>): ConsignmentDa
 export const ensOnlyConsignment = (overrides?: Partial<ConsignmentData>): ConsignmentData => ({
     ...defaults,
     transportDocumentNumber: generateRandomTransportDocumentNumber(),
+    containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
     isEnsOnly: true,
     ensOnlyReason: ENS_ONLY_REASON.STANDALONE_DECLARATION_IN_TSS,
     ...overrides,

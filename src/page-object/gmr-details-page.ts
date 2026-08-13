@@ -1,7 +1,9 @@
 import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
-import { summaryListValue, readFieldWhenVisible, readFieldIfPresent } from '../helper/element-helper';
+import {
+    summaryListValue, readFieldWhenVisible, readFieldIfPresent, switchToTabAndClickNew,
+} from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 
 /** The GMR detail summary list can be slow to paint under parallel load. */
@@ -22,6 +24,7 @@ export class GmrDetailsPage extends BasePage {
     private readonly generateBarcodeButton: Locator;
 
     private readonly externalContactsTab: Locator;
+    private readonly newExternalContactButton: Locator;
 
     // Summary-list fields, matched by their translated label (see t()).
     private readonly localReferenceNumber: Locator;
@@ -35,6 +38,8 @@ export class GmrDetailsPage extends BasePage {
         this.generateBarcodeButton = page.locator("button[value='generate-barcode']");
 
         this.externalContactsTab = page.locator("//a[contains(@href, '/external-contacts#overview-tab')]");
+
+        this.newExternalContactButton = page.locator("form[action*='/external-contacts'] button[value='new-record']");
 
         this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
         this.gmrId = summaryListValue(page, this.t!('gmrDetail.gmrId'));
@@ -57,6 +62,11 @@ export class GmrDetailsPage extends BasePage {
         await this.externalContactsTab.click();
     }
 
+    /** Open the "New external contact" wizard from the External Contacts tab. */
+    async declareNewExternalContact(): Promise<void> {
+        await switchToTabAndClickNew(this.page, this.externalContactsTab, this.newExternalContactButton);
+    }
+
     private async getGmrStatus(): Promise<string> {
         return readFieldWhenVisible(this.status, DETAIL_READ_TIMEOUT);
     }
@@ -67,10 +77,11 @@ export class GmrDetailsPage extends BasePage {
 
     /**
      * On the GMR "Check your answers" page (before submit): soft-assert the GMR is a
-     * Draft and its local reference opens with "GMR", and return that reference.
-     * Mirrors the draft checks on the movement- and consignment-overview pages.
+     * Draft and its local reference opens with "GMR", and return both. Mirrors the
+     * draft checks on the movement- and consignment-overview pages; the checks are
+     * soft so a mismatch still reaches the report rather than throwing the values away.
      */
-    async assertDraftGmr(): Promise<string> {
+    async assertDraftGmr(): Promise<{ localReferenceNumber: string; status: string }> {
         const localReferenceNumber = await this.getGmrLocalReferenceNumber();
         const status = await this.getGmrStatus();
 
@@ -78,7 +89,7 @@ export class GmrDetailsPage extends BasePage {
             .toMatch(LOCAL_REFERENCE.GMR_PREFIX);
         expect.soft(status, 'GMR status').toBe(this.t!('status.draft'));
 
-        return localReferenceNumber;
+        return { localReferenceNumber, status };
     }
 
     /**
