@@ -1,8 +1,8 @@
-import { BasePage } from "./base-page";
+﻿import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { ROLE_IN_MOVEMENT } from "../constant/role-in-movement-constant";
 import { SEPARATE_HAULIER } from "../constant/separate-haulier-constant";
-import { generateValidArrivalDate } from '../helper/data-generate-helper';
+import { generatePreLodgedArrivalDate } from '../helper/data-generate-helper';
 import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
 
 
@@ -199,7 +199,7 @@ export class MovementDeclarePage extends BasePage {
     }
 
     async inputArrivalDateTime(arrivalDateTime?: string): Promise<void> {
-        const value = arrivalDateTime ?? generateValidArrivalDate();
+        const value = arrivalDateTime ?? generatePreLodgedArrivalDate();
 
         const [, month, day, hour, minute] = value.split(/[-T:]/);
 

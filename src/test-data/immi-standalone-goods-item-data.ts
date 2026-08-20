@@ -6,6 +6,21 @@ import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { PREVIOUS_DOCUMENT_TYPE } from '../constant/previous-document-type-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
 
+/**
+ * The transport document an IMMI standalone goods item must carry (N730, a road
+ * consignment note).
+ *
+ * Exported because two callers need the SAME record: the journey below declares it, and
+ * the authority spec removes it to make CDS refuse the declaration and then declares it
+ * again to correct that. Written once, so the correction cannot drift from the thing it
+ * is correcting.
+ */
+export const immiStandaloneTransportDocument = () => documentReference({
+    documentCode: DOCUMENT_CODE.N730,
+    documentStatus: DOCUMENT_STATUS.AE,
+    documentReference: '0054047',
+});
+
 export const immiStandaloneGoodsItem = (
     overrides?: Partial<GoodsData>
 ): Partial<GoodsData> => ({
@@ -17,13 +32,7 @@ export const immiStandaloneGoodsItem = (
     // overrides it to true and names a record from TGP_RECORD.
     useTGP: false,
     commodityCode: '6306290000',
-    documentReferences: [
-        documentReference({
-            documentCode: DOCUMENT_CODE.N730,
-            documentStatus: DOCUMENT_STATUS.AE,
-            documentReference: '0054047',
-        }),
-    ],
+    documentReferences: [immiStandaloneTransportDocument()],
 
     previousDocuments: [
         previousDocument({

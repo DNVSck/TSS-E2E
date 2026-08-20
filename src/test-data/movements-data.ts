@@ -1,11 +1,11 @@
-import { ROLE_IN_MOVEMENT } from '../constant/role-in-movement-constant';
+﻿import { ROLE_IN_MOVEMENT } from '../constant/role-in-movement-constant';
 import { SEPARATE_HAULIER } from '../constant/separate-haulier-constant';
 import { PASSIVE_TRANSPORT_TYPE } from '../constant/passive-transport-type-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { TRANSPORT_CHARGES_OPTION_CODE } from '../constant/transport-charges-code-constant';
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
-import { generateValidArrivalDate } from '../helper/data-generate-helper';
+import { generatePreLodgedArrivalDate } from '../helper/data-generate-helper';
 import { CARRIER_EORI, HAULIER_EORI } from '../../config/environment';
 
 
@@ -61,7 +61,7 @@ const defaults: Omit<MovementData, 'arrivalDateTime'> = {
 
 export const movement = (overrides?: Partial<MovementData>): MovementData => ({
     ...defaults,
-    arrivalDateTime: generateValidArrivalDate(),
+    arrivalDateTime: generatePreLodgedArrivalDate(),
     ...overrides,
 });
 

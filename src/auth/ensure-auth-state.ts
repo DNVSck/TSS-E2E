@@ -2,8 +2,10 @@ import { chromium } from '@playwright/test';
 import { OTP_ENABLED, ENV, BASE_URL } from '../../config/environment';
 import { PortalPage } from '../page-object/portal-page';
 import { SignInPage } from '../page-object/sign-in-page';
-import { authStatePath, isAuthStateFresh, AUTH_STATE_TTL_MINUTES } from './auth-state';
-import { CompanyProfile, UserCredentials, getCredentialsPool, profilesToAuthenticate } from './credentials';
+import { authStatePath, isAuthStateFresh, isSessionYoungEnough, AUTH_STATE_TTL_MINUTES } from './auth-state';
+import {
+    CompanyProfile, UserCredentials, accountFor, getCredentialsPool, profilesToAuthenticate,
+} from './credentials';
 
 const SIGN_IN_TIMEOUT_MS = 60_000;
 
@@ -92,6 +94,26 @@ function envKey(c: UserCredentials, field: string): string {
     return c.accountNumber === undefined
         ? `${c.profile}_${field}`
         : `${c.profile}_${field}_${c.accountNumber}`;
+}
+
+
+export async function signInOnDemand(
+    profile: CompanyProfile,
+    parallelIndex: number
+): Promise<void> {
+    const account = accountFor(profile, parallelIndex);
+
+    if (isSessionYoungEnough(account.profile, account.accountNumber)) {
+        return;
+    }
+
+    const browser = await chromium.launch({ headless: true });
+
+    try {
+        await signInAndSaveState(browser, account);
+    } finally {
+        await browser.close();
+    }
 }
 
 async function signInAndSaveState(

@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
 import {
-    CompanyProfile, UserCredentials, accountFor, profilesToAuthenticate, isSingleAccountProfile,
+    CompanyProfile, UserCredentials, accountFor, assertProfileAuthenticated, isSingleAccountProfile,
 } from '../auth/credentials';
 import { authStatePath } from '../auth/auth-state';
 import { acquireAccountLock } from '../auth/account-lock';
@@ -28,27 +28,6 @@ export type WorkerAuthFixtureType = {
     authAccount: UserCredentials | null;
 };
 
-/**
- * Fail on the spec's own profile rather than on whatever session file happens to
- * be lying around. globalSetup only signs in the profiles AUTH_PROFILES asks for;
- * a spec needing another one would replay a session from an earlier run - Playwright
- * loads a stale storageState without complaint, so the test dies much later on an
- * unexpected sign-in screen, far from the real cause.
- */
-function assertProfileAuthenticated(profile: CompanyProfile): void {
-    const authenticated = profilesToAuthenticate();
-
-    if (authenticated.includes(profile)) return;
-
-    throw new Error(
-        `This spec runs as ${profile}, but this run only signed in: ${authenticated.join(', ')}. ` +
-        `Any ${profile} session on disk is left over from an earlier run and would be replayed ` +
-        `expired. Include the profile:\n\n` +
-        `    AUTH_PROFILES=${[...authenticated, profile].join(',')}\n\n` +
-        `If every run needs it, add it to DEFAULT_AUTH_PROFILES in src/auth/credentials.ts instead.`
-    );
-}
-
 type ExtendParams = Parameters<typeof test.extend<WorkerAuthFixtureType>>;
 
 export const workerAuthFixture: ExtendParams[0] = {
@@ -62,7 +41,7 @@ export const workerAuthFixture: ExtendParams[0] = {
             return;
         }
 
-        assertProfileAuthenticated(authProfile);
+        assertProfileAuthenticated(authProfile, 'This spec runs as');
         const account = accountFor(authProfile, testInfo.parallelIndex);
 
         // A pooled profile gives this worker its own account, so nothing to serialise.
@@ -93,9 +72,10 @@ export const workerAuthFixture: ExtendParams[0] = {
         }
     },
 
-    // Override Playwright's built-in storageState so it is resolved per worker:
-    // each worker replays its own account's session (pool[parallelIndex]), so no
-    // two concurrent workers share one session file.
+    // Override Playwright's built-in storageState so it is resolved per worker: each
+    // worker replays its own account's session (pool[parallelIndex]), so no two
+    // concurrent workers share one session file. Same resolution as sessionFor(), which
+    // the second-session fixture uses - see auth-state for why that has to hold.
     storageState: async ({ authAccount }, use) => {
         if (!authAccount) {
             await use(undefined);

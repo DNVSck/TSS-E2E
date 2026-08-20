@@ -46,5 +46,8 @@
     "arrived": "Wedi cyrraedd",
     "open": "Ar agor",
     "traderInputRequired": "Mewnbwn Masnachwr sy'n Ofynnol"
+  },
+  "accessDenied": {
+    "heading": "Nid oes gennych awdurdod i gael mynediad at hyn"
   }
 }

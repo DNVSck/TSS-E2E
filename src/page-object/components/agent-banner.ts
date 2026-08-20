@@ -53,12 +53,40 @@ export class AgentBanner extends BasePage {
         return await this.stopRepresentingLink.count() > 0;
     }
 
-    /** Stop representing if currently representing (no-op otherwise). */
+    /**
+     * Stop representing if currently representing (a no-op otherwise).
+     *
+     * Lands on the portal first when NEITHER banner link is on the page, for the same
+     * reason openTradersList does: the banner only renders on an authenticated portal
+     * page, so a caller that has not navigated yet sees no links at all - and the guard
+     * below would read that as "not representing" whatever the server actually holds.
+     *
+     * That is not hypothetical. Representing is SERVER-SIDE session state, and every test
+     * in a spec replays one session file, so a test that ends while representing hands
+     * the next one an agent that is still acting for somebody. A beforeEach calling this
+     * on a blank page was measured on 2026-08-19 doing nothing at all, and the next test
+     * read Full where its table said Read.
+     */
     async stopRepresenting(): Promise<void> {
+        if (await this.bannerIsMissing()) {
+            await this.page.goto(BASE_URL);
+        }
+
         if (!await this.isRepresenting()) {
             return;
         }
+
         await this.stopRepresentingLink.click();
         await this.stopRepresentingLink.waitFor({ state: 'hidden' });
+    }
+
+    /**
+     * True when the agent bar is not on this page at all - as opposed to being there and
+     * showing no active representation. Told apart by the "Select a company" link, which
+     * the bar always carries, representing or not.
+     */
+    private async bannerIsMissing(): Promise<boolean> {
+        return await this.selectCompanyLink.count() === 0
+            && await this.stopRepresentingLink.count() === 0;
     }
 }

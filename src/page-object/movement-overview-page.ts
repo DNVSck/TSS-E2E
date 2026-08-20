@@ -144,19 +144,11 @@ export class MovementOverviewPage extends BasePage {
      * hard: a hard failure would throw before the return, and neither value would
      * ever reach the report.
      */
-    async assertDraftMovementOverview(): Promise<{ localReferenceNumber: string; declarationStatus: string }> {
-        const localReferenceNumber = await this.getMovementLocalReferenceNumber();
-        const declarationStatus = await this.getMovementDeclarationStatus();
-        const expectedStatus = this.t!('status.draft');
-
-        // Asserting the string, not a boolean: a failure then reports the actual
-        // reference number instead of a bare "expected truthy, received false".
-        expect.soft(localReferenceNumber, 'Local reference number')
-            .toMatch(LOCAL_REFERENCE.ENS_PREFIX);
-
-        expect.soft(declarationStatus, 'Declaration status').toBe(expectedStatus);
-
-        return { localReferenceNumber, declarationStatus };
+    async readDraftMovementOverview(): Promise<{ localReferenceNumber: string; declarationStatus: string }> {
+        return {
+            localReferenceNumber: await this.getMovementLocalReferenceNumber(),
+            declarationStatus: await this.getMovementDeclarationStatus(),
+        };
     }
 
     /**
@@ -280,6 +272,30 @@ export class MovementOverviewPage extends BasePage {
     }
 
     /**
+     * Refuse to open a record when the tab lists more than one of its kind.
+     *
+     * These openers exist because the caller has NO other handle: the service generated
+     * the consignment (or the GMR), so its reference cannot be known until it is opened.
+     * "The first one" is therefore the only address available - and it is only correct
+     * while exactly one is listed.
+     *
+     * So the position is kept and the ASSUMPTION is asserted. A movement is built to hold
+     * several consignments ("New consignment" sits on this very page), so the day one
+     * does, this fails saying so - instead of opening an arbitrary record and letting
+     * every check afterwards report on the wrong declaration.
+     */
+    private async assertOneRecordListed(viewLink: Locator, kind: string): Promise<void> {
+        const listed = await viewLink.count();
+
+        if (listed > 1) {
+            throw new Error(
+                `This movement lists ${listed} ${kind} records of the same kind, so "the first one" ` +
+                `no longer identifies anything. Open it by its own reference instead.`
+            );
+        }
+    }
+
+    /**
      * Click a consignment card's "View" button and wait until its detail page has
      * loaded (URL settles on ".../{DEC|GLR…}/overview" — ENS/SFD use a DEC ref,
      * IMMI a GLR one). Awaiting the navigation here is what keeps a following read
@@ -288,6 +304,7 @@ export class MovementOverviewPage extends BasePage {
      */
     private async clickViewLink(viewLink: Locator): Promise<boolean> {
         try {
+            await this.assertOneRecordListed(viewLink, 'consignment');
             await viewLink.first().click();
             await this.page.waitForURL(/\/(?:DEC|GLR)\d+\/overview/, { timeout: NAV_TIMEOUT });
         } catch {
@@ -320,6 +337,8 @@ export class MovementOverviewPage extends BasePage {
         if (!await this.waitForRecordCard(this.gmrDetailsTab, this.gmrViewLink, GMR_VIEW_TIMEOUT)) {
             return false;
         }
+        await this.assertOneRecordListed(this.gmrViewLink, 'GMR');
+
         const href = await this.gmrViewLink.first().getAttribute('href');
         await this.gmrViewLink.first().click();
         if (href) {

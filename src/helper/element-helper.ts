@@ -162,6 +162,42 @@ export async function clickLinkAndWaitForRoute(page: Page, link: Locator): Promi
     }
 }
 
+// Click a link whose destination is NOT its href, and wait until the page has moved.
+//
+// The sibling of clickLinkAndWaitForRoute, for links the server resolves rather than
+// serves: a summary list's "Change" action points at ".../edit/_edit_?field=x", and
+// the app answers by redirecting to whichever wizard screen that field lives on. The
+// href therefore cannot say where the click lands, so the only honest expectation is
+// that we are no longer where we started.
+//
+// Weaker than matching a route, deliberately. Use it only where the destination is
+// genuinely unknowable in advance; anywhere else, assert the route.
+export async function clickLinkAndWaitForNavigation(page: Page, link: Locator): Promise<void> {
+    await link.waitFor({ state: 'visible', timeout: LINK_VISIBLE_TIMEOUT });
+    const from = StringUtil.stripTrailingSlashes(new URL(page.url()).pathname);
+
+    for (let attempt = 1; attempt <= ROUTE_CLICK_ATTEMPTS; attempt++) {
+        try {
+            await link.click({ timeout: LINK_VISIBLE_TIMEOUT });
+            await page.waitForURL(
+                url => StringUtil.stripTrailingSlashes(url.pathname) !== from,
+                { waitUntil: 'domcontentloaded', timeout: ROUTE_LANDING_TIMEOUT }
+            );
+            return;
+        } catch (error) {
+            if (attempt === ROUTE_CLICK_ATTEMPTS) {
+                throw new Error(
+                    `Link did not navigate away from "${from}" after ${ROUTE_CLICK_ATTEMPTS} clicks. ` +
+                    `Last failure: ${(error as Error).message}`
+                );
+            }
+            await ReportLog.info(
+                `Link did not navigate on attempt ${attempt}; clicking it again and retrying.`
+            );
+        }
+    }
+}
+
 // How long to wait for a tab's "add new record" button after the tab has become
 // active — the panel paints a beat after the tab's route settles. Also bounds the
 // click, so an unactionable button fails on this budget rather than the ambient

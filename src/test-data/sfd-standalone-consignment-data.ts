@@ -1,4 +1,4 @@
-import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
+﻿import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
@@ -10,7 +10,7 @@ import { CONTAINER_PACKED_STATUS } from '../constant/container-packed-status-con
 import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
 import {
     generateRandomTransportDocumentNumber, generateRandomContainerIdentifierNumber,
-    generateValidArrivalDate, generatePastArrivalDate,
+    generatePreLodgedArrivalDate, generatePastArrivalDate,
 } from '../helper/data-generate-helper';
 
 /**
@@ -33,8 +33,8 @@ export interface SfdStandaloneConsignmentData {
     portOfArrival: string;
     /**
      * "When and where will the goods arrive?" - day, month, hour and minute, asked on
-     * BOTH branches. The VALUE is what differs: a pre-lodged movement has not arrived
-     * so the time must be in the future, an arrived one must be in the past.
+     * BOTH branches. The VALUE is what differs: a pre-lodged movement has not arrived so
+     * its time is two minutes ahead, an arrived one half an hour back (see the generators).
      *
      * Left undefined so the factory derives whichever the branch needs. Set it only to
      * pin a specific moment, and then it is the spec's job to keep it on the right side
@@ -88,7 +88,7 @@ const defaults: SfdStandaloneConsignmentData = {
 
     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
     vehicleRegistration: 'GB12ABC',
-    portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+    portOfArrival: PORT_OF_ARRIVAL.BELFAST_GVMS_PORT,
     isControlledGoods: false,
 
     // Exporter profile. A blank/new EORI makes the app ask for the address, which
@@ -140,10 +140,10 @@ export const sfdStandaloneConsignment = (
     return {
         ...data,
         // Derived AFTER the overrides, because it depends on isPreLodged and a spec may
-        // have just changed it. Deriving earlier would leave an arrived movement holding
-        // a future arrival time - the two screens of one declaration disagreeing, which
-        // is exactly the mistake this branch exists to avoid.
+        // have just changed it. Deriving earlier would leave the movement holding the
+        // other branch's arrival time - the two screens of one declaration disagreeing,
+        // which is exactly the mistake this branch exists to avoid.
         arrivalDateTime: data.arrivalDateTime
-            ?? (data.isPreLodged ? generateValidArrivalDate() : generatePastArrivalDate()),
+            ?? (data.isPreLodged ? generatePreLodgedArrivalDate() : generatePastArrivalDate()),
     };
 };

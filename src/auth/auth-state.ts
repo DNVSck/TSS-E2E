@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { AUTH_REUSE_SESSION, ENV } from '../../config/environment';
-import { CompanyProfile } from './credentials';
+import { CompanyProfile, accountFor, assertProfileAuthenticated } from './credentials';
 
 /**
  * Where the signed-in browser state (cookies + localStorage) is cached.
@@ -45,12 +45,44 @@ export function authStatePath(profile: CompanyProfile, accountNumber?: number): 
  * run inherits a stale session.
  */
 export function isAuthStateFresh(profile: CompanyProfile, accountNumber?: number): boolean {
-    if (!AUTH_REUSE_SESSION) return false;
+    return AUTH_REUSE_SESSION && isSessionYoungEnough(profile, accountNumber);
+}
 
+/**
+ * Whether a session file exists and is young enough to replay - WITHOUT asking whether
+ * reuse was opted into.
+ *
+ * The distinction matters for an on-demand profile (see ON_DEMAND_PROFILES). Those are
+ * signed in by the first test that needs one, not by globalSetup, so "sign in once per
+ * run" cannot be arranged up front - it has to be decided at the moment of use. Every
+ * later test in the same run finds the file this one wrote and replays it, which is the
+ * behaviour AUTH_REUSE_SESSION exists to give the OTHER profiles. Turning that flag on
+ * for the whole suite to get it here would also start reusing sessions across runs,
+ * which is exactly what the default refuses to do.
+ */
+export function isSessionYoungEnough(profile: CompanyProfile, accountNumber?: number): boolean {
     const file = authStatePath(profile, accountNumber);
 
     if (!fs.existsSync(file)) return false;
 
     const ageMinutes = (Date.now() - fs.statSync(file).mtimeMs) / 60_000;
     return ageMinutes < AUTH_STATE_TTL_MINUTES;
+}
+
+/**
+ * The session file a company profile resolves to for one worker.
+ *
+ * The rule every caller must obey, and the reason it lives here rather than inside a
+ * fixture: a pooled profile stores a file per account (`AGENT-2.json`) while a
+ * single-login profile stores one unindexed file (`HAULIER.json`), so the name cannot
+ * be derived from the profile alone. Guessing it does not fail - it quietly picks up
+ * whatever an earlier run left on disk, and the test dies much later on an unexpected
+ * sign-in screen. That happened once, which is why this exists.
+ *
+ * Takes a worker index rather than a TestInfo so the rule stays free of Playwright.
+ */
+export function sessionFor(profile: CompanyProfile, parallelIndex: number): string {
+    assertProfileAuthenticated(profile, 'This test signs in as');
+    const account = accountFor(profile, parallelIndex);
+    return authStatePath(account.profile, account.accountNumber);
 }

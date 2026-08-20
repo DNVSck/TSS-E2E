@@ -1,5 +1,7 @@
 export const COMPANY_PROFILE = {
     AGENT: 'AGENT',
+    /** A SECOND agent company, unrelated to AGENT - see defaultAuthProfiles. */
+    AGENT_B: 'AGENT_B',
     IMPORTER: 'IMPORTER',
     HAULIER: 'HAULIER',
     PRIMARY_HOLDER: 'PRIMARY_HOLDER',
@@ -33,15 +35,72 @@ export interface UserCredentials {
  * actually runs as, so the common command (all of tests/functional) works with
  * nothing extra to remember.
  *
- * HAULIER is left out deliberately - no spec runs as one yet, and signing into an
- * account no test uses costs a login and lets an unrelated expired password block
- * the whole suite. Add a profile here the moment a spec starts using it; until
- * then the authAccount fixture fails fast and names the exact AUTH_PROFILES value.
+ * Each one costs a real sign-in per run and, if its password expires, blocks the
+ * whole suite rather than only the specs that use it. So a profile earns its place
+ * here by being needed, and is added when a spec starts using it - not before.
+ *
+ * HAULIER left on 2026-08-19: an integrated declaration no longer needs the Agent to
+ * act for it, and the permission rules stopped naming it, so nothing signs in as one.
+ * Its EORI is still test DATA - see rejectedByCds, which uses an EORI that is simply not
+ * the importer's - but no session is opened for it.
+ *
+ * AGENT_B is NOT here, and not by omission - see ON_DEMAND_PROFILES below.
  */
-const DEFAULT_AUTH_PROFILES: CompanyProfile[] = [
-    COMPANY_PROFILE.AGENT,
-    COMPANY_PROFILE.IMPORTER,
-];
+function defaultAuthProfiles(): CompanyProfile[] {
+    return [
+        COMPANY_PROFILE.AGENT,
+        COMPANY_PROFILE.IMPORTER,
+    ];
+}
+
+
+const ON_DEMAND_PROFILES: ReadonlySet<CompanyProfile> = new Set([
+    COMPANY_PROFILE.AGENT_B,
+]);
+
+/** True when this profile is signed in on first use rather than in globalSetup. */
+export function isOnDemandProfile(profile: CompanyProfile): boolean {
+    return ON_DEMAND_PROFILES.has(profile);
+}
+
+
+export function isProvisioned(profile: CompanyProfile): boolean {
+    return Boolean(
+        process.env[`${profile}_USER_NAME`]?.trim()
+        || process.env[`${profile}_USER_NAME_1`]?.trim()
+    );
+}
+
+/**
+ * Refuse to use a profile this run did not sign in.
+ *
+ * globalSetup only signs in the profiles AUTH_PROFILES asks for. Playwright loads a
+ * stale or absent storageState without complaint, so a test wanting another one would
+ * replay an expired session and die much later on an unexpected sign-in screen, far
+ * from the real cause.
+ *
+ * Lives here, next to the list it guards, because there are two ways to ask for a
+ * profile and both need the same answer: a spec's `test.use({ authProfile })`, and a
+ * test opening a second company's session. `howAsked` is the only thing that differs -
+ * it names which of the two got here, so the reader knows where to look.
+ */
+export function assertProfileAuthenticated(profile: CompanyProfile, howAsked: string): void {
+    // An on-demand profile has no session until a test asks for one, and asking is what
+    // creates it - so a missing one here is the normal case, not a stale-file hazard.
+    if (isOnDemandProfile(profile)) return;
+
+    const authenticated = profilesToAuthenticate();
+
+    if (authenticated.includes(profile)) return;
+
+    throw new Error(
+        `${howAsked} ${profile}, but this run only signed in: ${authenticated.join(', ')}. ` +
+        `Any ${profile} session on disk is left over from an earlier run and would be replayed ` +
+        `expired. Include the profile:\n\n` +
+        `    AUTH_PROFILES=${[...authenticated, profile].join(',')}\n\n` +
+        `If every run needs it, add it to defaultAuthProfiles() in src/auth/credentials.ts instead.`
+    );
+}
 
 /**
  * Which company profiles this run signs in.
@@ -57,7 +116,7 @@ const DEFAULT_AUTH_PROFILES: CompanyProfile[] = [
 export function profilesToAuthenticate(): CompanyProfile[] {
     const raw = process.env.AUTH_PROFILES?.trim();
 
-    if (!raw) return DEFAULT_AUTH_PROFILES;
+    if (!raw) return defaultAuthProfiles();
 
     const known = Object.values(COMPANY_PROFILE) as string[];
     const requested = raw.split(',').map(p => p.trim().toUpperCase());

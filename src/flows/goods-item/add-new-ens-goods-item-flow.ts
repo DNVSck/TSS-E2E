@@ -91,6 +91,10 @@ export class AddNewEnsGoodsItemFlow {
                 }
             }
 
+            // Between the commodity screen and packaging, which is where the service
+            // inserted it (the screen's own Back link points at commodity-information).
+            await this.steps.answerNirmsIfAsked(input);
+
             await this.steps.enterPackagingDetails(input);
             await this.steps.enterWeightInformation(input);
 

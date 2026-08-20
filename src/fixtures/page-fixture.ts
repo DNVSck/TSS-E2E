@@ -29,6 +29,7 @@ import { ConsignmentDetailPage } from '../page-object/consignment-detail-page';
 import { StandaloneConsignmentDeclarePage } from '../page-object/standalone-consignment-declare-page';
 import { FfdStandaloneConsignmentDeclarePage } from '../page-object/ffd-standalone-consignment-declare-page';
 import { TaskListPage } from '../page-object/task-list-page';
+import { DeclarationSearchPage } from '../page-object/declaration-search-page';
 
 
 export type PageFixtureType = {
@@ -41,6 +42,7 @@ export type PageFixtureType = {
     representTraderPage: RepresentTraderPage;
     agentBanner: AgentBanner;
     consignmentDetailPage: ConsignmentDetailPage;
+    declarationSearchPage: DeclarationSearchPage;
     initialFormDeclaraPage: InitialFormDeclaraPage;
     movementDeclarePage: MovementDeclarePage;
     goodsMovementTaskListPage: TaskListPage;
@@ -118,6 +120,10 @@ export const pageFixture: ExtendParams[0] = {
 
     consignmentDetailPage: async ({ page, t }, use) => {
         await use(new ConsignmentDetailPage(page, t));
+    },
+
+    declarationSearchPage: async ({ page }, use) => {
+        await use(new DeclarationSearchPage(page));
     },
 
     consignmentDeclarePage: async ({ page }, use) => {

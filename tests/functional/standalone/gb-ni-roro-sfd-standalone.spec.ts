@@ -22,12 +22,14 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
   test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Prelodged - RoRo (Accompanied)');
     reportTestCaseLink(SFD_STANDALONE);
-    await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-      testInfo,
-      url: getBaseUrl(),
-      consignmentOverrides: { isControlledGoods: true },
-      goodsItemOverrides: sfdStandaloneGoodsItem(),
-    });
+    await ReportLog.step('Create and submit the SFD standalone declaration', () =>
+      createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+        testInfo,
+        url: getBaseUrl(),
+        consignmentOverrides: { isControlledGoods: true },
+        goodsItemOverrides: sfdStandaloneGoodsItem(),
+      })
+    );
   });
 
   // An arrived movement is the same declaration minus the arrival date/time screen, and
@@ -35,29 +37,33 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
   // isPreLodged, so the override below is the only difference from the test above.
   test('Verify SFD Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Arrived - RoRo (Accompanied)');
-    await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-      testInfo,
-      url: getBaseUrl(),
-      consignmentOverrides: {
-        isPreLodged: false,
-        isControlledGoods: true,
-      },
-      goodsItemOverrides: sfdStandaloneGoodsItem(),
-    });
+    await ReportLog.step('Create and submit the SFD standalone declaration', () =>
+      createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+        testInfo,
+        url: getBaseUrl(),
+        consignmentOverrides: {
+          isPreLodged: false,
+          isControlledGoods: true,
+        },
+        goodsItemOverrides: sfdStandaloneGoodsItem(),
+      })
+    );
   });
 
   test('Verify SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Prelodged - RoRo (Accompanied)');
     reportTestCaseLink(SFD_EIDR_STANDALONE);
-    await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-      testInfo,
-      url: getBaseUrl(),
-      consignmentOverrides: {
-        isPreLodged: true,
-        isControlledGoods: false,
-      },
-      goodsItemOverrides: sfdStandaloneGoodsItem(),
-    });
+    await ReportLog.step('Create and submit the SFD standalone declaration', () =>
+      createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+        testInfo,
+        url: getBaseUrl(),
+        consignmentOverrides: {
+          isPreLodged: true,
+          isControlledGoods: false,
+        },
+        goodsItemOverrides: sfdStandaloneGoodsItem(),
+      })
+    );
   });
 
   // EIDR is this family's exception: it is authorised outright whether the movement was
@@ -66,15 +72,17 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
   // arrived route does NOT settle on "Arrived".
   test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Arrived - RoRo (Accompanied)');
-    await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-      testInfo,
-      url: getBaseUrl(),
-      consignmentOverrides: {
-        isPreLodged: false,
-        isControlledGoods: false,
-      },
-      goodsItemOverrides: sfdStandaloneGoodsItem(),
-    });
+    await ReportLog.step('Create and submit the SFD standalone declaration', () =>
+      createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+        testInfo,
+        url: getBaseUrl(),
+        consignmentOverrides: {
+          isPreLodged: false,
+          isControlledGoods: false,
+        },
+        goodsItemOverrides: sfdStandaloneGoodsItem(),
+      })
+    );
   });
 });
 
@@ -92,50 +100,58 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
 
   test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
-    await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-      testInfo,
-      url: getBaseUrl(),
-      consignmentOverrides: { isControlledGoods: true },
-      goodsItemOverrides: sfdStandaloneGoodsItem(),
-    });
+    await ReportLog.step('Create and submit the SFD standalone declaration', () =>
+      createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+        testInfo,
+        url: getBaseUrl(),
+        consignmentOverrides: { isControlledGoods: true },
+        goodsItemOverrides: sfdStandaloneGoodsItem(),
+      })
+    );
   });
 
   test('Verify SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself');
-    await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-      testInfo,
-      url: getBaseUrl(),
-      consignmentOverrides: {
-        isPreLodged: false,
-        isControlledGoods: true,
-      },
-      goodsItemOverrides: sfdStandaloneGoodsItem(),
-    });
+    await ReportLog.step('Create and submit the SFD standalone declaration', () =>
+      createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+        testInfo,
+        url: getBaseUrl(),
+        consignmentOverrides: {
+          isPreLodged: false,
+          isControlledGoods: true,
+        },
+        goodsItemOverrides: sfdStandaloneGoodsItem(),
+      })
+    );
   });
 
   test('Verify SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
-    await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-      testInfo,
-      url: getBaseUrl(),
-      consignmentOverrides: {
-        isPreLodged: true,
-        isControlledGoods: false,
-      },
-      goodsItemOverrides: sfdStandaloneGoodsItem(),
-    });
+    await ReportLog.step('Create and submit the SFD standalone declaration', () =>
+      createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+        testInfo,
+        url: getBaseUrl(),
+        consignmentOverrides: {
+          isPreLodged: true,
+          isControlledGoods: false,
+        },
+        goodsItemOverrides: sfdStandaloneGoodsItem(),
+      })
+    );
   });
 
   test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself');
-    await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-      testInfo,
-      url: getBaseUrl(),
-      consignmentOverrides: {
-        isPreLodged: false,
-        isControlledGoods: false,
-      },
-      goodsItemOverrides: sfdStandaloneGoodsItem(),
-    });
+    await ReportLog.step('Create and submit the SFD standalone declaration', () =>
+      createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+        testInfo,
+        url: getBaseUrl(),
+        consignmentOverrides: {
+          isPreLodged: false,
+          isControlledGoods: false,
+        },
+        goodsItemOverrides: sfdStandaloneGoodsItem(),
+      })
+    );
   });
 });

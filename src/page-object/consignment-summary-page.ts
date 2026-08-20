@@ -1,7 +1,7 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './base-page';
 import { TFunction } from '../fixtures/locale-fixture';
-import { summaryListValue, readFieldWhenVisible } from '../helper/element-helper';
+import { summaryListValue, readFieldWhenVisible, clickLinkAndWaitForNavigation } from '../helper/element-helper';
 
 /** The summary list paints a beat after these pages load. */
 const SUMMARY_READ_TIMEOUT = 20_000;
@@ -40,9 +40,29 @@ export class ConsignmentSummaryPage extends BasePage {
      * declaration was not warehoused after all - and both are worth failing on rather
      * than passing an empty string up.
      */
-    async assertSupervisingCustomsOffice(expectedOffice: string): Promise<string> {
-        const office = await readFieldWhenVisible(this.supervisingCustomsOffice, SUMMARY_READ_TIMEOUT);
-        expect.soft(office, 'Supervising customs office').toBe(expectedOffice);
-        return office;
+    async readSupervisingCustomsOffice(): Promise<string> {
+        return readFieldWhenVisible(this.supervisingCustomsOffice, SUMMARY_READ_TIMEOUT);
+    }
+
+    /**
+     * Follow the summary list's "Change" action for one named field.
+     *
+     * Addressed by the field name in the href ("?field=containerIdentifierNumber"),
+     * not by the row's label, which is translated - and the service names the field
+     * in the URL exactly as it names the input on the screen it opens, so a caller
+     * says the field once.
+     *
+     * Ends-with rather than contains: the field is the last query parameter, and a
+     * contains match would let "field=exporter" also select "field=exporterName".
+     *
+     * The href is not the destination. It ends "/edit/_edit_?field=x" - a placeholder
+     * the server resolves - and the click lands on the wizard screen that field lives
+     * on, which is why this waits for a navigation rather than for a known route.
+     */
+    async changeField(field: string): Promise<void> {
+        await clickLinkAndWaitForNavigation(
+            this.page,
+            this.page.locator(`.govuk-summary-list__actions a[href$='field=${field}']`)
+        );
     }
 }

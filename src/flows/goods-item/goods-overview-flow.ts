@@ -1,4 +1,7 @@
-﻿import { ReportLog } from '../../core/report/report-log';
+﻿import { expect } from '@playwright/test';
+import { ReportLog } from '../../core/report/report-log';
+import { TFunction } from '../../fixtures/locale-fixture';
+import { COUNTRY_NAME } from '../../constant/country-code-dropdown-constant';
 import { GoodsOverviewPage } from "../../page-object/goods-overview-page";
 import { DocumentReferenceDeclarePage } from "../../page-object/document-reference-declare-page";
 import { AdditionalInformationDeclarePage } from "../../page-object/additional-information-declare-page";
@@ -26,6 +29,10 @@ export class GoodsOverviewFlow {
         private readonly additionalProcedureCodeDeclarePage: AdditionalProcedureCodeDeclarePage,
         private readonly taricAdditionalCodeDeclarePage: TaricAdditionalCodeDeclarePage,
         private readonly nationalAdditionalCodeDeclarePage: NationalAdditionalCodeDeclarePage,
+        // Held for the same reason the other flows hold it: the values below are compared
+        // against translated text, but deciding whether the TGP record was applied is
+        // this layer's judgement, not the page's.
+        private readonly t: TFunction,
     ) { }
 
     /**
@@ -39,7 +46,23 @@ export class GoodsOverviewFlow {
         }
 
         await ReportLog.step('Verify the goods item was populated from the TGP record', async () => {
-            await this.goodsOverviewPage.assertTgpPopulatedFields(record);
+            const shown = await this.goodsOverviewPage.readTgpPopulatedFields();
+
+            // Every field read before any is judged, so one wrong value neither hides
+            // the others nor stops the journey completing.
+            expect.soft(shown.useTgp, 'Use a Trader Goods Profile').toBe(this.t('common.yes'));
+            expect.soft(shown.chosenTgp, 'Chosen TGP record').toBe(record.recordId);
+            expect.soft(shown.commodityCode, 'Commodity code from TGP').toBe(record.commodityCode);
+            expect.soft(shown.goodsDescription, 'Goods description from TGP')
+                .toBe(record.goodsDescription);
+            // The record holds the code; the summary list prints the name.
+            expect.soft(shown.countryOfOrigin, 'Country of origin from TGP')
+                .toBe(COUNTRY_NAME[record.countryOfOrigin]);
+            // Supplementary units are optional on the record. The row is rendered either
+            // way, showing "Not provided" when the record carries none - so that absence
+            // is asserted too rather than skipped.
+            expect.soft(shown.supplementaryUnits, 'Supplementary units from TGP')
+                .toBe(record.supplementaryUnits || this.t('common.notProvided'));
         });
     }
 
@@ -55,6 +78,24 @@ export class GoodsOverviewFlow {
                     await this.documentReferenceDeclarePage.declareDocumentReference(item);
                 });
             }
+        });
+    }
+
+    /**
+     * Correct a document reference already on this goods item.
+     *
+     * Opening the record re-enters the wizard it was created through, so the same step
+     * that declared it declares it again - exactly as correcting a holder-of-authorisation
+     * record does. Assumes the goods item is open on its Document references tab, which
+     * is the tab it opens on.
+     */
+    async correctDocumentReference(
+        item: DocumentReferenceData,
+        documentCode: string = item.documentCode
+    ): Promise<void> {
+        await ReportLog.step(`Correct the "${documentCode}" document reference`, async () => {
+            await this.goodsOverviewPage.openDocumentReferenceRecord(documentCode);
+            await this.documentReferenceDeclarePage.declareDocumentReference(item);
         });
     }
 

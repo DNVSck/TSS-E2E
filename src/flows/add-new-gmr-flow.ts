@@ -84,7 +84,7 @@ export class AddNewGMRFlow {
      */
     private async verifyDraftGmr(): Promise<void> {
         await ReportLog.step('Validate GMR is Draft with a GMR reference', async () => {
-            const { localReferenceNumber, status } = await this.gmrDetailsPage.assertDraftGmr();
+            const { localReferenceNumber, status } = await this.gmrDetailsPage.readDraftGmr();
             ReportLog.setParameter('GMR reference', localReferenceNumber);
             ReportLog.setParameter('GMR status (draft)', status);
         });

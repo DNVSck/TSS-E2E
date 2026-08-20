@@ -1,6 +1,14 @@
 import { Page, Locator, TestInfo } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import { PortalPage } from './portal-page';
+import { readFieldIfPresent } from '../helper/element-helper';
+
+/** One action button, and whether the screen will actually let it be used. */
+export interface ActionButton {
+    /** The posted value that names the action, e.g. "submit-consignment". */
+    value: string;
+    enabled: boolean;
+}
 
 /** Overview screens paint their list a beat after the route settles. */
 const CONTENT_TIMEOUT = 20_000;
@@ -29,6 +37,25 @@ export class BasePage {
         return this.page.locator('.govuk-summary-list__actions a');
     }
 
+    /**
+     * The buttons that DO something to the record - submit, cancel, delete, add.
+     *
+     * Every one of them posts `name="action"`, which is what separates them from the
+     * page furniture (cookie banner, chat widget) that carries no name at all.
+     */
+    protected get actionButtons(): Locator {
+        return this.page.locator('button[name="action"]');
+    }
+
+    /**
+     * The screen's own heading. Located structurally, never by its words - a caller
+     * that cares which screen this is compares the TEXT against t(), so the check
+     * stays honest in Welsh while the selector stays free of copy.
+     */
+    protected get pageHeading(): Locator {
+        return this.page.locator('h1');
+    }
+
     constructor(protected readonly page: Page, t?: TFunction) {
         this.t = t;
 
@@ -49,8 +76,63 @@ export class BasePage {
      * failed to load, so a caller has to establish the screen is there first.
      */
     async countContentRows(): Promise<number> {
-        await this.contentRows.first().waitFor({ state: 'visible', timeout: CONTENT_TIMEOUT });
+        await this.waitForContent(CONTENT_TIMEOUT);
         return this.contentRows.count();
+    }
+
+    /**
+     * Wait until the screen has listed something. Throws if it never does, which is
+     * what lets a caller tell "the record rendered and offers nothing" from "no
+     * record rendered" - two results that look identical to any absence check.
+     */
+    async waitForContent(timeout = CONTENT_TIMEOUT): Promise<void> {
+        await this.contentRows.first().waitFor({ state: 'visible', timeout });
+    }
+
+    /**
+     * Wait for whichever the service answers with: the record, or a heading instead
+     * of one.
+     *
+     * Both outcomes are expected when a permission test opens a record, so waiting
+     * for only the record would spend the full timeout every time the answer is a
+     * refusal - and waiting for only a heading would miss the record. Racing them
+     * settles as soon as either arrives.
+     */
+    async waitForContentOrHeading(timeout = CONTENT_TIMEOUT): Promise<void> {
+        await this.contentRows.first().or(this.pageHeading.first())
+            .waitFor({ state: 'visible', timeout });
+    }
+
+    /** How many rows are rendered right now. Does not wait - see waitForContent. */
+    async renderedRowCount(): Promise<number> {
+        return this.contentRows.count();
+    }
+
+    /** The screen's heading as shown, or '' when it has none. */
+    async readPageHeading(): Promise<string> {
+        return readFieldIfPresent(this.pageHeading);
+    }
+
+    /**
+     * Where the browser currently is.
+     *
+     * The handle another company needs: a second signed-in context has never walked the
+     * journey that built this record, so the URL one context arrived at is what lets
+     * the other open the very same one.
+     */
+    currentUrl(): string {
+        return this.page.url();
+    }
+
+    /**
+     * Open a record by its URL.
+     *
+     * The response status is deliberately NOT returned. A refusal is recognised by
+     * the page the service renders, because that is what a person is actually shown -
+     * the 403 behind it is a fact about the transport, and belongs to an API test.
+     */
+    async openUrl(url: string): Promise<void> {
+        await this.page.goto(url);
     }
 
     /**
@@ -73,6 +155,26 @@ export class BasePage {
             links.map(link => link.getAttribute('href') ?? '')
         );
         return hrefs.filter(href => href !== '');
+    }
+
+    /**
+     * Every action button the screen renders, WITH its enabled state.
+     *
+     * Both halves are needed because the service withholds an action in two different
+     * ways, and a check that knew only one would miss the other: a company with no
+     * rights over a record is simply not shown "Confirm and submit" or "Cancel" at
+     * all, while "Delete" IS rendered and merely disabled (measured 2026-08-13).
+     *
+     * So callers should ask what is ENABLED rather than what is present - see
+     * enabledActions - which is the one question both mechanisms answer the same way.
+     */
+    async listActionButtons(): Promise<ActionButton[]> {
+        return this.actionButtons.evaluateAll(buttons =>
+            buttons.map(button => ({
+                value: button.getAttribute('value') ?? '',
+                enabled: !(button as HTMLButtonElement).disabled,
+            }))
+        );
     }
 
     /**

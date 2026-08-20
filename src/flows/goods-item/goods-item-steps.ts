@@ -232,6 +232,18 @@ export class GoodsItemSteps {
         });
     }
 
+    /**
+     * The NIRMS screen, when the service shows it. A no-op otherwise - see
+     * GoodsDeclarePage.answerUseNirmsIfPresent for why this one cannot be decided from
+     * the journey's own flags.
+     */
+    async answerNirmsIfAsked(input: GoodsData): Promise<void> {
+        await ReportLog.step('Answer NIRMS', async () => {
+            const asked = await this.goodsDeclarePage.answerUseNirmsIfPresent(input.useNirms);
+            ReportLog.setParameter('NIRMS screen', asked ? `answered ${input.useNirms ? 'Yes' : 'No'}` : 'not shown');
+        });
+    }
+
     /** The ENS packaging screen, which also asks for the number of pieces. */
     async enterPackagingDetails(input: GoodsData): Promise<void> {
         await ReportLog.step('Fill Packaging Information', async () => {

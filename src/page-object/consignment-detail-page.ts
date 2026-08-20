@@ -1,6 +1,7 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { ConsignmentSummaryPage } from './consignment-summary-page';
-import { TFunction } from '../fixtures/locale-fixture';
+import { RecordTabs } from './components/record-tabs';
+import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { summaryListValue, readFieldWhenVisible, readFieldIfPresent } from '../helper/element-helper';
 import { isTraderInputRequiredConsignmentStatus } from '../helper/consignment-status-helper';
 
@@ -9,13 +10,26 @@ const DETAIL_READ_TIMEOUT = 15_000;
 /** The MRN is populated asynchronously after the consignment is authorised. */
 const MRN_POLL_TIMEOUT = 60_000;
 
+const STATUS_POLL_TIMEOUT = 60_000;
+
+/**
+ * How long a RESUBMISSION is given to change the status.
+ *
+ * Longer than a first submission's, measured 2026-08-19 on a standalone SFD: the
+ * correction cleared every CDS error from the page - so the service had taken it - while
+ * the status still read "Trader Input Required" when the 60-second poll gave up. A
+ * declaration being re-judged is a second trip through CDS, and it is slower than the
+ * first.
+ */
+export const RESUBMIT_STATUS_POLL_TIMEOUT = 150_000;
+
 /**
  * The MRN reduced to its alphanumeric characters. The service injects zero-width
  * spaces (U+200B) into the rendered MRN as line-break hints, so the raw text is
  * e.g. "26X<zwsp>I…" and never compares equal on its own. The same reduction also
  * flattens the "-" placeholder an unauthorised consignment shows to ''.
  */
-const alphanumericOnly = (raw: string): string => raw.replaceAll(/[^A-Za-z0-9]/g, '');
+export const alphanumericOnly = (raw: string): string => raw.replaceAll(/[^A-Za-z0-9]/g, '');
 
 /**
  * A consignment's detail page, reached via the "View" button on a consignment
@@ -27,8 +41,16 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
     private readonly movementReferenceNumber: Locator;
     private readonly status: Locator;
 
+    /**
+     * The tabbed record lists below the summary. Composed rather than inherited: the
+     * tabs belong to this kind of screen, not to every page in the suite.
+     */
+    readonly tabs: RecordTabs;
+
     constructor(page: Page, t: TFunction) {
         super(page, t);
+
+        this.tabs = new RecordTabs(page);
 
         this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
         this.movementReferenceNumber = summaryListValue(page, this.t!('consignmentDetail.movementReferenceNumber'));
@@ -62,7 +84,10 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
      * one locator per attempt and saves the whole remaining timeout on the runs that
      * need their report soonest, the failing ones.
      */
-    async waitForMovementReferenceNumber(): Promise<string> {
+    async waitForMovementReferenceNumber(
+        options: { traderInputIsSettled?: boolean } = {}
+    ): Promise<string> {
+        const { traderInputIsSettled = true } = options;
         let mrn = '';
         await expect(async () => {
             mrn = await this.readMovementReferenceNumber();
@@ -71,7 +96,7 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
             }
 
             const status = await readFieldIfPresent(this.status);
-            if (isTraderInputRequiredConsignmentStatus(status, this.t!)) {
+            if (traderInputIsSettled && isTraderInputRequiredConsignmentStatus(status, this.t!)) {
                 return;
             }
 
@@ -88,25 +113,37 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
         return readFieldWhenVisible(this.status, DETAIL_READ_TIMEOUT);
     }
 
-    /** Soft-assert the consignment status is "Awaiting arrival"; returns the actual status. */
-    async assertStatusAwaitingArrival(): Promise<string> {
-        const status = await this.getConsignmentStatus();
-        expect.soft(status, 'Consignment status').toBe(this.t!('status.awaitingArrival'));
+
+    async waitForStatus(
+        expectedStatusKey: TranslationKey,
+        timeout = STATUS_POLL_TIMEOUT
+    ): Promise<string> {
+        const expected = this.t!(expectedStatusKey);
+        let status = '';
+
+        await expect(async () => {
+            status = await readFieldIfPresent(this.status);
+            if (status === expected) {
+                return;
+            }
+            await this.page.reload();
+            expect(status, 'Consignment status').toBe(expected);
+        })
+            .toPass({ timeout, intervals: [2_000, 3_000, 5_000] })
+            .catch(() => { /* the caller asserts; this only decides how long to wait */ });
+
         return status;
     }
 
     /**
-     * Soft-assert the consignment carries NO Movement Reference Number. An EIDR
-     * consignment is never authorised with an MRN — it lands "Trader Input
-     * Required" and renders the MRN row as "-", unlike ENS/SFD/IMMI. The raw
-     * display ("-") is returned for the report; the check strips to alphanumerics
-     * (a real MRN has them, the "-" placeholder does not) and expects none.
+     * The MRN row exactly as it is displayed, waiting for the summary list first.
+     *
+     * Raw rather than reduced, because the raw text is what a report should carry: an
+     * EIDR renders "-" here, and whether that means "no MRN" is the caller's judgement -
+     * see alphanumericOnly, exported for exactly that.
      */
-    async assertNoMovementReferenceNumber(): Promise<string> {
-        // Ensure the summary list has painted before reading the MRN row.
+    async readDisplayedMovementReferenceNumber(): Promise<string> {
         await readFieldWhenVisible(this.status, DETAIL_READ_TIMEOUT);
-        const raw = await readFieldIfPresent(this.movementReferenceNumber);
-        expect.soft(alphanumericOnly(raw), 'EIDR MRN (should be absent)').toBe('');
-        return raw;
+        return readFieldIfPresent(this.movementReferenceNumber);
     }
 }

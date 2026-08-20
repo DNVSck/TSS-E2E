@@ -2,14 +2,22 @@ import { ConsignmentSummaryPage } from "./consignment-summary-page";
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
-    clickLinkAndWaitForRoute, switchToTabAndClickNew, summaryListValue,
+    clickLinkAndWaitForRoute, clickLinkAndWaitForNavigation, switchToTabAndClickNew, summaryListValue,
     readFieldWhenVisible, readFieldIfPresent, newRecordButton,
 } from '../helper/element-helper';
-import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 import { isTraderInputRequiredConsignmentStatus } from '../helper/consignment-status-helper';
+import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
+import { StringUtil } from '../core/util/string-util';
+import {
+    OPEN_TAB_RECORD, RECORD_LINK, RECORD_DELETE_BUTTON,
+} from './components/record-tabs';
 
 /** The overview summary list paints a beat after the draft is created. */
 const SUMMARY_READ_TIMEOUT = 20_000;
+
+/** Deleting a record re-renders the tab in place; no navigation to wait on. */
+const RECORD_DELETE_TIMEOUT = 20_000;
+
 /** After submit, the status flips to "Awaiting arrival" asynchronously. */
 const SUBMIT_STATUS_POLL_TIMEOUT = 60_000;
 
@@ -26,6 +34,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     private readonly newHolderOfAuthorisationBtn: Locator;
     private readonly confirmAndSubmitButton: Locator;
     private readonly consignmentBreadcrumbLink: Locator;
+    private readonly openTabRecords: Locator;
 
     // Draft summary-list fields, matched by their translated label (see t()). The
     // label is exact-matched (:text-is) so "Status" is not also satisfied by the
@@ -62,8 +71,9 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         // with the other tabs' own "new-record" buttons.
         this.newPreviousDocumentBtn = newRecordButton(page, 'previous-documents');
         this.newHolderOfAuthorisationBtn = newRecordButton(page, 'holder-of-authorisation');
+        this.openTabRecords = page.locator(OPEN_TAB_RECORD);
         this.documentTab = page.locator("//a[contains(@href, '/documents#overview-tab')]");
-        this.confirmAndSubmitButton = page.locator("button[value='submit-consignment']");
+        this.confirmAndSubmitButton = page.locator(`button[value='${CONSIGNMENT_ACTION.SUBMIT}']`);
     }
 
 
@@ -101,45 +111,145 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         return readFieldWhenVisible(this.declarationType, SUMMARY_READ_TIMEOUT);
     }
 
-    async assertEidrDeclarationType(): Promise<string> {
-        const declarationType = await this.getDeclarationType();
-        expect.soft(declarationType, 'Declaration type').toBe(this.t!('declarationType.eidr'));
-        return declarationType;
-    }
-
     private async getConsignmentStatus(): Promise<string> {
         return readFieldWhenVisible(this.status, SUMMARY_READ_TIMEOUT);
     }
 
     /**
-     * Soft-assert the freshly-created draft consignment — its reference opens with
-     * "DEC" and its status is "Draft" — and return both. They are read from the
-     * consignment-overview summary list, which paints as soon as the draft is
-     * created. Mirrors {@link MovementOverviewPage.assertDraftMovementOverview}: the
-     * page reads and asserts, the flow reports. All checks are soft, so a mismatch
-     * still reaches the report rather than throwing the values away.
+     * Read the freshly-created draft consignment's reference and status from the
+     * summary list, which paints as soon as the draft is created.
+     *
+     * Reads only. Whether "DEC..." and "Draft" are the RIGHT answers is a rule about
+     * the service, so the flow that asked decides it.
      */
-    async assertDraftConsignment(): Promise<{ consignmentReference: string; declarationStatus: string }> {
-        const consignmentReference = await this.getConsignmentLocalReferenceNumber();
-        const declarationStatus = await this.getConsignmentStatus();
-        const expectedStatus = this.t!('status.draft');
-
-        expect.soft(consignmentReference, 'Consignment reference').toMatch(LOCAL_REFERENCE.DEC_PREFIX);
-        expect.soft(declarationStatus, 'Consignment status').toBe(expectedStatus);
-
-        return { consignmentReference, declarationStatus };
+    async readDraftConsignment(): Promise<{ consignmentReference: string; declarationStatus: string }> {
+        return {
+            consignmentReference: await this.getConsignmentLocalReferenceNumber(),
+            declarationStatus: await this.getConsignmentStatus(),
+        };
     }
 
     async clickConfirmAndSubmit(): Promise<void> {
         await this.confirmAndSubmitButton.click();
     }
 
+
     /**
-     * Soft-assert the freshly-created standalone consignment's reference and return
-     * it with whatever status the overview shows. Each journey stamps its own prefix
-     * (IMMI "GLR", SFD "SFD", FFD "FFD"), so the caller passes the one it expects -
-     * asserting the journey that actually ran, not merely that some standalone
-     * reference exists. Mirrors {@link assertDraftConsignment} (the ENS "DEC" variant).
+     * The route of every GOODS ITEM this consignment lists, in page order.
+     *
+     * Goods-item-specific on purpose. A consignment's record types are NOT addressed
+     * alike: a goods item is the consignment's route plus one segment, while a holder
+     * of authorisation is ".../holder-of-authorisation/<index>/edit/start" (measured
+     * 2026-08-13). An earlier version claimed one rule covered both; what it really
+     * found on the authorisation tab was a hidden goods link.
+     *
+     * Derived from the route we are ON, never from a reference prefix: the consignment
+     * is addressed "DEC..." on an ENS journey and "GLR..." on a standalone one, so a
+     * prefix match would find nothing on standalone and call it recordless.
+     *
+     * CSS cannot express "exactly one segment deeper", hence the scan. That same test
+     * excludes the consignment's own link: it leaves "/overview" behind, while a
+     * record leaves "/<id>/overview".
+     */
+    async listGoodsItemRoutes(): Promise<string[]> {
+        // Everything BEFORE "/overview", not the pathname with "/overview" trimmed off
+        // the end: a tab is served at ".../overview/<tab-name>", so trimming the end
+        // would leave the tab in the route and match nothing. Both shapes reduce to the
+        // consignment here.
+        const pathname = StringUtil.stripTrailingSlashes(new URL(this.page.url()).pathname);
+        const consignmentRoute = pathname.slice(0, pathname.indexOf('/overview'));
+
+        // :visible is load-bearing. The GOV.UK tabs component renders EVERY panel into
+        // the DOM and hides the inactive ones, so an unfiltered scan returns the other
+        // tabs' records too - and the first one back is then a record this tab does not
+        // show, which cannot be clicked (measured 2026-08-13).
+        const hrefs = await this.page.locator(`a[href*='${consignmentRoute}/']:visible`)
+            .evaluateAll(links => links.map(link => link.getAttribute('href') ?? ''));
+
+        return hrefs.filter(href =>
+            /^\/[^/]+\/overview$/.test(StringUtil.stripTrailingSlashes(href).slice(consignmentRoute.length))
+        );
+    }
+
+    /**
+     * Open one of the consignment's goods items, by position in that list.
+     *
+     * By index rather than by anything the item contains, because a permission check
+     * does not care WHICH item it looks at - it cares the service answers the same way
+     * for every one.
+     *
+     * Returns false when no item is listed at that position, which an authority test
+     * expects rather than treats as a broken run.
+     */
+    async openGoodsItem(index = 0): Promise<boolean> {
+        const goodsItem = (await this.listGoodsItemRoutes())[index];
+
+        if (!goodsItem) {
+            return false;
+        }
+
+        await clickLinkAndWaitForRoute(this.page, this.page.locator(`a[href='${goodsItem}']`).first());
+        return true;
+    }
+
+    /** Open the "Holder of authorisation" tab, without adding a record to it. */
+    async openHolderOfAuthorisationTab(): Promise<void> {
+        await clickLinkAndWaitForRoute(this.page, this.holderOfAuthorisationTab);
+    }
+
+    /**
+     * Open an existing holder-of-authorisation record for editing.
+     *
+     * Found by the TYPE CODE it is labelled with ("[EXW] XI896458895023"), not by
+     * position. The route does carry an index, and that is the trap: it makes "the first
+     * record" look like a stable address when it is only the order the service rendered.
+     * Measured 2026-08-19 - one consignment held an EXW and an SDE at once, so a default
+     * of 0 would have opened whichever came first.
+     *
+     * There is no Change link on the record; the record IS the link.
+     *
+     * "start" is a launcher, not a destination: the service answers it with a redirect
+     * to the wizard's first screen ("/edit/type-code"). So the landing cannot be
+     * matched against the href, and this waits for a navigation instead - the same
+     * reason a summary list's "_edit_" Change link does.
+     */
+    async openHolderOfAuthorisationRecord(typeCode: string): Promise<void> {
+        // The bracketed label the service renders, not a bare substring: "EXW" alone
+        // would also match an "EXWH" record, which is a different authorisation.
+        const record = this.openTabRecords.filter({ hasText: `[${typeCode}]` });
+
+        await clickLinkAndWaitForNavigation(this.page, record.locator(RECORD_LINK));
+    }
+
+    /**
+     * Remove a holder-of-authorisation record from the open tab.
+     *
+     * Found by the TYPE CODE it is labelled with ("[EXW] XI896458895023"), never by
+     * position. Two things rule position out: the tab can hold several authorisations at
+     * once (measured 2026-08-19, an EXW and an SDE side by side), and the delete button's
+     * own `value="delete:<record id>"` carries an id rather than an index - so nothing on
+     * the page agrees that "the first record" means anything stable.
+     *
+     * Waits for that record to be gone rather than for a route: the tab re-renders in
+     * place, so the address does not change and there is nothing else to wait on.
+     */
+    async deleteHolderOfAuthorisationRecord(typeCode: string): Promise<void> {
+        // The bracketed label the service renders, not a bare substring: "EXW" alone
+        // would also match an "EXWH" record, which is a different authorisation.
+        const record = this.openTabRecords.filter({ hasText: `[${typeCode}]` });
+
+        await record.locator(RECORD_DELETE_BUTTON).click();
+
+        await expect(record).toHaveCount(0, { timeout: RECORD_DELETE_TIMEOUT });
+    }
+
+    /**
+     * Read the freshly-created standalone consignment's reference and status.
+     *
+     * Reads only - which prefix a journey stamps (IMMI "GLR", SFD "SFD", FFD "FFD") is
+     * the flow's expectation, not this page's. That separation is what lets a spec that
+     * does not care about the LRN skip the check: welding it here is why the authority
+     * test on a controlled SFD went red on defect 1239.
      *
      * BOTH rows are read without throwing, because either can be legitimately absent:
      * the Status row only appears once the consignment has been submitted, and the SFD
@@ -157,15 +267,13 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
      * Swallowing that would report it as an empty LRN, which is exactly what the missing
      * row above looks like: one real defect and one broken run, indistinguishable.
      */
-    async assertDraftStandaloneConsignment(
-        expectedPrefix: RegExp
-    ): Promise<{ consignmentReference: string; declarationStatus: string }> {
+    async readDraftStandaloneConsignment(): Promise<{ consignmentReference: string; declarationStatus: string }> {
         await this.contentRows.first().waitFor({ state: 'visible', timeout: SUMMARY_READ_TIMEOUT });
 
-        const consignmentReference = await readFieldIfPresent(this.localReferenceNumber);
-        const declarationStatus = await readFieldIfPresent(this.status);
-        expect.soft(consignmentReference, 'Consignment LRN').toMatch(expectedPrefix);
-        return { consignmentReference, declarationStatus };
+        return {
+            consignmentReference: await readFieldIfPresent(this.localReferenceNumber),
+            declarationStatus: await readFieldIfPresent(this.status),
+        };
     }
 
 
@@ -178,7 +286,9 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
             // Returning without throwing ends the poll. Both cases below are settled:
             // the expected status arrived, or the consignment came to rest somewhere it
             // will not leave on its own, so no amount of reloading changes the answer.
-            // The soft assertion after the poll still reports the mismatch.
+            //
+            // This is the load-bearing use of that second case: without it a rejected
+            // consignment costs the full poll timeout before anyone can say so.
             if (status === expected || isTraderInputRequiredConsignmentStatus(status, this.t!)) {
                 return;
             }
@@ -187,9 +297,8 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
             expect(status, 'Consignment status').toBe(expected);
         })
             .toPass({ timeout: SUBMIT_STATUS_POLL_TIMEOUT, intervals: [2_000, 3_000, 5_000] })
-            .catch(() => { /* soft: return whatever was last read for the caller to report */ });
+            .catch(() => { /* the caller asserts; this only decides how long to wait */ });
 
-        expect.soft(status, 'Consignment status').toBe(expected);
         return status;
     }
 

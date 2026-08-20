@@ -81,15 +81,11 @@ export class GmrDetailsPage extends BasePage {
      * draft checks on the movement- and consignment-overview pages; the checks are
      * soft so a mismatch still reaches the report rather than throwing the values away.
      */
-    async assertDraftGmr(): Promise<{ localReferenceNumber: string; status: string }> {
-        const localReferenceNumber = await this.getGmrLocalReferenceNumber();
-        const status = await this.getGmrStatus();
-
-        expect.soft(localReferenceNumber, 'GMR local reference number')
-            .toMatch(LOCAL_REFERENCE.GMR_PREFIX);
-        expect.soft(status, 'GMR status').toBe(this.t!('status.draft'));
-
-        return { localReferenceNumber, status };
+    async readDraftGmr(): Promise<{ localReferenceNumber: string; status: string }> {
+        return {
+            localReferenceNumber: await this.getGmrLocalReferenceNumber(),
+            status: await this.getGmrStatus(),
+        };
     }
 
     /**

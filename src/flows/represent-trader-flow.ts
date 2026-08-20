@@ -22,6 +22,14 @@ export class RepresentTraderFlow {
 
     async representTrader(companyName: string): Promise<void> {
         await ReportLog.step(`Start representing "${companyName}"`, async () => {
+            // Switching straight from one company to another is offered by the banner
+            // ("Select a different company"), but it leaves nothing to wait on: the
+            // "Stop representing" link is already there, so waitUntilRepresenting would
+            // pass on the OLD representation and the test would carry on before the new
+            // one took effect. Stopping first gives the switch a real signal - the link
+            // goes away and comes back. A no-op when not representing, which is every
+            // first call.
+            await this.agentBanner.stopRepresenting();
             await this.agentBanner.openTradersList();
             await this.representTraderPage.startRepresenting(companyName);
             await this.agentBanner.waitUntilRepresenting();
@@ -30,5 +38,20 @@ export class RepresentTraderFlow {
         // so a run is trackable without scrolling the step timeline. Only specs
         // that represent reach this flow, so non-representing journeys stay clean.
         ReportLog.setParameter('Representing', companyName);
+    }
+
+    /**
+     * Stop representing, so the Agent acts as itself again.
+     *
+     * The authority specs need this to ask their sharpest question: an Agent that
+     * has stopped representing must lose sight of the declarations it made while it
+     * was. Representation is server-side session state, not part of the replayed
+     * storageState, so it has to be turned off deliberately - nothing else clears it
+     * mid-test.
+     */
+    async stopRepresenting(): Promise<void> {
+        await ReportLog.step('Stop representing', async () => {
+            await this.agentBanner.stopRepresenting();
+        });
     }
 }

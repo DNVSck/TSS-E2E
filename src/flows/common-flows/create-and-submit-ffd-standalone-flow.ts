@@ -73,6 +73,10 @@ export class CreateAndSubmitFfdStandaloneFlow {
         await this.goodsOverviewFlow.declareDocumentReferences(goodsData.documentReferences);
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
 
+        // The goods-item work above leaves the browser on the GOODS ITEM overview;
+        // submit lives on the consignment overview, so walk back up first.
+        await this.consignmentOverviewFlow.goToConsignmentOverview();
+
         await this.consignmentOverviewFlow.submitConsignment();
         // NOSONAR TODO: verify the post-submit state - what FFD is expected to produce (an MRN
         // like SFD/IMMI, or something else) is not yet confirmed.

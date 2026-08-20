@@ -5,6 +5,7 @@ import { LocaleFixtureType, localeFixture } from './locale-fixture';
 import { PageFixtureType, pageFixture } from './page-fixture';
 import { flowFixture, FlowFixtureType } from './flow-fixture';
 import { workerAuthFixture, WorkerAuthFixtureType } from './worker-auth-fixture';
+import { companySessionFixture, CompanySessionFixtureType } from './company-session-fixture';
 
 type AllFixtures =
   APIFixtureType &
@@ -12,7 +13,8 @@ type AllFixtures =
   LocaleFixtureType &
   AxeFixtureType &
   FlowFixtureType &
-  WorkerAuthFixtureType;
+  WorkerAuthFixtureType &
+  CompanySessionFixtureType;
 
 export const testMain = test.extend<AllFixtures>({
   ...apiFixture,
@@ -21,4 +23,5 @@ export const testMain = test.extend<AllFixtures>({
   ...axeFixture,
   ...flowFixture,
   ...workerAuthFixture,
+  ...companySessionFixture,
 });

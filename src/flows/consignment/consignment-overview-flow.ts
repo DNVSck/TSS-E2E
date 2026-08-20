@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+﻿import { expect } from '@playwright/test';
 import { ReportLog } from '../../core/report/report-log';
 import { ConsignmentOverviewPage } from "../../page-object/consignment-overview-page";
 import { PreviousDocumentDeclarePage } from "../../page-object/header-previous-documents-declare-page";
@@ -7,8 +7,15 @@ import { ConsignmentDetailPage } from '../../page-object/consignment-detail-page
 import { PreviousDocumentData } from "../../test-data/previous-document-data";
 import { HolderOfAuthorisationData } from "../../test-data/holder-of-authorisation-data";
 import { TranslationKey, TFunction } from '../../fixtures/locale-fixture';
-import { isTraderInputRequiredConsignmentStatus, traderInputRequiredError } from '../../helper/consignment-status-helper';
-import { MrnCountryCode, mrnPrefix } from '../../constant/local-reference-constants';
+import { LOCAL_REFERENCE, MrnCountryCode, mrnPrefix } from '../../constant/local-reference-constants';
+import { ConsignmentSteps } from './consignment-steps';
+
+/**
+ * The field name the service uses to address the container identification screen,
+ * both in the summary list's "Change" href and as the input's id on the screen it
+ * opens. Opaque enough to be worth naming once.
+ */
+const CONTAINER_IDENTIFIER_FIELD = 'containerIdentifierNumber';
 
 /**
  * Declares the consignment-overview tabs that each hold a list of records
@@ -21,6 +28,9 @@ export class ConsignmentOverviewFlow {
         private readonly previousDocumentDeclarePage: PreviousDocumentDeclarePage,
         private readonly holderOfAuthorisationDeclarePage: HolderOfAuthorisationDeclarePage,
         private readonly consignmentDetailPage: ConsignmentDetailPage,
+        // Correcting a rejected consignment re-opens the wizard screen the field
+        // lives on, so this flow drives the same steps the journey used to fill it.
+        private readonly consignmentSteps: ConsignmentSteps,
         // Whether a status means "handed back to the trader" is a comparison against
         // translated text, but the decision it feeds - can this journey carry on? - is
         // this layer's. So the flow holds t and asks the question itself, rather than
@@ -36,15 +46,23 @@ export class ConsignmentOverviewFlow {
 
     /**
      * Report the ENS consignment's reference (DEC...) as soon as its draft is
-     * created, so a run captures it even if a later step fails — mirroring the
+     * created, so a run captures it even if a later step fails â€” mirroring the
      * movement LRN, which is reported at draft time too.
      */
-    async verifyDraftConsignment(): Promise<void> {
-        await ReportLog.step('Validate draft ENS consignment', async () => {
+    async verifyDraftConsignment(): Promise<string> {
+        return ReportLog.step('Validate draft ENS consignment', async () => {
             const { consignmentReference, declarationStatus } =
-                await this.consignmentOverviewPage.assertDraftConsignment();
+                await this.consignmentOverviewPage.readDraftConsignment();
             ReportLog.setParameter('ENS Consignment reference', consignmentReference);
             ReportLog.setParameter('ENS Consignment status (draft)', declarationStatus);
+
+            // Reported first, then judged here rather than in the page: what a draft
+            // consignment is supposed to look like is a rule about the service.
+            expect.soft(consignmentReference, 'Consignment reference')
+                .toMatch(LOCAL_REFERENCE.DEC_PREFIX);
+            expect.soft(declarationStatus, 'Consignment status').toBe(this.t('status.draft'));
+
+            return consignmentReference;
         });
     }
 
@@ -54,17 +72,21 @@ export class ConsignmentOverviewFlow {
      * The expected prefix comes from the journey (IMMI "GLR", SFD "SFD", FFD "FFD"),
      * so this checks the journey that ran rather than any standalone reference.
      */
-    async verifyStandaloneConsignmentLrn(expectedPrefix: RegExp): Promise<void> {
-        await ReportLog.step('Validate standalone consignment LRN', async () => {
+    async verifyStandaloneConsignmentLrn(expectedPrefix: RegExp): Promise<string> {
+        return ReportLog.step('Validate standalone consignment LRN', async () => {
             const { consignmentReference, declarationStatus } =
-                await this.consignmentOverviewPage.assertDraftStandaloneConsignment(expectedPrefix);
+                await this.consignmentOverviewPage.readDraftStandaloneConsignment();
             ReportLog.setParameter('Consignment LRN', consignmentReference);
+            expect.soft(consignmentReference, 'Consignment LRN').toMatch(expectedPrefix);
             // Only once submitted does this overview carry a Status row; reporting an
             // empty parameter before then would read as "status unknown/blank" rather
             // than "not yet shown".
             if (declarationStatus) {
                 ReportLog.setParameter('Consignment status (draft)', declarationStatus);
             }
+            // Returned as well as reported: it is how a second company looks this
+            // declaration up, and only the session that built it ever sees it.
+            return consignmentReference;
         });
     }
 
@@ -76,16 +98,7 @@ export class ConsignmentOverviewFlow {
         await ReportLog.step('Verify standalone consignment submitted', async () => {
             const status = await this.consignmentOverviewPage.waitForSubmittedStatus(expectedStatusKey);
             ReportLog.setParameter('Consignment status (submitted)', status);
-
-            // Reported first, then thrown: a journey that expected an authorisation
-            // cannot do anything meaningful with a consignment the service handed back,
-            // so it stops here - but the report still carries the status that stopped it.
-            // Guarded on the expectation, so a journey that legitimately ends in this
-            // state (as the ENS EIDR one does) would pass rather than fail here.
-            const expectedIt = expectedStatusKey === 'status.traderInputRequired';
-            if (!expectedIt && isTraderInputRequiredConsignmentStatus(status, this.t)) {
-                throw traderInputRequiredError('The standalone consignment', status);
-            }
+            expect(status, 'Consignment status').toBe(this.t(expectedStatusKey));
         });
     }
 
@@ -102,15 +115,17 @@ export class ConsignmentOverviewFlow {
      */
     async verifySupervisingCustomsOffice(expectedOffice: string): Promise<void> {
         await ReportLog.step('Verify supervising customs office', async () => {
-            const office = await this.consignmentOverviewPage.assertSupervisingCustomsOffice(expectedOffice);
+            const office = await this.consignmentOverviewPage.readSupervisingCustomsOffice();
             ReportLog.setParameter('Supervising customs office', office);
+            expect.soft(office, 'Supervising customs office').toBe(expectedOffice);
         });
     }
 
     async verifySfdEidrDeclarationType(): Promise<void> {
         await ReportLog.step('Verify EIDR declaration type', async () => {
-            const declarationType = await this.consignmentOverviewPage.assertEidrDeclarationType();
+            const declarationType = await this.consignmentOverviewPage.getDeclarationType();
             ReportLog.setParameter('Declaration type', declarationType);
+            expect.soft(declarationType, 'Declaration type').toBe(this.t('declarationType.eidr'));
         });
     }
 
@@ -135,12 +150,37 @@ export class ConsignmentOverviewFlow {
         });
     }
 
-    /** From the goods-item overview, return to the consignment overview via the
-     *  breadcrumb and submit the consignment. */
     async submitConsignment(): Promise<void> {
         await ReportLog.step('Submit consignment', async () => {
-            await this.consignmentOverviewPage.goToConsignmentOverview();
             await this.consignmentOverviewPage.clickConfirmAndSubmit();
+        });
+    }
+
+    /**
+     * Correct the container identification of a rejected consignment.
+     *
+     * The "Change" link for a field opens the wizard screen that field lives on -
+     * the whole "Container information" screen, not the single field - so the same
+     * step the journey used to fill it in the first place fills it again. That is
+     * why this takes all four values rather than only the one being corrected.
+     *
+     * And correcting a field puts the consignment back INTO the wizard: continuing
+     * from that screen lands on "Check your answers", not on the overview. So the
+     * declaration has to be completed again before it can be resubmitted, exactly as
+     * it was when first built.
+     */
+    async correctContainerIdentification(
+        containerIdentifierNumber: string,
+        containerSize: string,
+        containerPackedStatus: string,
+        containerSupplierType: string
+    ): Promise<void> {
+        await ReportLog.step('Correct the container identification', async () => {
+            await this.consignmentOverviewPage.changeField(CONTAINER_IDENTIFIER_FIELD);
+            await this.consignmentSteps.fillContainerIdentification(
+                containerIdentifierNumber, containerSize, containerPackedStatus, containerSupplierType
+            );
+            await this.consignmentSteps.finishConsignmentDeclaration();
         });
     }
 
@@ -155,6 +195,47 @@ export class ConsignmentOverviewFlow {
                     await this.previousDocumentDeclarePage.declarePreviousDocument(item);
                 });
             }
+        });
+    }
+
+    /**
+     * Correct a holder-of-authorisation record that is already on the consignment.
+     *
+     * Opening the record re-enters the wizard it was created through, so the same step
+     * that declared it declares it again - exactly as correcting a summary-list field
+     * re-opens that field's screen. There is no Change link on the record itself; the
+     * record IS the link.
+     */
+    /**
+     * Remove a holder-of-authorisation record the declaration should never have carried.
+     *
+     * The other way to correct that tab, and the one an unsupported authorisation needs:
+     * an Excise Warehouse authorisation on a declaration with no excise procedure code is
+     * not a wrong VALUE to be edited, it is a record that does not belong - so CDS is
+     * answered by taking it away, not by changing it.
+     */
+    async removeHolderOfAuthorisation(typeCode: string): Promise<void> {
+        await ReportLog.step(`Remove the "${typeCode}" holder of authorisation`, async () => {
+            await this.consignmentOverviewPage.openHolderOfAuthorisationTab();
+            await this.consignmentOverviewPage.deleteHolderOfAuthorisationRecord(typeCode);
+        });
+    }
+
+    /**
+     * Correct one holder-of-authorisation record.
+     *
+     * `typeCode` says WHICH record, because the tab can hold several. It defaults to the
+     * type of the record being written, since a correction almost always replaces a
+     * record of the same kind; pass it when the correction CHANGES the type.
+     */
+    async correctHolderOfAuthorisation(
+        item: HolderOfAuthorisationData,
+        typeCode: string = item.typeCode
+    ): Promise<void> {
+        await ReportLog.step(`Correct the "${typeCode}" holder of authorisation`, async () => {
+            await this.consignmentOverviewPage.openHolderOfAuthorisationTab();
+            await this.consignmentOverviewPage.openHolderOfAuthorisationRecord(typeCode);
+            await this.holderOfAuthorisationDeclarePage.declareHolderOfAuthorisation(item);
         });
     }
 

@@ -13,6 +13,7 @@ import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { LOCAL_REFERENCE, MRN_COUNTRY_CODE } from '../../constant/local-reference-constants';
 import { UserCredentials } from '../../auth/credentials';
+import { TranslationKey } from '../../fixtures/locale-fixture';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
 import { standaloneSubmittedStatusKey } from '../../helper/consignment-status-helper';
 import { requiresWarehouseIdentifier } from '../../helper/procedure-code-helper';
@@ -45,6 +46,19 @@ export class CreateAndSubmitImmiStandaloneFlow {
         url: string;
         consignmentOverrides?: Partial<ImmiStandaloneConsignmentData>;
         goodsItemOverrides?: Partial<GoodsData>;
+        /**
+         * The status this journey expects to end on, when it is not the usual one.
+         *
+         * Only the authority specs pass it, and only to say "Trader Input Required":
+         * they submit data CDS refuses on purpose, because a rejected consignment is
+         * the one state where the service still offers actions and a permission can
+         * therefore be told apart from a state everybody shares.
+         *
+         * Given, the MRN check is skipped too - a rejected consignment was never
+         * authorised, so asking for its authorised MRN would fail for a second reason
+         * that says nothing new.
+         */
+        expectedStatusKey?: TranslationKey;
     }): Promise<void> {
         const { testInfo, url } = options;
         const consignmentData = immiStandaloneConsignment(options.consignmentOverrides);
@@ -91,8 +105,7 @@ export class CreateAndSubmitImmiStandaloneFlow {
         //
         // The navigation is NOT optional. Everything above leaves the browser on the
         // GOODS ITEM overview (on whichever tab was declared last), and this row lives
-        // on the CONSIGNMENT overview - submitConsignment is what usually walks back up
-        // the breadcrumb, and it runs after this.
+        // on the CONSIGNMENT overview.
         if (requiresWarehouseIdentifier(goodsData.procedureCode)) {
             await this.consignmentOverviewFlow.goToConsignmentOverview();
             await this.consignmentOverviewFlow.verifySupervisingCustomsOffice(
@@ -100,8 +113,12 @@ export class CreateAndSubmitImmiStandaloneFlow {
             );
         }
 
+        // The goods-item work above leaves the browser on the GOODS ITEM overview;
+        // submit lives on the consignment overview, so walk back up first.
+        await this.consignmentOverviewFlow.goToConsignmentOverview();
+
         await this.consignmentOverviewFlow.submitConsignment();
-        await this.verifyPostSubmit(consignmentData);
+        await this.verifyPostSubmit(consignmentData, options.expectedStatusKey);
     }
 
     /**
@@ -111,10 +128,18 @@ export class CreateAndSubmitImmiStandaloneFlow {
      * consignment is assigned an MRN opening with the IMMI country code - the same
      * check the ENS journey makes of the IMMI consignment it auto-generates.
      */
-    private async verifyPostSubmit(consignmentData: ImmiStandaloneConsignmentData): Promise<void> {
+    private async verifyPostSubmit(
+        consignmentData: ImmiStandaloneConsignmentData,
+        expectedStatusKey?: TranslationKey
+    ): Promise<void> {
         await this.consignmentOverviewFlow.verifyStandaloneConsignmentSubmitted(
-            standaloneSubmittedStatusKey(consignmentData.isPreLodged)
+            expectedStatusKey ?? standaloneSubmittedStatusKey(consignmentData.isPreLodged)
         );
-        await this.consignmentOverviewFlow.verifyStandaloneConsignmentMrn('IMMI', MRN_COUNTRY_CODE.IMMI);
+
+        // A caller that expected a rejection was never going to get an MRN - see the
+        // option's own note.
+        if (!expectedStatusKey) {
+            await this.consignmentOverviewFlow.verifyStandaloneConsignmentMrn('IMMI', MRN_COUNTRY_CODE.IMMI);
+        }
     }
 }

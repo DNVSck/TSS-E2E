@@ -2,10 +2,38 @@ import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue } from '../helper/element-helper';
 
-const COMMODITY_SUBMIT_TIMEOUT = 45_000;
+const COMMODITY_SUBMIT_TIMEOUT = 60_000;
+
+/**
+ * How long the NIRMS screen gets to appear before the wizard is taken to have skipped it.
+ *
+ * Short on purpose. The previous screen has already been submitted when this is asked, so
+ * the next screen is either painting or is a different one - there is nothing slow to wait
+ * for, and every declaration that does not qualify for NIRMS pays this once.
+ */
+const NIRMS_SCREEN_TIMEOUT = 5_000;
+
+/**
+ * The first field of a goods-wizard screen gets longer than the global action timeout.
+ *
+ * These screens are the slowest thing the suite renders, and under parallel load the
+ * FIRST field of a screen is where that shows: the click that submitted the previous one
+ * has returned, but the next screen is still painting. Measured 2026-08-17 - at four
+ * workers the wizard timed out on shipping marks in one run and gross mass in the next,
+ * while two workers passed both, so it is the screen that is slow rather than any one
+ * field.
+ *
+ * Applied to the first field of each screen that has actually proved slow, not to every
+ * field: a long timeout on a field that is genuinely missing only delays the report.
+ */
+const SCREEN_PAINT_TIMEOUT = 30_000;
+
+/** The radio group on the NIRMS screen, addressed by the name its inputs post. */
+const USE_NIRMS_RADIO_NAME = 'useNirms';
 
 export class GoodsDeclarePage extends BasePage {
 
+    private readonly useNirmsRadios: Locator;
     private readonly useTgpYesOption: Locator;
     private readonly useTgpNoOption: Locator;
     private readonly tgpNumberInput: Locator;
@@ -50,6 +78,7 @@ export class GoodsDeclarePage extends BasePage {
         super(page);
 
         // "Do you want to use TGP?" — the first goods screen, IMMI goods only.
+        this.useNirmsRadios = page.locator("input[name='useNirms']");
         this.useTgpYesOption = page.locator("input#useTgp-yesNoOptions-yes");
         this.useTgpNoOption = page.locator("input#useTgp-yesNoOptions-no");
 
@@ -199,8 +228,40 @@ export class GoodsDeclarePage extends BasePage {
         await selectDropdownValue(this.nationalAdditionalCodeDropdown, nationalAdditionalCode);
     }
 
+    /**
+     * "Do you want to use NIRMS for these goods?" - answer it only if it is on screen.
+     *
+     * CONDITIONAL, and not on anything the test controls: the service shows it when the
+     * importer company holds a NIRMS authorisation AND the commodity supports NIRMS
+     * (Trung, 2026-08-17). So this cannot be driven from the journey's own booleans the
+     * way every other screen is, and asking for the radio unconditionally would hang the
+     * wizard on every declaration that does not qualify.
+     *
+     * Waits on the RADIO rather than a heading, because the heading is translated and
+     * these specs run in Welsh too. A short wait: by the time this is called the previous
+     * screen has already been submitted, so the next one is either painting or is not
+     * this one.
+     */
+    async answerUseNirmsIfPresent(useNirms: boolean): Promise<boolean> {
+        // waitFor, NOT isVisible: isVisible answers immediately and ignores its timeout
+        // (it is documented as deprecated there), so it reports "not shown" for a screen
+        // that is merely still painting - which is exactly the case here, one submit
+        // earlier. Throwing is the expected outcome when the screen is genuinely absent.
+        const shown = await this.useNirmsRadios.first()
+            .waitFor({ state: 'visible', timeout: NIRMS_SCREEN_TIMEOUT })
+            .then(() => true, () => false);
+
+        if (!shown) {
+            return false;
+        }
+
+        await checkRadioByValue(this.page, USE_NIRMS_RADIO_NAME, useNirms ? 'yes' : 'no');
+        await this.clickContinueButton();
+        return true;
+    }
+
     async inputShippingMarks(shippingMarks: string): Promise<void> {
-        await this.shippingMarksInput.fill(shippingMarks, { timeout: 30000 });
+        await this.shippingMarksInput.fill(shippingMarks, { timeout: SCREEN_PAINT_TIMEOUT });
     }
 
     async selectTypeOfPackages(typeOfPackages: string): Promise<void> {
@@ -216,7 +277,8 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     async inputGrossMass(grossMass: string): Promise<void> {
-        await this.grossMassInput.fill(grossMass);
+        // First field of the weight screen - see SCREEN_PAINT_TIMEOUT.
+        await this.grossMassInput.fill(grossMass, { timeout: SCREEN_PAINT_TIMEOUT });
     }
 
     async inputNetMass(netMass: string): Promise<void> {
