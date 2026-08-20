@@ -13,7 +13,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
   // (chosen from the pool), signed in once by globalSetup. No sign-in per test.
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
 
-  test.beforeEach(async ({ representTraderFlow }) => {
+  test.beforeEach(async () => {
     await ReportLog.setFeature('GB to NI RoRo EIDR Declaration Process');
   });
 

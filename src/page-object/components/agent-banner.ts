@@ -54,7 +54,9 @@ export class AgentBanner extends BasePage {
     }
 
     /**
-     * Stop representing if currently representing (a no-op otherwise).
+     * Stop representing if currently representing (a no-op otherwise). Returns whether
+     * there was anything to stop, which is how the reset fixture can stay silent in the
+     * ordinary case and report the rare test that started dirty.
      *
      * Lands on the portal first when NEITHER banner link is on the page, for the same
      * reason openTradersList does: the banner only renders on an authenticated portal
@@ -67,17 +69,18 @@ export class AgentBanner extends BasePage {
      * on a blank page was measured on 2026-08-19 doing nothing at all, and the next test
      * read Full where its table said Read.
      */
-    async stopRepresenting(): Promise<void> {
+    async stopRepresenting(): Promise<boolean> {
         if (await this.bannerIsMissing()) {
             await this.page.goto(BASE_URL);
         }
 
         if (!await this.isRepresenting()) {
-            return;
+            return false;
         }
 
         await this.stopRepresentingLink.click();
         await this.stopRepresentingLink.waitFor({ state: 'hidden' });
+        return true;
     }
 
     /**

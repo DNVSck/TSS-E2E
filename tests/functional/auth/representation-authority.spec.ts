@@ -29,9 +29,8 @@ import { test } from '../../test-hooks';
 test.describe('ENS Integrated declaration authority - Agent declares as itself', () => {
     test.use({ authProfile: COMPANY_PROFILE.AGENT });
 
-    test.beforeEach(async ({ representTraderFlow }) => {
+    test.beforeEach(async () => {
         await ReportLog.setFeature('Representation authority');
-        await representTraderFlow.stopRepresenting();
     });
 
     test('Verify that the Agent, on its own account, can correct and resubmit its rejected ENS consignment', { tag: ['@auth', '@authorisation'] }, async ({

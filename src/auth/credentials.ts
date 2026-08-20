@@ -64,6 +64,24 @@ export function isOnDemandProfile(profile: CompanyProfile): boolean {
 }
 
 
+const REPRESENTING_PROFILES: ReadonlySet<CompanyProfile> = new Set([
+    COMPANY_PROFILE.AGENT,
+    COMPANY_PROFILE.AGENT_B,
+]);
+
+/**
+ * True when this profile can act on another company's behalf - i.e. its session can
+ * carry a representation that outlives the test that started it.
+ *
+ * Read by the representation-reset fixture, which clears that state before every test.
+ * An importer has no agent banner to clear, so asking here is what keeps the fixture a
+ * no-op for every other profile instead of navigating pointlessly.
+ */
+export function canRepresentTraders(profile: CompanyProfile): boolean {
+    return REPRESENTING_PROFILES.has(profile);
+}
+
+
 export function isProvisioned(profile: CompanyProfile): boolean {
     return Boolean(
         process.env[`${profile}_USER_NAME`]?.trim()
