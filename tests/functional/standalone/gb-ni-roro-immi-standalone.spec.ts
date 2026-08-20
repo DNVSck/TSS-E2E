@@ -17,7 +17,7 @@ import { additionalInformation } from '../../../src/test-data/additional-informa
 import { previousDocument } from '../../../src/test-data/previous-document-data';
 import { PREVIOUS_DOCUMENT_TYPE } from '../../../src/constant/previous-document-type-constant';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
-import { inwardProcessingLocationOfGoods, locationOfGoodsOfOther } from '../../../src/helper/location-of-goods-helper';
+import { locationOfGoodsOfOther, inwardProcessingLocationOfGoods } from '../../../src/helper/location-of-goods-helper';
 
 const IMMI_PRELODGED = '4442';
 const IMMI_ARRIVED = '4443';
@@ -239,6 +239,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         isPreLodged: false,
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
         representationType: REPRESENTATION_TYPE.INDIRECT,
+        locationOfGoods: locationOfGoodsOfOther(IMPORTER_IPO),
         holdersOfAuthorisation: [
           holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
           holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW }),
@@ -283,6 +284,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         isPreLodged: false,
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         representationType: REPRESENTATION_TYPE.DIRECT,
+        locationOfGoods: locationOfGoodsOfOther(IMPORTER_IPO),
         headerPreviousDocuments: [
           previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: '4GBXI896458895015-0611EC04' }),
           previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCS, documentReference: 'DEF' }),

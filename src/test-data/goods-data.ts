@@ -4,7 +4,7 @@ import {COUNTRY_CODE} from "../constant/country-code-dropdown-constant";
 import {TYPE_OF_PACKAGES} from "../constant/type-of-packages-constant";
 import { PROCEDURE_CODES } from "../constant/procedure-codes-constant";
 import { ADDITIONAL_PROCEDURE_CODES } from "../constant/additional-procedure-codes-constant";
-import { WAREHOUSE_TYPE } from "../constant/warehouse-type-constant";
+import { WAREHOUSE_TYPE, WarehouseTypeCode } from "../constant/warehouse-type-constant";
 import { ITEM_CURRENCY } from "../constant/item-currency-constant";
 import { CONTAINER_SIZE } from "../constant/container-size-constant";
 import { CONTAINER_PACKED_STATUS } from "../constant/container-packed-status-constant";
@@ -67,7 +67,7 @@ export interface GoodsData {
     netMass?: string;
     procedureCode: string;
     additionalProcedureCode: string;
-    warehouseType: string;
+    warehouseType: WarehouseTypeCode;
     warehouseIdentifier: string;
     invoiceNumber?: string;
     itemCurrency: string;
@@ -172,9 +172,19 @@ const defaults: Omit<GoodsData, 'containerIdentifierNumber' | 'warehouseIdentifi
     nationalAdditionalCodes: [],
 };
 
-export const goods = (overrides?: Partial<GoodsData>): GoodsData => ({
-    ...defaults,
-    containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
-    warehouseIdentifier: generateRandomWarehouseIdentifier(),
-    ...overrides,
-});
+export const goods = (overrides?: Partial<GoodsData>): GoodsData => {
+    const data = {
+        ...defaults,
+        containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
+        ...overrides,
+    };
+
+    // Derived last, from the type actually in force: computed alongside the defaults it
+    // would carry the DEFAULT warehouse type, and an override naming another one would
+    // leave the identifier contradicting the dropdown beside it.
+    return {
+        ...data,
+        warehouseIdentifier: data.warehouseIdentifier
+            ?? generateRandomWarehouseIdentifier(data.warehouseType),
+    };
+};

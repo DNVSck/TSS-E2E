@@ -24,7 +24,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
     await ReportLog.setFeature('GB to NI RoRo Simplified Customs Declaration Process');
     // Agent represents the Haulier company before declaring on the Importer's
     // behalf — a server-side session state the journeys below then run under.
-    //await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
+    await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
   });
 
   test('Verify ENS-SFD - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
