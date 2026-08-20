@@ -29,8 +29,6 @@ import { test } from '../../test-hooks';
 test.describe('ENS Integrated declaration authority - Agent declares as itself', () => {
     test.use({ authProfile: COMPANY_PROFILE.AGENT });
 
-    test.setTimeout(10 * 60_000);
-
     test.beforeEach(async ({ representTraderFlow }) => {
         await ReportLog.setFeature('Representation authority');
         await representTraderFlow.stopRepresenting();
@@ -42,37 +40,35 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
     }, testInfo) => {
         await ReportLog.setStory('Agent on its own account - reach, reject, correct, resubmit');
 
-        const draft = await ReportLog.step('Build the ENS declaration and leave it in draft', () =>
+        const draft = await ReportLog.step('Agent declares an ENS consignment and leaves it in draft', () =>
             createDraftEnsDeclarationFlow
                 .createDraftEnsDeclaration(ensOnlyDeclaration(testInfo, rejectedByIcs2()))
         );
 
-        // A draft asks less than a rejection does: the question is only whether a company
-        // may submit it, cancel it, and add records to it.
-        const draftUrl = await declarationAccessFlow.openDeclarationFromSearch(draft.consignmentReference);
-        const draftRecords = await declarationAccessFlow.locateRecordsAt(draftUrl);
+        await ReportLog.step('Agent and Importer on the draft consignment - check what each is offered', async () => {
+            // A draft asks less than a rejection does: the question is only whether a
+            // company may submit it, cancel it, and add records to it.
+            const draftUrl = await declarationAccessFlow
+                .openDeclarationFromSearch(draft.consignmentReference);
+            const draftRecords = await declarationAccessFlow.locateRecordsAt(draftUrl);
 
-        const draftCheck = {
-            what: 'the draft consignment',
-            records: draftRecords,
-            reference: draft.consignmentReference,
-        };
-
-        await ReportLog.step('Measure who may touch it while it is still a draft', async () => {
             await checkAuthority(ENS_ONLY_AUTHORITY.draftConsignment, {
-                ...draftCheck, parties: ['agent', 'importer'],
+                what: 'the draft consignment',
+                records: draftRecords,
+                reference: draft.consignmentReference,
+                parties: ['agent', 'importer'],
             });
 
             const draftMovement = await declarationAccessFlow.locateMovementHeader();
             await checkAuthority(ENS_ONLY_AUTHORITY.draftMovement, {
-            what: 'the draft movement header',
-            records: draftMovement,
-            surfaceOnly: true,
-            recordActions: [MOVEMENT_ACTION.NEW_CONSIGNMENT, MOVEMENT_ACTION.CANCEL_DECLARATION],
+                what: 'the draft movement header',
+                records: draftMovement,
+                surfaceOnly: true,
+                recordActions: [MOVEMENT_ACTION.NEW_CONSIGNMENT, MOVEMENT_ACTION.CANCEL_DECLARATION],
             });
         });
 
-        await ReportLog.step('Submit it, and let ICS2 hand it back to the trader', async () => {
+        await ReportLog.step('Agent submits it and ICS2 hands it back - expect Trader Input Required', async () => {
             await declarationAccessFlow.openDeclarationFromSearch(draft.consignmentReference);
             await consignmentOverviewFlow.submitConsignment();
             await movementOverviewFlow.waitForSubmittedMovementOverview();
@@ -85,7 +81,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
         // The header first and the consignment second, so the Agent's browser ends up
         // inside the consignment - which is where the correction below starts, and the
         // movement overview has no breadcrumb back down into it.
-        await ReportLog.step('Measure who may touch it once it has been rejected', async () => {
+        await ReportLog.step('Agent and Importer on the rejected consignment - check what each is offered', async () => {
             const rejectedMovement = await declarationAccessFlow.locateMovementHeader();
             await checkAuthority(ENS_ONLY_AUTHORITY.rejectedMovement, {
                 what: 'the movement header of the rejected consignment',
@@ -101,7 +97,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             });
         });
 
-        await ReportLog.step('Correct the rejection and resubmit', async () => {
+        await ReportLog.step('Agent corrects the container and resubmits - expect the service to accept it', async () => {
             // The reads left the Agent's browser on the goods item; the field being
             // corrected lives a level up.
             await consignmentOverviewFlow.goToConsignmentOverview();
@@ -135,11 +131,11 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      */
     test('Verify that the Agent cannot edit a rejected SFD on its own account, and can once it represents the Importer', { tag: ['@auth', '@authorisation'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
-        declarationAccessFlow, representTraderFlow, checkAuthority, t,
+        declarationAccessFlow, representTraderFlow, checkAuthority,
     }, testInfo) => {
         await ReportLog.setStory('Agent starts representing the Importer to correct the rejected SFD');
 
-        await ReportLog.step('Build the ENS-SFD declaration and let CDS reject the SFD', async () => {
+        await ReportLog.step('Agent declares an ENS-SFD and submits it - expect CDS to reject the SFD', async () => {
             await createDraftEnsDeclarationFlow
                 .createDraftEnsDeclaration(ensSfdDeclaration(testInfo, rejectedByCds()));
 
@@ -162,7 +158,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             records: sfd,
         };
 
-        await ReportLog.step('Measure what the Agent may do on its own account', () =>
+        await ReportLog.step('Agent on its own account - check it is refused every change to the rejected SFD', () =>
             // One party at a time, because the Agent can only represent one company at
             // once - which is the whole point of this test rather than an inconvenience.
             checkAuthority(GENERATED_DECLARATION_AUTHORITY.rejectedConsignment, {
@@ -170,14 +166,14 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             })
         );
 
-        await ReportLog.step('Measure what the same account may do representing the Importer', async () => {
+        await ReportLog.step('The same account now representing the Importer - check it is offered those changes', async () => {
             await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
             await checkAuthority(GENERATED_DECLARATION_AUTHORITY.rejectedConsignment, {
                 ...sfdCheck, parties: ['agentAsImporter'],
             });
         });
 
-        await ReportLog.step('Correct the authorisation and resubmit', async () => {
+        await ReportLog.step('Agent representing the Importer corrects the authorisation - expect CDS to accept it', async () => {
             // The reads ended on the goods item; the authorisation record is on a tab of
             // the consignment.
             await declarationAccessFlow.openRecord(sfd.consignment);
@@ -209,11 +205,11 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      */
     test('Verify that the Importer, on its own login, can correct and resubmit a rejected SFD the Agent declared', { tag: ['@auth', '@authorisation'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
-        declarationAccessFlow, checkAuthority, t,
+        declarationAccessFlow, checkAuthority,
     }, testInfo) => {
         await ReportLog.setStory('Importer corrects the holder of authorisation and resubmits');
 
-        await ReportLog.step('Build the ENS-SFD declaration and let CDS reject the SFD', async () => {
+        await ReportLog.step('Agent declares an ENS-SFD and submits it - expect CDS to reject the SFD', async () => {
             await createDraftEnsDeclarationFlow
                 .createDraftEnsDeclaration(ensSfdDeclaration(testInfo, rejectedByCds()));
 
@@ -228,7 +224,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
         // Asked on its own login rather than through the Agent, because the rule is
         // about the company and not about a representation. The window is kept: the
         // Importer is about to use what it was just shown.
-        const { importer } = await ReportLog.step('Measure what the Importer may do on its own login', () =>
+        const { importer } = await ReportLog.step('Importer on its own login - check what it is offered on the record the Agent declared', () =>
             checkAuthority(GENERATED_DECLARATION_AUTHORITY.rejectedConsignment, {
                 what: 'the rejected SFD',
                 records: sfd,
@@ -237,7 +233,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             })
         );
 
-        await ReportLog.step('The Importer corrects the authorisation and resubmits', async () => {
+        await ReportLog.step('Importer corrects the authorisation on its own login - expect CDS to accept it', async () => {
             // The reads ended on the goods item; the authorisation record is on a tab of
             // the consignment.
             await importer!.declarations.openRecord(sfd.consignment);
@@ -270,11 +266,11 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      */
     test('Verify that the Agent cannot edit a rejected IMMI on its own account, and can once it represents the Importer', { tag: ['@auth', '@authorisation'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
-        declarationAccessFlow, representTraderFlow, goodsOverviewFlow, checkAuthority, t,
+        declarationAccessFlow, representTraderFlow, goodsOverviewFlow, checkAuthority,
     }, testInfo) => {
         await ReportLog.setStory('The rejected IMMI is the Importer to correct, not the declaring Agent');
 
-        await ReportLog.step('Build the ENS-IMMI declaration and let CDS reject the IMMI', async () => {
+        await ReportLog.step('Agent declares an ENS-IMMI and submits it - expect CDS to reject the IMMI', async () => {
             await createDraftEnsDeclarationFlow
                 .createDraftEnsDeclaration(ensImmiDeclaration(testInfo, immiRejectedByCds()));
 
@@ -293,13 +289,13 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             tabs: IMMI_EIDR_DECLARATION_TABS,
         };
 
-        await ReportLog.step('Measure what the Agent and the Importer may do', () =>
+        await ReportLog.step('Agent on its own account and Importer on its own login - check what each is offered', () =>
             checkAuthority(GENERATED_DECLARATION_AUTHORITY.rejectedConsignment, {
                 ...immiCheck, parties: ['agent', 'importer'],
             })
         );
 
-        await ReportLog.step('Measure what the same account may do representing the Importer', async () => {
+        await ReportLog.step('The same account now representing the Importer - check it is offered those changes', async () => {
             // From the Agent's own browser, switched to represent the Importer: the same
             // right the Importer holds, reached the way the SFD switch test reaches it,
             // and without a second window for a correction only one company can make.
@@ -309,7 +305,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             });
         });
 
-        await ReportLog.step('Correct the UKIMS document and resubmit', async () => {
+        await ReportLog.step('Agent representing the Importer corrects the UKIMS document - expect CDS to accept it', async () => {
             // The correction undoes the lever exactly: the goods item's 1UKI goes back to
             // the importer's own UKIMS number. The reads left the browser on the goods
             // item, which is where that record lives.
@@ -339,11 +335,11 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      */
     test('Verify that the Importer, on its own login, can correct and resubmit a rejected IMMI the Agent declared', { tag: ['@auth', '@authorisation'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
-        declarationAccessFlow, checkAuthority, t,
+        declarationAccessFlow, checkAuthority,
     }, testInfo) => {
         await ReportLog.setStory('Importer corrects the UKIMS on a rejected IMMI and resubmits');
 
-        await ReportLog.step('Build the ENS-IMMI declaration and let CDS reject the IMMI', async () => {
+        await ReportLog.step('Agent declares an ENS-IMMI and submits it - expect CDS to reject the IMMI', async () => {
             await createDraftEnsDeclarationFlow
                 .createDraftEnsDeclaration(ensImmiDeclaration(testInfo, immiRejectedByCds()));
 
@@ -358,7 +354,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
         // Both companies on the same records at the same moment - the Importer offered
         // the corrections the representing Agent is not. Its window is kept, because it
         // is about to use what it was just shown.
-        const { importer } = await ReportLog.step('Measure what the Agent and the Importer may do', () =>
+        const { importer } = await ReportLog.step('Agent on its own account and Importer on its own login - check what each is offered', () =>
             checkAuthority(GENERATED_DECLARATION_AUTHORITY.rejectedConsignment, {
                 what: 'the rejected IMMI',
                 records: immi,
@@ -368,7 +364,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             })
         );
 
-        await ReportLog.step('The Importer corrects the UKIMS document and resubmits', async () => {
+        await ReportLog.step('Importer corrects the UKIMS document on its own login - expect CDS to accept it', async () => {
             // The correction undoes the lever exactly: the goods item's 1UKI goes back to
             // the importer's own UKIMS number.
             await importer!.declarations.openRecord(immi.goodsItem!);
@@ -405,7 +401,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
     }, testInfo) => {
         await ReportLog.setStory('Everybody reads the generated EIDR, nobody may change it');
 
-        await ReportLog.step('Build the ENS-EIDR declaration and submit it', async () => {
+        await ReportLog.step('Agent declares an ENS-EIDR and submits it', async () => {
             await createDraftEnsDeclarationFlow
                 .createDraftEnsDeclaration(ensEidrDeclaration(testInfo));
 
@@ -430,7 +426,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
                 + 'company gaining an action, not a screen that renders nothing',
         };
 
-        await ReportLog.step('Measure what the Agent and the Importer may do', () =>
+        await ReportLog.step('Agent on its own account and Importer on its own login - check what each is offered', () =>
             checkAuthority(ENS_EIDR_AUTHORITY.generatedEidrConsignment, {
                 ...eidrCheck, parties: ['agent', 'importer'],
             })
@@ -476,20 +472,22 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
     }, testInfo) => {
         await ReportLog.setStory('Standalone IMMI - the creating agent corrects it and puts it back in');
 
-        await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
-            testInfo,
-            url: BASE_URL,
-            consignmentOverrides: {
-                typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-                representationType: REPRESENTATION_TYPE.DIRECT,
-            },
-            goodsItemOverrides: immiStandaloneGoodsItem(immiStandaloneRejectedByCds()),
-            expectedStatusKey: 'status.traderInputRequired',
-        });
+        const immi = await ReportLog.step('Agent representing the Importer declares a standalone IMMI - expect CDS to reject it', async () => {
+            await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
+                testInfo,
+                url: BASE_URL,
+                consignmentOverrides: {
+                    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+                    representationType: REPRESENTATION_TYPE.DIRECT,
+                },
+                goodsItemOverrides: immiStandaloneGoodsItem(immiStandaloneRejectedByCds()),
+                expectedStatusKey: 'status.traderInputRequired',
+            });
 
-        // Submitting leaves the browser on the consignment overview, which is the record
-        // itself here - a standalone declaration has no movement above it.
-        const immi = await declarationAccessFlow.locateRecordsHere();
+            // Submitting leaves the browser on the consignment overview, which is the
+            // record itself here - a standalone declaration has no movement above it.
+            return declarationAccessFlow.locateRecordsHere();
+        });
 
         const immiCheck = {
             what: 'the rejected standalone IMMI',
@@ -497,13 +495,13 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             tabs: IMMI_EIDR_DECLARATION_TABS,
         };
 
-        await ReportLog.step('Measure what the representing Agent and the Importer may do', () =>
+        await ReportLog.step('Agent representing the Importer and Importer on its own login - check what each is offered', () =>
             checkAuthority(STANDALONE_AUTHORITY.createdByThisAgent, {
                 ...immiCheck, parties: ['agentAsImporter', 'importer'],
             })
         );
 
-        await ReportLog.step('Measure what the same account may do representing nobody', async () => {
+        await ReportLog.step('The same account representing nobody - check it is refused the record it just made', async () => {
             // The half that needs no lever to mean something: the same account, no longer
             // acting for anybody, is refused the declaration it just made.
             await representTraderFlow.stopRepresenting();
@@ -512,7 +510,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             });
         });
 
-        await ReportLog.step('Declare the missing transport document and resubmit', async () => {
+        await ReportLog.step('Agent representing the Importer declares the missing transport document - expect CDS to accept it', async () => {
             // Everything above only observed a screen. Full is a claim about the service
             // ACCEPTING a change, so the agent goes on to make one: the correction undoes
             // the lever exactly, declaring the transport document it left out.
@@ -552,21 +550,23 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
     }, testInfo) => {
         await ReportLog.setStory('Standalone IMMI - the importer corrects it on its own login');
 
-        await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
-            testInfo,
-            url: BASE_URL,
-            consignmentOverrides: {
-                typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-                representationType: REPRESENTATION_TYPE.DIRECT,
-            },
-            goodsItemOverrides: immiStandaloneGoodsItem(immiStandaloneRejectedByCds()),
-            expectedStatusKey: 'status.traderInputRequired',
+        const immi = await ReportLog.step('Agent representing the Importer declares a standalone IMMI - expect CDS to reject it', async () => {
+            await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
+                testInfo,
+                url: BASE_URL,
+                consignmentOverrides: {
+                    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+                    representationType: REPRESENTATION_TYPE.DIRECT,
+                },
+                goodsItemOverrides: immiStandaloneGoodsItem(immiStandaloneRejectedByCds()),
+                expectedStatusKey: 'status.traderInputRequired',
+            });
+
+            return declarationAccessFlow.locateRecordsHere();
         });
 
-        const immi = await declarationAccessFlow.locateRecordsHere();
-
         // The window is kept: the Importer is about to use what it was just shown.
-        const { importer } = await ReportLog.step('Measure what the Importer may do on its own login', () =>
+        const { importer } = await ReportLog.step('Importer on its own login - check what it is offered on the record the Agent declared', () =>
             checkAuthority(STANDALONE_AUTHORITY.createdByThisAgent, {
                 what: 'the rejected standalone IMMI',
                 records: immi,
@@ -576,7 +576,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             })
         );
 
-        await ReportLog.step('The Importer declares the missing transport document and resubmits', async () => {
+        await ReportLog.step('Importer declares the missing transport document on its own login - expect CDS to accept it', async () => {
             // A level deeper than a consignment correction: an IMMI is refused over its
             // GOODS ITEM documents, so the second session works in that item's tabs.
             await importer!.declarations.openRecord(immi.goodsItem!);
@@ -614,36 +614,38 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
     }, testInfo) => {
         await ReportLog.setStory('Standalone SFD - the creating agent corrects it and puts it back in');
 
-        await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-            testInfo,
-            url: BASE_URL,
-            consignmentOverrides: {
-                isControlledGoods: true,
-                holdersOfAuthorisation: [sfdStandaloneRejectedByCds()],
-            },
-            goodsItemOverrides: sfdStandaloneGoodsItem(),
-            expectedStatusKey: 'status.traderInputRequired',
-        });
+        const sfd = await ReportLog.step('Agent representing the Importer declares a standalone SFD - expect CDS to reject it', async () => {
+            await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+                testInfo,
+                url: BASE_URL,
+                consignmentOverrides: {
+                    isControlledGoods: true,
+                    holdersOfAuthorisation: [sfdStandaloneRejectedByCds()],
+                },
+                goodsItemOverrides: sfdStandaloneGoodsItem(),
+                expectedStatusKey: 'status.traderInputRequired',
+            });
 
-        const sfd = await declarationAccessFlow.locateRecordsHere();
+            return declarationAccessFlow.locateRecordsHere();
+        });
 
         // No tab override: an SFD carries all nine goods-item tabs, unlike an IMMI.
         const sfdCheck = { what: 'the rejected standalone SFD', records: sfd };
 
-        await ReportLog.step('Measure what the representing Agent and the Importer may do', () =>
+        await ReportLog.step('Agent representing the Importer and Importer on its own login - check what each is offered', () =>
             checkAuthority(STANDALONE_AUTHORITY.createdByThisAgent, {
                 ...sfdCheck, parties: ['agentAsImporter', 'importer'],
             })
         );
 
-        await ReportLog.step('Measure what the same account may do representing nobody', async () => {
+        await ReportLog.step('The same account representing nobody - check it is refused the record it just made', async () => {
             await representTraderFlow.stopRepresenting();
             await checkAuthority(STANDALONE_AUTHORITY.createdByThisAgent, {
                 ...sfdCheck, parties: ['agentNotRepresenting'],
             });
         });
 
-        await ReportLog.step('Remove the authorisation that does not belong and resubmit', async () => {
+        await ReportLog.step('Agent representing the Importer removes the authorisation - expect CDS to accept it', async () => {
             // Representing again first, because the refusal check above gave it up.
             await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
 
@@ -677,20 +679,22 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
     }, testInfo) => {
         await ReportLog.setStory('Standalone SFD - the importer corrects it on its own login');
 
-        await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-            testInfo,
-            url: BASE_URL,
-            consignmentOverrides: {
-                isControlledGoods: true,
-                holdersOfAuthorisation: [sfdStandaloneRejectedByCds()],
-            },
-            goodsItemOverrides: sfdStandaloneGoodsItem(),
-            expectedStatusKey: 'status.traderInputRequired',
+        const sfd = await ReportLog.step('Agent representing the Importer declares a standalone SFD - expect CDS to reject it', async () => {
+            await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+                testInfo,
+                url: BASE_URL,
+                consignmentOverrides: {
+                    isControlledGoods: true,
+                    holdersOfAuthorisation: [sfdStandaloneRejectedByCds()],
+                },
+                goodsItemOverrides: sfdStandaloneGoodsItem(),
+                expectedStatusKey: 'status.traderInputRequired',
+            });
+
+            return declarationAccessFlow.locateRecordsHere();
         });
 
-        const sfd = await declarationAccessFlow.locateRecordsHere();
-
-        const { importer } = await ReportLog.step('Measure what the Importer may do on its own login', () =>
+        const { importer } = await ReportLog.step('Importer on its own login - check what it is offered on the record the Agent declared', () =>
             checkAuthority(STANDALONE_AUTHORITY.createdByThisAgent, {
                 what: 'the rejected standalone SFD',
                 records: sfd,
@@ -699,7 +703,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             })
         );
 
-        await ReportLog.step('The Importer removes the authorisation and resubmits', async () => {
+        await ReportLog.step('Importer removes the authorisation on its own login - expect CDS to accept it', async () => {
             await importer!.declarations.openRecord(sfd.consignment);
             await importer!.consignment.removeHolderOfAuthorisation(
                 AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW
@@ -727,16 +731,18 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
     }, testInfo) => {
         await ReportLog.setStory('Standalone EIDR - everybody reads it, nobody may change it');
 
-        await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-            testInfo,
-            url: BASE_URL,
-            // Uncontrolled goods is the whole difference: it is what the service answers
-            // with an EIDR rather than an SFD.
-            consignmentOverrides: { isControlledGoods: false },
-            goodsItemOverrides: sfdStandaloneGoodsItem(),
-        });
+        const eidr = await ReportLog.step('Agent representing the Importer declares uncontrolled goods - expect an EIDR back', async () => {
+            await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+                testInfo,
+                url: BASE_URL,
+                // Uncontrolled goods is the whole difference: it is what the service
+                // answers with an EIDR rather than an SFD.
+                consignmentOverrides: { isControlledGoods: false },
+                goodsItemOverrides: sfdStandaloneGoodsItem(),
+            });
 
-        const eidr = await declarationAccessFlow.locateRecordsHere();
+            return declarationAccessFlow.locateRecordsHere();
+        });
 
         const eidrCheck = {
             what: 'the standalone EIDR',
@@ -745,13 +751,17 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             recordActions: [CONSIGNMENT_ACTION.CANCEL_WITH_CONFIRMATION],
         };
 
-        await checkAuthority(STANDALONE_AUTHORITY.createdByThisAgent, {
-            ...eidrCheck, parties: ['agentAsImporter', 'importer'],
-        });
+        await ReportLog.step('Agent representing the Importer and Importer on its own login - check what each is offered', () =>
+            checkAuthority(STANDALONE_AUTHORITY.createdByThisAgent, {
+                ...eidrCheck, parties: ['agentAsImporter', 'importer'],
+            })
+        );
 
-        await representTraderFlow.stopRepresenting();
-        await checkAuthority(STANDALONE_AUTHORITY.createdByThisAgent, {
-            ...eidrCheck, parties: ['agentNotRepresenting'],
+        await ReportLog.step('The same account representing nobody - check it is refused the record it just made', async () => {
+            await representTraderFlow.stopRepresenting();
+            await checkAuthority(STANDALONE_AUTHORITY.createdByThisAgent, {
+                ...eidrCheck, parties: ['agentNotRepresenting'],
+            });
         });
     });
 
@@ -765,20 +775,24 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
         );
         await ReportLog.setStory('Standalone draft - a second agent company reaches nothing of it');
 
-        const { consignmentReference } = await createDraftSfdStandaloneFlow.createDraftSfdStandalone({
-            testInfo,
-            url: BASE_URL,
-            consignmentOverrides: { isControlledGoods: true },
-            goodsItemOverrides: sfdStandaloneGoodsItem(),
+        const draft = await ReportLog.step('Agent representing the Importer leaves a standalone SFD in draft', async () => {
+            const { consignmentReference } = await createDraftSfdStandaloneFlow.createDraftSfdStandalone({
+                testInfo,
+                url: BASE_URL,
+                consignmentOverrides: { isControlledGoods: true },
+                goodsItemOverrides: sfdStandaloneGoodsItem(),
+            });
+
+            return { consignmentReference, records: await declarationAccessFlow.locateRecordsHere() };
         });
 
-        const draft = await declarationAccessFlow.locateRecordsHere();
-
-        await checkAuthority(STANDALONE_AUTHORITY.createdByThisAgent, {
-            what: 'the draft standalone SFD',
-            records: draft,
-            reference: consignmentReference,
-            parties: ['agentAsImporter', 'anotherAgent'],
-        });
+        await ReportLog.step('The Agent that created it and a second Agent company - check only the creator reaches it', () =>
+            checkAuthority(STANDALONE_AUTHORITY.createdByThisAgent, {
+                what: 'the draft standalone SFD',
+                records: draft.records,
+                reference: draft.consignmentReference,
+                parties: ['agentAsImporter', 'anotherAgent'],
+            })
+        );
     });
 });
