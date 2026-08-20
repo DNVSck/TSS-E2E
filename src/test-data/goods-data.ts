@@ -24,6 +24,17 @@ export interface GoodsData {
      * other journey, where the screen never shows.
      */
     useTGP: boolean;
+/**
+     * "Do you want to use NIRMS for these goods?" - answered only when the service asks,
+     * which it does when the importer company holds a NIRMS authorisation AND the
+     * commodity supports it (Trung, 2026-08-17).
+     *
+     * Defaults to false, which BYPASSES the feature while it is still being built. When
+     * it is finished, the interesting cases are the ones that answer true - and the
+     * company/commodity pairing that makes the screen appear will need modelling then,
+     * rather than being left to whatever the environment happens to hold.
+     */
+    useNirms: boolean;
     /**
      * The TGP record to declare against — see TGP_RECORD for the ones that exist.
      * Optional and NOT defaulted: which records exist depends on the environment and
@@ -92,6 +103,8 @@ export interface GoodsData {
 const defaults: Omit<GoodsData, 'containerIdentifierNumber' | 'warehouseIdentifier'> = {
     // "Do you want to use TGP?" — IMMI goods only; false = "without TGP".
     useTGP: false,
+    // Bypasses the NIRMS screen while the feature is unfinished - see GoodsData.useNirms.
+    useNirms: false,
     // Deliberately no default record: which records exist depends on the environment and
     // the trader, so a default would let a test that forgot to name one run silently
     // against whichever record happened to sit here.

@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+﻿import { expect } from '@playwright/test';
 import { ReportLog } from '../../core/report/report-log';
 import { ConsignmentOverviewPage } from "../../page-object/consignment-overview-page";
 import { PreviousDocumentDeclarePage } from "../../page-object/header-previous-documents-declare-page";
@@ -28,6 +28,20 @@ export class ConsignmentOverviewFlow {
         private readonly t: TFunction,
     ) { }
 
+    /**
+     * The expected status is a PARAMETER, not baked in: the same pair of CDS responses
+     * lands an SFD on "Arrived" and an IMMI on "Closed" (Trung, 2026-08-20).
+     */
+    async verifyConsignmentStatus(expectedStatusKey: TranslationKey): Promise<string> {
+        const expected = this.t(expectedStatusKey);
+
+        return ReportLog.step(`Wait for the consignment to reach ${expected}`, async () => {
+            const status = await this.consignmentDetailPage.waitForStatus(expectedStatusKey);
+            ReportLog.setParameter('Consignment status', status);
+            return status;
+        });
+    }
+
     /** Return to the consignment overview (e.g. after adding a goods item, which
      *  ends on the goods-item overview). */
     async goToConsignmentOverview(): Promise<void> {
@@ -54,8 +68,8 @@ export class ConsignmentOverviewFlow {
      * The expected prefix comes from the journey (IMMI "GLR", SFD "SFD", FFD "FFD"),
      * so this checks the journey that ran rather than any standalone reference.
      */
-    async verifyStandaloneConsignmentLrn(expectedPrefix: RegExp): Promise<void> {
-        await ReportLog.step('Validate standalone consignment LRN', async () => {
+    async verifyStandaloneConsignmentLrn(expectedPrefix: RegExp): Promise<string> {
+        return ReportLog.step('Validate standalone consignment LRN', async () => {
             const { consignmentReference, declarationStatus } =
                 await this.consignmentOverviewPage.assertDraftStandaloneConsignment(expectedPrefix);
             ReportLog.setParameter('Consignment LRN', consignmentReference);
@@ -65,6 +79,10 @@ export class ConsignmentOverviewFlow {
             if (declarationStatus) {
                 ReportLog.setParameter('Consignment status (draft)', declarationStatus);
             }
+
+            // Returned as well as reported: a standalone declaration is named to CDS by
+            // this reference and its MRN, and only the session that built it sees them.
+            return consignmentReference;
         });
     }
 
@@ -125,13 +143,14 @@ export class ConsignmentOverviewFlow {
      *
      * Not used by the EIDR route, which is never authorised with a generated MRN.
      */
-    async verifyStandaloneConsignmentMrn(label: string, mrnCode: MrnCountryCode): Promise<void> {
-        await ReportLog.step(`Verify ${label} MRN`, async () => {
+    async verifyStandaloneConsignmentMrn(label: string, mrnCode: MrnCountryCode): Promise<string> {
+        return ReportLog.step(`Verify ${label} MRN`, async () => {
             const mrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();
             // Reported before the assertion, so a run that fails it still carries the
             // value that failed.
             ReportLog.setParameter(`${label} MRN`, mrn);
             expect.soft(mrn, `${label} MRN`).toMatch(mrnPrefix(mrnCode));
+            return mrn;
         });
     }
 

@@ -11,6 +11,7 @@ import {
 import { GoodsData, goods } from '../../test-data/goods-data';
 import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
+import { DeclarationIdentity } from '../../test-data/payload/cds-notification-payload';
 import { LOCAL_REFERENCE, MRN_COUNTRY_CODE } from '../../constant/local-reference-constants';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
@@ -45,7 +46,7 @@ export class CreateAndSubmitImmiStandaloneFlow {
         url: string;
         consignmentOverrides?: Partial<ImmiStandaloneConsignmentData>;
         goodsItemOverrides?: Partial<GoodsData>;
-    }): Promise<void> {
+    }): Promise<DeclarationIdentity> {
         const { testInfo, url } = options;
         const consignmentData = immiStandaloneConsignment(options.consignmentOverrides);
         const goodsData = goods(options.goodsItemOverrides);
@@ -64,7 +65,8 @@ export class CreateAndSubmitImmiStandaloneFlow {
         // Report the LRN as soon as the draft exists, before anything that could fail.
         // IMMI stamps a "GLR" reference, so asserting the prefix asserts the journey
         // that actually ran rather than merely that some standalone draft exists.
-        await this.consignmentOverviewFlow.verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.GLR_PREFIX);
+        const lrn = await this.consignmentOverviewFlow
+            .verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.GLR_PREFIX);
         // Consignment-overview tabs, declared before the goods item (no-op on empty lists).
         await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
         await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
@@ -101,7 +103,8 @@ export class CreateAndSubmitImmiStandaloneFlow {
         }
 
         await this.consignmentOverviewFlow.submitConsignment();
-        await this.verifyPostSubmit(consignmentData);
+        const mrn = await this.verifyPostSubmit(consignmentData);
+        return { lrn, mrn };
     }
 
     /**
@@ -111,10 +114,13 @@ export class CreateAndSubmitImmiStandaloneFlow {
      * consignment is assigned an MRN opening with the IMMI country code - the same
      * check the ENS journey makes of the IMMI consignment it auto-generates.
      */
-    private async verifyPostSubmit(consignmentData: ImmiStandaloneConsignmentData): Promise<void> {
+    private async verifyPostSubmit(
+        consignmentData: ImmiStandaloneConsignmentData
+    ): Promise<string> {
         await this.consignmentOverviewFlow.verifyStandaloneConsignmentSubmitted(
             standaloneSubmittedStatusKey(consignmentData.isPreLodged)
         );
-        await this.consignmentOverviewFlow.verifyStandaloneConsignmentMrn('IMMI', MRN_COUNTRY_CODE.IMMI);
+        return this.consignmentOverviewFlow
+            .verifyStandaloneConsignmentMrn('IMMI', MRN_COUNTRY_CODE.IMMI);
     }
 }

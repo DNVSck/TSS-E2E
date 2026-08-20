@@ -1,7 +1,7 @@
 ﻿import { PortalAccessFlow } from '../portal-access-flow';
 import { InitialFormDeclarationFlow } from '../initial-form-declaration-flow';
 import { MovementHeaderDeclarationFlow } from '../movement/movement-header-declaration-flow';
-import { MovementOverviewFlow } from '../movement/movement-overview-flow';
+import { MovementOverviewFlow, GeneratedConsignment } from '../movement/movement-overview-flow';
 import { initialFormData, InitialFormData } from '../../test-data/initial-form-data';
 import { movement, MovementData } from '../../test-data/movements-data';
 import { TestInfo } from '@playwright/test';
@@ -15,6 +15,12 @@ import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
 import { requiresWarehouseIdentifier } from '../../helper/procedure-code-helper';
 import { SUPERVISING_CUSTOMS_OFFICE } from '../../constant/supervising-customs-office-constant';
+
+export interface EnsDeclarationResult {
+    transportDocumentNumber: string;
+    ensMrn: string;
+    generatedConsignment?: GeneratedConsignment;
+}
 
 export class CreateAndSubmitEnsDeclarationFlow {
     constructor(
@@ -44,7 +50,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
         movementOverrides?: Partial<MovementData>;
         consignmentOverrides?: Partial<ConsignmentData>;
         goodsItemOverrides?: Partial<GoodsData>;
-    }): Promise<{ transportDocumentNumber: string; ensMrn: string }> {
+    }): Promise<EnsDeclarationResult> {
         const { testInfo, url } = options;
 
         reportTestAccount(this.authAccount, 'completeEnsDeclarationFlow');
@@ -87,8 +93,14 @@ export class CreateAndSubmitEnsDeclarationFlow {
         // Goods-item work done: return to the consignment overview via the breadcrumb
         // and submit the consignment.
         await this.consignmentOverviewFlow.submitConsignment();
-        const ensMrn = await this.verifyPostSubmit(goodsJourney, goodsData.procedureCode);
-        return { transportDocumentNumber: consignmentData.transportDocumentNumber, ensMrn };
+        const { ensMrn, generatedConsignment } =
+            await this.verifyPostSubmit(goodsJourney, goodsData.procedureCode);
+
+        return {
+            transportDocumentNumber: consignmentData.transportDocumentNumber,
+            ensMrn,
+            generatedConsignment,
+        };
     }
 
     /**
@@ -105,24 +117,31 @@ export class CreateAndSubmitEnsDeclarationFlow {
     private async verifyPostSubmit(
         goodsJourney: GoodsJourneyContext,
         goodsProcedureCode: string
-    ): Promise<string> {
+    ): Promise<{ ensMrn: string; generatedConsignment?: GeneratedConsignment }> {
         await this.movementOverviewFlow.waitForSubmittedMovementOverview();
+
+        let generatedConsignment: GeneratedConsignment | undefined;
+
         if (goodsJourney.useIMMI) {
             // A warehoused procedure code makes the service derive a supervising
             // customs office; every other code leaves the row off the page entirely.
-            await this.movementOverviewFlow.verifyImmiConsignmentDetail(
+            generatedConsignment = await this.movementOverviewFlow.verifyImmiConsignmentDetail(
                 requiresWarehouseIdentifier(goodsProcedureCode)
                     ? SUPERVISING_CUSTOMS_OFFICE.GBBEL004
                     : undefined
             );
         } else if (goodsJourney.isControlledGoods) {
-            await this.movementOverviewFlow.verifySfdConsignmentDetail();
+            generatedConsignment = await this.movementOverviewFlow.verifySfdConsignmentDetail();
         } else if (!goodsJourney.isEnsOnly) {
-            // The remaining full journey (non-IMMI, controlled goods = No) is EIDR.
+            // The remaining full journey (non-IMMI, controlled goods = No) is EIDR - the
+            // one generated declaration that never carries an MRN, so nothing outside
+            // the browser can name it and nothing is returned for it.
             await this.movementOverviewFlow.verifyEidrConsignmentDetail();
         }
+
         // Submitting auto-returns to the movement overview.
-        return this.movementOverviewFlow.verifyEnsConsignmentDetail();
+        const ensMrn = await this.movementOverviewFlow.verifyEnsConsignmentDetail();
+        return { ensMrn, generatedConsignment };
     }
 
     /**

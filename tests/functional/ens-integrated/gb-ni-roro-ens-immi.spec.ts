@@ -31,11 +31,11 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
   });
 
   test('Verify ENS-IMMI - RoRo (Accompanied) with TGP is created and submitted successfully (4000-1EN)', { tag: ['@smoke', '@happyPath'] }, async ({
-    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
+    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied with TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+    const { generatedConsignment: immi } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
       movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
@@ -68,14 +68,16 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
         external_contacts_list: ['adam3.taylor@nifreight.co.uk', 'ledt@nifreight.co.uk'],
       }
     ));
+
+    await triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi);
   });
 
   test('Verify ENS-IMMI - RoRo (Unaccompanied) without TGP is created and submitted successfully (0700-1EL)', { tag: ['@smoke', '@happyPath'] }, async ({
-    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
+    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied without TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+    const { generatedConsignment: immi } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
       movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
@@ -113,14 +115,16 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     });
 
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
+
+    await triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi);
   });
 
   test('Verify ENS-IMMI - RoRo (Accompanied) without TGP is created and submitted successfully (4000-1SG)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({
-    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
+    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied without TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+    const { generatedConsignment: immi } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
       movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
@@ -151,15 +155,17 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     });
 
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
+
+    await triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi);
   });
 
 
   test('Verify ENS-IMMI - RoRo (Unaccompanied) with TGP is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({
-    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow
+    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied with TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+    const { generatedConsignment: immi } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
       testInfo,
       url: getBaseUrl(),
       movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
@@ -184,6 +190,8 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     });
 
     await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
+
+    await triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi);
   });
 
 });

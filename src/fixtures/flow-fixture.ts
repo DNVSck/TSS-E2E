@@ -27,6 +27,8 @@ import { GoodsOverviewFlow } from '../flows/goods-item/goods-overview-flow';
 import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
 import { RepresentTraderFlow } from '../flows/represent-trader-flow';
 import { Ics2NotificationFlow } from '../flows/ics2-notification-flow';
+import { CdsNotificationFlow } from '../flows/cds-notification-flow';
+import { TriggerFinalStatusThroughCdsFlow } from '../flows/common-flows/trigger-final-status-through-cds-flow';
 import { LocaleFixtureType } from './locale-fixture';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
 import { APIFixtureType } from './api-fixture';
@@ -57,6 +59,8 @@ export type FlowFixtureType = {
 
     // Common Flows for ENS integrated flow: ENS Only, ENS-SFD, ENS-IMMI, ENS-EIDR
     ics2NotificationFlow: Ics2NotificationFlow;
+    cdsNotificationFlow: CdsNotificationFlow;
+    triggerFinalStatusThroughCdsFlow: TriggerFinalStatusThroughCdsFlow;
 
     // Common Flows
     createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow;
@@ -137,8 +141,20 @@ export const flowFixture: ExtendParams[0] = {
         await use(new AddNewGMRFlow(movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage));
     },
 
-    ics2NotificationFlow: async ({ rmqApiRequest }, use) => {
-        await use(new Ics2NotificationFlow(rmqApiRequest));
+    ics2NotificationFlow: async ({ ics2MockApiClient }, use) => {
+        await use(new Ics2NotificationFlow(ics2MockApiClient));
+    },
+
+    cdsNotificationFlow: async ({ cdsMockApiClient }, use) => {
+        await use(new CdsNotificationFlow(cdsMockApiClient));
+    },
+
+    triggerFinalStatusThroughCdsFlow: async ({
+        cdsNotificationFlow, movementOverviewFlow, consignmentOverviewFlow,
+    }, use) => {
+        await use(new TriggerFinalStatusThroughCdsFlow(
+            cdsNotificationFlow, movementOverviewFlow, consignmentOverviewFlow
+        ));
     },
 
     createAndSubmitEnsDeclarationFlow: async ({

@@ -45,6 +45,7 @@
     "awaitingArrival": "Awaiting arrival",
     "arrived": "Arrived",
     "open": "Open",
-    "traderInputRequired": "Trader Input Required"
+    "traderInputRequired": "Trader Input Required",
+    "closed": "Closed"
   }
 }

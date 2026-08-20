@@ -167,7 +167,7 @@ export class MovementOverviewPage extends BasePage {
      */
     async openEnsConsignmentDetail(): Promise<boolean> {
         await this.returnToMovementOverview();
-        return this.openConsignmentFromTab(this.ensConsignmentsTab, this.ensConsignmentViewLink);
+        return this.openRecordFromTab(this.ensConsignmentsTab, this.ensConsignmentViewLink);
     }
 
     /**
@@ -179,11 +179,39 @@ export class MovementOverviewPage extends BasePage {
      */
     async openSfdConsignmentDetail(): Promise<boolean> {
         await this.returnToMovementOverview();
-        return this.openConsignmentFromTab(
+        return this.openRecordFromTab(
             this.sfdConsignmentsTab,
             this.sfdConsignmentViewLink,
             LINKED_CONSIGNMENT_VIEW_TIMEOUT
         );
+    }
+
+    async reopenSfdConsignmentDetail(): Promise<boolean> {
+        return this.reopenGeneratedConsignment(
+            this.sfdConsignmentsTab, this.sfdConsignmentViewLink
+        );
+    }
+
+    /** The IMMI counterpart of {@link reopenSfdConsignmentDetail}. */
+    async reopenImmiConsignmentDetail(): Promise<boolean> {
+        return this.reopenGeneratedConsignment(
+            this.immiConsignmentsTab, this.immiConsignmentViewLink
+        );
+    }
+
+    /**
+     * Reach the movement overview by URL, then open one of its generated consignments.
+     *
+     * The counterpart of the open*ConsignmentDetail methods, which walk back up the
+     * breadcrumb - the user's own path, and the right one mid-journey. This is for a
+     * caller with no path to walk: see goToMovementOverview.
+     *
+     * Shared rather than written per kind: the only difference between them is which
+     * tab to click, and two copies would be two places to fix when the route changes.
+     */
+    private async reopenGeneratedConsignment(tab: Locator, viewLink: Locator): Promise<boolean> {
+        await this.goToMovementOverview();
+        return this.openRecordFromTab(tab, viewLink, LINKED_CONSIGNMENT_VIEW_TIMEOUT);
     }
 
     /**
@@ -192,7 +220,7 @@ export class MovementOverviewPage extends BasePage {
      */
     async openImmiConsignmentDetail(): Promise<boolean> {
         await this.returnToMovementOverview();
-        return this.openConsignmentFromTab(
+        return this.openRecordFromTab(
             this.immiConsignmentsTab,
             this.immiConsignmentViewLink,
             LINKED_CONSIGNMENT_VIEW_TIMEOUT
@@ -205,11 +233,32 @@ export class MovementOverviewPage extends BasePage {
      */
     async openEidrConsignmentDetail(): Promise<boolean> {
         await this.returnToMovementOverview();
-        return this.openConsignmentFromTab(
+        return this.openRecordFromTab(
             this.eidrConsignmentsTab,
             this.eidrConsignmentViewLink,
             LINKED_CONSIGNMENT_VIEW_TIMEOUT
         );
+    }
+
+    /**
+     * The movement overview's own path.
+     *
+     * One definition, because three callers needed it and each had written it out:
+     * two as a RegExp to recognise the page, one as a path to navigate to. A route
+     * change had to be found in all three, or it broke the one that was missed.
+     */
+    private movementOverviewPath(movement: string): string {
+        return `/${GOODS_MOVEMENT_SEGMENT}/${movement}/${OVERVIEW_SEGMENT}`;
+    }
+
+    /**
+     * Recognises that path once the browser has landed on it.
+     *
+     * The trailing group allows a query or a fragment and nothing else, so a deeper
+     * route (".../overview/sfd-consignments") is not mistaken for the overview itself.
+     */
+    private movementOverviewPattern(movement: string): RegExp {
+        return new RegExp(`${this.movementOverviewPath(movement)}(?:[?#]|$)`);
     }
 
     /** The current movement's number ("ENS…"), parsed from the URL. */
@@ -221,31 +270,59 @@ export class MovementOverviewPage extends BasePage {
         return match[0];
     }
 
+    /** Any movement's overview - this runs before the number is known. */
     async waitForSubmittedMovementOverview(): Promise<void> {
         await this.page.waitForURL(
-            new RegExp(String.raw`/${GOODS_MOVEMENT_SEGMENT}/ENS\d+/${OVERVIEW_SEGMENT}(?:[?#]|$)`),
-            { timeout: NAV_TIMEOUT }
-        );
-    }
-
-    async returnToMovementOverview(): Promise<void> {
-        const movement = this.currentMovementNumber();
-        await this.page
-            .locator(`a.govuk-breadcrumbs__link[href$='/${movement}/${OVERVIEW_SEGMENT}']`)
-            .click();
-        await this.page.waitForURL(
-            new RegExp(`/${GOODS_MOVEMENT_SEGMENT}/${movement}/${OVERVIEW_SEGMENT}(?:[?#]|$)`),
+            this.movementOverviewPattern(String.raw`ENS\d+`),
             { timeout: NAV_TIMEOUT }
         );
     }
 
     /**
-     * Open a consignments tab and click the (first) consignment's "View". The
-     * consignment can be generated asynchronously and the overview does not
-     * auto-refresh, so if its card is not yet listed, reload and retry until it
-     * appears (or the timeout lapses → false).
+     * Land on the movement overview from anywhere, by URL.
+     *
+     * The exception to this page object's rule of following the user's own path, and it
+     * earns it: a GMR record page has NO route back up to the movement. Checked on
+     * 2026-08-20 - no breadcrumb to /<movement>/overview anywhere on it, and its own
+     * "SFD Consignments" tab renders an EMPTY list, so the consignment cannot be
+     * reached from there either. A journey that has just submitted a GMR is stranded,
+     * and returnToMovementOverview (which clicks a breadcrumb) has nothing to click.
+     *
+     * The movement number comes from the URL the browser is already on, so this cannot
+     * navigate to some other movement than the one under test.
      */
-    private async openConsignmentFromTab(
+    private async goToMovementOverview(): Promise<void> {
+        const movement = this.currentMovementNumber();
+        const url = new URL(this.page.url());
+        // Everything before "/goods-movement/" - the portal's own mount point, taken
+        // from the live URL rather than assumed, so a re-mounted service still works.
+        const mountPoint = url.pathname.slice(0, url.pathname.indexOf(`/${GOODS_MOVEMENT_SEGMENT}/`));
+
+        url.pathname = `${mountPoint}${this.movementOverviewPath(movement)}`;
+        url.search = '';
+        url.hash = '';
+
+        await this.page.goto(url.toString());
+    }
+
+    async returnToMovementOverview(): Promise<void> {
+        const movement = this.currentMovementNumber();
+        await this.page
+            .locator(`a.govuk-breadcrumbs__link[href$="${this.movementOverviewPath(movement)}"]`)
+            .click();
+        await this.page.waitForURL(
+            this.movementOverviewPattern(movement),
+            { timeout: NAV_TIMEOUT }
+        );
+    }
+
+    /**
+     * Open a tab and click the (first) record's "View" - a consignment or a GMR, which
+     * behave the same way here. The record can be generated asynchronously and the
+     * overview does not auto-refresh, so if its card is not yet listed, reload and
+     * retry until it appears (or the timeout lapses → false).
+     */
+    private async openRecordFromTab(
         tab: Locator,
         viewLink: Locator,
         timeout = CONSIGNMENT_VIEW_TIMEOUT
@@ -280,16 +357,35 @@ export class MovementOverviewPage extends BasePage {
     }
 
     /**
-     * Click a consignment card's "View" button and wait until its detail page has
-     * loaded (URL settles on ".../{DEC|GLR…}/overview" — ENS/SFD use a DEC ref,
-     * IMMI a GLR one). Awaiting the navigation here is what keeps a following read
-     * from racing the click and landing on the wrong page. Returns false if the
-     * click does not open a detail page.
+     * Click a record card's "View" button and wait until its detail page has loaded.
+     *
+     * Where it is going comes from the link's OWN href, not from a pattern of what a
+     * detail URL looks like. That pattern used to be /(DEC|GLR)\d+\/overview/, which a
+     * GMR does not match - so opening a GMR had to restate this whole method rather
+     * than call it, and every future record type would have had to do the same.
+     *
+     * Awaiting the navigation is the point of the method: without it a following read
+     * races the click and reads the page being left. A "View" carrying no href is a
+     * broken card, so it is reported as not opened rather than clicked hopefully.
      */
     private async clickViewLink(viewLink: Locator): Promise<boolean> {
+        const link = viewLink.first();
+        const href = await link.getAttribute('href');
+
+        if (!href) {
+            return false;
+        }
+
+        // Resolved against the current URL so a relative href and an absolute one both
+        // reduce to the pathname the browser will actually be on.
+        const route = StringUtil.stripTrailingSlashes(new URL(href, this.page.url()).pathname);
+
         try {
-            await viewLink.first().click();
-            await this.page.waitForURL(/\/(?:DEC|GLR)\d+\/overview/, { timeout: NAV_TIMEOUT });
+            await link.click();
+            await this.page.waitForURL(
+                url => StringUtil.stripTrailingSlashes(url.pathname) === route,
+                { timeout: NAV_TIMEOUT }
+            );
         } catch {
             return false;
         }
@@ -310,26 +406,13 @@ export class MovementOverviewPage extends BasePage {
 
     /**
      * Open the submitted GMR's detail page from the movement overview. Submitting a
-     * GMR returns here with the GMR tab active; click the tab (a reload during the
-     * card-wait deselects govuk-tabs, so re-select it), wait for the GMR's "View"
-     * link, then open it. The detail route is read from the link's own href — the GMR
-     * detail URL shape is not hard-coded. Returns false if no GMR card appears.
+     * GMR returns here with the GMR tab active. Returns false if no GMR card appears.
+     *
+     * The same journey as opening a consignment, so it is the same method now: this
+     * one used to restate it because clickViewLink only recognised consignment URLs.
      */
     async openGmrDetailFromTab(): Promise<boolean> {
-        await this.gmrDetailsTab.click();
-        if (!await this.waitForRecordCard(this.gmrDetailsTab, this.gmrViewLink, GMR_VIEW_TIMEOUT)) {
-            return false;
-        }
-        const href = await this.gmrViewLink.first().getAttribute('href');
-        await this.gmrViewLink.first().click();
-        if (href) {
-            const route = StringUtil.stripTrailingSlashes(href.split('#')[0]);
-            await this.page.waitForURL(
-                url => StringUtil.stripTrailingSlashes(url.pathname) === route,
-                { timeout: NAV_TIMEOUT }
-            );
-        }
-        return true;
+        return this.openRecordFromTab(this.gmrDetailsTab, this.gmrViewLink, GMR_VIEW_TIMEOUT);
     }
 
 }

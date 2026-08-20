@@ -4,6 +4,18 @@ import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue } from 
 
 const COMMODITY_SUBMIT_TIMEOUT = 45_000;
 
+/**
+ * How long the NIRMS screen gets to appear before the wizard is taken to have skipped it.
+ *
+ * Short on purpose. The previous screen has already been submitted when this is asked, so
+ * the next screen is either painting or is a different one - there is nothing slow to wait
+ * for, and every declaration that does not qualify for NIRMS pays this once.
+ */
+const NIRMS_SCREEN_TIMEOUT = 5_000;
+
+/** The radio group on the NIRMS screen, addressed by the name its inputs post. */
+const USE_NIRMS_RADIO_NAME = 'useNirms';
+
 export class GoodsDeclarePage extends BasePage {
 
     private readonly useTgpYesOption: Locator;
@@ -35,6 +47,7 @@ export class GoodsDeclarePage extends BasePage {
 
     private readonly grossMassInput: Locator;
     private readonly netMassInput: Locator;
+    private readonly useNirmsRadios: Locator;
 
     private readonly goodsProcedureCodeDropdown: Locator;
 
@@ -94,6 +107,7 @@ export class GoodsDeclarePage extends BasePage {
         // "Enter weight information"
         this.grossMassInput = page.locator("input#grossMass");
         this.netMassInput = page.locator("input#netMass");
+        this.useNirmsRadios = page.locator("input[name='useNirms']");
     
         // "Goods procedure codes"
         this.goodsProcedureCodeDropdown = page.locator("select#procedureCode");
@@ -197,6 +211,34 @@ export class GoodsDeclarePage extends BasePage {
 
     async selectNationalAdditionalCode(nationalAdditionalCode: string): Promise<void> {
         await selectDropdownValue(this.nationalAdditionalCodeDropdown, nationalAdditionalCode);
+    }
+
+    /**
+     * "Do you want to use NIRMS for these goods?" - answered only when the service asks.
+     *
+     * Whether it asks cannot be decided from the journey's own flags: the screen appears
+     * when the IMPORTER holds a NIRMS authorisation AND the commodity supports it, which
+     * is a fact about the environment's data rather than about this declaration. So the
+     * wizard looks, answers if it is there, and reports which happened.
+     *
+     * Returns whether the screen was shown.
+     */
+    async answerUseNirmsIfPresent(useNirms: boolean): Promise<boolean> {
+        // waitFor, NOT isVisible: isVisible answers immediately and ignores its timeout
+        // (it is documented as deprecated there), so it reports "not shown" for a screen
+        // that is merely still painting - which is exactly the case here, one submit
+        // earlier. Throwing is the expected outcome when the screen is genuinely absent.
+        const shown = await this.useNirmsRadios.first()
+            .waitFor({ state: 'visible', timeout: NIRMS_SCREEN_TIMEOUT })
+            .then(() => true, () => false);
+
+        if (!shown) {
+            return false;
+        }
+
+        await checkRadioByValue(this.page, USE_NIRMS_RADIO_NAME, useNirms ? 'yes' : 'no');
+        await this.clickContinueButton();
+        return true;
     }
 
     async inputShippingMarks(shippingMarks: string): Promise<void> {

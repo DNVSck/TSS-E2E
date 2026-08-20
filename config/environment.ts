@@ -1,4 +1,5 @@
 import { LOCALES_CONSTANT } from '../src/constant/locales-constant';
+import { tssOrigin } from '../src/constant/tss-host-constant';
 
 export type Locale = 'all' | 'en' | 'cy';
 
@@ -133,4 +134,10 @@ export const IS_ISC2_MOCK = boolOrDefault(process.env.ISC2_MOCK_SERVER);
 export const RMQ_HOST     = process.env.RMQ_HOST     ?? '';
 export const RMQ_USERNAME = process.env.RMQ_USERNAME ?? '';
 export const RMQ_PWD      = process.env.RMQ_PWD      ?? '';
+
+export const CDS_MOCK_HOST = tssOrigin(ENV);
+
+export const CDS_TOKEN = process.env.CDS_TOKEN?.trim() ?? '';
+
+export const IS_CDS_MOCK_AVAILABLE = CDS_TOKEN !== '';
 
