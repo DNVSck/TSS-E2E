@@ -14,6 +14,8 @@ node_modules/
 /reports/
 /allure-results/
 /allure-report/
+/allure-report-share/
+/allure-report-share.zip
 
 # Environment Files
 .env.*

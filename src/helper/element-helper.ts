@@ -351,6 +351,9 @@ export function taskListRecord(page: Page, code: string): Locator {
 /** How long a record gets to disappear after its own Delete is pressed. */
 const RECORD_REMOVAL_TIMEOUT = 20_000;
 
+/** A record whose Delete was pressed and which is still listed gets this many more goes. */
+const RECORD_REMOVAL_ATTEMPTS = 3;
+
 /**
  * Remove the record opening with this code, and report whether there was one.
  *
@@ -358,8 +361,19 @@ const RECORD_REMOVAL_TIMEOUT = 20_000;
  * arrives carrying differs from one journey to the next, so "remove this if it is
  * there" is the honest instruction. A caller that needs it gone can check the answer.
  *
- * Waits for the record to leave the page rather than for a network call: the list is
- * re-rendered by the POST, so the next removal must not read the list it replaced.
+ * The Delete button posts a form, so the list is REPLACED rather than edited, and the
+ * removal must be confirmed by an assertion that RETRIES rather than by reading the
+ * count once. Reading once measures whichever document happens to be current, and while
+ * the POST is in flight that is still the old one - so a removal that worked reads as a
+ * removal that did nothing. Measured on SIT 2026-08-21: C506 was gone from the
+ * declaration afterwards, yet the count said it was still there, and the extra clicks
+ * that followed were pressing Delete on a list that had already moved on.
+ *
+ * The outer loop is for the other failure, the one the route-matching click already
+ * guards against (see clickLinkAndWaitForRoute, whose links "can swallow a click
+ * without navigating"): a click issued while a previous removal is still navigating
+ * never posts, and nothing says so. Only a click that leaves the record in place for
+ * the whole timeout is retried, so the two cases cannot be confused.
  */
 export async function removeTaskListRecord(page: Page, code: string): Promise<boolean> {
     const record = taskListRecord(page, code);
@@ -368,7 +382,25 @@ export async function removeTaskListRecord(page: Page, code: string): Promise<bo
         return false;
     }
 
-    await record.first().locator('button[name="action"][value^="delete"]').click();
-    await expect(taskListRecord(page, code)).toHaveCount(0, { timeout: RECORD_REMOVAL_TIMEOUT });
-    return true;
+    for (let attempt = 1; attempt <= RECORD_REMOVAL_ATTEMPTS; attempt++) {
+        await record.first()
+            .locator('button[name="action"][value^="delete"]')
+            .click({ timeout: RECORD_REMOVAL_TIMEOUT });
+
+        try {
+            await expect(record).toHaveCount(0, { timeout: RECORD_REMOVAL_TIMEOUT });
+            return true;
+        } catch {
+            console.log(
+                `Record [${code}] is still listed after attempt ${attempt} of `
+                + `${RECORD_REMOVAL_ATTEMPTS}; pressing Delete again.`
+            );
+        }
+    }
+
+    throw new Error(
+        `[${code}] is still listed after ${RECORD_REMOVAL_ATTEMPTS} attempts to delete it. `
+        + `Its Delete button was pressed each time and the record stayed, so either the `
+        + `service is refusing the removal or the button no longer posts.`
+    );
 }
