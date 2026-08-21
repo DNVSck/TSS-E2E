@@ -5,7 +5,7 @@ import { ReportLog } from '../../../src/core/report/report-log';
 import {
     COMPANY_PROFILE,
     UserCredentials,
-    getCredentials,
+    accountFor,
     isProfileConfigured,
 } from '../../../src/auth/credentials';
 import { wrongCasePasswordVariants } from '../../../src/test-data/password-case-data';
@@ -21,14 +21,14 @@ test.describe.configure({ mode: 'serial' });
 test.describe('TSS Portal - Password Case-Sensitivity and Visibility (Test Case 2546)', () => {
 
     test.skip(
-        !isProfileConfigured(COMPANY_PROFILE.PRIMARY_HOLDER),
-        'PRIMARY_HOLDER_USER_NAME is not configured for this environment'
+        !isProfileConfigured(COMPANY_PROFILE.AUTH_ACCOUNT),
+        'AUTH_ACCOUNT_USER_NAME_1 is not configured for this environment'
     );
 
     let account: UserCredentials;
 
     test.beforeEach(() => {
-        account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
+        account = accountFor(COMPANY_PROFILE.AUTH_ACCOUNT, test.info().parallelIndex);
     });
 
     test.afterEach(async ({ signInFlow }, testInfo) => {
@@ -66,7 +66,7 @@ test.describe('TSS Portal - Password Case-Sensitivity and Visibility (Test Case 
 
             expect(
                 variants.length,
-                'PRIMARY_HOLDER password has no upper/lower case variation, so this test '
+                'AUTH_ACCOUNT password has no upper/lower case variation, so this test '
                 + 'cannot demonstrate case-sensitivity - give the account a mixed-case password'
             ).toBeGreaterThan(0);
 

@@ -1,4 +1,4 @@
-import { COMPANY_PROFILE, UserCredentials, getCredentials, isProfileConfigured } from '../../../src/auth/credentials';
+import { COMPANY_PROFILE, UserCredentials, accountFor, isProfileConfigured } from '../../../src/auth/credentials';
 import { OTP_ENABLED } from '../../../config/environment';
 import { MESSAGE_CONSTANTS } from '../../../src/constant/messages-constants';
 import { test, expect, getBaseUrl } from '../../test-hooks';
@@ -13,14 +13,14 @@ test.describe.configure({ mode: 'serial' });
 test.describe('TSS Portal sign-in - negative cases', () => {
 
     test.skip(
-        !isProfileConfigured(COMPANY_PROFILE.PRIMARY_HOLDER),
-        'PRIMARY_HOLDER_USER_NAME is not configured for this environment'
+        !isProfileConfigured(COMPANY_PROFILE.AUTH_ACCOUNT),
+        'AUTH_ACCOUNT_USER_NAME_1 is not configured for this environment'
     );
 
     let account: UserCredentials;
 
     test.beforeEach(() => {
-        account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
+        account = accountFor(COMPANY_PROFILE.AUTH_ACCOUNT, test.info().parallelIndex);
     });
 
     test.afterEach(async ({ signInFlow }, testInfo) => {
@@ -111,8 +111,8 @@ test.describe('TSS Portal sign-in - negative cases', () => {
 test.describe('TSS Portal sign-in - sensitive field security (Test Case 2551)', () => {
 
     test.skip(
-        !isProfileConfigured(COMPANY_PROFILE.PRIMARY_HOLDER),
-        'PRIMARY_HOLDER_USER_NAME is not configured for this environment'
+        !isProfileConfigured(COMPANY_PROFILE.AUTH_ACCOUNT),
+        'AUTH_ACCOUNT_USER_NAME_1 is not configured for this environment'
     );
     test('Verify that password field is protected from browser auto-fill attacks', 
         { tag: ['@auth', '@security', '@regression'] }, 
@@ -137,7 +137,7 @@ test.describe('TSS Portal sign-in - sensitive field security (Test Case 2551)', 
             reportTestCaseLink(NO_CREDENTIAL_CACHE_TEST_ID);
             
             test.skip(!OTP_ENABLED, 'This environment does not ask for an authenticator code.');            
-            const account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
+            const account = accountFor(COMPANY_PROFILE.AUTH_ACCOUNT, testInfo.parallelIndex);
             await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
             await signInFlow.submitValidCredentials(account);
     

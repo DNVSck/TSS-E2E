@@ -1,5 +1,5 @@
 import { test, expect, getBaseUrl } from '../../test-hooks';
-import { COMPANY_PROFILE, UserCredentials, getCredentials, isProfileConfigured } from '../../../src/auth/credentials';
+import { COMPANY_PROFILE, UserCredentials, accountFor, isProfileConfigured } from '../../../src/auth/credentials';
 import { OTP_ENABLED } from '../../../config/environment';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
@@ -36,8 +36,8 @@ test.describe('TSS Portal sign-in - browser security (Test Case 2549)', () => {
     // Decided once, when the file is read, so no fixture is built for a run that cannot
     // do this at all - see isProfileConfigured.
     test.skip(
-        !isProfileConfigured(COMPANY_PROFILE.PRIMARY_HOLDER),
-        'PRIMARY_HOLDER_USER_NAME is not configured for this environment'
+        !isProfileConfigured(COMPANY_PROFILE.AUTH_ACCOUNT),
+        'AUTH_ACCOUNT_USER_NAME_1 is not configured for this environment'
     );
 
     let account: UserCredentials;
@@ -54,7 +54,7 @@ test.describe('TSS Portal sign-in - browser security (Test Case 2549)', () => {
             'Skipping Welsh locale due to language switcher timing issues'
         );
 
-        account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
+        account = accountFor(COMPANY_PROFILE.AUTH_ACCOUNT, testInfo.parallelIndex);
     });
 
     test.afterEach(async ({ signInFlow }, testInfo) => {

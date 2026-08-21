@@ -2,7 +2,7 @@ import { OTP_ENABLED } from '../../../config/environment';
 import { MESSAGE_CONSTANTS } from '../../../src/constant/messages-constants';
 import { test, expect, getBaseUrl } from '../../test-hooks';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
-import { COMPANY_PROFILE, UserCredentials, getCredentials, isProfileConfigured } from '../../../src/auth/credentials';
+import { COMPANY_PROFILE, UserCredentials, accountFor, isProfileConfigured } from '../../../src/auth/credentials';
 
 const EMAIL_NORMALIZATION_TEST_ID = '2545';
 
@@ -10,8 +10,8 @@ test.describe.configure({ mode: 'serial' });
 // Decided once, when the file is read - this file has no describe, so the file itself
 // is the suite the annotation lands on. See isProfileConfigured.
 test.skip(
-    !isProfileConfigured(COMPANY_PROFILE.PRIMARY_HOLDER),
-    'PRIMARY_HOLDER_USER_NAME is not configured for this environment'
+    !isProfileConfigured(COMPANY_PROFILE.AUTH_ACCOUNT),
+    'AUTH_ACCOUNT_USER_NAME_1 is not configured for this environment'
 );
 
 test('Test Case 2545: Email normalization and invalid format validation',
@@ -20,7 +20,7 @@ test('Test Case 2545: Email normalization and invalid format validation',
         reportTestCaseLink(EMAIL_NORMALIZATION_TEST_ID);
         test.skip(!OTP_ENABLED, 'This environment does not have MFA enabled.');
 
-        const account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
+        const account = accountFor(COMPANY_PROFILE.AUTH_ACCOUNT, testInfo.parallelIndex);
 
         // Step 1: Navigate to TSS2 service start page
         // The login page is displayed

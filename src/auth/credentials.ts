@@ -4,6 +4,24 @@ export const COMPANY_PROFILE = {
     HAULIER: 'HAULIER',
     PRIMARY_HOLDER: 'PRIMARY_HOLDER',
     NON_PRIMARY_HOLDER: 'NON_PRIMARY_HOLDER',
+
+    /**
+     * The pool the auth suite signs in as - ordinary users of a company, held apart
+     * from the profiles above because what they are FOR is different: the others say
+     * what capacity a declaration is made in, this one only has to be an account that
+     * can sign in.
+     *
+     * A pool rather than one account, and that is the whole point. Every auth test
+     * signs in, several deliberately sign in WRONG, and the identity provider locks
+     * an account after ten failures without a success between them - so one shared
+     * account has to be driven one worker at a time. With an account per worker the
+     * failures land on separate counters and the suite can run in parallel again.
+     *
+     * PRIMARY_HOLDER cannot be pooled: a company has exactly one account holder, so
+     * there is nothing to make more of. Only the permissions spec needs that account
+     * to BE the holder; every other test just needed somewhere to sign in.
+     */
+    AUTH_ACCOUNT: 'AUTH_ACCOUNT',
 } as const;
 
 /**
@@ -88,7 +106,14 @@ export function profilesToAuthenticate(): CompanyProfile[] {
  * Playwright-free, like the rest of this file - see profilesToAuthenticate.
  */
 export function isProfileConfigured(profile: CompanyProfile): boolean {
-    return Boolean(process.env[`${profile}_USER_NAME`]?.trim());
+    // Either shape counts. A pooled profile declares AUTH_ACCOUNT_USER_NAME_1 and no
+    // unindexed key at all, so checking only the unindexed one would report a fully
+    // configured pool as missing - and every test that guards on this would skip,
+    // quietly, on an environment that can run them.
+    return Boolean(
+        process.env[`${profile}_USER_NAME`]?.trim()
+        || process.env[`${profile}_USER_NAME_1`]?.trim()
+    );
 }
 
 export function getCredentials(profile: CompanyProfile): UserCredentials {
