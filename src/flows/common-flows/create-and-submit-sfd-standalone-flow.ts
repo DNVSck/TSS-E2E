@@ -16,7 +16,7 @@ import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-h
 import { DeclarationIdentity } from '../../test-data/payload/cds-notification-payload';
 import { LOCAL_REFERENCE, MRN_COUNTRY_CODE } from '../../constant/local-reference-constants';
 import { TranslationKey } from '../../fixtures/locale-fixture';
-import { standaloneSubmittedStatusKey } from '../../helper/consignment-status-helper';
+import { standaloneSubmittedStatusKey } from '../../helper/declaration-status-helper';
 
 /**
  * The status a submitted SFD standalone consignment settles on.

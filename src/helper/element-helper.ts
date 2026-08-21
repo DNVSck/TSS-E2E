@@ -248,3 +248,127 @@ export async function checkRadioByValue(
 export function newRecordButton(page: Page, formAction: string): Locator {
     return page.locator(`form[action*="${formAction}"] button[value^="new-"]`);
 }
+
+/** How long a wizard gets to hand over from one step to the next. */
+const WIZARD_STEP_TIMEOUT = 20_000;
+
+/**
+ * Which step of a wizard the browser is on.
+ *
+ * The last path segment, with any "<journey>~" prefix dropped:
+ *
+ *     .../update/delivery-terms-journey~delivery-terms-unlocode?index&jump
+ *                                       ^^^^^^^^^^^^^^^^^^^^^^^ this
+ *
+ * The service names its own screens this way, which makes the URL the cheapest and
+ * most reliable statement of which screen is showing - no locator, no timeout, and no
+ * translated text.
+ */
+export function currentWizardStep(page: Page): string {
+    const lastSegment = new URL(page.url()).pathname.split('/').pop() ?? '';
+    return lastSegment.split('~').pop() ?? '';
+}
+
+/**
+ * Wait until the wizard has left the step it was on.
+ *
+ * Continue posts back to the SAME step and only then redirects, so reading the step
+ * straight after the click would always report the screen just left - and a caller
+ * deciding what to do next from that would answer the previous screen twice. This is
+ * the wait that makes "which screen am I on?" a safe question to ask.
+ */
+export async function waitForWizardStepToChange(
+    page: Page,
+    from: string,
+    timeout = WIZARD_STEP_TIMEOUT
+): Promise<void> {
+    await page.waitForFunction(
+        previous => {
+            const lastSegment = new URL(location.href).pathname.split('/').pop() ?? '';
+            return (lastSegment.split('~').pop() ?? '') !== previous;
+        },
+        from,
+        { timeout }
+    );
+}
+
+/**
+ * Click a link that OPENS A WIZARD, and wait until the wizard's first screen is on.
+ *
+ * The counterpart to clickLinkAndWaitForRoute, for the links that helper cannot serve.
+ * It works out where a link goes from the link's own href, which is right for a link
+ * that goes where it says - and wrong for these, because they do not:
+ *
+ *     href  .../update/_edit_                    lands on  .../update/<first unanswered screen>
+ *     href  .../update/_edit_?field=methodOfPayment       .../update/method-of-payment
+ *     href  .../<goods>/edit/_edit_                       .../<goods>/edit/country-of-origin
+ *
+ * "_edit_" is a placeholder the service resolves on arrival - to whichever question the
+ * declaration has not answered yet, which is not knowable before asking. So the
+ * destination is described by SHAPE instead: inside the wizard, and past the
+ * placeholder.
+ */
+export async function clickLinkAndEnterWizard(
+    page: Page,
+    link: Locator,
+    wizardSegment: 'update' | 'edit'
+): Promise<void> {
+    await link.waitFor({ state: 'visible', timeout: LINK_VISIBLE_TIMEOUT });
+    await link.click({ timeout: LINK_VISIBLE_TIMEOUT });
+
+    await page.waitForURL(
+        url => {
+            const path = new URL(url).pathname;
+            return path.includes(`/${wizardSegment}/`) && !path.includes('_edit_');
+        },
+        { timeout: LINK_VISIBLE_TIMEOUT, waitUntil: 'commit' }
+    );
+}
+
+/**
+ * One record in a task list, found by the code it opens with.
+ *
+ * The declaration screens list holders of authorisation, document references and the
+ * rest as `li.govuk-task-list__item`, each opening with its code in brackets -
+ * "[C506] XIDPO1229035", "[CGU] XI896458895023". Matching on that code rather than on
+ * position is the whole point: the delete button a record carries is keyed by INDEX
+ * ("delete-document-reference:1"), and every removal renumbers the ones after it.
+ *
+ * The same markup is modelled as `TAB_RECORD` in record-tabs.ts on the authority
+ * branch. Unify the two when that merges; they must not drift, because a DOM change
+ * would then fix one screen and break the other.
+ *
+ * And unify TOWARDS this one. The tabs are being dropped from the whole service - the
+ * supplementary declaration's goods record already lists every section on one page, and
+ * the declaration and consignment overviews are to follow (Trung, 2026-08-21). Reading
+ * records without first opening the tab that holds them is the shape that survives;
+ * everything built on "each tab is its own route" is not.
+ */
+export function taskListRecord(page: Page, code: string): Locator {
+    return page.locator('li.govuk-task-list__item').filter({ hasText: `[${code}]` });
+}
+
+/** How long a record gets to disappear after its own Delete is pressed. */
+const RECORD_REMOVAL_TIMEOUT = 20_000;
+
+/**
+ * Remove the record opening with this code, and report whether there was one.
+ *
+ * Returns false rather than throwing when the record is absent: what a declaration
+ * arrives carrying differs from one journey to the next, so "remove this if it is
+ * there" is the honest instruction. A caller that needs it gone can check the answer.
+ *
+ * Waits for the record to leave the page rather than for a network call: the list is
+ * re-rendered by the POST, so the next removal must not read the list it replaced.
+ */
+export async function removeTaskListRecord(page: Page, code: string): Promise<boolean> {
+    const record = taskListRecord(page, code);
+
+    if (await record.count() === 0) {
+        return false;
+    }
+
+    await record.first().locator('button[name="action"][value^="delete"]').click();
+    await expect(taskListRecord(page, code)).toHaveCount(0, { timeout: RECORD_REMOVAL_TIMEOUT });
+    return true;
+}

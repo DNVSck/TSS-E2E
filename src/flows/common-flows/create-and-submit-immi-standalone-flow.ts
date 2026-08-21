@@ -15,7 +15,7 @@ import { DeclarationIdentity } from '../../test-data/payload/cds-notification-pa
 import { LOCAL_REFERENCE, MRN_COUNTRY_CODE } from '../../constant/local-reference-constants';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
-import { standaloneSubmittedStatusKey } from '../../helper/consignment-status-helper';
+import { standaloneSubmittedStatusKey } from '../../helper/declaration-status-helper';
 import { requiresWarehouseIdentifier } from '../../helper/procedure-code-helper';
 import { SUPERVISING_CUSTOMS_OFFICE } from '../../constant/supervising-customs-office-constant';
 

@@ -1,6 +1,7 @@
 import { FfdStandaloneConsignmentData } from '../../test-data/ffd-standalone-consignment-data';
 import { toPartyAddress } from '../../page-object/components/party-block';
 import { FfdStandaloneConsignmentDeclarePage } from '../../page-object/ffd-standalone-consignment-declare-page';
+import { CommercialTermsDeclarePage } from '../../page-object/commercial-terms-declare-page';
 import { ReportLog } from '../../core/report/report-log';
 import { MovementSteps } from '../movement/movement-steps';
 import { ConsignmentSteps } from './consignment-steps';
@@ -32,6 +33,7 @@ export class AddNewFfdStandaloneConsignmentFlow {
         private readonly movementSteps: MovementSteps,
         private readonly consignmentSteps: ConsignmentSteps,
         private readonly ffdPage: FfdStandaloneConsignmentDeclarePage,
+        private readonly commercialTermsPage: CommercialTermsDeclarePage,
     ) { }
 
     async addNewFfdStandaloneConsignment(input: FfdStandaloneConsignmentData): Promise<void> {
@@ -205,19 +207,19 @@ export class AddNewFfdStandaloneConsignmentFlow {
     /** One screen: the INCOTERM plus whether the trader knows the UN/LOCODE. */
     private async enterDeliveryTerms(incoterm: string, isKnownUnlocode: boolean): Promise<void> {
         await ReportLog.step('Enter the delivery terms', async () => {
-            await this.ffdPage.enterDeliveryTerms(incoterm, isKnownUnlocode);
+            await this.commercialTermsPage.enterDeliveryTerms(incoterm, isKnownUnlocode);
         });
     }
 
     private async selectDeliveryCountry(countryCode: string): Promise<void> {
         await ReportLog.step('Select the delivery country', async () => {
-            await this.ffdPage.selectDeliveryCountry(countryCode);
+            await this.commercialTermsPage.selectDeliveryCountry(countryCode);
         });
     }
 
     private async selectDeliveryPlace(unlocodePlace: string): Promise<void> {
         await ReportLog.step('Select the delivery place', async () => {
-            await this.ffdPage.selectDeliveryPlace(unlocodePlace);
+            await this.commercialTermsPage.selectDeliveryPlace(unlocodePlace);
         });
     }
 
@@ -236,7 +238,7 @@ export class AddNewFfdStandaloneConsignmentFlow {
 
     private async selectMethodOfPayment(methodOfPayment: string): Promise<void> {
         await ReportLog.step('Select the method of payment', async () => {
-            await this.ffdPage.selectMethodOfPayment(methodOfPayment);
+            await this.commercialTermsPage.selectMethodOfPayment(methodOfPayment);
         });
     }
 }

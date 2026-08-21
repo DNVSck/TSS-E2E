@@ -7,7 +7,7 @@ import { ConsignmentDetailPage } from '../../page-object/consignment-detail-page
 import { PreviousDocumentData } from "../../test-data/previous-document-data";
 import { HolderOfAuthorisationData } from "../../test-data/holder-of-authorisation-data";
 import { TranslationKey, TFunction } from '../../fixtures/locale-fixture';
-import { isTraderInputRequiredConsignmentStatus, traderInputRequiredError } from '../../helper/consignment-status-helper';
+import { isTraderInputRequiredStatus, traderInputRequiredError } from '../../helper/declaration-status-helper';
 import { MrnCountryCode, mrnPrefix } from '../../constant/local-reference-constants';
 
 /**
@@ -101,7 +101,7 @@ export class ConsignmentOverviewFlow {
             // Guarded on the expectation, so a journey that legitimately ends in this
             // state (as the ENS EIDR one does) would pass rather than fail here.
             const expectedIt = expectedStatusKey === 'status.traderInputRequired';
-            if (!expectedIt && isTraderInputRequiredConsignmentStatus(status, this.t)) {
+            if (!expectedIt && isTraderInputRequiredStatus(status, this.t)) {
                 throw traderInputRequiredError('The standalone consignment', status);
             }
         });

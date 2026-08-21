@@ -1,4 +1,5 @@
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
+import { UNLOCODE } from '../constant/unlocode-constant';
 import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
@@ -202,7 +203,7 @@ const defaults: Omit<FfdStandaloneConsignmentData, 'transportDocumentNumber'> = 
     isKnownUnlocode: false,
     deliveryCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
     // A UN/LOCODE from the delivery country's list - the options depend on the country.
-    deliveryPlaceUnlocode: 'GBBEL',
+    deliveryPlaceUnlocode: UNLOCODE.BELFAST,
 
     isSameNatureOfGoods: true,
     natureOfGoods: NATURE_OF_GOODS.OUTRIGHT_PURCHASE_SALE,

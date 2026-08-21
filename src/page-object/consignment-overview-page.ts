@@ -6,7 +6,7 @@ import {
     readFieldWhenVisible, readFieldIfPresent, newRecordButton,
 } from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
-import { isTraderInputRequiredConsignmentStatus } from '../helper/consignment-status-helper';
+import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
 
 /** The overview summary list paints a beat after the draft is created. */
 const SUMMARY_READ_TIMEOUT = 20_000;
@@ -179,7 +179,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
             // the expected status arrived, or the consignment came to rest somewhere it
             // will not leave on its own, so no amount of reloading changes the answer.
             // The soft assertion after the poll still reports the mismatch.
-            if (status === expected || isTraderInputRequiredConsignmentStatus(status, this.t!)) {
+            if (status === expected || isTraderInputRequiredStatus(status, this.t!)) {
                 return;
             }
 

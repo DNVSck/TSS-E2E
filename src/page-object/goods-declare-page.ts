@@ -55,6 +55,11 @@ export class GoodsDeclarePage extends BasePage {
     private readonly warehouseTypeDropdown: Locator;
     private readonly warehouseIdentifierInput: Locator;
 
+    private readonly natureOfGoodsDropdown: Locator;
+    private readonly preferenceDropdown: Locator;
+    private readonly countryOfPreferentialOriginDropdown: Locator;
+    private readonly valuationMethodDropdown: Locator;
+    private readonly statisticalValueInput: Locator;
     private readonly invoiceNumberInput: Locator;
     private readonly itemCurrencyDropdown: Locator;
     private readonly itemPriceAmountInput: Locator;
@@ -121,6 +126,12 @@ export class GoodsDeclarePage extends BasePage {
         this.warehouseIdentifierInput = page.locator("input#warehouseIdentifier");
 
         // "Enter invoice details"
+        this.natureOfGoodsDropdown = page.locator("select#natureOfGoods");
+        this.preferenceDropdown = page.locator("select#preference");
+        this.countryOfPreferentialOriginDropdown = page.locator("select#countryOfPreferentialOrigin");
+        this.valuationMethodDropdown = page.locator("select#valuationMethod");
+        this.statisticalValueInput = page.locator("input#statisticalValue");
+
         this.invoiceNumberInput = page.locator("input#invoiceNumber");
         this.itemCurrencyDropdown = page.locator("select#itemCurrency");
         this.itemPriceAmountInput = page.locator("input#itemPrice");
@@ -406,5 +417,60 @@ export class GoodsDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
+    // The three screens below are asked only on a supplementary declaration. A frontier
+    // declaration never collects them, which is the point of an SD: they are what the
+    // duty is calculated from.
 
+    /**
+     * "What is the reason/nature of the goods?"
+     *
+     * The FFD standalone journey asks this at CONSIGNMENT level, over two screens, and
+     * keeps its own pair on FfdStandaloneConsignmentDeclarePage. This is the goods-item
+     * screen of the same name - one item, one answer - and shares only the field id.
+     */
+    async selectNatureOfGoods(natureOfGoods: string): Promise<void> {
+        await selectDropdownValue(this.natureOfGoodsDropdown, natureOfGoods);
+        await this.clickContinueButton();
+    }
+
+    /**
+     * "Enter preference and valuation details" - one screen carrying three answers.
+     *
+     * The country of preferential origin is optional and the app says so in its own
+     * label, so an undefined value leaves the dropdown alone rather than selecting a
+     * blank option, which is a different thing and can fail validation.
+     */
+    async enterPreferenceAndValuation(
+        preference: string,
+        valuationMethod: string,
+        countryOfPreferentialOrigin?: string
+    ): Promise<void> {
+        await selectDropdownValue(this.preferenceDropdown, preference);
+        if (countryOfPreferentialOrigin) {
+            await selectDropdownValue(this.countryOfPreferentialOriginDropdown, countryOfPreferentialOrigin);
+        }
+        await selectDropdownValue(this.valuationMethodDropdown, valuationMethod);
+        await this.clickContinueButton();
+    }
+
+    /**
+     * "Commodity information" as a supplementary declaration asks it: the code and the
+     * description arrive from the frontier declaration, so only the supplementary units
+     * are typed.
+     *
+     * The screen labels that field "(optional)" and the service then refuses to move on
+     * without it - the tariff decides, and a commodity measured in units requires them.
+     * Measured on SIT 2026-08-20 against commodity 0601101000, which answers "Enter the
+     * supplementary units" to an empty field its own label called optional.
+     */
+    async enterSupplementaryUnits(supplementaryUnits: string): Promise<void> {
+        await this.inputSupplementaryUnits(supplementaryUnits);
+        await this.clickContinueButton();
+    }
+
+    /** "Statistical value" */
+    async enterStatisticalValue(statisticalValue: string): Promise<void> {
+        await this.statisticalValueInput.fill(statisticalValue);
+        await this.clickContinueButton();
+    }
 }

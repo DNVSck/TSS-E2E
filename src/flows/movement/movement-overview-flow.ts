@@ -3,7 +3,7 @@ import { ReportLog } from '../../core/report/report-log';
 import { MovementOverviewPage } from "../../page-object/movement-overview-page";
 import { ConsignmentDetailPage } from "../../page-object/consignment-detail-page";
 import { MRN_COUNTRY_CODE, MrnCountryCode, mrnPrefix } from '../../constant/local-reference-constants';
-import { isTraderInputRequiredConsignmentStatus, traderInputRequiredError } from '../../helper/consignment-status-helper';
+import { isTraderInputRequiredStatus, traderInputRequiredError } from '../../helper/declaration-status-helper';
 import { TFunction } from '../../fixtures/locale-fixture';
 
 
@@ -186,7 +186,7 @@ export class MovementOverviewFlow {
             // nothing to move. The soft results above already name what was wrong; going
             // on would only add their consequences. The EIDR check is deliberately not
             // routed through here - that journey ends in this state legitimately.
-            if (isTraderInputRequiredConsignmentStatus(status, this.t)) {
+            if (isTraderInputRequiredStatus(status, this.t)) {
                 throw traderInputRequiredError(`The auto-generated ${label} consignment`, status);
             }
 

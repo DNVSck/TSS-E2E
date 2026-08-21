@@ -153,3 +153,17 @@ export function generateRandomWarehouseIdentifier(
     const authorisationNumber = faker.string.numeric({ length: WAREHOUSE_AUTHORISATION_DIGITS });
     return `${warehouseType}${authorisationNumber}${countryCode}`;
 }
+
+/** Digits in the invoice number a supplementary declaration cites. */
+const INVOICE_NUMBER_DIGITS = 8;
+
+/**
+ * An invoice number for the supplementary declaration's "Enter invoice details" screen.
+ *
+ * Entering one has a side effect worth knowing about: the service adds an `[N935]`
+ * document reference (the invoice) to the goods item by itself. Nothing needs to
+ * declare that document separately.
+ */
+export function generateRandomInvoiceNumber(): string {
+    return `INV${faker.string.numeric({ length: INVOICE_NUMBER_DIGITS })}`;
+}

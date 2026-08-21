@@ -99,6 +99,14 @@ export const IMPORTER_SDE = required('IMPORTER_SDE');
 export const IMPORTER_CWP = required('IMPORTER_CWP');
 /** Excise Warehouse authorisation. */
 export const IMPORTER_EXW = required('IMPORTER_EXW');
+/**
+ * Deferment of Payment authorisation — cited on the C506 document.
+ *
+ * Cited a SECOND time, as the [1207] document, with its "XIDPO" prefix stripped: what
+ * is left is the deferment account number the duty is actually charged to. One value,
+ * two forms, and CDS wants both — see {@link defermentAccountNumber}.
+ */
+export const IMPORTER_DPO = required('IMPORTER_DPO');
 
 /**
  * The counterparties a declaration names. One key per ROLE even where one company

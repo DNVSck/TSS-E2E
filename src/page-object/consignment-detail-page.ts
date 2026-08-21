@@ -2,7 +2,7 @@ import { Page, Locator, expect } from '@playwright/test';
 import { ConsignmentSummaryPage } from './consignment-summary-page';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { summaryListValue, readFieldWhenVisible, readFieldIfPresent } from '../helper/element-helper';
-import { isTraderInputRequiredConsignmentStatus } from '../helper/consignment-status-helper';
+import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
 
 /** This heavy detail page can be slow to paint under parallel load. */
 const DETAIL_READ_TIMEOUT = 15_000;
@@ -73,7 +73,7 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
             }
 
             const status = await readFieldIfPresent(this.status);
-            if (isTraderInputRequiredConsignmentStatus(status, this.t!)) {
+            if (isTraderInputRequiredStatus(status, this.t!)) {
                 return;
             }
 
