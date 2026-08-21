@@ -262,10 +262,9 @@ export class GoodsItemSteps {
     async answerNirmsIfAsked(input: GoodsData): Promise<void> {
         await ReportLog.step('Answer NIRMS', async () => {
             const asked = await this.goodsDeclarePage.answerUseNirmsIfPresent(input.useNirms);
-            ReportLog.setParameter(
-                'NIRMS screen',
-                asked ? `answered ${input.useNirms ? 'Yes' : 'No'}` : 'not shown'
-            );
+
+            const answer = input.useNirms ? 'Yes' : 'No';
+            ReportLog.setParameter('NIRMS screen', asked ? `answered ${answer}` : 'not shown');
         });
     }
 

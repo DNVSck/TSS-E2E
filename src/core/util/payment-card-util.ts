@@ -79,8 +79,8 @@ export class PaymentCardUtil {
     static randomCardholderName(): string {
         return StringUtil.randomFullName()
             .toUpperCase()
-            .replace(/[^A-Z ]/g, ' ')
-            .replace(/\s+/g, ' ')
+            .replaceAll(/[^A-Z ]/g, ' ')
+            .replaceAll(/\s+/g, ' ')
             .trim();
     }
 }

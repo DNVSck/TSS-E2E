@@ -75,7 +75,7 @@ export interface CdsResponseMessage {
  * WCO formatCode 304 - YYYYMMDDHHmmss in UTC, no separators, trailing Z.
  */
 function wcoDateTime(date: Date): string {
-    return `${date.toISOString().replace(/[-:T.]/g, '').slice(0, 14)}Z`;
+    return `${date.toISOString().replaceAll(/[-:T.]/g, '').slice(0, 14)}Z`;
 }
 
 /**

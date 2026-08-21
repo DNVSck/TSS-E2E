@@ -3,7 +3,7 @@ import { ALL_COMPANY_PROFILE_ACTIONS } from '../../../src/constant/company-profi
 import { test, expect, getBaseUrl } from '../../test-hooks';
 
 
-
+test.describe.configure({ mode: 'serial' });
 test.describe('TSS Portal company profile - edit permissions', () => {
 
     // Both halves of this file need the pair of accounts, so one answer covers it.
