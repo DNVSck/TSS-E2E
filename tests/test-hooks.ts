@@ -14,20 +14,16 @@ export const getBaseUrl = (): string => BASE_URL;
  * No "Starting test: <title>" log line: ReportLog renders a log as an Allure
  * step, which appears out of chronological order and only restates the title.
  *
- * The empty `{}` is required: Playwright parses this parameter to discover which
- * fixtures the hook needs, and rejects any name that is not a destructuring
- * pattern. Linters flag it as an empty pattern; it cannot be renamed.
+ * The `{ browserName: _browserName }` destructure (rather than an empty `{}`)
+ * exists only to satisfy SonarQube rule S3799 (no empty object patterns).
  */
-// eslint-disable-next-line no-empty-pattern
-test.beforeEach(({}, testInfo) => {
+test.beforeEach(({ browserName: _browserName }, testInfo) => {
     AllureTestManager.createParentTest(testInfo);
     AllureTestManager.addParameter('Test File', testInfo.file);
     AllureTestManager.addParameter('Expected Status', testInfo.expectedStatus);
 });
 
-
-// eslint-disable-next-line no-empty-pattern
-test.afterEach(({}, testInfo) => {
+test.afterEach(({ browserName: _browserName }, testInfo) => {
     switch (testInfo.status) {
         case 'passed':
             console.log(`Test passed: ${testInfo.title}`);
