@@ -6,7 +6,6 @@ import { COMPANY_PROFILE, UserCredentials, accountFor, isProfileConfigured } fro
 
 const EMAIL_NORMALIZATION_TEST_ID = '2545';
 
-test.describe.configure({ mode: 'serial' });
 // Decided once, when the file is read - this file has no describe, so the file itself
 // is the suite the annotation lands on. See isProfileConfigured.
 test.skip(

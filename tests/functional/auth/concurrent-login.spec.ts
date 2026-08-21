@@ -5,8 +5,6 @@ import { COMPANY_PROFILE, accountFor, isProfileConfigured } from '../../../src/a
 
 const CONCURRENT_LOGIN_TEST_ID = '2550';
 
-test.describe.configure({ mode: 'serial' });
-
 test.describe('TSS Portal concurrent login', () => {
 
     // Decided once, when the file is read. Deciding it inside the test body instead

@@ -8,8 +8,6 @@ const INVALID_CREDENTIAL_TEST_ID = '2536';
 const INVALID_MFA_CODE_TEST_ID = '2537';
 const NO_CREDENTIAL_CACHE_TEST_ID = '2551';
 
-test.describe.configure({ mode: 'serial' });
-
 test.describe('TSS Portal sign-in - negative cases', () => {
 
     test.skip(

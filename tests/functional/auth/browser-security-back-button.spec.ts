@@ -7,8 +7,6 @@ import { AuthPageUrls } from '../../../src/flows/sign-in-flow';
 
 const TEST_CASE_ID = '2549';
 
-test.describe.configure({ mode: 'serial' });
-
 /**
  * Test Case 2549, steps 1 and 2 only.
  *

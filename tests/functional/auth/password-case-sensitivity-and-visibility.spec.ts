@@ -17,7 +17,6 @@ const SHOW = 'Show';
 const HIDE = 'Hide';
 
 
-test.describe.configure({ mode: 'serial' });
 test.describe('TSS Portal - Password Case-Sensitivity and Visibility (Test Case 2546)', () => {
 
     test.skip(
