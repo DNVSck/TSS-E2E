@@ -32,9 +32,11 @@ import { TriggerFinalStatusThroughCdsFlow } from '../flows/common-flows/trigger-
 import { SupplementaryDeclarationSteps } from '../flows/supplementary-declaration/supplementary-declaration-steps';
 import { CompleteAndSubmitSupplementaryDeclarationFlow } from '../flows/common-flows/complete-and-submit-supplementary-declaration-flow';
 import { GenerateSdDraftFromEnsSfdFlow } from '../flows/common-flows/generate-sd-draft-from-ens-sfd-flow';
+import { ConcurrentLoginFlow } from '../flows/concurrent-login-flow';
 import { LocaleFixtureType } from './locale-fixture';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
 import { APIFixtureType } from './api-fixture';
+import { SecondDeviceFixtureType } from './second-device-fixture';
 
 export type FlowFixtureType = {
     // Business Flows
@@ -80,11 +82,12 @@ export type FlowFixtureType = {
     supplementaryDeclarationSteps: SupplementaryDeclarationSteps;
     generateSdDraftFromEnsSfdFlow: GenerateSdDraftFromEnsSfdFlow;
     completeAndSubmitSupplementaryDeclarationFlow: CompleteAndSubmitSupplementaryDeclarationFlow;
+    concurrentLoginFlow: ConcurrentLoginFlow;
 }
 
 // LocaleFixtureType is in the union because two flows take `t` themselves - deciding
 // what a translated status means for a journey is flow-level, not page-level.
-type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType & APIFixtureType & LocaleFixtureType>>;
+type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType & APIFixtureType & LocaleFixtureType & SecondDeviceFixtureType>>;
 
 export const flowFixture: ExtendParams[0] = {
     portalAccessFlow: async ({ basePage, portalPage }, use) => {
@@ -265,6 +268,16 @@ export const flowFixture: ExtendParams[0] = {
         await use(new CreateAndSubmitFfdStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,
             addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+        ));
+    },
+
+    concurrentLoginFlow: async ({
+        basePage, portalPage, signInPage,
+        secondDeviceBasePage, secondDevicePortalPage, secondDeviceSignInPage
+    }, use) => {
+        await use(new ConcurrentLoginFlow(
+            basePage, portalPage, signInPage,
+            secondDeviceBasePage, secondDevicePortalPage, secondDeviceSignInPage
         ));
     },
 };

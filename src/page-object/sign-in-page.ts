@@ -22,6 +22,7 @@ export class SignInPage extends BasePage {
     private readonly totpCodeInput: Locator;
     private readonly totpErrorMessage: Locator;
     private readonly errorSummaryMessage: Locator;
+    private readonly passwordShowHideButton: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -32,6 +33,7 @@ export class SignInPage extends BasePage {
         // Keycloak's "Invalid authenticator code." message on the OTP screen.
         this.totpErrorMessage = page.locator("#input-error-otp-code");
         this.errorSummaryMessage = page.locator('.govuk-error-summary__list li');
+        this.passwordShowHideButton = page.locator("button[aria-label='Show password']");
     }
 
     /** Fill in the username/password and submit. */
@@ -142,5 +144,105 @@ export class SignInPage extends BasePage {
         await this.totpCodeInput.fill(code);
         await this.signInButton.click();
         await this.page.waitForLoadState('domcontentloaded');
+    }
+
+    async getPasswordAutocompleteAttribute(): Promise<string | null> {
+        return await this.passwordInput.getAttribute('autocomplete');
+    }
+
+    async getOtpAutocompleteAttribute(): Promise<string | null> {
+        return await this.totpCodeInput.getAttribute('autocomplete');
+    }
+
+    async getPasswordFieldValue(): Promise<string> {
+        return await this.passwordInput.inputValue();
+    }
+
+    async getOtpFieldValue(): Promise<string> {
+        return await this.totpCodeInput.inputValue();
+    }
+
+    async getEmailFieldValue(): Promise<string> {
+        return await this.emailAddressInput.inputValue();
+    }
+
+    async isOtpFieldVisible(): Promise<boolean> {
+        return await this.totpCodeInput.isVisible({ timeout: 2000 }).catch(() => false);
+    }
+
+    /**
+     * Check if the OTP/MFA screen is currently visible.
+     * Used for security testing to verify MFA screen is not accessible after back button.
+     */
+    async isOtpScreenVisible(): Promise<boolean> {
+        try {
+            return await this.totpCodeInput.isVisible({ timeout: 2000 });
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Check if the password screen is currently visible.
+     * Used for security testing to verify password screen is not accessible.
+     */
+    async isPasswordScreenVisible(): Promise<boolean> {
+        try {
+            return await this.passwordInput.isVisible({ timeout: 2000 });
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Get the current page URL (convenience method for testing).
+     */
+    async getCurrentPageUrl(): Promise<string> {
+        return this.page.url();
+    }
+
+    /**
+     * Toggle password visibility by clicking the Show/Hide button.
+     * The button text changes from "Show" to "Hide" and vice versa.
+     * The password field type changes from "password" to "text" and back.
+     */
+    async togglePasswordVisibility(): Promise<void> {
+        await this.passwordShowHideButton.click();
+        await this.page.waitForLoadState('domcontentloaded');
+    }
+
+    /**
+     * Get the current password field type attribute.
+     * Returns "password" when masked, "text" when visible.
+     */
+    async getPasswordFieldType(): Promise<string | null> {
+        return await this.passwordInput.getAttribute('type');
+    }
+
+    /**
+     * Get the current text of the password toggle button ("Show" or "Hide").
+     */
+    async getPasswordToggleButtonText(): Promise<string> {
+        return (await this.passwordShowHideButton.innerText()).trim();
+    }
+
+    /**
+     * Check if the password field is currently masked.
+     * Returns true if field type is "password", false if "text".
+     */
+    async isPasswordMasked(): Promise<boolean> {
+        const fieldType = await this.getPasswordFieldType();
+        return fieldType === 'password';
+    }
+
+    /**
+     * Check if the password toggle button (Show/Hide) is visible on the page.
+     */
+    async isPasswordToggleButtonVisible(): Promise<boolean> {
+        try {
+            return await this.passwordShowHideButton.isVisible({ timeout: 2000 });
+        } catch {
+            return false;
+        }
     }
 }

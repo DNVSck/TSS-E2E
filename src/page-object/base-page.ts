@@ -124,4 +124,49 @@ export class BasePage {
         await this.commonFinishButton.click();
     }
 
+    /**
+     * Click the browser back button and wait for navigation to complete.
+     * Returns the URL after the back navigation.
+     */
+    async clickBrowserBackButton(): Promise<string> {
+        await this.page.goBack();
+        await this.page.waitForLoadState('domcontentloaded');
+        return this.page.url();
+    }
+
+    /**
+     * Get the current page URL.
+     *
+     * Synchronous, like the Playwright API it wraps - page.url() reads a value
+     * already held by the page, it doesn't round-trip anywhere. Existing callers
+     * that `await` this keep working unchanged: awaiting a non-promise value is
+     * legal and resolves immediately.
+     */
+    getCurrentUrl(): string {
+        return this.page.url();
+    }
+
+    /**
+     * Navigate directly to a specific URL.
+     * Handles potential redirects or auth failures gracefully.
+     */
+    async navigateToUrlDirect(url: string): Promise<void> {
+        await this.page.goto(url, { waitUntil: 'domcontentloaded' });
+    }
+
+    /**
+     * Get all cookies from the current context.
+     */
+    async getSessionCookies(): Promise<any[]> {
+        return await this.page.context().cookies();
+    }
+
+    /**
+     * Get the browser instance from the current page context.
+     * Used for advanced browser operations like creating new contexts.
+     */
+    async getBrowser(): Promise<any> {
+        return await this.page.context().browser();
+    }
+
 }
