@@ -391,7 +391,7 @@ export async function removeTaskListRecord(page: Page, code: string): Promise<bo
             await expect(record).toHaveCount(0, { timeout: RECORD_REMOVAL_TIMEOUT });
             return true;
         } catch {
-            console.log(
+            await ReportLog.info(
                 `Record [${code}] is still listed after attempt ${attempt} of `
                 + `${RECORD_REMOVAL_ATTEMPTS}; pressing Delete again.`
             );
