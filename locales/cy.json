@@ -36,6 +36,9 @@
   "consignmentDetail": {
     "movementReferenceNumber": "Rhif cyfeirnod symud"
   },
+  "supplementaryDeclaration": {
+    "simplifiedDeclarationReference": "Cyfeirnod Datganiad Symlach"
+  },
   "gmrDetail": {
     "gmrId": "ID GMR"
   },
@@ -45,6 +48,10 @@
     "awaitingArrival": "Yn aros i gyrraedd",
     "arrived": "Wedi cyrraedd",
     "open": "Ar agor",
-    "traderInputRequired": "Mewnbwn Masnachwr sy'n Ofynnol"
+    "traderInputRequired": "Mewnbwn Masnachwr sy'n Ofynnol",
+    "closed": "Ar gau",
+    "processing": "Wrthi'n prosesu",
+    "paymentPending": "Taliad yn Aros",
+    "taxCalculation": "Cyfrifiad treth"
   }
 }

@@ -2,7 +2,7 @@ import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import {
-    summaryListValue, readFieldWhenVisible, readFieldIfPresent, switchToTabAndClickNew,
+    summaryListValue, readFieldWhenVisible, readFieldIfPresent, switchToTabAndClickNew, newRecordButton,
 } from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 
@@ -39,7 +39,7 @@ export class GmrDetailsPage extends BasePage {
 
         this.externalContactsTab = page.locator("//a[contains(@href, '/external-contacts#overview-tab')]");
 
-        this.newExternalContactButton = page.locator("form[action*='/external-contacts'] button[value='new-record']");
+        this.newExternalContactButton = newRecordButton(page, '/external-contacts');
 
         this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
         this.gmrId = summaryListValue(page, this.t!('gmrDetail.gmrId'));

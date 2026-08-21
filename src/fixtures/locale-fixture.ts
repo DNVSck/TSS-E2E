@@ -1,7 +1,8 @@
 import { test as base, TestInfo } from '@playwright/test';
 import { LOCALES_CONSTANT } from '../constant/locales-constant';
-import fs from 'fs';
-import path from 'path';
+import { ReportLog } from '../core/report/report-log';
+import fs from 'node:fs';
+import path from 'node:path';
 
 type DotPaths<T> = {
   [K in keyof T & string]: T[K] extends Record<string, unknown>
@@ -45,18 +46,21 @@ export const localeFixture = {
     const projectName = testInfo.project.name;
     const currentLocale = projectName.includes(LOCALES_CONSTANT.CY_GB) ? LOCALES_CONSTANT.CY_GB : LOCALES_CONSTANT.EN_GB;
 
-    console.log(`Locale fixture loading for project: ${projectName}, locale: ${currentLocale}`);
+    // A parameter, not a step: which locale a test ran under is a FACT about the test,
+    // not a unit of work it performed. As steps these were three lines on every test's
+    // timeline saying the same thing, and the two "Loaded ... locale" ones only repeated
+    // what the locale itself already says. As a parameter it sits beside the other facts
+    // in the report, where anyone reading a failure would look for it.
+    ReportLog.setParameter('Locale', currentLocale);
 
     let messages: Record<string, any> = {};
 
     if (currentLocale === LOCALES_CONSTANT.CY_GB) {
       const messagesPath = path.resolve(process.cwd(), localeCyPath);
       messages = require(messagesPath);
-      console.log(`Loaded Welsh locale for t() function`);
     } else {
       const messagesPath = path.resolve(process.cwd(), localeEnPath);
       messages = require(messagesPath);
-      console.log(`Loaded English locale for t() function`);
     }
 
     const t: TFunction = (key: string): string => {

@@ -9,6 +9,19 @@ import { generateValidArrivalDate } from '../helper/data-generate-helper';
 import { CARRIER_EORI, HAULIER_EORI } from '../../config/environment';
 
 
+/**
+ * The registration the movement declares for its means of transport.
+ *
+ * Named rather than typed in place because a SECOND screen has to carry the same
+ * value: the supplementary declaration raised from this movement asks for the vehicle
+ * again, pre-populated with something else, and the two have to agree. See
+ * SupplementaryDeclarationData.meansOfTransportRegistration.
+ */
+export const VEHICLE_REGISTRATION_NUMBER = 'AB12CDE';
+
+/** The unaccompanied twin: a trailer instead of a vehicle. */
+export const TRAILER_REGISTRATION_NUMBER = 'TR12LER';
+
 export interface MovementData {
     typeOfMovement: string;
     roleInThisMovement: string;
@@ -40,7 +53,7 @@ const defaults: Omit<MovementData, 'arrivalDateTime'> = {
     roleInThisMovement: ROLE_IN_MOVEMENT.ON_BEHALF_OF_CARRIER,
     haulierSeparateThisMovement: SEPARATE_HAULIER.CARRIER_IS_HAULIER,
     imoNumber: '9198941',
-    vehicleRegistrationNumber: 'AB12CDE',
+    vehicleRegistrationNumber: VEHICLE_REGISTRATION_NUMBER,
     conveyanceReferenceNumber: '',
     nationalityOfMeanOfTransport: COUNTRY_CODE.UNITED_KINGDOM,
     sealNumber: '',
@@ -53,7 +66,7 @@ const defaults: Omit<MovementData, 'arrivalDateTime'> = {
     placeOfDelivery: 'Belfast',
     typeOfPassiveTransport: PASSIVE_TRANSPORT_TYPE.BUS,
     transportCharges: TRANSPORT_CHARGES_OPTION_CODE.ACCOUNT_HOLDER_WITH_CARRIER,
-    trailerRegistrationNumber: 'TR12LER',
+    trailerRegistrationNumber: TRAILER_REGISTRATION_NUMBER,
     carrierEori: CARRIER_EORI,
     haulierEori: HAULIER_EORI,
 };

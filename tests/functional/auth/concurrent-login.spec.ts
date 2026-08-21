@@ -1,13 +1,18 @@
 import { expect, getBaseUrl, test } from '../../test-hooks';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
-import { getPrimaryHolderOrSkip } from '../../../src/helper/accounts-helper';
+import { COMPANY_PROFILE, accountFor, isProfileConfigured } from '../../../src/auth/credentials';
 
 const CONCURRENT_LOGIN_TEST_ID = '2550';
 
-test.describe.configure({ mode: 'serial' });
-
 test.describe('TSS Portal concurrent login', () => {
+
+    // Decided once, when the file is read. Deciding it inside the test body instead
+    // builds the second browser context first and then throws it away.
+    test.skip(
+        !isProfileConfigured(COMPANY_PROFILE.AUTH_ACCOUNT),
+        'AUTH_ACCOUNT_USER_NAME_1 is not configured for this environment'
+    );
 
     test.beforeEach(async () => {
         await ReportLog.setFeature('Concurrent Login');
@@ -19,7 +24,7 @@ test.describe('TSS Portal concurrent login', () => {
             reportTestCaseLink(CONCURRENT_LOGIN_TEST_ID);
             await ReportLog.setStory('Concurrent Login from Two Devices');
 
-            const account = getPrimaryHolderOrSkip();
+            const account = accountFor(COMPANY_PROFILE.AUTH_ACCOUNT, testInfo.parallelIndex);
 
             const result = await concurrentLoginFlow.signInOnBothDevices({
                 credentials: account,

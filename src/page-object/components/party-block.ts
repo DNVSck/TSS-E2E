@@ -1,6 +1,6 @@
 import { BasePage } from '../base-page';
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue } from '../../helper/element-helper';
+import { selectDropdownValue, currentWizardStep, waitForWizardStepToChange } from '../../helper/element-helper';
 
 /**
  * A trade party involved in a consignment. Consignment declaration repeats the
@@ -70,10 +70,6 @@ export function toPartyAddress<Prefix extends string>(
 }
 
 
-function currentStep(url: string): string {
-    return new URL(url).pathname.split('~').pop() ?? '';
-}
-
 export class PartyBlock extends BasePage {
     private readonly eoriInput: Locator;
     private readonly nameInput: Locator;
@@ -121,20 +117,16 @@ export class PartyBlock extends BasePage {
         // also proves the previous screen has finished handing over; reading the
         // URL first could capture the step we are still leaving.
         await this.fillEori(eori);
-        const eoriStep = currentStep(this.page.url());
+        const eoriStep = currentWizardStep(this.page);
 
         await this.clickContinueButton();
 
         // Continue posts back to the same step, then redirects roughly 400ms later.
         // Reading page.url() straight after the click would therefore always see
         // the EORI screen, and every party would look "accepted".
-        await this.page.waitForFunction(
-            from => new URL(location.href).pathname.split('~').pop() !== from,
-            eoriStep,
-            { timeout: timeoutMs }
-        );
+        await waitForWizardStepToChange(this.page, eoriStep, timeoutMs);
 
-        return currentStep(this.page.url()) === `${this.party}-profile` ? 'address' : 'accepted';
+        return currentWizardStep(this.page) === `${this.party}-profile` ? 'address' : 'accepted';
     }
 
 

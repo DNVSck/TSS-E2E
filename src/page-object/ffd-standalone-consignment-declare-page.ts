@@ -15,18 +15,19 @@ import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper
  *     arrival date/time, port of arrival    -> MovementDeclarePage
  *   - buyer, transport and destination,
  *     trader reference, invoice currency    -> ConsignmentDeclarePage
+ *   - delivery terms, delivery country and
+ *     place, method of payment              -> CommercialTermsDeclarePage
  *
  * So do NOT copy a locator here that already exists in one of those.
+ *
+ * That last line moved out on 2026-08-20: the supplementary declaration shows those
+ * four screens too, so they were never FFD-only and this file was the wrong owner.
  */
 export class FfdStandaloneConsignmentDeclarePage extends BasePage {
     private readonly inlandModeOfTransportDropdown: Locator;
     private readonly warehouseTypeDropdown: Locator;
     private readonly warehouseIdentifierInput: Locator;
-    private readonly incotermDropdown: Locator;
-    private readonly unlocodeCountryDropdown: Locator;
-    private readonly unlocodePlaceDropdown: Locator;
     private readonly natureOfGoodsDropdown: Locator;
-    private readonly methodOfPaymentDropdown: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -34,11 +35,7 @@ export class FfdStandaloneConsignmentDeclarePage extends BasePage {
         this.inlandModeOfTransportDropdown = page.locator('select#inlandModeOfTransport');
         this.warehouseTypeDropdown = page.locator('select#warehouseType');
         this.warehouseIdentifierInput = page.locator('input#warehouseIdentifier');
-        this.incotermDropdown = page.locator('select#incoterm');
-        this.unlocodeCountryDropdown = page.locator('select#unlocodeCountry');
-        this.unlocodePlaceDropdown = page.locator('select#unlocodePlace');
         this.natureOfGoodsDropdown = page.locator('select#natureOfGoods');
-        this.methodOfPaymentDropdown = page.locator('select#methodOfPayment');
     }
 
     /** "What is the inland mode of transport?" */
@@ -70,28 +67,6 @@ export class FfdStandaloneConsignmentDeclarePage extends BasePage {
 
 
     /**
-     * "Delivery terms" — one screen carrying the INCOTERM and whether the trader knows
-     * the UN/LOCODE. Answering no leads to picking the country and place instead.
-     */
-    async enterDeliveryTerms(incoterm: string, isKnownUnlocode: boolean): Promise<void> {
-        await selectDropdownValue(this.incotermDropdown, incoterm);
-        await checkRadioByValue(this.page, 'isKnownUnlocode', isKnownUnlocode ? 'yes' : 'no');
-        await this.clickContinueButton();
-    }
-
-    /** "Delivery country" */
-    async selectDeliveryCountry(countryCode: string): Promise<void> {
-        await selectDropdownValue(this.unlocodeCountryDropdown, countryCode);
-        await this.clickContinueButton();
-    }
-
-    /** "Delivery place" — the options depend on the country chosen a screen earlier. */
-    async selectDeliveryPlace(unlocodePlace: string): Promise<void> {
-        await selectDropdownValue(this.unlocodePlaceDropdown, unlocodePlace);
-        await this.clickContinueButton();
-    }
-
-    /**
      * "Nature of goods", screen one — is every goods item of the same nature?
      * Answering yes leads to the second screen, which asks what that nature is.
      */
@@ -108,9 +83,4 @@ export class FfdStandaloneConsignmentDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
-    /** "Method of payment" */
-    async selectMethodOfPayment(methodOfPayment: string): Promise<void> {
-        await selectDropdownValue(this.methodOfPaymentDropdown, methodOfPayment);
-        await this.clickContinueButton();
-    }
 }

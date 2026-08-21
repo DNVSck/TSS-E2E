@@ -242,6 +242,19 @@ export class ConsignmentDeclarePage extends BasePage {
         await this.enterPartyEoriAndAddress(this.exporter, exporterEORI, address);
     }
 
+    /**
+     * The exporter's address screen on its own, with no EORI screen before it.
+     *
+     * A supplementary declaration asks for the exporter this way: the frontier
+     * declaration it inherits from never captured one, and the SD goes straight to
+     * "Enter exporter profile" (route `exporter-journey~exporter-profile`) rather than
+     * asking for an EORI and deciding from that. Same screen, same six fields - only
+     * the way in differs, so it reuses the same party block.
+     */
+    async enterExporterProfile(address: PartyAddress): Promise<void> {
+        await this.exporter.enterAddress(address);
+    }
+
     // ===================== Seller (same as exporter?) =====================
 
     async selectSellerSameAsExporterYes(): Promise<void> {

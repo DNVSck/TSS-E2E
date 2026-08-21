@@ -1,13 +1,15 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { ConsignmentSummaryPage } from './consignment-summary-page';
-import { TFunction } from '../fixtures/locale-fixture';
+import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { summaryListValue, readFieldWhenVisible, readFieldIfPresent } from '../helper/element-helper';
-import { isTraderInputRequiredConsignmentStatus } from '../helper/consignment-status-helper';
+import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
 
 /** This heavy detail page can be slow to paint under parallel load. */
 const DETAIL_READ_TIMEOUT = 15_000;
 /** The MRN is populated asynchronously after the consignment is authorised. */
 const MRN_POLL_TIMEOUT = 60_000;
+
+export const STATUS_POLL_TIMEOUT = 150_000;
 
 /**
  * The MRN reduced to its alphanumeric characters. The service injects zero-width
@@ -71,7 +73,7 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
             }
 
             const status = await readFieldIfPresent(this.status);
-            if (isTraderInputRequiredConsignmentStatus(status, this.t!)) {
+            if (isTraderInputRequiredStatus(status, this.t!)) {
                 return;
             }
 
@@ -86,6 +88,39 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
 
     async getConsignmentStatus(): Promise<string> {
         return readFieldWhenVisible(this.status, DETAIL_READ_TIMEOUT);
+    }
+
+    /**
+     * Poll the page until the status reads the expected one, and return it.
+     *
+     * A reload loop rather than a wait on the locator: the status is rendered
+     * server-side, so a value that changes because CDS answered only appears on the
+     * next request. Nothing here sleeps - each attempt asks the real question and the
+     * loop ends the moment the answer changes, so a fast environment pays no more than
+     * the first round trip.
+     *
+     * Throws on timeout, unlike the soft assertions around it: a status that never
+     * arrives means the thing that was supposed to cause it did not happen, and every
+     * later check would be measuring the wrong state.
+     */
+    async waitForStatus(
+        expectedStatusKey: TranslationKey,
+        timeout = STATUS_POLL_TIMEOUT
+    ): Promise<string> {
+        const expected = this.t!(expectedStatusKey);
+        let status = '';
+
+        await expect(async () => {
+            status = await readFieldIfPresent(this.status);
+            if (status === expected) {
+                return;
+            }
+
+            await this.page.reload();
+            expect(await readFieldIfPresent(this.status), 'Consignment status').toBe(expected);
+        }).toPass({ timeout, intervals: [2_000, 3_000, 5_000] });
+
+        return status;
     }
 
     /** Soft-assert the consignment status is "Awaiting arrival"; returns the actual status. */

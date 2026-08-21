@@ -14,6 +14,11 @@ node_modules/
 /reports/
 /allure-results/
 /allure-report/
+/allure-report-share/
+/allure-report-share.zip
+
+# Zipped env files - real credentials, never committed. See the env:zip script.
+/env-files.zip
 
 # Environment Files
 .env.*

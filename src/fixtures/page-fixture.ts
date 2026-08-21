@@ -28,6 +28,12 @@ import { AgentBanner } from '../page-object/components/agent-banner';
 import { ConsignmentDetailPage } from '../page-object/consignment-detail-page';
 import { StandaloneConsignmentDeclarePage } from '../page-object/standalone-consignment-declare-page';
 import { FfdStandaloneConsignmentDeclarePage } from '../page-object/ffd-standalone-consignment-declare-page';
+import { CommercialTermsDeclarePage } from '../page-object/commercial-terms-declare-page';
+import { DeclarationOverviewPage } from '../page-object/declaration-overview-page';
+import { SupplementaryDeclarationOverviewPage } from '../page-object/supplementary-declaration-overview-page';
+import { SupplementaryDeclarationGoodsRecordPage } from '../page-object/supplementary-declaration-goods-record-page';
+import { Wizard } from '../page-object/components/wizard';
+import { SupplementaryDeclarationStep } from '../constant/supplementary-declaration-step-constant';
 import { TaskListPage } from '../page-object/task-list-page';
 
 
@@ -62,6 +68,12 @@ export type PageFixtureType = {
     standaloneConsignmentDeclarePage: StandaloneConsignmentDeclarePage;
     // The FFD-only screens. Empty until they are built - see the page object.
     ffdStandaloneConsignmentDeclarePage: FfdStandaloneConsignmentDeclarePage;
+    commercialTermsDeclarePage: CommercialTermsDeclarePage;
+    // The declaration list, and the supplementary declaration reached through it.
+    declarationOverviewPage: DeclarationOverviewPage;
+    supplementaryDeclarationOverviewPage: SupplementaryDeclarationOverviewPage;
+    supplementaryDeclarationGoodsRecordPage: SupplementaryDeclarationGoodsRecordPage;
+    supplementaryDeclarationWizard: Wizard<SupplementaryDeclarationStep>;
     consignmentTaskListPage: TaskListPage;
 }
 
@@ -182,6 +194,26 @@ export const pageFixture: ExtendParams[0] = {
 
     ffdStandaloneConsignmentDeclarePage: async ({ page }, use) => {
         await use(new FfdStandaloneConsignmentDeclarePage(page));
+    },
+
+    commercialTermsDeclarePage: async ({ page }, use) => {
+        await use(new CommercialTermsDeclarePage(page));
+    },
+
+    declarationOverviewPage: async ({ page }, use) => {
+        await use(new DeclarationOverviewPage(page));
+    },
+
+    supplementaryDeclarationOverviewPage: async ({ page, t }, use) => {
+        await use(new SupplementaryDeclarationOverviewPage(page, t));
+    },
+
+    supplementaryDeclarationGoodsRecordPage: async ({ page }, use) => {
+        await use(new SupplementaryDeclarationGoodsRecordPage(page));
+    },
+
+    supplementaryDeclarationWizard: async ({ page }, use) => {
+        await use(new Wizard<SupplementaryDeclarationStep>(page));
     },
 
     consignmentTaskListPage: async ({ page }, use) => {

@@ -1,4 +1,5 @@
 import { LOCALES_CONSTANT } from '../src/constant/locales-constant';
+import { tssOrigin } from '../src/constant/tss-host-constant';
 
 export type Locale = 'all' | 'en' | 'cy';
 
@@ -98,6 +99,14 @@ export const IMPORTER_SDE = required('IMPORTER_SDE');
 export const IMPORTER_CWP = required('IMPORTER_CWP');
 /** Excise Warehouse authorisation. */
 export const IMPORTER_EXW = required('IMPORTER_EXW');
+/**
+ * Deferment of Payment authorisation — cited on the C506 document.
+ *
+ * Cited a SECOND time, as the [1207] document, with its "XIDPO" prefix stripped: what
+ * is left is the deferment account number the duty is actually charged to. One value,
+ * two forms, and CDS wants both — see {@link defermentAccountNumber}.
+ */
+export const IMPORTER_DPO = required('IMPORTER_DPO');
 
 /**
  * The counterparties a declaration names. One key per ROLE even where one company
@@ -133,4 +142,10 @@ export const IS_ISC2_MOCK = boolOrDefault(process.env.ISC2_MOCK_SERVER);
 export const RMQ_HOST     = process.env.RMQ_HOST     ?? '';
 export const RMQ_USERNAME = process.env.RMQ_USERNAME ?? '';
 export const RMQ_PWD      = process.env.RMQ_PWD      ?? '';
+
+export const CDS_MOCK_HOST = tssOrigin(ENV);
+
+export const CDS_TOKEN = process.env.CDS_TOKEN?.trim() ?? '';
+
+export const IS_CDS_MOCK_AVAILABLE = CDS_TOKEN !== '';
 

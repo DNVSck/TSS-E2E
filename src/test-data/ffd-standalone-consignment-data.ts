@@ -1,4 +1,5 @@
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
+import { UNLOCODE } from '../constant/unlocode-constant';
 import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
@@ -7,7 +8,7 @@ import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods
 import { INLAND_MODE_OF_TRANSPORT } from '../constant/inland-mode-of-transport-constant';
 import { INCOTERM } from '../constant/incoterm-constant';
 import { METHOD_OF_PAYMENT } from '../constant/method-of-payment-constant';
-import { WAREHOUSE_TYPE } from '../constant/warehouse-type-constant';
+import { WAREHOUSE_TYPE, WarehouseTypeCode } from '../constant/warehouse-type-constant';
 import { DECLARATION_PROCEDURE } from '../constant/declaration-procedure-constant';
 import { NATURE_OF_GOODS } from '../constant/nature-of-goods-constant';
 import { BUYER_EORI, EXPORTER_EORI } from '../../config/environment';
@@ -106,7 +107,7 @@ export interface FfdStandaloneConsignmentData {
     goodsDomesticStatus: string;
 
     // Customs-warehousing tail only.
-    warehouseType?: string;
+    warehouseType?: WarehouseTypeCode;
     warehouseIdentifier?: string;
 
     /**
@@ -202,7 +203,7 @@ const defaults: Omit<FfdStandaloneConsignmentData, 'transportDocumentNumber'> = 
     isKnownUnlocode: false,
     deliveryCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
     // A UN/LOCODE from the delivery country's list - the options depend on the country.
-    deliveryPlaceUnlocode: 'GBBEL',
+    deliveryPlaceUnlocode: UNLOCODE.BELFAST,
 
     isSameNatureOfGoods: true,
     natureOfGoods: NATURE_OF_GOODS.OUTRIGHT_PURCHASE_SALE,
@@ -241,7 +242,7 @@ export const ffdStandaloneConsignment = (
     return {
         ...data,
         // Derived AFTER the overrides are applied, because the identifier CARRIES the
-        // warehouse type letter (GB + U + 1234567). Computing it any earlier would let a
+        // warehouse type letter (U + 1234567 + GB). Computing it any earlier would let a
         // spec change the type and be left with an identifier still naming the old one -
         // two screens of the same declaration contradicting each other, which the form
         // would likely accept and no assertion here would catch.

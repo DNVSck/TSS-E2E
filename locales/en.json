@@ -36,6 +36,9 @@
   "consignmentDetail": {
     "movementReferenceNumber": "Movement reference number"
   },
+  "supplementaryDeclaration": {
+    "simplifiedDeclarationReference": "Simplified Declaration Reference"
+  },
   "gmrDetail": {
     "gmrId": "GMR ID"
   },
@@ -45,6 +48,10 @@
     "awaitingArrival": "Awaiting arrival",
     "arrived": "Arrived",
     "open": "Open",
-    "traderInputRequired": "Trader Input Required"
+    "traderInputRequired": "Trader Input Required",
+    "closed": "Closed",
+    "processing": "Processing",
+    "paymentPending": "PaymentPending",
+    "taxCalculation": "Tax calculation"
   }
 }

@@ -4,6 +4,18 @@ import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue } from 
 
 const COMMODITY_SUBMIT_TIMEOUT = 45_000;
 
+/**
+ * How long the NIRMS screen gets to appear before the wizard is taken to have skipped it.
+ *
+ * Short on purpose. The previous screen has already been submitted when this is asked, so
+ * the next screen is either painting or is a different one - there is nothing slow to wait
+ * for, and every declaration that does not qualify for NIRMS pays this once.
+ */
+const NIRMS_SCREEN_TIMEOUT = 5_000;
+
+/** The radio group on the NIRMS screen, addressed by the name its inputs post. */
+const USE_NIRMS_RADIO_NAME = 'useNirms';
+
 export class GoodsDeclarePage extends BasePage {
 
     private readonly useTgpYesOption: Locator;
@@ -35,6 +47,7 @@ export class GoodsDeclarePage extends BasePage {
 
     private readonly grossMassInput: Locator;
     private readonly netMassInput: Locator;
+    private readonly useNirmsRadios: Locator;
 
     private readonly goodsProcedureCodeDropdown: Locator;
 
@@ -42,6 +55,11 @@ export class GoodsDeclarePage extends BasePage {
     private readonly warehouseTypeDropdown: Locator;
     private readonly warehouseIdentifierInput: Locator;
 
+    private readonly natureOfGoodsDropdown: Locator;
+    private readonly preferenceDropdown: Locator;
+    private readonly countryOfPreferentialOriginDropdown: Locator;
+    private readonly valuationMethodDropdown: Locator;
+    private readonly statisticalValueInput: Locator;
     private readonly invoiceNumberInput: Locator;
     private readonly itemCurrencyDropdown: Locator;
     private readonly itemPriceAmountInput: Locator;
@@ -94,6 +112,7 @@ export class GoodsDeclarePage extends BasePage {
         // "Enter weight information"
         this.grossMassInput = page.locator("input#grossMass");
         this.netMassInput = page.locator("input#netMass");
+        this.useNirmsRadios = page.locator("input[name='useNirms']");
     
         // "Goods procedure codes"
         this.goodsProcedureCodeDropdown = page.locator("select#procedureCode");
@@ -107,6 +126,12 @@ export class GoodsDeclarePage extends BasePage {
         this.warehouseIdentifierInput = page.locator("input#warehouseIdentifier");
 
         // "Enter invoice details"
+        this.natureOfGoodsDropdown = page.locator("select#natureOfGoods");
+        this.preferenceDropdown = page.locator("select#preference");
+        this.countryOfPreferentialOriginDropdown = page.locator("select#countryOfPreferentialOrigin");
+        this.valuationMethodDropdown = page.locator("select#valuationMethod");
+        this.statisticalValueInput = page.locator("input#statisticalValue");
+
         this.invoiceNumberInput = page.locator("input#invoiceNumber");
         this.itemCurrencyDropdown = page.locator("select#itemCurrency");
         this.itemPriceAmountInput = page.locator("input#itemPrice");
@@ -197,6 +222,34 @@ export class GoodsDeclarePage extends BasePage {
 
     async selectNationalAdditionalCode(nationalAdditionalCode: string): Promise<void> {
         await selectDropdownValue(this.nationalAdditionalCodeDropdown, nationalAdditionalCode);
+    }
+
+    /**
+     * "Do you want to use NIRMS for these goods?" - answered only when the service asks.
+     *
+     * Whether it asks cannot be decided from the journey's own flags: the screen appears
+     * when the IMPORTER holds a NIRMS authorisation AND the commodity supports it, which
+     * is a fact about the environment's data rather than about this declaration. So the
+     * wizard looks, answers if it is there, and reports which happened.
+     *
+     * Returns whether the screen was shown.
+     */
+    async answerUseNirmsIfPresent(useNirms: boolean): Promise<boolean> {
+        // waitFor, NOT isVisible: isVisible answers immediately and ignores its timeout
+        // (it is documented as deprecated there), so it reports "not shown" for a screen
+        // that is merely still painting - which is exactly the case here, one submit
+        // earlier. Throwing is the expected outcome when the screen is genuinely absent.
+        const shown = await this.useNirmsRadios.first()
+            .waitFor({ state: 'visible', timeout: NIRMS_SCREEN_TIMEOUT })
+            .then(() => true, () => false);
+
+        if (!shown) {
+            return false;
+        }
+
+        await checkRadioByValue(this.page, USE_NIRMS_RADIO_NAME, useNirms ? 'yes' : 'no');
+        await this.clickContinueButton();
+        return true;
     }
 
     async inputShippingMarks(shippingMarks: string): Promise<void> {
@@ -364,5 +417,60 @@ export class GoodsDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
+    // The three screens below are asked only on a supplementary declaration. A frontier
+    // declaration never collects them, which is the point of an SD: they are what the
+    // duty is calculated from.
 
+    /**
+     * "What is the reason/nature of the goods?"
+     *
+     * The FFD standalone journey asks this at CONSIGNMENT level, over two screens, and
+     * keeps its own pair on FfdStandaloneConsignmentDeclarePage. This is the goods-item
+     * screen of the same name - one item, one answer - and shares only the field id.
+     */
+    async selectNatureOfGoods(natureOfGoods: string): Promise<void> {
+        await selectDropdownValue(this.natureOfGoodsDropdown, natureOfGoods);
+        await this.clickContinueButton();
+    }
+
+    /**
+     * "Enter preference and valuation details" - one screen carrying three answers.
+     *
+     * The country of preferential origin is optional and the app says so in its own
+     * label, so an undefined value leaves the dropdown alone rather than selecting a
+     * blank option, which is a different thing and can fail validation.
+     */
+    async enterPreferenceAndValuation(
+        preference: string,
+        valuationMethod: string,
+        countryOfPreferentialOrigin?: string
+    ): Promise<void> {
+        await selectDropdownValue(this.preferenceDropdown, preference);
+        if (countryOfPreferentialOrigin) {
+            await selectDropdownValue(this.countryOfPreferentialOriginDropdown, countryOfPreferentialOrigin);
+        }
+        await selectDropdownValue(this.valuationMethodDropdown, valuationMethod);
+        await this.clickContinueButton();
+    }
+
+    /**
+     * "Commodity information" as a supplementary declaration asks it: the code and the
+     * description arrive from the frontier declaration, so only the supplementary units
+     * are typed.
+     *
+     * The screen labels that field "(optional)" and the service then refuses to move on
+     * without it - the tariff decides, and a commodity measured in units requires them.
+     * Measured on SIT 2026-08-20 against commodity 0601101000, which answers "Enter the
+     * supplementary units" to an empty field its own label called optional.
+     */
+    async enterSupplementaryUnits(supplementaryUnits: string): Promise<void> {
+        await this.inputSupplementaryUnits(supplementaryUnits);
+        await this.clickContinueButton();
+    }
+
+    /** "Statistical value" */
+    async enterStatisticalValue(statisticalValue: string): Promise<void> {
+        await this.statisticalValueInput.fill(statisticalValue);
+        await this.clickContinueButton();
+    }
 }

@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { DateTimeUtil } from '../core/util/date-time-util';
 import { TRANSPORT_DOCUMENT_FORMAT, TypeOfMovementKey } from '../constant/type-of-movement-code-constant';
+import { WarehouseTypeCode } from '../constant/warehouse-type-constant';
 
 // Generators for values shaped by THIS service's rules - a valid arrival window, a
 // transport document number a real trader would enter. They live here rather than in
@@ -15,6 +16,12 @@ import { TRANSPORT_DOCUMENT_FORMAT, TypeOfMovementKey } from '../constant/type-o
  * and time plus 30 minutes, formatted as `YYYY-MM-DDTHH:mm` for the datetime-local
  * input. The 30-minute lead keeps it safely in the future without tripping the
  * form's far-future validation.
+ *
+ * The lead is also what a test declaring an ARRIVED movement has to wait out, so a
+ * shorter one (3 minutes was tried on feature/representative-authority) reaches those
+ * cases sooner. Left at 30 here deliberately - see Trung, 2026-08-20 - because nothing
+ * currently needs the shorter wait, and the reason for the number was lost once already
+ * when it was changed without one.
  */
 export function generateValidArrivalDate(): string {
     const arrival = new Date(Date.now() + 30 * 60 * 1000);
@@ -120,19 +127,43 @@ export function generateRandomContainerIdentifierNumber(): string {
 const WAREHOUSE_AUTHORISATION_DIGITS = 7;
 
 /**
- * A warehouse identifier for the "Warehouse identifier" screen: an authorisation
- * number followed by the authorising country.
+ * A warehouse identifier for the "Warehouse identifier" screen: the warehouse type
+ * letter, an authorisation number, and the authorising country.
  *
- *     1234567 GB
- *     ^^^^^^^ ^^ authorising country
- *     authorisation number assigned by the customs authority
+ *     U 1234567 GB
+ *     ^ ^^^^^^^ ^^ authorising country
+ *     | authorisation number assigned by the customs authority
+ *     warehouse type, repeating the dropdown beside this field
  *
- * It carries NO warehouse type letter, unlike an earlier version of this function.
- * The screen now asks for the type in its own dropdown, so putting the letter in the
- * identifier as well would be stating it twice - and the two could disagree, giving a
- * declaration whose identifier contradicts the type beside it. One field, one answer.
+ * WORKING AROUND A DEFECT (Trung, 2026-08-19). The type letter is stated twice - once
+ * in the screen's own dropdown and again at the front of this identifier - which is not
+ * how the field is meant to work. The service currently rejects an identifier that does
+ * not repeat it, so the tests repeat it. Take the prefix out when that is fixed; nothing
+ * else here depends on it.
+ *
+ * The type is a REQUIRED argument rather than a default, because that is what keeps the
+ * two fields agreeing: a caller cannot generate an identifier without saying which type
+ * it belongs to, so there is no way to end up with one naming a type the dropdown does
+ * not hold.
  */
-export function generateRandomWarehouseIdentifier(countryCode = 'GB'): string {
+export function generateRandomWarehouseIdentifier(
+    warehouseType: WarehouseTypeCode,
+    countryCode = 'GB'
+): string {
     const authorisationNumber = faker.string.numeric({ length: WAREHOUSE_AUTHORISATION_DIGITS });
-    return `${authorisationNumber}${countryCode}`;
+    return `${warehouseType}${authorisationNumber}${countryCode}`;
+}
+
+/** Digits in the invoice number a supplementary declaration cites. */
+const INVOICE_NUMBER_DIGITS = 8;
+
+/**
+ * An invoice number for the supplementary declaration's "Enter invoice details" screen.
+ *
+ * Entering one has a side effect worth knowing about: the service adds an `[N935]`
+ * document reference (the invoice) to the goods item by itself. Nothing needs to
+ * declare that document separately.
+ */
+export function generateRandomInvoiceNumber(): string {
+    return `INV${faker.string.numeric({ length: INVOICE_NUMBER_DIGITS })}`;
 }

@@ -27,6 +27,11 @@ import { GoodsOverviewFlow } from '../flows/goods-item/goods-overview-flow';
 import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
 import { RepresentTraderFlow } from '../flows/represent-trader-flow';
 import { Ics2NotificationFlow } from '../flows/ics2-notification-flow';
+import { CdsNotificationFlow } from '../flows/cds-notification-flow';
+import { TriggerFinalStatusThroughCdsFlow } from '../flows/common-flows/trigger-final-status-through-cds-flow';
+import { SupplementaryDeclarationSteps } from '../flows/supplementary-declaration/supplementary-declaration-steps';
+import { CompleteAndSubmitSupplementaryDeclarationFlow } from '../flows/common-flows/complete-and-submit-supplementary-declaration-flow';
+import { GenerateSdDraftFromEnsSfdFlow } from '../flows/common-flows/generate-sd-draft-from-ens-sfd-flow';
 import { ConcurrentLoginFlow } from '../flows/concurrent-login-flow';
 import { LocaleFixtureType } from './locale-fixture';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
@@ -59,6 +64,8 @@ export type FlowFixtureType = {
 
     // Common Flows for ENS integrated flow: ENS Only, ENS-SFD, ENS-IMMI, ENS-EIDR
     ics2NotificationFlow: Ics2NotificationFlow;
+    cdsNotificationFlow: CdsNotificationFlow;
+    triggerFinalStatusThroughCdsFlow: TriggerFinalStatusThroughCdsFlow;
 
     // Common Flows
     createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow;
@@ -68,6 +75,13 @@ export type FlowFixtureType = {
     createAndSubmitImmiStandaloneFlow: CreateAndSubmitImmiStandaloneFlow;
     createAndSubmitSfdStandaloneFlow: CreateAndSubmitSfdStandaloneFlow;
     createAndSubmitFfdStandaloneFlow: CreateAndSubmitFfdStandaloneFlow;
+
+    // The supplementary declaration, which no journey CREATES: the service raises it
+    // once a frontier declaration clears, so this one is asked for alongside the
+    // journey that produced it rather than instead of it.
+    supplementaryDeclarationSteps: SupplementaryDeclarationSteps;
+    generateSdDraftFromEnsSfdFlow: GenerateSdDraftFromEnsSfdFlow;
+    completeAndSubmitSupplementaryDeclarationFlow: CompleteAndSubmitSupplementaryDeclarationFlow;
     concurrentLoginFlow: ConcurrentLoginFlow;
 }
 
@@ -140,8 +154,20 @@ export const flowFixture: ExtendParams[0] = {
         await use(new AddNewGMRFlow(movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage));
     },
 
-    ics2NotificationFlow: async ({ rmqApiRequest }, use) => {
-        await use(new Ics2NotificationFlow(rmqApiRequest));
+    ics2NotificationFlow: async ({ ics2MockApiClient }, use) => {
+        await use(new Ics2NotificationFlow(ics2MockApiClient));
+    },
+
+    cdsNotificationFlow: async ({ cdsMockApiClient }, use) => {
+        await use(new CdsNotificationFlow(cdsMockApiClient));
+    },
+
+    triggerFinalStatusThroughCdsFlow: async ({
+        cdsNotificationFlow, movementOverviewFlow, consignmentOverviewFlow,
+    }, use) => {
+        await use(new TriggerFinalStatusThroughCdsFlow(
+            cdsNotificationFlow, movementOverviewFlow, consignmentOverviewFlow
+        ));
     },
 
     createAndSubmitEnsDeclarationFlow: async ({
@@ -198,15 +224,45 @@ export const flowFixture: ExtendParams[0] = {
         ));
     },
 
+    supplementaryDeclarationSteps: async ({
+        supplementaryDeclarationWizard, movementDeclarePage, consignmentDeclarePage,
+        commercialTermsDeclarePage, goodsItemDeclarePage
+    }, use) => {
+        await use(new SupplementaryDeclarationSteps(
+            supplementaryDeclarationWizard, movementDeclarePage, consignmentDeclarePage,
+            commercialTermsDeclarePage, goodsItemDeclarePage
+        ));
+    },
+
+    generateSdDraftFromEnsSfdFlow: async ({
+        createAndSubmitEnsDeclarationFlow, triggerFinalStatusThroughCdsFlow, representTraderFlow
+    }, use) => {
+        await use(new GenerateSdDraftFromEnsSfdFlow(
+            createAndSubmitEnsDeclarationFlow, triggerFinalStatusThroughCdsFlow, representTraderFlow
+        ));
+    },
+
+    completeAndSubmitSupplementaryDeclarationFlow: async ({
+        basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
+        supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
+        additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, authAccount
+    }, use) => {
+        await use(new CompleteAndSubmitSupplementaryDeclarationFlow(
+            basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
+            supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
+            additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, authAccount
+        ));
+    },
+
     createAndSubmitFfdStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
         standaloneConsignmentSteps, movementSteps, consignmentSteps,
-        ffdStandaloneConsignmentDeclarePage, goodsItemSteps,
+        ffdStandaloneConsignmentDeclarePage, commercialTermsDeclarePage, goodsItemSteps,
         consignmentOverviewFlow, goodsOverviewFlow, authAccount
     }, use) => {
         const addConsignment = new AddNewFfdStandaloneConsignmentFlow(
             standaloneConsignmentSteps, movementSteps, consignmentSteps,
-            ffdStandaloneConsignmentDeclarePage
+            ffdStandaloneConsignmentDeclarePage, commercialTermsDeclarePage
         );
         const addGoodsItem = new AddNewFfdStandaloneGoodsItemFlow(goodsItemSteps);
         await use(new CreateAndSubmitFfdStandaloneFlow(
@@ -216,12 +272,10 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     concurrentLoginFlow: async ({
-        basePage, portalPage, signInPage,
-        secondDeviceBasePage, secondDevicePortalPage, secondDeviceSignInPage
+        signInFlow, portalPage, secondDeviceSignInFlow, secondDevicePortalPage
     }, use) => {
         await use(new ConcurrentLoginFlow(
-            basePage, portalPage, signInPage,
-            secondDeviceBasePage, secondDevicePortalPage, secondDeviceSignInPage
+            signInFlow, portalPage, secondDeviceSignInFlow, secondDevicePortalPage
         ));
     },
 };

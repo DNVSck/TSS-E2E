@@ -13,9 +13,10 @@ import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
+import { DeclarationIdentity } from '../../test-data/payload/cds-notification-payload';
 import { LOCAL_REFERENCE, MRN_COUNTRY_CODE } from '../../constant/local-reference-constants';
 import { TranslationKey } from '../../fixtures/locale-fixture';
-import { standaloneSubmittedStatusKey } from '../../helper/consignment-status-helper';
+import { standaloneSubmittedStatusKey } from '../../helper/declaration-status-helper';
 
 /**
  * The status a submitted SFD standalone consignment settles on.
@@ -59,7 +60,7 @@ export class CreateAndSubmitSfdStandaloneFlow {
         url: string;
         consignmentOverrides?: Partial<SfdStandaloneConsignmentData>;
         goodsItemOverrides?: Partial<GoodsData>;
-    }): Promise<void> {
+    }): Promise<DeclarationIdentity | undefined> {
         const { testInfo, url } = options;
         const consignmentData = sfdStandaloneConsignment(options.consignmentOverrides);
         const goodsData = goods(options.goodsItemOverrides);
@@ -77,7 +78,8 @@ export class CreateAndSubmitSfdStandaloneFlow {
         // Report the LRN as soon as the draft exists, before anything that could fail.
         // The "SFD" prefix asserts the journey that actually ran rather than merely
         // that some standalone draft exists.
-        await this.consignmentOverviewFlow.verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.DEC_PREFIX);
+        const lrn = await this.consignmentOverviewFlow
+            .verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.DEC_PREFIX);
         await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
         await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
 
@@ -89,14 +91,19 @@ export class CreateAndSubmitSfdStandaloneFlow {
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
 
         await this.consignmentOverviewFlow.submitConsignment();
-        await this.verifyPostSubmit(consignmentData);
+        const mrn = await this.verifyPostSubmit(consignmentData);
+
+        // Undefined on the EIDR route, which has no MRN and needs no CDS response.
+        return mrn ? { lrn, mrn } : undefined;
     }
 
     /**
      * Post-submit verification for standalone SFD: the consignment settles on a status
      * and is assigned an MRN.
      */
-    private async verifyPostSubmit(consignmentData: SfdStandaloneConsignmentData): Promise<void> {
+    private async verifyPostSubmit(
+        consignmentData: SfdStandaloneConsignmentData
+    ): Promise<string | undefined> {
         await this.consignmentOverviewFlow.verifyStandaloneConsignmentSubmitted(
             submittedStatusKey(consignmentData)
         );
@@ -104,9 +111,13 @@ export class CreateAndSubmitSfdStandaloneFlow {
         // has no MRN check yet (see verifySfdEidrDeclarationType); calling the SFD one
         // for it would read the same row and report whatever it holds as "SFD MRN".
         if (consignmentData.isControlledGoods) {
-            await this.consignmentOverviewFlow.verifyStandaloneConsignmentMrn('SFD', MRN_COUNTRY_CODE.SFD);
-            return;
+            return this.consignmentOverviewFlow
+                .verifyStandaloneConsignmentMrn('SFD', MRN_COUNTRY_CODE.SFD);
         }
+
+        // The EIDR route returns nothing to name to CDS, and needs nothing: it is
+        // authorised outright, with no MRN and no arrival to wait for.
         await this.consignmentOverviewFlow.verifySfdEidrDeclarationType();
+        return undefined;
     }
 }

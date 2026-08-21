@@ -1,47 +1,33 @@
-import { UserCredentials } from '../../../src/auth/credentials';
-import { MESSAGE_CONSTANTS } from '../../../src/constant/messages-constants';
 import { test, expect, getBaseUrl } from '../../test-hooks';
+import { MESSAGE_CONSTANTS } from '../../../src/constant/messages-constants';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
-import { getPrimaryHolderOrSkip } from '../../../src/helper/accounts-helper';
-import { SignInFlow } from '../../../src/flows/sign-in-flow';
-import { TestInfo } from '@playwright/test';
+import {
+    COMPANY_PROFILE,
+    UserCredentials,
+    accountFor,
+    isProfileConfigured,
+} from '../../../src/auth/credentials';
+import { wrongCasePasswordVariants } from '../../../src/test-data/password-case-data';
 
 const CASE_SENSITIVITY_AND_VISIBILITY_TEST_ID = '2546';
 
-/** Steps 2/3: submit a wrong-case password and expect the generic sign-in error. */
-async function expectRejectedPassword(
-    signInFlow: SignInFlow,
-    testInfo: TestInfo,
-    account: UserCredentials,
-    password: string,
-    description: string
-): Promise<void> {
-    await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+/** What the toggle button reads in each state - GOV.UK password-input component. */
+const SHOW = 'Show';
+const HIDE = 'Hide';
 
-    const message = await signInFlow.submitRejectedCredentials(account.username, password, description);
-
-    expect(message, `System should reject ${description}`)
-        .toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
-}
-
-/** Steps 5/6: the toggle button is visible and starts out reading "Show". */
-async function expectToggleButtonShowsInitialState(signInFlow: SignInFlow): Promise<void> {
-    const buttonVisible = await signInFlow.isPasswordToggleButtonVisible();
-    expect(buttonVisible, 'Show button should be visible')
-        .toBe(true);
-
-    const initialButtonText = await signInFlow.getPasswordToggleButtonText();
-    expect(initialButtonText, 'Button should initially display "Show"')
-        .toBe('Show');
-}
 
 test.describe('TSS Portal - Password Case-Sensitivity and Visibility (Test Case 2546)', () => {
+
+    test.skip(
+        !isProfileConfigured(COMPANY_PROFILE.AUTH_ACCOUNT),
+        'AUTH_ACCOUNT_USER_NAME_1 is not configured for this environment'
+    );
 
     let account: UserCredentials;
 
     test.beforeEach(() => {
-        account = getPrimaryHolderOrSkip();
+        account = accountFor(COMPANY_PROFILE.AUTH_ACCOUNT, test.info().parallelIndex);
     });
 
     test.afterEach(async ({ signInFlow }, testInfo) => {
@@ -50,104 +36,86 @@ test.describe('TSS Portal - Password Case-Sensitivity and Visibility (Test Case 
         if (!account) {
             return;
         }
+        // Steps 2 and 3 leave failed attempts against the account; a successful
+        // sign-in is what clears the counter.
         await signInFlow.restoreSignedInState(account, { baseUrl: getBaseUrl(), testInfo });
     });
 
-    test('Test Case 2546 - Password case-sensitivity and Show/Hide button functionality', 
-        { tag: ['@auth', '@security', '@regression'] }, 
-        async ({ signInFlow, page }, testInfo) => {
+    test('Test Case 2546 - Password case-sensitivity and Show/Hide button functionality',
+        { tag: ['@auth', '@security', '@regression'] },
+        async ({ signInFlow }, testInfo) => {
             reportTestCaseLink(CASE_SENSITIVITY_AND_VISIBILITY_TEST_ID);
-            
-            // Step 1: Navigate to TSS2 service start page
-            await ReportLog.step('Step 1: Navigate to TSS2 service and verify login page elements', async () => {
+
+            // ---- Step 1: the sign-in screen offers an empty, masked password field ----
+            await ReportLog.step('Step 1: The sign-in screen shows an empty password field and a Show button', async () => {
                 await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
-                
-                const passwordFieldValue = await signInFlow.getPasswordFieldValue();
-                expect(passwordFieldValue, 'Password field should be empty initially')
+
+                expect(await signInFlow.getPasswordFieldValue(), 'Password field starts empty')
                     .toBe('');
-                
-                // Verify Show button is visible
-                const showButtonVisible = await signInFlow.isPasswordToggleButtonVisible();
-                expect(showButtonVisible, 'Password toggle button (Show) should be visible')
+                expect(await signInFlow.isPasswordToggleButtonVisible(), 'Password toggle button is offered')
                     .toBe(true);
-                
-                ReportLog.pass('Login page displays password field and Show button');
             });
 
-            // Step 2: Enter valid email but incorrect lowercase password
-            await ReportLog.step('Step 2: Verify incorrect lowercase password is rejected', async () => {
-                await expectRejectedPassword(
-                    signInFlow,
-                    testInfo,
-                    account,
-                    'mypassword123',
-                    'incorrect lowercase password'
-                );
+            // ---- Steps 2 and 3: the same password in the wrong case is refused ----
+            // Derived from the real password, so a rejection is evidence about CASE and
+            // not merely evidence that some other string is not the password. An account
+            // whose password has no case variety cannot demonstrate this at all, which
+            // is a fact about the fixture and has to fail loudly rather than pass quietly.
+            const variants = wrongCasePasswordVariants(account.password);
 
-                ReportLog.pass('System rejected credentials with lowercase password');
-            });
+            expect(
+                variants.length,
+                'AUTH_ACCOUNT password has no upper/lower case variation, so this test '
+                + 'cannot demonstrate case-sensitivity - give the account a mixed-case password'
+            ).toBeGreaterThan(0);
 
-            // Step 3: Enter valid email but incorrect uppercase password
-            await ReportLog.step('Step 3: Verify incorrect uppercase password is rejected', async () => {
-                await expectRejectedPassword(
-                    signInFlow,
-                    testInfo,
-                    account,
-                    'MYPASSWORD123',
-                    'incorrect uppercase password'
-                );
+            for (const { value, description } of variants) {
+                await ReportLog.step(`Steps 2-3: Sign-in is refused for ${description}`, async () => {
+                    await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
-                ReportLog.pass('System rejected credentials with uppercase password');
-            });
+                    const message = await signInFlow.submitRejectedCredentials(
+                        account.username,
+                        value,
+                        description
+                    );
 
-            // Step 4: Enter valid email and correct password - verify masked
-            await ReportLog.step('Step 4: Verify password is masked by default with correct credentials', async () => {
+                    expect(message, `System should reject ${description}`)
+                        .toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
+                });
+            }
+
+            // ---- Steps 4 to 6: the Show/Hide toggle, on one visit to the screen ----
+            // The password is typed but NOT submitted. Masking is a property of the field
+            // while the user types, so submitting would leave the only screen that can be
+            // observed - and would spend a real sign-in attempt to learn nothing.
+            await ReportLog.step('Step 4: The correct password is masked as it is typed', async () => {
                 await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
-                
-                // Enter valid credentials
-                await signInFlow.submitValidCredentials(account);
-                
-                // Note: submitValidCredentials navigates to authenticator step, confirming
-                // the credentials were accepted and the password was masked during entry.
-                ReportLog.pass('Password confirmed as masked during correct credential entry');
+                await signInFlow.enterPassword(account.password);
+
+                expect(await signInFlow.isPasswordMasked(), 'Password is masked by default')
+                    .toBe(true);
+                expect(await signInFlow.getPasswordToggleButtonText(), 'Button offers to Show')
+                    .toBe(SHOW);
             });
 
-            // Step 5: Enter valid email and correct password, then click Show button
-            await ReportLog.step('Step 5: Click Show button to unmask password, verify button text changes to Hide', async () => {
-                await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
-                
-                // Submit with invalid password to stay on login page for button testing
-                await signInFlow.submitRejectedCredentials(
-                    account.username,
-                    'testinvalid123',
-                    'test credentials for visibility testing'
-                );
-                
-                // Page stays on login with error displayed
-                await page.waitForLoadState('domcontentloaded');
+            await ReportLog.step('Step 5: Show reveals the password and the button becomes Hide', async () => {
+                await signInFlow.togglePasswordVisibility();
 
-                await expectToggleButtonShowsInitialState(signInFlow);
-
-                ReportLog.pass('Show button is visible and displays correct initial text');
+                // The field type is the assertion, not the field value: reading the value
+                // back would put the real password into any failure message.
+                expect(await signInFlow.isPasswordMasked(), 'Show unmasks the password')
+                    .toBe(false);
+                expect(await signInFlow.getPasswordToggleButtonText(), 'Button now offers to Hide')
+                    .toBe(HIDE);
             });
 
-            // Step 6: Click Hide button to re-mask password, verify button text changes to Show
-            await ReportLog.step('Step 6: Verify Hide button functionality and text changes back to Show', async () => {
-                await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
-                
-                // Submit with invalid password to stay on login page
-                await signInFlow.submitRejectedCredentials(
-                    account.username,
-                    'testinvalid456',
-                    'test credentials for hide button testing'
-                );
-                
-                // Page stays on login page with error - ready for testing
-                await page.waitForLoadState('domcontentloaded');
+            await ReportLog.step('Step 6: Hide masks the password again and the button returns to Show', async () => {
+                await signInFlow.togglePasswordVisibility();
 
-                await expectToggleButtonShowsInitialState(signInFlow);
-
-                ReportLog.pass('Hide button functionality verified - button displays correct text');
+                expect(await signInFlow.isPasswordMasked(), 'Hide re-masks the password')
+                    .toBe(true);
+                expect(await signInFlow.getPasswordToggleButtonText(), 'Button offers to Show again')
+                    .toBe(SHOW);
             });
         });
 

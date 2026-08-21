@@ -154,19 +154,4 @@ export class BasePage {
         await this.page.goto(url, { waitUntil: 'domcontentloaded' });
     }
 
-    /**
-     * Get all cookies from the current context.
-     */
-    async getSessionCookies(): Promise<any[]> {
-        return await this.page.context().cookies();
-    }
-
-    /**
-     * Get the browser instance from the current page context.
-     * Used for advanced browser operations like creating new contexts.
-     */
-    async getBrowser(): Promise<any> {
-        return await this.page.context().browser();
-    }
-
 }
