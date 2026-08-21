@@ -1,14 +1,20 @@
-import { COMPANY_PROFILE } from '../../../src/auth/credentials';
+import { COMPANY_PROFILE, getCredentials, isProfileConfigured } from '../../../src/auth/credentials';
 import { ALL_COMPANY_PROFILE_ACTIONS } from '../../../src/constant/company-profile-action-constant';
 import { test, expect, getBaseUrl } from '../../test-hooks';
-import { credentialsOrSkip } from '../../../src/helper/accounts-helper';
 
 
 
 test.describe('TSS Portal company profile - edit permissions', () => {
 
+    // Both halves of this file need the pair of accounts, so one answer covers it.
+    test.skip(
+        !isProfileConfigured(COMPANY_PROFILE.PRIMARY_HOLDER)
+        || !isProfileConfigured(COMPANY_PROFILE.NON_PRIMARY_HOLDER),
+        'PRIMARY_HOLDER_USER_NAME and NON_PRIMARY_HOLDER_USER_NAME are not both configured for this environment'
+    );
+
     test('An account holder can edit the company profile and its users', { tag: ['@auth', '@authorisation'] }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
-        const account = credentialsOrSkip(COMPANY_PROFILE.PRIMARY_HOLDER, 'PRIMARY_HOLDER_USER_NAME');
+        const account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
 
         await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });
 
@@ -34,7 +40,7 @@ test.describe('TSS Portal company profile - edit permissions', () => {
 
 
     test('A user who is not the account holder gets view-only', { tag: ['@auth', '@authorisation'] }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
-        const account = credentialsOrSkip(COMPANY_PROFILE.NON_PRIMARY_HOLDER, 'NON_PRIMARY_HOLDER_USER_NAME');
+        const account = getCredentials(COMPANY_PROFILE.NON_PRIMARY_HOLDER);
 
         await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });
 

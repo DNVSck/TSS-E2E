@@ -10,8 +10,6 @@ import { HAULIER_COMPANY_NAME } from '../../../config/environment';
 import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
 import { gmrData } from '../../../src/test-data/gmr-data';
 import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
-import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
-import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
 
 const ENS_SFD_GMR = '4436';
 

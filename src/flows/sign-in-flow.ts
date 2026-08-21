@@ -130,6 +130,13 @@ export class SignInFlow {
     }
 
     private async completeAuthenticatorStep(credentials: UserCredentials): Promise<void> {
+        // The authenticator screen arrives on its own page load, so it is given a budget
+        // of its own rather than the ambient action timeout. Without this, the first thing
+        // to touch the field is inputTotp's fill, which auto-waits for the action timeout
+        // and then reports a field it could not fill - which reads as a broken input
+        // rather than a page that had simply not rendered yet.
+        await this.signInPage.waitForAuthenticatorCodeStep();
+
         // inputTotp owns the retry across TOTP windows: a code refused because its
         // window has just rolled is resubmitted on the next one.
         await this.signInPage.inputTotp(credentials.totpSecret!);
@@ -236,6 +243,19 @@ export class SignInFlow {
             ReportLog.setParameter('Current URL after direct access', url);
 
             return { screenVisible, url };
+        });
+    }
+
+    /**
+     * Type a password into the sign-in form without submitting it.
+     *
+     * An action, so it is a step of its own: the toggle assertions that follow are only
+     * meaningful against a field that holds something, and a report that does not show
+     * the field was filled cannot say why they were meaningful.
+     */
+    async enterPassword(password: string): Promise<void> {
+        await ReportLog.step('Enter a password without submitting', async () => {
+            await this.signInPage.enterPassword(password);
         });
     }
 

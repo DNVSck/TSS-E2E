@@ -73,6 +73,24 @@ export function profilesToAuthenticate(): CompanyProfile[] {
     return requested as CompanyProfile[];
 }
 
+/**
+ * Whether this environment has an account for the profile at all.
+ *
+ * Asked by the specs that only apply where a profile exists - the authority and
+ * permission ones, which sign in as a primary account holder that not every environment
+ * has. They skip on the answer, at describe level, so nothing is built for a test that
+ * will not run.
+ *
+ * Lives beside getCredentials because that is what already owns the convention: the
+ * env key IS derived from the profile name, so nothing else has to know it and no
+ * caller can pass a key that belongs to a different profile.
+ *
+ * Playwright-free, like the rest of this file - see profilesToAuthenticate.
+ */
+export function isProfileConfigured(profile: CompanyProfile): boolean {
+    return Boolean(process.env[`${profile}_USER_NAME`]?.trim());
+}
+
 export function getCredentials(profile: CompanyProfile): UserCredentials {
     const username = process.env[`${profile}_USER_NAME`]?.trim();
     const password = process.env[`${profile}_PASSWORD`]?.trim();

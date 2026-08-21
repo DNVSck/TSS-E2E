@@ -14,16 +14,31 @@ export const getBaseUrl = (): string => BASE_URL;
  * No "Starting test: <title>" log line: ReportLog renders a log as an Allure
  * step, which appears out of chronological order and only restates the title.
  *
- * The `{ browserName: _browserName }` destructure (rather than an empty `{}`)
- * exists only to satisfy SonarQube rule S3799 (no empty object patterns).
+ * These hooks take NO parameters, and read the test through `test.info()`.
+ *
+ * That sidesteps a constraint worth knowing about. Playwright parses a hook's FIRST
+ * parameter to work out which fixtures it needs, and rejects anything that is not an
+ * object destructuring pattern - `(_, testInfo)` fails outright with "First argument
+ * must use the object destructuring pattern". Which leaves two poor options: `({},
+ * testInfo)`, an empty pattern that eslint and SonarQube (S3799) both flag, or naming a
+ * fixture the hook never uses, which makes the signature state a dependency that is not
+ * real.
+ *
+ * Declaring no parameters at all avoids the question. Playwright returns early before
+ * it looks for a pattern, so there is nothing for either linter to object to, and the
+ * hook claims nothing it does not use.
  */
-test.beforeEach(({ browserName: _browserName }, testInfo) => {
+test.beforeEach(() => {
+    const testInfo = test.info();
+
     AllureTestManager.createParentTest(testInfo);
     AllureTestManager.addParameter('Test File', testInfo.file);
     AllureTestManager.addParameter('Expected Status', testInfo.expectedStatus);
 });
 
-test.afterEach(({ browserName: _browserName }, testInfo) => {
+test.afterEach(() => {
+    const testInfo = test.info();
+
     switch (testInfo.status) {
         case 'passed':
             console.log(`Test passed: ${testInfo.title}`);

@@ -14,6 +14,23 @@ const MAX_TOTP_ATTEMPTS = 8;
 /** The identity provider is a separate host and can be slow to hand a screen over. */
 const AUTH_SCREEN_TIMEOUT = 30_000;
 
+/**
+ * The last TOTP code this process submitted, per secret.
+ *
+ * A code can be spent once. Without this, the only way a sign-in learns the current
+ * window is already spent is by SUBMITTING the spent code and being refused - and
+ * every refusal is a failed login attempt, which Keycloak's brute-force detector
+ * counts. A suite that signs the same account in for every test therefore spends its
+ * way towards a temporary lockout, and a locked account answers correct credentials
+ * with 'Invalid username or password' - indistinguishable from a wrong password, so
+ * the lockout arrives disguised as a product bug.
+ *
+ * Remembering what was spent turns that failed login into a wait. Module scope, so
+ * every page object in the worker shares it; a secret whose window has already
+ * rolled costs nothing, because waitForNextCode returns as soon as the code differs.
+ */
+const spentTotpCodes = new Map<string, string>();
+
 export class SignInPage extends BasePage {
 
     private readonly emailAddressInput: Locator;
@@ -33,7 +50,11 @@ export class SignInPage extends BasePage {
         // Keycloak's "Invalid authenticator code." message on the OTP screen.
         this.totpErrorMessage = page.locator("#input-error-otp-code");
         this.errorSummaryMessage = page.locator('.govuk-error-summary__list li');
-        this.passwordShowHideButton = page.locator("button[aria-label='Show password']");
+        // The GOV.UK password-input component's own JS hook. NOT the aria-label: that
+        // reads 'Show password' before the first click and 'Hide password' after it, so
+        // a locator keyed on it stops matching the moment the button is used - measured
+        // on sit, 2026-08-21. This class is the same in both states.
+        this.passwordShowHideButton = page.locator('.govuk-js-password-input-toggle');
     }
 
     /** Fill in the username/password and submit. */
@@ -91,7 +112,10 @@ export class SignInPage extends BasePage {
 
 
     async inputTotp(secret: string): Promise<void> {
-        let lastCode: string | undefined;
+        // Seeded from what this process already spent for this secret rather than from
+        // undefined, so the FIRST attempt waits out a spent window instead of burning a
+        // failed login attempt to discover it - see spentTotpCodes.
+        let lastCode: string | undefined = spentTotpCodes.get(secret);
 
         for (let attempt = 1; attempt <= MAX_TOTP_ATTEMPTS; attempt++) {
             if (lastCode !== undefined) {
@@ -100,6 +124,7 @@ export class SignInPage extends BasePage {
 
             const code = generateTotpCode(secret);
             lastCode = code;
+            spentTotpCodes.set(secret, code);
             await this.submitCode(code);
 
             // On the freshly loaded page: the error present means the code was
@@ -208,7 +233,18 @@ export class SignInPage extends BasePage {
      */
     async togglePasswordVisibility(): Promise<void> {
         await this.passwordShowHideButton.click();
-        await this.page.waitForLoadState('domcontentloaded');
+    }
+
+    /**
+     * Type a password without submitting the form.
+     *
+     * The masking behaviour is only worth asserting on a field that HOLDS something -
+     * an empty field is masked whatever the toggle does. Separate from {@link signIn}
+     * because that one submits, which leaves the screen.
+     */
+    async enterPassword(password: string): Promise<void> {
+        await this.passwordInput.waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
+        await this.passwordInput.fill(password);
     }
 
     /**

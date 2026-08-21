@@ -1,20 +1,52 @@
 import { test, expect, getBaseUrl } from '../../test-hooks';
-import { UserCredentials } from '../../../src/auth/credentials';
+import { COMPANY_PROFILE, UserCredentials, getCredentials, isProfileConfigured } from '../../../src/auth/credentials';
 import { OTP_ENABLED } from '../../../config/environment';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
-import { getPrimaryHolderOrSkip } from '../../../src/helper/accounts-helper';
 import { AuthPageUrls } from '../../../src/flows/sign-in-flow';
 
 const TEST_CASE_ID = '2549';
 
 test.describe.configure({ mode: 'serial' });
 
+/**
+ * Test Case 2549, steps 1 and 2 only.
+ *
+ * Step 3 - "no auto-login after browser closure" - is deliberately NOT automated, and
+ * this is the only record of why.
+ *
+ * The portal issues its own session cookie `tss.sid` as a PERSISTENT cookie with a ~24
+ * hour lifetime, not a session cookie. So a session surviving a browser restart is what
+ * the service is built to do; confirmed by hand on sit, 2026-08-21 - closed the browser,
+ * reopened, still signed in with no re-authentication. What actually ends a session is
+ * idle time (~30 minutes), not closing the browser.
+ *
+ * So the step measures a cause that does not exist: any test of it would pass or fail on
+ * how quickly the browser was reopened, which is a fact about the tester, not the
+ * service. The version that was here asserted that a FRESH browser context has no
+ * cookies - true by definition of a fresh context, so it could not fail for a product
+ * reason, and it never closed a browser at all.
+ *
+ * Raised with Martin Harber: whether a persistent 24-hour cookie is the intended policy.
+ * If it is not, this belongs in a defect rather than a test. If it is, the step should be
+ * re-scoped to the idle timeout - which nothing here asserts today.
+ */
 test.describe('TSS Portal sign-in - browser security (Test Case 2549)', () => {
+
+    // Decided once, when the file is read, so no fixture is built for a run that cannot
+    // do this at all - see isProfileConfigured.
+    test.skip(
+        !isProfileConfigured(COMPANY_PROFILE.PRIMARY_HOLDER),
+        'PRIMARY_HOLDER_USER_NAME is not configured for this environment'
+    );
 
     let account: UserCredentials;
 
-    test.beforeEach(({ browserName: _browserName }, testInfo) => {
+    // No parameters, and testInfo read through test.info() - see tests/test-hooks.ts for
+    // why an empty destructure and a named-but-unused fixture are both worse.
+    test.beforeEach(() => {
+        const testInfo = test.info();
+
         test.skip(!OTP_ENABLED, 'This environment does not ask for an authenticator code.');
 
         test.skip(
@@ -22,7 +54,7 @@ test.describe('TSS Portal sign-in - browser security (Test Case 2549)', () => {
             'Skipping Welsh locale due to language switcher timing issues'
         );
 
-        account = getPrimaryHolderOrSkip();
+        account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
     });
 
     test.afterEach(async ({ signInFlow }, testInfo) => {

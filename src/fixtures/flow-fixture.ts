@@ -272,12 +272,10 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     concurrentLoginFlow: async ({
-        basePage, portalPage, signInPage,
-        secondDeviceBasePage, secondDevicePortalPage, secondDeviceSignInPage
+        signInFlow, portalPage, secondDeviceSignInFlow, secondDevicePortalPage
     }, use) => {
         await use(new ConcurrentLoginFlow(
-            basePage, portalPage, signInPage,
-            secondDeviceBasePage, secondDevicePortalPage, secondDeviceSignInPage
+            signInFlow, portalPage, secondDeviceSignInFlow, secondDevicePortalPage
         ));
     },
 };
