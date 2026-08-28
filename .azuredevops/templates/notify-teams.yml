@@ -1,0 +1,75 @@
+parameters:
+  - name: title
+    type: string
+  - name: testScope
+    type: string
+    default: ''
+  - name: workers
+    type: string
+    default: ''
+
+steps:
+  - script: |
+      if [ -z "$(TEAMS_WEBHOOK_URL)" ]; then
+        echo "TEAMS_WEBHOOK_URL not set, skipping notification"
+        exit 0
+      fi
+      JUNIT="$(Agent.TempDirectory)/reports/test-results/junit.xml"
+      if [ -f "$JUNIT" ]; then
+      bash "$(Build.SourcesDirectory)/.azuredevops/scripts/parse-junit.sh" "$JUNIT" > "$(Agent.TempDirectory)/reports/counts.env"
+      . "$(Agent.TempDirectory)/reports/counts.env"
+        PASSED="${PASSED:-0}"; FAILED="${FAILED:-0}"; SKIPPED="${SKIPPED:-0}"; TOTAL="${TOTAL:-0}"
+        RUN_NOTE=""
+      else
+        PASSED="–"; FAILED="–"; SKIPPED="–"; TOTAL="–"
+        RUN_NOTE='{ "type": "TextBlock", "text": "Tests did not run - environment setup failed", "wrap": true, "weight": "Bolder", "color": "Attention" },'
+      fi
+      STATUS="$(Agent.JobStatus)"
+      CONTAINER_STYLE="default"
+      if [ "$STATUS" = "Succeeded" ]; then CONTAINER_STYLE="good";
+      elif [ "$STATUS" = "Failed" ]; then CONTAINER_STYLE="attention";
+      elif [ "$STATUS" = "PartiallySucceeded" ]; then CONTAINER_STYLE="warning"; fi
+      curl -X POST "$(TEAMS_WEBHOOK_URL)" -H "Content-Type: application/json" -d @- <<EOF
+      {
+        "type": "message",
+        "attachments": [
+          {
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "contentUrl": null,
+            "content": {
+              "\$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+              "type": "AdaptiveCard",
+              "version": "1.4",
+              "body": [
+                {
+                  "type": "Container",
+                  "style": "$CONTAINER_STYLE",
+                  "bleed": true,
+                  "items": [
+                    { "type": "TextBlock", "size": "Large", "weight": "Bolder", "text": "${{ parameters.title }}", "wrap": true },
+                    { "type": "TextBlock", "size": "Medium", "weight": "Bolder", "text": "$STATUS", "wrap": true }
+                  ]
+                },
+                $RUN_NOTE
+                { "type": "FactSet", "facts": [
+                  { "title": "Test scope", "value": "${{ parameters.testScope }}" },
+                  { "title": "Workers", "value": "${{ parameters.workers }}" }
+                ] },
+                { "type": "ColumnSet", "columns": [
+                  { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "Passed", "horizontalAlignment": "Center" }, { "type": "TextBlock", "text": "$PASSED", "size": "ExtraLarge", "weight": "Bolder", "color": "Good", "horizontalAlignment": "Center" } ] },
+                  { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "Failed", "horizontalAlignment": "Center" }, { "type": "TextBlock", "text": "$FAILED", "size": "ExtraLarge", "weight": "Bolder", "color": "Attention", "horizontalAlignment": "Center" } ] },
+                  { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "Skipped", "horizontalAlignment": "Center" }, { "type": "TextBlock", "text": "$SKIPPED", "size": "ExtraLarge", "weight": "Bolder", "color": "Warning", "horizontalAlignment": "Center" } ] },
+                  { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "Total", "horizontalAlignment": "Center" }, { "type": "TextBlock", "text": "$TOTAL", "size": "ExtraLarge", "weight": "Bolder", "horizontalAlignment": "Center" } ] }
+                ] }
+              ],
+              "actions": [
+                { "type": "Action.OpenUrl", "title": "View build", "url": "$(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)" },
+                { "type": "Action.OpenUrl", "title": "View test results", "url": "$(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=ms.vss-test-web.build-test-results-tab" }
+              ]
+            }
+          }
+        ]
+      }
+      EOF
+    displayName: 'Notify Teams'
+    condition: succeededOrFailed()

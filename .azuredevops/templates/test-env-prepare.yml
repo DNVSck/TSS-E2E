@@ -3,6 +3,11 @@ parameters:
     type: string
 
 steps:
+  - task: NodeTool@0
+    displayName: Setup Node 24
+    inputs:
+      versionSpec: '24.x'
+
   - checkout: self
 
   - script: |
@@ -28,31 +33,11 @@ steps:
       corepack pnpm --version
       corepack pnpm install --frozen-lockfile
 
-      if [ ! -f ".env.example" ]; then
-        echo "ERROR: .env.example was not found in $(Build.SourcesDirectory)"
-        exit 1
-      fi
+      # System dependencies for Chromium are baked into the agent image.
+      # Do not add --with-deps here: it requires sudo and hangs on this pool.
+      echo "Installing Playwright Chromium..."
+      npx playwright install chromium
 
-      ENV_FILE=".env.${ENVIRONMENT}"
-      cp .env.example "$ENV_FILE"
-
-      set_env_value() {
-        local key="$1"
-        local value="$2"
-
-        if grep -q "^${key}=" "$ENV_FILE"; then
-          sed -i "s|^${key}=.*|${key}=${value}|" "$ENV_FILE"
-        else
-          printf '\n%s=%s\n' "$key" "$value" >> "$ENV_FILE"
-        fi
-      }
-
-      set_env_value "HEADLESS" "true"
-      set_env_value "VIDEO_MODE" "retain-on-failure"
-
-      chmod 600 "$ENV_FILE"
-
-      echo "Environment file created: $ENV_FILE"
       echo "Environment preparation completed for: $ENVIRONMENT"
 
     displayName: 'Install dependencies and prepare environment'

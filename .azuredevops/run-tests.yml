@@ -1,0 +1,86 @@
+parameters:
+  - name: environment
+    displayName: 'Environment to run against'
+    type: string
+    default: test
+    values:
+      - test
+      - sit
+      - sit2
+      - dev
+
+  - name: testScope
+    displayName: 'Test Scope'
+    type: string
+    default: smoke
+    values:
+      - smoke
+      - all
+      - regression
+      - standalone
+      - ens-integrated
+
+  - name: testFilter
+    displayName: 'Custom Filter (--grep regex on test title; include @ for tags, e.g. @smoke. "none" = use Test Scope)'
+    type: string
+    default: 'none'
+
+  - name: workers
+    displayName: 'Parallel Playwright workers'
+    type: number
+    default: 1
+    values:
+      - 1
+      - 2
+      - 3
+      - 4
+
+  - name: runAccessibilityTests
+    displayName: 'Run Accessibility Tests'
+    type: boolean
+    default: false
+
+  - name: runFunctionalTests
+    displayName: 'Run Functional Tests'
+    type: boolean
+    default: true
+
+  - name: runAll
+    displayName: 'Run All Test Types (overrides selections above)'
+    type: boolean
+    default: false
+
+variables:
+  - ${{ if eq(parameters.environment, 'dev') }}:
+      - group: TSS-E2E-DEV
+  - ${{ if eq(parameters.environment, 'test') }}:
+      - group: TSS-E2E-TEST
+  - ${{ if eq(parameters.environment, 'sit') }}:
+      - group: TSS-E2E-SIT
+  - ${{ if eq(parameters.environment, 'sit2') }}:
+      - group: TSS-E2E-SIT2
+
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  name: TSS-NonProd-EKS
+
+jobs:
+  - job: Test
+    displayName: 'Run tests - ${{ parameters.environment }}'
+    timeoutInMinutes: 720
+    steps:
+      - template: templates/run-group-of-tests.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+          testScope: ${{ parameters.testScope }}
+          testFilter: ${{ parameters.testFilter }}
+          workers: ${{ parameters.workers }}
+          runAccessibilityTests: ${{ parameters.runAccessibilityTests }}
+          runFunctionalTests: ${{ parameters.runFunctionalTests }}
+          runAll: ${{ parameters.runAll }}

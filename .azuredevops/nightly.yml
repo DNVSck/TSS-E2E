@@ -1,0 +1,41 @@
+trigger: none
+
+pr: none
+
+schedules:
+  - cron: "0 4 * * 1-5" # UTC, Monday-Friday only
+    displayName: Nightly regression (test + sit)
+    branches:
+      include:
+        - main
+    always: true
+
+pool:
+  name: TSS-NonProd-EKS
+
+jobs:
+  - job: FunctionalTests_test
+    displayName: 'Run functional regression - test'
+    timeoutInMinutes: 720
+    variables:
+      - group: TSS-E2E-TEST
+    steps:
+      - template: templates/run-group-of-tests.yml
+        parameters:
+          environment: test
+          testScope: regression
+          testFilter: none
+          workers: 1
+
+  - job: FunctionalTests_sit
+    displayName: 'Run functional regression - sit'
+    timeoutInMinutes: 720
+    variables:
+      - group: TSS-E2E-SIT
+    steps:
+      - template: templates/run-group-of-tests.yml
+        parameters:
+          environment: sit
+          testScope: regression
+          testFilter: none
+          workers: 1

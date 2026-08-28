@@ -24,7 +24,10 @@ const missingEnv: string[] = [];
 
 function required(name: string): string {
   const value = process.env[name]?.trim();
-  if (!value) {
+  // Reject both an empty value and an unresolved "$(NAME)" literal. Azure DevOps
+  // leaves a "$(VAR)" untouched when VAR is missing from the variable group, so
+  // treating that as populated would run the suite with a placeholder value.
+  if (!value || value === `$(${name})`) {
     missingEnv.push(name);
     return '';
   }

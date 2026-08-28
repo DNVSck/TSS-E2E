@@ -1,0 +1,218 @@
+parameters:
+  - name: environment
+    type: string
+
+  - name: testScope
+    type: string
+    default: smoke
+    values:
+      - smoke
+      - all
+      - regression
+      - standalone
+      - ens-integrated
+
+  - name: testFilter
+    type: string
+    default: ''
+
+  - name: envContent
+    type: string
+    default: ''
+
+  - name: workers
+    type: number
+    default: 1
+    values:
+      - 1
+      - 2
+      - 3
+      - 4
+
+  - name: runAccessibilityTests
+    type: boolean
+    default: false
+
+  - name: runFunctionalTests
+    type: boolean
+    default: true
+
+  - name: runAll
+    type: boolean
+    default: false
+
+steps:
+  - template: test-env-prepare.yml
+    parameters:
+      environment: ${{ parameters.environment }}
+
+  - script: |
+      set -euo pipefail
+      cd "$(Build.SourcesDirectory)"
+
+      export ENV="${{ parameters.environment }}"
+
+      TEST_SCOPE="${{ parameters.testScope }}"
+      TEST_FILTER="${{ parameters.testFilter }}"
+      WORKER_COUNT="${{ parameters.workers }}"
+
+      RUN_ALL="${{ parameters.runAll }}"
+      RUN_ACCESSIBILITY="${{ parameters.runAccessibilityTests }}"
+      RUN_FUNCTIONAL="${{ parameters.runFunctionalTests }}"
+
+      if [ "$RUN_ALL" = "true" ] || { [ "$RUN_ACCESSIBILITY" = "true" ] && [ "$RUN_FUNCTIONAL" = "true" ]; }; then
+        TEST_PATH="tests"
+      elif [ "$RUN_ACCESSIBILITY" = "true" ]; then
+        TEST_PATH="tests/accessibility"
+      else
+        TEST_PATH="tests/functional"
+      fi
+
+      if [ ! -d "$TEST_PATH" ]; then
+        echo "ERROR: Test directory does not exist: $TEST_PATH"
+        echo "Available test directories:"
+        find tests -maxdepth 1 -mindepth 1 -type d -print
+        exit 1
+      fi
+
+      if ! [[ "$WORKER_COUNT" =~ ^[1-4]$ ]]; then
+        echo "ERROR: workers must be between 1 and 4."
+        exit 1
+      fi
+
+      # Unset optional account vars left as unresolved macros.
+      normalise_optional_variable() {
+        local name="$1"
+        local value="${!name:-}"
+
+        if [ "$value" = "\$($name)" ]; then
+          unset "$name"
+        fi
+      }
+
+      for account_number in 1 2 3 4; do
+        normalise_optional_variable "AGENT_USER_NAME_${account_number}"
+        normalise_optional_variable "AGENT_TOTP_SECRET_${account_number}"
+      done
+
+      require_variable() {
+        local name="$1"
+        local value="${!name:-}"
+
+        if [ -z "$value" ] || [ "$value" = "\$($name)" ]; then
+          echo "ERROR: Missing required pipeline variable: $name"
+          exit 1
+        fi
+
+        echo "Configuration present: $name"
+      }
+
+      require_variable "BASE_URL"
+      require_variable "OTP_ENABLED"
+      require_variable "HAULIER_COMPANY_NAME"
+      require_variable "AGENT_PASSWORD"
+
+      for account_number in $(seq 1 "$WORKER_COUNT"); do
+        require_variable "AGENT_USER_NAME_${account_number}"
+
+        if [ "${OTP_ENABLED,,}" = "true" ]; then
+          require_variable "AGENT_TOTP_SECRET_${account_number}"
+        fi
+      done
+
+      RUN_ARGS=(
+        "$TEST_PATH"
+        "--project=chromium-en"
+        "--workers=$WORKER_COUNT"
+      )
+
+      if [ "$TEST_FILTER" != "none" ] && [ -n "$TEST_FILTER" ]; then
+        RUN_ARGS+=("--grep" "$TEST_FILTER")
+      elif [ "$TEST_SCOPE" = "smoke" ]; then
+        RUN_ARGS+=("--grep" "@smoke")
+      elif [ "$TEST_SCOPE" = "regression" ]; then
+        RUN_ARGS+=("--grep" "@regression")
+      elif [ "$TEST_SCOPE" = "standalone" ]; then
+        RUN_ARGS[0]="tests/functional/standalone"
+      elif [ "$TEST_SCOPE" = "ens-integrated" ]; then
+        RUN_ARGS[0]="tests/functional/ens-integrated"
+      fi
+
+      echo "Running Playwright tests..."
+      echo "Environment: $ENV"
+      echo "Test path: $TEST_PATH"
+      echo "Test scope: $TEST_SCOPE"
+      echo "Workers: $WORKER_COUNT"
+
+      corepack pnpm exec playwright test "${RUN_ARGS[@]}"
+
+    displayName: 'Run tests - ${{ parameters.environment }}'
+
+    env:
+      ENV: ${{ parameters.environment }}
+
+      CI: 'true'
+      HEADLESS: 'true'
+      LOCALE: 'en'
+      AUTH_REUSE_SESSION: 'true'
+      PWDEBUG: '0'
+      PLAYWRIGHT_HTML_OPEN: 'never'
+
+      # Secret variables are not auto-injected; map them explicitly.
+      AGENT_PASSWORD: $(AGENT_PASSWORD)
+      AGENT_TOTP_SECRET_1: $(AGENT_TOTP_SECRET_1)
+      AGENT_TOTP_SECRET_2: $(AGENT_TOTP_SECRET_2)
+      AGENT_TOTP_SECRET_3: $(AGENT_TOTP_SECRET_3)
+      AGENT_TOTP_SECRET_4: $(AGENT_TOTP_SECRET_4)
+
+      HAULIER_PASSWORD: $(HAULIER_PASSWORD)
+      HAULIER_TOTP_SECRET: $(HAULIER_TOTP_SECRET)
+      HAULIER_EORI: $(HAULIER_EORI)
+
+      IMPORTER_PASSWORD: $(IMPORTER_PASSWORD)
+      IMPORTER_TOTP_SECRET: $(IMPORTER_TOTP_SECRET)
+      IMPORTER_EORI: $(IMPORTER_EORI)
+      IMPORTER_IPO: $(IMPORTER_IPO)
+      IMPORTER_UKIMS: $(IMPORTER_UKIMS)
+      IMPORTER_SDE: $(IMPORTER_SDE)
+      IMPORTER_CWP: $(IMPORTER_CWP)
+      IMPORTER_EXW: $(IMPORTER_EXW)
+      IMPORTER_DPO: $(IMPORTER_DPO)
+
+      PRIMARY_HOLDER_PASSWORD: $(PRIMARY_HOLDER_PASSWORD)
+      PRIMARY_HOLDER_TOTP_SECRET: $(PRIMARY_HOLDER_TOTP_SECRET)
+      NON_PRIMARY_HOLDER_PASSWORD: $(NON_PRIMARY_HOLDER_PASSWORD)
+      NON_PRIMARY_HOLDER_TOTP_SECRET: $(NON_PRIMARY_HOLDER_TOTP_SECRET)
+
+      AUTH_ACCOUNT_PASSWORD: $(AUTH_ACCOUNT_PASSWORD)
+      AUTH_ACCOUNT_TOTP_SECRET_1: $(AUTH_ACCOUNT_TOTP_SECRET_1)
+      AUTH_ACCOUNT_TOTP_SECRET_2: $(AUTH_ACCOUNT_TOTP_SECRET_2)
+
+      CARRIER_PASSWORD: $(CARRIER_PASSWORD)
+      CARRIER_TOTP_SECRET: $(CARRIER_TOTP_SECRET)
+      CARRIER_EORI: $(CARRIER_EORI)
+
+      BUYER_EORI: $(BUYER_EORI)
+      CONSIGNOR_EORI: $(CONSIGNOR_EORI)
+      CONSIGNEE_EORI: $(CONSIGNEE_EORI)
+      SELLER_EORI: $(SELLER_EORI)
+      EXPORTER_EORI: $(EXPORTER_EORI)
+
+      ICS2_DECLARANT_ID: $(ICS2_DECLARANT_ID)
+      RMQ_PWD: $(RMQ_PWD)
+      CDS_TOKEN: $(CDS_TOKEN)
+
+  - template: publish-test-artifacts.yml
+    parameters:
+      environment: ${{ parameters.environment }}
+      testType: 'all'
+
+  - template: cleanup.yml
+    parameters:
+      environment: ${{ parameters.environment }}
+
+  - template: notify-teams.yml
+    parameters:
+      title: 'TSS-E2E Tests - ${{ parameters.environment }}'
+      testScope: ${{ parameters.testScope }}
+      workers: ${{ parameters.workers }}
