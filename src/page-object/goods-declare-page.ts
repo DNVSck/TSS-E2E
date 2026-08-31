@@ -14,6 +14,9 @@ const COMMODITY_SUBMIT_TIMEOUT = 90_000;
  */
 const NIRMS_SCREEN_TIMEOUT = 5_000;
 
+/** How long to look for the supervising customs office screen before deciding it is absent. */
+const SUPERVISING_OFFICE_SCREEN_TIMEOUT = 5_000;
+
 /** The radio group on the NIRMS screen, addressed by the name its inputs post. */
 const USE_NIRMS_RADIO_NAME = 'useNirms';
 
@@ -53,6 +56,7 @@ export class GoodsDeclarePage extends BasePage {
     private readonly goodsProcedureCodeDropdown: Locator;
 
     private readonly additionalProcedureCodeDropdown: Locator;
+    private readonly supervisingCustomsOfficeDropdown: Locator;
     private readonly warehouseTypeDropdown: Locator;
     private readonly warehouseIdentifierInput: Locator;
 
@@ -123,6 +127,7 @@ export class GoodsDeclarePage extends BasePage {
 
         // "Warehouse identifier" - inserted into the procedure journey only for the
         // procedure codes that declare warehoused goods (see requiresWarehouseIdentifier).
+        this.supervisingCustomsOfficeDropdown = page.locator("select#supervisingCustomsOffice");
         this.warehouseTypeDropdown = page.locator("select#warehouseType");
         this.warehouseIdentifierInput = page.locator("input#warehouseIdentifier");
 
@@ -285,6 +290,33 @@ export class GoodsDeclarePage extends BasePage {
     async selectAdditionalProcedureCode(additionalProcedureCode: string): Promise<void> {
         await selectDropdownValue(this.additionalProcedureCodeDropdown, additionalProcedureCode);
         await this.clickContinueButton();
+    }
+
+    /**
+     * "Supervising customs office" - the office that oversees the procedure, on its own
+     * screen ahead of the warehouse one.
+     *
+     * Only some procedure codes reach it, and the exact set is the service's rule rather
+     * than something this page can derive, so the screen is looked for rather than
+     * assumed. The caller decides when it is worth looking - see
+     * GoodsItemSteps.selectSupervisingCustomsOfficeIfAsked.
+     *
+     * Returns whether the screen was shown.
+     */
+    async selectSupervisingCustomsOfficeIfPresent(office: string): Promise<boolean> {
+        // waitFor rather than isVisible, for the reason given on answerUseNirmsIfPresent:
+        // isVisible ignores its timeout and would call a screen still painting "absent".
+        const shown = await this.supervisingCustomsOfficeDropdown
+            .waitFor({ state: 'visible', timeout: SUPERVISING_OFFICE_SCREEN_TIMEOUT })
+            .then(() => true, () => false);
+
+        if (!shown) {
+            return false;
+        }
+
+        await selectDropdownValue(this.supervisingCustomsOfficeDropdown, office);
+        await this.clickContinueButton();
+        return true;
     }
 
     /**
