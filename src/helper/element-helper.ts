@@ -42,6 +42,26 @@ export async function readFieldWhenVisible(field: Locator, timeout: number): Pro
 // counterpart to readFieldWhenVisible for values the backend populates
 // asynchronously (MRN, GMR ID, the post-submit status). Callers poll on this and
 // decide themselves when to give up, so it must never wait and never throw.
+/**
+ * Every message in the GOV.UK error summary, or an empty array when the screen shows none.
+ *
+ * For DIAGNOSIS, not for assertions - a caller that wants to assert on one error should
+ * locate it, so a failure names the message it wanted. This exists so a step that failed
+ * for some other reason can say whether the service had also rejected the form, which is
+ * the difference between "the app was slow" and "the app refused what we typed".
+ *
+ * Never throws. It is called on the way out of a failure, often while the page is still
+ * navigating, and a diagnosis that fails would replace the real error with its own.
+ */
+export async function readErrorSummary(page: Page): Promise<string[]> {
+    try {
+        const messages = await page.locator('.govuk-error-summary__list li').allTextContents();
+        return messages.map(message => message.trim()).filter(Boolean);
+    } catch {
+        return [];
+    }
+}
+
 export async function readFieldIfPresent(field: Locator): Promise<string> {
     if (await field.count() === 0) {
         return '';

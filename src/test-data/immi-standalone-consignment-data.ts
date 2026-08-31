@@ -80,7 +80,7 @@ const defaults: ImmiStandaloneConsignmentData = {
     isPreLodged: true,
 
     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-    portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+    portOfArrival: PORT_OF_ARRIVAL.BELFAST_GVMS_PORT,
 
     // Exporter profile. A blank/new EORI makes the app ask for the address, which
     // PartyBlock then fills.

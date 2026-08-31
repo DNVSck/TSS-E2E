@@ -69,7 +69,7 @@ export class DeclarationOverviewPage extends BasePage {
     async searchByReference(reference: string): Promise<void> {
         const listUrl = new URL(this.page.url());
         listUrl.searchParams.set('searchQuery', reference);
-        await this.page.goto(listUrl.toString());
+        await this.page.goto(listUrl.toString(), { waitUntil: 'domcontentloaded' });
     }
 
     /**

@@ -108,7 +108,7 @@ async function signInAndSaveState(
         const portalPage = new PortalPage(page);
         const signInPage = new SignInPage(page);
 
-        await page.goto(BASE_URL);
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
         await portalPage.clickSignIn();
         await signInPage.signIn(credentials);
 

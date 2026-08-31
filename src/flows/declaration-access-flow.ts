@@ -395,12 +395,14 @@ export class DeclarationAccessFlow {
      * of what an account is allowed to see.
      */
     async searchForDeclaration(reference: string): Promise<string[]> {
-        return ReportLog.step(`Search the declarations overview for ${this.labelFor(`"${reference}"`)}`, async () => {
+        const label = this.labelFor(`"${reference}"`);
+
+        return ReportLog.step(`Search the declarations overview for ${label}`, async () => {
             await this.portalPage.openDraftDeclarations();
             const matches = await this.declarationSearchPage.findDeclarationsByReference(reference);
 
             ReportLog.setParameter(
-                `Search ${this.labelFor(`"${reference}"`)}`,
+                `Search ${label}`,
                 matches.length > 0 ? `${matches.length} result(s)` : 'no results'
             );
             return matches;

@@ -89,9 +89,23 @@ export class BasePage {
      * signed-in session via `storageState`, and `storageState` replays
      * localStorage as well as cookies. Clearing it would sign the test out.
      * Each test already starts from a fresh browser context anyway.
+     *
+     * `domcontentloaded`, not Playwright's default `load` - the convention every
+     * navigation in this suite now follows.
+     *
+     * `load` waits for every subresource: images, fonts, third-party scripts. One of
+     * those never completing is enough to hold the navigation open even though the
+     * page is fully usable, which is exactly how it fails on CI - egress there is not
+     * the same as a developer's machine, so a blocked font or analytics host hangs
+     * until the navigation budget runs out. Seen on sit 2026-08-31, a 30-second
+     * timeout on the portal home that loads instantly by hand.
+     *
+     * Nothing is lost by not waiting: whatever runs next waits for the element it
+     * actually needs, so waiting for the last image only adds someone else's latency
+     * to every test.
      */
     async navigateToPortal(url: string, testInfo: TestInfo): Promise<void> {
-        await this.page.goto(url);
+        await this.page.goto(url, { waitUntil: 'domcontentloaded' });
         await this.switchToWelshIfNeeded(testInfo);
     }
 

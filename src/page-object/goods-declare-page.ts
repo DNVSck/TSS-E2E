@@ -1,8 +1,9 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue } from '../helper/element-helper';
+import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, readErrorSummary } from '../helper/element-helper';
 
-const COMMODITY_SUBMIT_TIMEOUT = 45_000;
+
+const COMMODITY_SUBMIT_TIMEOUT = 60_000;
 
 /**
  * How long the NIRMS screen gets to appear before the wizard is taken to have skipped it.
@@ -325,7 +326,7 @@ export class GoodsDeclarePage extends BasePage {
         await this.selectCommodityCode(commodityCode);
         await this.inputGoodsDescription(goodsDescription);
         await this.inputSupplementaryUnits(supplementaryUnits);
-        await this.clickContinueButton(COMMODITY_SUBMIT_TIMEOUT);
+        await this.submitCommodityScreen();
     }
 
     /**
@@ -341,7 +342,7 @@ export class GoodsDeclarePage extends BasePage {
     ): Promise<void> {
         await this.selectCommodityCode(commodityCode);
         await this.inputGoodsDescription(goodsDescription);
-        await this.clickContinueButton(COMMODITY_SUBMIT_TIMEOUT);
+        await this.submitCommodityScreen();
     }
 
     /**
@@ -472,5 +473,36 @@ export class GoodsDeclarePage extends BasePage {
     async enterStatisticalValue(statisticalValue: string): Promise<void> {
         await this.statisticalValueInput.fill(statisticalValue);
         await this.clickContinueButton();
+    }
+
+    private async submitCommodityScreen(): Promise<void> {
+        try {
+            await this.clickContinueButton(COMMODITY_SUBMIT_TIMEOUT);
+        } catch (error) {
+            throw new Error(await this.describeCommoditySubmitFailure(error as Error));
+        }
+    }
+
+    /**
+     * Every read here is allowed to fail: this runs while the page may still be
+     * navigating, and a diagnosis that threw would replace the real failure with its own.
+     */
+    private async describeCommoditySubmitFailure(error: Error): Promise<string> {
+        let path = 'a page whose URL could not be read';
+        try {
+            path = new URL(this.page.url()).pathname;
+        } catch { /* keep the placeholder */ }
+
+        const errors = await readErrorSummary(this.page);
+        const quoted = errors.map(message => `"${message}"`).join('; ');
+        const shown = errors.length
+            ? `The page shows: ${quoted}.`
+            : 'The page shows no error, so the service had not refused the form - it had '
+                + 'not answered yet. Read the POST in this run\'s trace before raising the '
+                + 'budget again.';
+
+        return `Submitting the commodity screen did not reach the next screen within `
+            + `${COMMODITY_SUBMIT_TIMEOUT / 1_000}s. Still on "${path}". ${shown}`
+            + `\n\nOriginal failure: ${error.message}`;
     }
 }

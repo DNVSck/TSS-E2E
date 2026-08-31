@@ -10,6 +10,8 @@ import { HAULIER_COMPANY_NAME } from '../../../config/environment';
 import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
 import { gmrData } from '../../../src/test-data/gmr-data';
 import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
+import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
+import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
 
 const ENS_SFD_GMR = '4436';
 
@@ -83,4 +85,30 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
     await triggerFinalStatusThroughCdsFlow.arriveSfdConsignment(sfd);
   });
 
+    test('Verify ENS-SFD - RoRo (Unaccompanied) is created and submitted successfully (0700-000)', { tag: [ '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+    await ReportLog.setStory('ENS SFD - GB to NI RoRo Simplified Customs Declaration UnAccompanied');
+    reportTestCaseLink(ENS_SFD_GMR);
+    const { generatedConsignment: sfd } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+      testInfo,
+      url: getBaseUrl(),
+      movementOverrides: {
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
+      },
+      consignmentOverrides: {
+        headerPreviousDocuments: [
+          previousDocument({ documentReference: '5GB553202734852-09042025' })
+        ],
+      },
+      goodsItemOverrides: {
+        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+        documentReferences: [
+          documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
+        ],
+      },
+    });
+
+    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
+
+    await triggerFinalStatusThroughCdsFlow.arriveSfdConsignment(sfd);
+  });
 });
