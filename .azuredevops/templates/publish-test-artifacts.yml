@@ -65,15 +65,20 @@ steps:
       TRIMMED="$(Agent.TempDirectory)/reports/allure-results-single"
       [ -d "$RESULTS" ] || exit 0
 
-      # Traces are excluded, videos are kept. Every attachment is inlined as base64, and
-      # a run with the traces in produced a 72 MB index.html - paid for nothing, because
-      # Allure cannot open a trace, it only offers it as a download. A video it plays
-      # inline, which is the point of reading the report at all. Traces stay in the two
-      # artifacts above, where `playwright show-trace` can use them.
+      # Traces and videos are excluded, and this report is only viable because they are.
+      # Every attachment is inlined as base64, so the whole set has to be held in memory
+      # to encode - measured at roughly ten times its own size. A run that kept the
+      # traces produced a 72 MB index.html; the one that kept the videos never finished,
+      # the step was killed and no artifact was published at all.
+      #
+      # Neither is a loss here. Allure cannot open a trace, it only offers a download.
+      # What survives is what this report is for: which tests failed, the steps they
+      # took, and the screenshot of the failure. Video and traces stay complete in the
+      # allure-report artifact above, which `allure open` serves in full.
       rm -rf "$TRIMMED"
       mkdir -p "$TRIMMED"
       for f in "$RESULTS"/*; do
-        case "$f" in *.zip) continue;; esac
+        case "$f" in *.zip|*.webm) continue;; esac
         cp "$f" "$TRIMMED"/
       done
 
@@ -91,11 +96,3 @@ steps:
       ArtifactName: 'allure-report-single-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
       publishLocation: Container
 
-  - task: PublishBuildArtifacts@1
-    displayName: 'Publish Playwright HTML report - ${{ parameters.environment }}'
-    condition: always()
-    continueOnError: true
-    inputs:
-      PathtoPublish: '$(Agent.TempDirectory)/reports/playwright-report'
-      ArtifactName: 'playwright-report-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
-      publishLocation: Container

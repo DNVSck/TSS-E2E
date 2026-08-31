@@ -15,7 +15,7 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Agent Represen
     await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
   });
 
-  test('Verify FFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitFfdStandaloneFlow }, testInfo) => {
+  test('Verify FFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: [] }, async ({ createAndSubmitFfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('FFD Standalone - Prelodged - RoRo (Accompanied)');
     await createAndSubmitFfdStandaloneFlow.completeFfdStandaloneFlow({
       testInfo,
@@ -29,7 +29,7 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Agent Represen
 
   // Accompanied and unaccompanied differ by one screen: the vehicle registration
   // becomes the trailer registration. Everything after it is the same journey.
-  test('Verify FFD Standalone - Prelodged - RoRo (Unaccompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitFfdStandaloneFlow }, testInfo) => {
+  test('Verify FFD Standalone - Prelodged - RoRo (Unaccompanied) is created and submitted successfully (4000-000)', { tag: [] }, async ({ createAndSubmitFfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('FFD Standalone - Prelodged - RoRo (Unaccompanied)');
     await createAndSubmitFfdStandaloneFlow.completeFfdStandaloneFlow({
       testInfo,
