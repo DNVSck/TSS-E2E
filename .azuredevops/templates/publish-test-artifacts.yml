@@ -61,7 +61,23 @@ steps:
 
   - script: |
       set -euo pipefail
-      node "$(Build.SourcesDirectory)/node_modules/allure/cli.js" generate "$(Agent.TempDirectory)/reports/allure-results" --config "$(Build.SourcesDirectory)/allure.share.mjs" -o "$(Agent.TempDirectory)/reports/allure-report-single"
+      RESULTS="$(Agent.TempDirectory)/reports/allure-results"
+      TRIMMED="$(Agent.TempDirectory)/reports/allure-results-single"
+      [ -d "$RESULTS" ] || exit 0
+
+      # Traces are excluded, videos are kept. Every attachment is inlined as base64, and
+      # a run with the traces in produced a 72 MB index.html - paid for nothing, because
+      # Allure cannot open a trace, it only offers it as a download. A video it plays
+      # inline, which is the point of reading the report at all. Traces stay in the two
+      # artifacts above, where `playwright show-trace` can use them.
+      rm -rf "$TRIMMED"
+      mkdir -p "$TRIMMED"
+      for f in "$RESULTS"/*; do
+        case "$f" in *.zip) continue;; esac
+        cp "$f" "$TRIMMED"/
+      done
+
+      node "$(Build.SourcesDirectory)/node_modules/allure/cli.js" generate "$TRIMMED" --config "$(Build.SourcesDirectory)/allure.share.mjs" -o "$(Agent.TempDirectory)/reports/allure-report-single"
     displayName: 'Generate single-file Allure report'
     condition: always()
     continueOnError: true

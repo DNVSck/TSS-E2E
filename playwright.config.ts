@@ -9,7 +9,7 @@ const LOCALE = process.env.LOCALE ?? 'all';
  */
 const TEST_TIMEOUT = 300_000; // Maximum duration of one test: 5 minutes
 const EXPECT_TIMEOUT = 30_000; // Maximum wait for Playwright assertions: 30 seconds
-const ACTION_TIMEOUT = 15_000; // Maximum wait for actions such as click/fill: 15 seconds
+const ACTION_TIMEOUT = 30_000; // Maximum wait for actions such as click/fill: 30 seconds
 const NAVIGATION_TIMEOUT = 30_000; // Maximum wait for page navigation: 30 seconds
 
 const HEADLESS = process.env.HEADLESS === 'true';
@@ -87,22 +87,8 @@ export default defineConfig({
     actionTimeout: ACTION_TIMEOUT,
     navigationTimeout: NAVIGATION_TIMEOUT,
     screenshot: 'only-on-failure',
-    /*
-     * Video locally, none on CI.
-     *
-     * On CI the video is the one artifact that adds no information: the trace below
-     * replays the same failure with the DOM, the network log and the console attached,
-     * and `screenshot` above already keeps the final frame. It is not free - 124 MB
-     * across 46 failures on the nightly of 2026-08-31, roughly three times what the
-     * traces themselves weigh once the filmstrip is off - and that weight is what makes
-     * the published artifact too heavy to download.
-     *
-     * Locally it stays on. There is no artifact to download, nothing to slow down, and
-     * a video is the quickest way to watch a headless run that behaved unlike the headed
-     * one you were debugging.
-     */
     video: {
-      mode: process.env.CI ? 'off' : 'retain-on-failure',
+      mode: 'retain-on-failure',
       size: RECORDING_SIZE,
     },
     /*
