@@ -47,20 +47,7 @@ export default defineConfig({
   globalTeardown: './config/global-teardown.ts', /* Global teardown to generate Allure report after tests */
   fullyParallel: true, /* Run tests in files in parallel */
   forbidOnly: !!process.env.CI, /* Fail the build on CI if you accidentally left test.only in the source code. */
-  /*
-   * One retry on CI, not two.
-   *
-   * `retain-on-failure` keeps a trace for EVERY failed attempt, so each retry multiplies
-   * what the run publishes: the nightly of 2026-08-31 produced 48 traces weighing 529 MB
-   * for roughly 16 failing tests - three attempts each, of which the first two were never
-   * read. Dropping to one retry removes a third of that, and a third of the wall-clock
-   * spent re-running tests that were going to fail anyway.
-   *
-   * What it costs: a test that is genuinely flaky one run in three now reports red more
-   * often. That is the intended direction - this suite has known flakiness (the commodity
-   * autocomplete, TOTP windows) and a third attempt hid it rather than fixing it.
-   */
-  retries: process.env.CI ? 1 : Number(process.env.RETRY_COUNT ?? 0),
+  retries: Number(process.env.RETRY_COUNT ?? 0),
 
   workers: resolveWorkers(),
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -91,26 +78,12 @@ export default defineConfig({
       mode: 'retain-on-failure',
       size: RECORDING_SIZE,
     },
-    /*
-     * DOM snapshots, but no filmstrip.
-     *
-     * Three settings sound alike and are not. `screenshot` above writes a standalone PNG
-     * of the failure - kept, and it costs almost nothing (2 MB across 46 failures on the
-     * nightly of 2026-08-31). `snapshots` records the DOM and CSS around every action,
-     * which the trace viewer RENDERS as the real page: hover it, inspect elements, see
-     * the locator highlighted. `screenshots` adds the thumbnail strip along the top for
-     * scrubbing - and that strip was the bulk of 529 MB across 48 traces.
-     *
-     * So what is lost is the scrubbing, not the ability to see the failing page.
-     *
-     * The one thing a DOM snapshot cannot reproduce is anything not expressible as
-     * HTML - canvas contents, a cross-origin iframe. This service is GOV.UK forms, so
-     * that has not come up; if it ever does, turn the strip back on for that run.
-     */
     trace: {
       mode: 'retain-on-failure',
       snapshots: true,
       screenshots: false,
+      sources: false,
+      attachments: false,
     },
     // Headed: null = fill the real (maximized) window. Headless: there is no window
     // to fill, so state the size explicitly - see RECORDING_SIZE.
