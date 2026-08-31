@@ -47,7 +47,20 @@ export default defineConfig({
   globalTeardown: './config/global-teardown.ts', /* Global teardown to generate Allure report after tests */
   fullyParallel: true, /* Run tests in files in parallel */
   forbidOnly: !!process.env.CI, /* Fail the build on CI if you accidentally left test.only in the source code. */
-  retries: process.env.CI ? 2 : Number(process.env.RETRY_COUNT ?? 0), /* Retry strategy - number of retries */
+  /*
+   * One retry on CI, not two.
+   *
+   * `retain-on-failure` keeps a trace for EVERY failed attempt, so each retry multiplies
+   * what the run publishes: the nightly of 2026-08-31 produced 48 traces weighing 529 MB
+   * for roughly 16 failing tests - three attempts each, of which the first two were never
+   * read. Dropping to one retry removes a third of that, and a third of the wall-clock
+   * spent re-running tests that were going to fail anyway.
+   *
+   * What it costs: a test that is genuinely flaky one run in three now reports red more
+   * often. That is the intended direction - this suite has known flakiness (the commodity
+   * autocomplete, TOTP windows) and a third attempt hid it rather than fixing it.
+   */
+  retries: process.env.CI ? 1 : Number(process.env.RETRY_COUNT ?? 0),
 
   workers: resolveWorkers(),
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -74,11 +87,45 @@ export default defineConfig({
     actionTimeout: ACTION_TIMEOUT,
     navigationTimeout: NAVIGATION_TIMEOUT,
     screenshot: 'only-on-failure',
+    /*
+     * Video locally, none on CI.
+     *
+     * On CI the video is the one artifact that adds no information: the trace below
+     * replays the same failure with the DOM, the network log and the console attached,
+     * and `screenshot` above already keeps the final frame. It is not free - 124 MB
+     * across 46 failures on the nightly of 2026-08-31, roughly three times what the
+     * traces themselves weigh once the filmstrip is off - and that weight is what makes
+     * the published artifact too heavy to download.
+     *
+     * Locally it stays on. There is no artifact to download, nothing to slow down, and
+     * a video is the quickest way to watch a headless run that behaved unlike the headed
+     * one you were debugging.
+     */
     video: {
-      mode: 'retain-on-failure',
+      mode: process.env.CI ? 'off' : 'retain-on-failure',
       size: RECORDING_SIZE,
     },
-    trace: 'retain-on-failure',
+    /*
+     * DOM snapshots, but no filmstrip.
+     *
+     * Three settings sound alike and are not. `screenshot` above writes a standalone PNG
+     * of the failure - kept, and it costs almost nothing (2 MB across 46 failures on the
+     * nightly of 2026-08-31). `snapshots` records the DOM and CSS around every action,
+     * which the trace viewer RENDERS as the real page: hover it, inspect elements, see
+     * the locator highlighted. `screenshots` adds the thumbnail strip along the top for
+     * scrubbing - and that strip was the bulk of 529 MB across 48 traces.
+     *
+     * So what is lost is the scrubbing, not the ability to see the failing page.
+     *
+     * The one thing a DOM snapshot cannot reproduce is anything not expressible as
+     * HTML - canvas contents, a cross-origin iframe. This service is GOV.UK forms, so
+     * that has not come up; if it ever does, turn the strip back on for that run.
+     */
+    trace: {
+      mode: 'retain-on-failure',
+      snapshots: true,
+      screenshots: false,
+    },
     // Headed: null = fill the real (maximized) window. Headless: there is no window
     // to fill, so state the size explicitly - see RECORDING_SIZE.
     viewport: HEADLESS ? RECORDING_SIZE : null,

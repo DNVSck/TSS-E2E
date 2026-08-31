@@ -302,7 +302,7 @@ export class MovementOverviewPage extends BasePage {
         url.search = '';
         url.hash = '';
 
-        await this.page.goto(url.toString());
+        await this.page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
     }
 
     async returnToMovementOverview(): Promise<void> {

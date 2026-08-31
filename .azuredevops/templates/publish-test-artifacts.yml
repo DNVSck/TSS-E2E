@@ -58,3 +58,17 @@ steps:
       PathtoPublish: '$(Agent.TempDirectory)/reports/allure-report'
       ArtifactName: 'allure-report-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
       publishLocation: Container
+
+  # The Playwright HTML report. The staging step above already moves it into the
+  # temp dir, but nothing published it - so it was generated and then thrown away
+  # with the agent. It carries the trace viewer inline: a failed test can be opened
+  # and replayed in the browser, without downloading an archive and running
+  # show-trace against it.
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Playwright HTML report - ${{ parameters.environment }}'
+    condition: always()
+    continueOnError: true
+    inputs:
+      PathtoPublish: '$(Agent.TempDirectory)/reports/playwright-report'
+      ArtifactName: 'playwright-report-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
+      publishLocation: Container

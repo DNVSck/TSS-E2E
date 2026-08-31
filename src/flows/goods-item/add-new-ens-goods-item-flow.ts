@@ -1,6 +1,7 @@
 import { ReportLog } from '../../core/report/report-log';
 import { GoodsData } from '../../test-data/goods-data';
 import { GoodsItemSteps } from './goods-item-steps';
+import { hidesSupplementaryUnit } from '../../helper/procedure-code-helper';
 
 /**
  * Which of the conditional goods-item screens a journey reaches. Derived from the
@@ -81,10 +82,11 @@ export class AddNewEnsGoodsItemFlow {
             // A TGP item skips the commodity screen outright — the record already
             // supplies the commodity code, description and supplementary units.
             //
-            // SFD and IMMI then collect supplementary units on that screen; ENS-only and
-            // EIDR do not render the field. Two separate steps, not one with a flag.
             if (!usesTgp) {
-                if (journey.hasSupplementaryUnits) {
+                const showsSupplementaryUnits = journey.hasSupplementaryUnits
+                    && !hidesSupplementaryUnit(input.additionalProcedureCode);
+
+                if (showsSupplementaryUnits) {
                     await this.steps.enterCommodityInformation(input);
                 } else {
                     await this.steps.enterCommodityInformationWithoutSupplementaryUnits(input);

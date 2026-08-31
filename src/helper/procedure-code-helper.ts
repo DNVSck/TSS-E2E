@@ -22,3 +22,24 @@ export function requiresWarehouseIdentifier(procedureCode: string): boolean {
     return WAREHOUSED_PREFIXES.some(prefix => code.startsWith(prefix))
         || WAREHOUSED_SUFFIXES.some(suffix => code.endsWith(suffix));
 }
+
+/**
+ * Additional procedure codes for which the service HIDES the supplementary-unit field
+ * (IMMI, from 2026-08-31 - Trung).
+ *
+ * Kept as a list rather than folded into the caller for the same reason the warehouse
+ * rule is: the service's own rule is stated once here, so a test that changes its
+ * additional procedure code gets the right screen with nothing else to remember.
+ */
+const HIDES_SUPPLEMENTARY_UNIT: ReadonlySet<string> = new Set(['1SG', '1EN']);
+
+/**
+ * Whether the goods-item wizard will hide the supplementary-unit field.
+ *
+ * Hidden, not merely optional - so a flow that filled it anyway would be typing into a
+ * field that is not on the screen, which fails as a timeout naming the input rather
+ * than naming the rule that removed it.
+ */
+export function hidesSupplementaryUnit(additionalProcedureCode: string): boolean {
+    return HIDES_SUPPLEMENTARY_UNIT.has(additionalProcedureCode.trim());
+}
