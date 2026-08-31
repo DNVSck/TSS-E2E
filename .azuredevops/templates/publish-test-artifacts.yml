@@ -59,11 +59,22 @@ steps:
       ArtifactName: 'allure-report-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
       publishLocation: Container
 
-  # The Playwright HTML report. The staging step above already moves it into the
-  # temp dir, but nothing published it - so it was generated and then thrown away
-  # with the agent. It carries the trace viewer inline: a failed test can be opened
-  # and replayed in the browser, without downloading an archive and running
-  # show-trace against it.
+  - script: |
+      set -euo pipefail
+      node "$(Build.SourcesDirectory)/node_modules/allure/cli.js" generate "$(Agent.TempDirectory)/reports/allure-results" --config "$(Build.SourcesDirectory)/allure.share.mjs" -o "$(Agent.TempDirectory)/reports/allure-report-single"
+    displayName: 'Generate single-file Allure report'
+    condition: always()
+    continueOnError: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish single-file Allure report - ${{ parameters.environment }}'
+    condition: always()
+    continueOnError: true
+    inputs:
+      PathtoPublish: '$(Agent.TempDirectory)/reports/allure-report-single'
+      ArtifactName: 'allure-report-single-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
+      publishLocation: Container
+
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Playwright HTML report - ${{ parameters.environment }}'
     condition: always()
