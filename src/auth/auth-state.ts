@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { AUTH_REUSE_SESSION, ENV } from '../../config/environment';
-import { CompanyProfile } from './credentials';
+import { CompanyProfile, accountFor, assertProfileAuthenticated } from './credentials';
 
 /**
  * Where the signed-in browser state (cookies + localStorage) is cached.
@@ -53,4 +53,39 @@ export function isAuthStateFresh(profile: CompanyProfile, accountNumber?: number
 
     const ageMinutes = (Date.now() - fs.statSync(file).mtimeMs) / 60_000;
     return ageMinutes < AUTH_STATE_TTL_MINUTES;
+}
+
+/**
+ * Whether the cached session is younger than its time-to-live, IGNORING
+ * AUTH_REUSE_SESSION.
+ *
+ * Deliberately not isAuthStateFresh. That one answers "may this run REPLAY a session
+ * from an earlier run", which is off by default so every run proves sign-in still
+ * works. This one answers "did THIS run already sign this profile in", asked by an
+ * on-demand profile that would otherwise sign in again for every test that touches
+ * it - spending a login each time and colliding with its own TOTP window.
+ */
+export function isSessionYoungEnough(profile: CompanyProfile, accountNumber?: number): boolean {
+    const file = authStatePath(profile, accountNumber);
+
+    if (!fs.existsSync(file)) return false;
+
+    const ageMinutes = (Date.now() - fs.statSync(file).mtimeMs) / 60_000;
+    return ageMinutes < AUTH_STATE_TTL_MINUTES;
+}
+
+/**
+ * The session file a company profile resolves to for one worker.
+ *
+ * A pooled profile stores a file per account (AGENT-2.json) while a single-login
+ * profile stores one unindexed file, so the name cannot be derived from the profile
+ * alone. Guessing it does not fail loudly - it quietly picks up whatever an earlier
+ * run left on disk, and the test dies much later on an unexpected sign-in screen.
+ *
+ * Takes a worker index rather than a TestInfo so the rule stays free of Playwright.
+ */
+export function sessionFor(profile: CompanyProfile, parallelIndex: number): string {
+    assertProfileAuthenticated(profile, 'This test signs in as');
+    const account = accountFor(profile, parallelIndex);
+    return authStatePath(account.profile, account.accountNumber);
 }

@@ -60,6 +60,21 @@ export class CreateAndSubmitSfdStandaloneFlow {
         url: string;
         consignmentOverrides?: Partial<SfdStandaloneConsignmentData>;
         goodsItemOverrides?: Partial<GoodsData>;
+
+        /**
+         * The status this submission is expected to settle on, when it is NOT the one
+         * the journey would normally reach.
+         *
+         * The authority specs submit deliberately invalid data to get a declaration
+         * handed back, so for them "Trader Input Required" is the precondition of the
+         * test rather than its failure - and it has to be told apart from the state
+         * everybody else treats as a problem.
+         *
+         * Given, the MRN check is skipped too: a rejected consignment was never
+         * authorised, so asking for its authorised MRN would fail for a second reason
+         * that says nothing new.
+         */
+        expectedStatusKey?: TranslationKey;
     }): Promise<DeclarationIdentity | undefined> {
         const { testInfo, url } = options;
         const consignmentData = sfdStandaloneConsignment(options.consignmentOverrides);
@@ -91,7 +106,7 @@ export class CreateAndSubmitSfdStandaloneFlow {
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
 
         await this.consignmentOverviewFlow.submitConsignment();
-        const mrn = await this.verifyPostSubmit(consignmentData);
+        const mrn = await this.verifyPostSubmit(consignmentData, options.expectedStatusKey);
 
         // Undefined on the EIDR route, which has no MRN and needs no CDS response.
         return mrn ? { lrn, mrn } : undefined;
@@ -102,11 +117,19 @@ export class CreateAndSubmitSfdStandaloneFlow {
      * and is assigned an MRN.
      */
     private async verifyPostSubmit(
-        consignmentData: SfdStandaloneConsignmentData
+        consignmentData: SfdStandaloneConsignmentData,
+        expectedStatusKey?: TranslationKey
     ): Promise<string | undefined> {
         await this.consignmentOverviewFlow.verifyStandaloneConsignmentSubmitted(
-            submittedStatusKey(consignmentData)
+            expectedStatusKey ?? submittedStatusKey(consignmentData)
         );
+
+        // A caller that expected a rejection was never going to get an MRN - see the
+        // option's own note.
+        if (expectedStatusKey) {
+            return undefined;
+        }
+
         // One consignment, so one check - which one depends on the route. The EIDR route
         // has no MRN check yet (see verifySfdEidrDeclarationType); calling the SFD one
         // for it would read the same row and report whatever it holds as "SFD MRN".

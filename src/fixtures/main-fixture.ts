@@ -6,6 +6,8 @@ import { PageFixtureType, pageFixture } from './page-fixture';
 import { flowFixture, FlowFixtureType } from './flow-fixture';
 import { workerAuthFixture, WorkerAuthFixtureType } from './worker-auth-fixture';
 import { secondDeviceFixture, SecondDeviceFixtureType } from './second-device-fixture';
+import { companySessionFixture, CompanySessionFixtureType } from './company-session-fixture';
+import { representationFixture, RepresentationFixtureType } from './representation-fixture';
 
 type AllFixtures =
   APIFixtureType &
@@ -14,7 +16,9 @@ type AllFixtures =
   AxeFixtureType &
   FlowFixtureType &
   WorkerAuthFixtureType &
-  SecondDeviceFixtureType;
+  SecondDeviceFixtureType &
+  CompanySessionFixtureType &
+  RepresentationFixtureType;
 
 export const testMain = test.extend<AllFixtures>({
   ...apiFixture,
@@ -24,4 +28,6 @@ export const testMain = test.extend<AllFixtures>({
   ...secondDeviceFixture,
   ...flowFixture,
   ...workerAuthFixture,
+  ...companySessionFixture,
+  ...representationFixture,
 });

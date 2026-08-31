@@ -1,5 +1,6 @@
 ﻿import { TestInfo } from '@playwright/test';
 import { PortalAccessFlow } from '../portal-access-flow';
+import { TranslationKey } from '../../fixtures/locale-fixture';
 import { InitialFormDeclarationFlow } from '../initial-form-declaration-flow';
 import { AddNewImmiStandaloneConsignmentFlow } from '../consignment/add-new-immi-standalone-consignment-flow';
 import { AddNewImmiStandaloneGoodsItemFlow } from '../goods-item/add-new-immi-standalone-goods-item-flow';
@@ -46,6 +47,21 @@ export class CreateAndSubmitImmiStandaloneFlow {
         url: string;
         consignmentOverrides?: Partial<ImmiStandaloneConsignmentData>;
         goodsItemOverrides?: Partial<GoodsData>;
+
+        /**
+         * The status this submission is expected to settle on, when it is NOT the one
+         * the journey would normally reach.
+         *
+         * The authority specs submit deliberately invalid data to get a declaration
+         * handed back, so for them "Trader Input Required" is the precondition of the
+         * test rather than its failure - and it has to be told apart from the state
+         * everybody else treats as a problem.
+         *
+         * Given, the MRN check is skipped too: a rejected consignment was never
+         * authorised, so asking for its authorised MRN would fail for a second reason
+         * that says nothing new.
+         */
+        expectedStatusKey?: TranslationKey;
     }): Promise<DeclarationIdentity> {
         const { testInfo, url } = options;
         const consignmentData = immiStandaloneConsignment(options.consignmentOverrides);
@@ -103,7 +119,7 @@ export class CreateAndSubmitImmiStandaloneFlow {
         }
 
         await this.consignmentOverviewFlow.submitConsignment();
-        const mrn = await this.verifyPostSubmit(consignmentData);
+        const mrn = await this.verifyPostSubmit(consignmentData, options.expectedStatusKey);
         return { lrn, mrn };
     }
 
@@ -115,11 +131,19 @@ export class CreateAndSubmitImmiStandaloneFlow {
      * check the ENS journey makes of the IMMI consignment it auto-generates.
      */
     private async verifyPostSubmit(
-        consignmentData: ImmiStandaloneConsignmentData
+        consignmentData: ImmiStandaloneConsignmentData,
+        expectedStatusKey?: TranslationKey
     ): Promise<string> {
         await this.consignmentOverviewFlow.verifyStandaloneConsignmentSubmitted(
-            standaloneSubmittedStatusKey(consignmentData.isPreLodged)
+            expectedStatusKey ?? standaloneSubmittedStatusKey(consignmentData.isPreLodged)
         );
+
+        // A caller that expected a rejection was never going to get an MRN - see the
+        // option's own note.
+        if (expectedStatusKey) {
+            return '';
+        }
+
         return this.consignmentOverviewFlow
             .verifyStandaloneConsignmentMrn('IMMI', MRN_COUNTRY_CODE.IMMI);
     }

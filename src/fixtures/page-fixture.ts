@@ -30,6 +30,7 @@ import { StandaloneConsignmentDeclarePage } from '../page-object/standalone-cons
 import { FfdStandaloneConsignmentDeclarePage } from '../page-object/ffd-standalone-consignment-declare-page';
 import { CommercialTermsDeclarePage } from '../page-object/commercial-terms-declare-page';
 import { DeclarationOverviewPage } from '../page-object/declaration-overview-page';
+import { DeclarationSearchPage } from '../page-object/declaration-search-page';
 import { SupplementaryDeclarationOverviewPage } from '../page-object/supplementary-declaration-overview-page';
 import { SupplementaryDeclarationGoodsRecordPage } from '../page-object/supplementary-declaration-goods-record-page';
 import { Wizard } from '../page-object/components/wizard';
@@ -71,6 +72,10 @@ export type PageFixtureType = {
     commercialTermsDeclarePage: CommercialTermsDeclarePage;
     // The declaration list, and the supplementary declaration reached through it.
     declarationOverviewPage: DeclarationOverviewPage;
+
+    // Finding a declaration by reference, which is how the authority specs reach one
+    // they did not create: a second company sees it only through the search.
+    declarationSearchPage: DeclarationSearchPage;
     supplementaryDeclarationOverviewPage: SupplementaryDeclarationOverviewPage;
     supplementaryDeclarationGoodsRecordPage: SupplementaryDeclarationGoodsRecordPage;
     supplementaryDeclarationWizard: Wizard<SupplementaryDeclarationStep>;
@@ -202,6 +207,10 @@ export const pageFixture: ExtendParams[0] = {
 
     declarationOverviewPage: async ({ page }, use) => {
         await use(new DeclarationOverviewPage(page));
+    },
+
+    declarationSearchPage: async ({ page }, use) => {
+        await use(new DeclarationSearchPage(page));
     },
 
     supplementaryDeclarationOverviewPage: async ({ page, t }, use) => {

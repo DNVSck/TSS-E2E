@@ -2,8 +2,8 @@ import { chromium } from '@playwright/test';
 import { OTP_ENABLED, ENV, BASE_URL } from '../../config/environment';
 import { PortalPage } from '../page-object/portal-page';
 import { SignInPage } from '../page-object/sign-in-page';
-import { authStatePath, isAuthStateFresh, AUTH_STATE_TTL_MINUTES } from './auth-state';
-import { CompanyProfile, UserCredentials, getCredentialsPool, profilesToAuthenticate } from './credentials';
+import { authStatePath, isAuthStateFresh, isSessionYoungEnough, AUTH_STATE_TTL_MINUTES } from './auth-state';
+import { CompanyProfile, UserCredentials, accountFor, getCredentialsPool, profilesToAuthenticate } from './credentials';
 
 const SIGN_IN_TIMEOUT_MS = 60_000;
 
@@ -152,4 +152,35 @@ function buildSignInError(credentials: UserCredentials, label: string, url: stri
         `${totpHint} in .env.${ENV}.\n` +
         `Underlying error: ${reason}`
     );
+}
+
+/**
+ * Sign a profile in the first time a test asks for it, rather than in globalSetup.
+ *
+ * For a profile only one spec uses. Signing it in on every run costs a login the other
+ * suites never need, and an expired password on it would block them all - so it earns
+ * its session by being asked for.
+ *
+ * isSessionYoungEnough, not isAuthStateFresh: this asks whether THIS run already signed
+ * the profile in, which must hold even when session REPLAY across runs is switched off.
+ * Using the replay guard here would sign in again for every test that touched the
+ * profile, spending a login each time and colliding with its own TOTP window.
+ */
+export async function signInOnDemand(
+    profile: CompanyProfile,
+    parallelIndex: number
+): Promise<void> {
+    const account = accountFor(profile, parallelIndex);
+
+    if (isSessionYoungEnough(account.profile, account.accountNumber)) {
+        return;
+    }
+
+    const browser = await chromium.launch({ headless: true });
+
+    try {
+        await signInAndSaveState(browser, account);
+    } finally {
+        await browser.close();
+    }
 }

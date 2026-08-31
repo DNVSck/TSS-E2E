@@ -53,12 +53,22 @@ export class AgentBanner extends BasePage {
         return await this.stopRepresentingLink.count() > 0;
     }
 
-    /** Stop representing if currently representing (no-op otherwise). */
-    async stopRepresenting(): Promise<void> {
-        if (!await this.isRepresenting()) {
-            return;
+    async stopRepresenting(): Promise<boolean> {
+        if (await this.bannerIsMissing()) {
+            await this.page.goto(BASE_URL);
         }
+
+        if (!await this.isRepresenting()) {
+            return false;
+        }
+
         await this.stopRepresentingLink.click();
         await this.stopRepresentingLink.waitFor({ state: 'hidden' });
+        return true;
+    }
+
+    private async bannerIsMissing(): Promise<boolean> {
+        return await this.selectCompanyLink.count() === 0
+            && await this.stopRepresentingLink.count() === 0;
     }
 }

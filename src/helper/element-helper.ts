@@ -308,6 +308,48 @@ export async function waitForWizardStepToChange(
  * destination is described by SHAPE instead: inside the wizard, and past the
  * placeholder.
  */
+/**
+ * Click a link whose destination is NOT its href, and wait until the page has moved.
+ *
+ * The weaker sibling of clickLinkAndEnterWizard below, for links whose landing route is
+ * not knowable in advance at all. A summary list's "Change" action points at
+ * ".../edit/_edit_?field=x" and the app answers by redirecting to whichever wizard
+ * screen that field lives on, so the only honest expectation is that we are no longer
+ * where we started.
+ *
+ * Deliberately weaker, and to be used only where the destination genuinely cannot be
+ * described; anywhere the wizard segment IS known, clickLinkAndEnterWizard says so and
+ * fails on the right thing. The two overlap enough that they should be reconciled once
+ * the authority suite runs green and the real routes are observable - keeping both for
+ * now because substituting the stronger one without seeing the route would only move
+ * the guess from here to a timeout.
+ */
+export async function clickLinkAndWaitForNavigation(page: Page, link: Locator): Promise<void> {
+    await link.waitFor({ state: 'visible', timeout: LINK_VISIBLE_TIMEOUT });
+    const from = StringUtil.stripTrailingSlashes(new URL(page.url()).pathname);
+
+    for (let attempt = 1; attempt <= ROUTE_CLICK_ATTEMPTS; attempt++) {
+        try {
+            await link.click({ timeout: LINK_VISIBLE_TIMEOUT });
+            await page.waitForURL(
+                url => StringUtil.stripTrailingSlashes(url.pathname) !== from,
+                { waitUntil: 'domcontentloaded', timeout: ROUTE_LANDING_TIMEOUT }
+            );
+            return;
+        } catch (error) {
+            if (attempt === ROUTE_CLICK_ATTEMPTS) {
+                throw new Error(
+                    `Link did not navigate away from "${from}" after ${ROUTE_CLICK_ATTEMPTS} clicks. ` +
+                    `Last failure: ${(error as Error).message}`
+                );
+            }
+            await ReportLog.info(
+                `Link did not navigate on attempt ${attempt}; clicking it again and retrying.`
+            );
+        }
+    }
+}
+
 export async function clickLinkAndEnterWizard(
     page: Page,
     link: Locator,

@@ -31,4 +31,19 @@ export class RepresentTraderFlow {
         // that represent reach this flow, so non-representing journeys stay clean.
         ReportLog.setParameter('Representing', companyName);
     }
+
+    /**
+     * Stop representing, so the Agent acts as itself again.
+     *
+     * The authority specs need this to ask their sharpest question: an Agent that
+     * has stopped representing must lose sight of the declarations it made while it
+     * was. Representation is server-side session state, not part of the replayed
+     * storageState, so it has to be turned off deliberately - nothing else clears it
+     * mid-test.
+     */
+    async stopRepresenting(): Promise<void> {
+        await ReportLog.step('Stop representing', async () => {
+            await this.agentBanner.stopRepresenting();
+        });
+    }
 }

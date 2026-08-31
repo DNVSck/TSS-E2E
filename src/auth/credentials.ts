@@ -22,6 +22,15 @@ export const COMPANY_PROFILE = {
      * to BE the holder; every other test just needed somewhere to sign in.
      */
     AUTH_ACCOUNT: 'AUTH_ACCOUNT',
+
+    /**
+     * A SECOND agent company, unrelated to AGENT.
+     *
+     * The authority tests need two agents to ask their question at all: whether a
+     * declaration one company made is readable, editable or invisible to another.
+     * One agent can only ever be asked about its own work.
+     */
+    AGENT_B: 'AGENT_B',
 } as const;
 
 /**
@@ -72,6 +81,67 @@ const DEFAULT_AUTH_PROFILES: CompanyProfile[] = [
  * Lives here rather than next to the sign-in code because the test workers read
  * it too, and they must not pull a browser-launching module in just to do so.
  */
+/**
+ * Profiles signed in on FIRST USE rather than in globalSetup.
+ *
+ * Deliberately outside the default list, not missing from it. AGENT_B appears in one
+ * spec file; signing it in on every run would spend a login, and an expired password
+ * on it would block suites that never mention it.
+ */
+const ON_DEMAND_PROFILES: ReadonlySet<CompanyProfile> = new Set([
+    COMPANY_PROFILE.AGENT_B,
+]);
+
+/** True when this profile is signed in on first use rather than in globalSetup. */
+export function isOnDemandProfile(profile: CompanyProfile): boolean {
+    return ON_DEMAND_PROFILES.has(profile);
+}
+
+const REPRESENTING_PROFILES: ReadonlySet<CompanyProfile> = new Set([
+    COMPANY_PROFILE.AGENT_B,
+]);
+
+/**
+ * True when this profile can act on another company's behalf - i.e. its session can
+ * carry a representation that outlives the test that started it.
+ *
+ * Read by the representation-reset fixture, which clears that state before every test.
+ * An importer has no agent banner to clear, so asking here is what keeps the fixture a
+ * no-op for every other profile instead of navigating pointlessly.
+ */
+export function canRepresentTraders(profile: CompanyProfile): boolean {
+    return REPRESENTING_PROFILES.has(profile);
+}
+
+/**
+ * Refuse to use a profile this run did not sign in.
+ *
+ * globalSetup only signs in the profiles AUTH_PROFILES asks for. Playwright loads a
+ * stale or absent storageState without complaint, so a test wanting another one would
+ * replay an expired session and die much later on an unexpected sign-in screen, far
+ * from the real cause.
+ *
+ * `howAsked` names which of the two routes got here - a spec's test.use({ authProfile }),
+ * or a test opening a second company's session - so the reader knows where to look.
+ */
+export function assertProfileAuthenticated(profile: CompanyProfile, howAsked: string): void {
+    // An on-demand profile has no session until a test asks for one, and asking is what
+    // creates it - so a missing one here is the normal case, not a stale-file hazard.
+    if (isOnDemandProfile(profile)) return;
+
+    const authenticated = profilesToAuthenticate();
+
+    if (authenticated.includes(profile)) return;
+
+    throw new Error(
+        `${howAsked} ${profile}, but this run only signed in: ${authenticated.join(', ')}. ` +
+        `Any ${profile} session on disk is left over from an earlier run and would be replayed ` +
+        `expired. Include the profile:\n\n` +
+        `    AUTH_PROFILES=${[...authenticated, profile].join(',')}\n\n` +
+        `If every run needs it, add it to DEFAULT_AUTH_PROFILES in src/auth/credentials.ts instead.`
+    );
+}
+
 export function profilesToAuthenticate(): CompanyProfile[] {
     const raw = process.env.AUTH_PROFILES?.trim();
 

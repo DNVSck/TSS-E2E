@@ -1,5 +1,6 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { ConsignmentSummaryPage } from './consignment-summary-page';
+import { RecordTabs } from './components/record-tabs';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { summaryListValue, readFieldWhenVisible, readFieldIfPresent } from '../helper/element-helper';
 import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
@@ -8,6 +9,17 @@ import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper
 const DETAIL_READ_TIMEOUT = 15_000;
 /** The MRN is populated asynchronously after the consignment is authorised. */
 const MRN_POLL_TIMEOUT = 60_000;
+
+/**
+ * How long a RESUBMISSION is given to change the status.
+ *
+ * Longer than a first submission's, measured 2026-08-19 on a standalone SFD: the
+ * correction cleared every CDS error from the page - so the service had taken it -
+ * while the status still read "Trader Input Required" when the 60-second poll gave up.
+ * A declaration being re-judged is a second trip through CDS, and it is slower than the
+ * first.
+ */
+export const RESUBMIT_STATUS_POLL_TIMEOUT = 150_000;
 
 export const STATUS_POLL_TIMEOUT = 150_000;
 
@@ -29,8 +41,16 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
     private readonly movementReferenceNumber: Locator;
     private readonly status: Locator;
 
+    /**
+     * The tabbed record lists below the summary. Composed rather than inherited: the
+     * tabs belong to this kind of screen, not to every page in the suite.
+     */
+    readonly tabs: RecordTabs;
+
     constructor(page: Page, t: TFunction) {
         super(page, t);
+
+        this.tabs = new RecordTabs(page);
 
         this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
         this.movementReferenceNumber = summaryListValue(page, this.t!('consignmentDetail.movementReferenceNumber'));
@@ -64,7 +84,18 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
      * one locator per attempt and saves the whole remaining timeout on the runs that
      * need their report soonest, the failing ones.
      */
-    async waitForMovementReferenceNumber(): Promise<string> {
+    /**
+     * `traderInputIsSettled` is the caller saying whether a rejection ENDS the wait.
+     * True for a journey, which has nothing more to expect once the service hands the
+     * declaration back. False for the authority specs, which submit deliberately
+     * invalid data - there, "Trader Input Required" is the state being waited FOR, and
+     * treating it as the end of the road would return an empty MRN before the service
+     * had finished producing one.
+     */
+    async waitForMovementReferenceNumber(
+        options: { traderInputIsSettled?: boolean } = {}
+    ): Promise<string> {
+        const { traderInputIsSettled = true } = options;
         let mrn = '';
         await expect(async () => {
             mrn = await this.readMovementReferenceNumber();
@@ -73,7 +104,7 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
             }
 
             const status = await readFieldIfPresent(this.status);
-            if (isTraderInputRequiredStatus(status, this.t!)) {
+            if (traderInputIsSettled && isTraderInputRequiredStatus(status, this.t!)) {
                 return;
             }
 
