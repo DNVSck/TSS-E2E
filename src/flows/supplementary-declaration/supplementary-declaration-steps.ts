@@ -134,11 +134,11 @@ export class SupplementaryDeclarationSteps {
     }
 
     /** "UN/LOCODE" - the screen behind answering yes above. */
-    async enterUnlocodeIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async selectUnlocodeIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
         return this.answerIfAsked(
             STEP.DELIVERY_UNLOCODE,
             `Quote ${input.unlocode} as the delivery location`,
-            () => this.commercialTermsPage.enterUnlocode(input.unlocode)
+            () => this.commercialTermsPage.selectUnlocode(input.unlocode)
         );
     }
 

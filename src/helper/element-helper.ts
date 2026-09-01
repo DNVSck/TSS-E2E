@@ -152,6 +152,11 @@ export async function clickLinkAndWaitForRoute(page: Page, link: Locator): Promi
     const route = StringUtil.stripTrailingSlashes(new URL(href, page.url()).pathname);
 
     for (let attempt = 1; attempt <= ROUTE_CLICK_ATTEMPTS; attempt++) {
+
+        if (StringUtil.stripTrailingSlashes(new URL(page.url()).pathname) === route) {
+            return;
+        }
+
         try {
             await link.click({ timeout: LINK_VISIBLE_TIMEOUT });
             // Wait only for the route to be committed and parsed, NOT for the page to
@@ -349,6 +354,11 @@ export async function clickLinkAndWaitForNavigation(page: Page, link: Locator): 
     const from = StringUtil.stripTrailingSlashes(new URL(page.url()).pathname);
 
     for (let attempt = 1; attempt <= ROUTE_CLICK_ATTEMPTS; attempt++) {
+
+        if (StringUtil.stripTrailingSlashes(new URL(page.url()).pathname) !== from) {
+            return;
+        }
+
         try {
             await link.click({ timeout: LINK_VISIBLE_TIMEOUT });
             await page.waitForURL(

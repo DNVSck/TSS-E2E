@@ -259,7 +259,7 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     async inputShippingMarks(shippingMarks: string): Promise<void> {
-        await this.shippingMarksInput.fill(shippingMarks, { timeout: 30000 });
+        await this.shippingMarksInput.fill(shippingMarks, { timeout: COMMODITY_SUBMIT_TIMEOUT });
     }
 
     async selectTypeOfPackages(typeOfPackages: string): Promise<void> {

@@ -20,7 +20,7 @@ import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper
  */
 export class CommercialTermsDeclarePage extends BasePage {
     private readonly incotermDropdown: Locator;
-    private readonly unlocodeInput: Locator;
+    private readonly unlocodeDropdown: Locator;
     private readonly unlocodeCountryDropdown: Locator;
     private readonly unlocodePlaceDropdown: Locator;
     private readonly methodOfPaymentDropdown: Locator;
@@ -29,7 +29,7 @@ export class CommercialTermsDeclarePage extends BasePage {
         super(page);
 
         this.incotermDropdown = page.locator('select#incoterm');
-        this.unlocodeInput = page.locator('input#unlocode');
+        this.unlocodeDropdown = page.locator('select#unlocode');
         this.unlocodeCountryDropdown = page.locator('select#unlocodeCountry');
         this.unlocodePlaceDropdown = page.locator('select#unlocodePlace');
         this.methodOfPaymentDropdown = page.locator('select#methodOfPayment');
@@ -51,8 +51,8 @@ export class CommercialTermsDeclarePage extends BasePage {
      * The alternative to the two screens below, not an addition to them: saying yes
      * takes the code outright, saying no asks for the country and the place instead.
      */
-    async enterUnlocode(unlocode: string): Promise<void> {
-        await this.unlocodeInput.fill(unlocode);
+    async selectUnlocode(unlocode: string): Promise<void> {
+        await selectDropdownValue(this.unlocodeDropdown, unlocode);
         await this.clickContinueButton();
     }
 

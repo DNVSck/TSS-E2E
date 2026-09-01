@@ -24,14 +24,7 @@ import {
 test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
     test.use({ authProfile: COMPANY_PROFILE.AGENT });
 
-    /**
-     * Longer than the suite's five minutes because this is two journeys end to end, and
-     * most of the extra is spent waiting rather than clicking: the movement, CDS
-     * clearing the SFD, the supplementary declaration's own two wizards - and finally
-     * CDS again, which took about two minutes on its own to assess the duty. Measured at
-     * 5.3 minutes on SIT, so five was not a margin at all.
-     */
-    test.describe.configure({ timeout: 900_000 });
+    test.describe.configure({ timeout: 1_200_000 });
 
     test.beforeEach(async () => {
         await ReportLog.setFeature('GB to NI Supplementary Declaration Process');

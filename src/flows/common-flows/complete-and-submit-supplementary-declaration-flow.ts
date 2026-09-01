@@ -158,7 +158,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
             // knowing the UN/LOCODE takes it outright, not knowing it asks for the
             // country and then the place. Whichever the wizard did not go to is simply
             // not on the page, so both are offered and only one can match.
-            await this.steps.enterUnlocodeIfAsked(input);
+            await this.steps.selectUnlocodeIfAsked(input);
             await this.steps.selectDeliveryCountryIfAsked(input);
             await this.steps.selectDeliveryPlaceIfAsked(input);
 

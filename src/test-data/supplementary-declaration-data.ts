@@ -4,7 +4,7 @@ import { INCOTERM } from '../constant/incoterm-constant';
 import { NATURE_OF_GOODS } from '../constant/nature-of-goods-constant';
 import { METHOD_OF_PAYMENT, MethodOfPaymentCode } from '../constant/method-of-payment-constant';
 import { PREFERENCE_CODE, VALUATION_METHOD } from '../constant/preference-and-valuation-constant';
-import { UNLOCODE } from '../constant/unlocode-constant';
+import { UNLOCODE, UnlocodeCode } from '../constant/unlocode-constant';
 import { DocumentReferenceData, documentReference } from './document-reference-data';
 import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
@@ -83,10 +83,10 @@ export interface SupplementaryDeclarationData {
      */
     isKnownUnlocode: boolean;
     /** Used when isKnownUnlocode is true. */
-    unlocode: string;
+    unlocode: UnlocodeCode;
     /** Both used when isKnownUnlocode is false. */
     deliveryCountryCode: string;
-    deliveryPlaceUnlocode: string;
+    deliveryPlaceUnlocode: UnlocodeCode;
 
     // ---- header: invoice currency --------------------------------------------------
     invoiceCurrency: string;

@@ -10,6 +10,8 @@ import {
 /** This overview paints its summary card a beat after load. */
 const OVERVIEW_READ_TIMEOUT = 15_000;
 
+const TOGGLE_SETTLE_TIMEOUT = 2_000;
+
 /**
  * How long a submitted supplementary declaration gets to reach its final status.
  *
@@ -34,6 +36,7 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
     private readonly declarationReference: Locator;
     private readonly status: Locator;
     private readonly fullDetailsToggle: Locator;
+    private readonly fullDetails: Locator;
     private readonly startNowButton: Locator;
     private readonly goodsRecordLinks: Locator;
     private readonly goodsRecordsTab: Locator;
@@ -50,7 +53,11 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
         // carries an untranslated i18n key ("govuk-tag--declaration-list.statuses.draft")
         // which changes with the status, so only this half is matched on.
         this.status = page.locator('span.declaration-status');
+        // One button for both directions - it flips aria-expanded and its own label
+        // ("Show"/"Hide full consignment details"), so there is one element here, not two.
+        // Matched on what it CONTROLS rather than on that label, which is translated.
         this.fullDetailsToggle = page.locator("button[aria-controls='declaration-full-details']");
+        this.fullDetails = page.locator('#declaration-full-details');
         this.startNowButton = page.locator('main a.govuk-button--start');
         // A goods record is the only link on this screen whose href ENDS in /overview -
         // the tabs all carry a "#overview-tab" fragment after it.
@@ -85,9 +92,13 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
      */
     async expandFullConsignmentDetails(): Promise<void> {
         await this.fullDetailsToggle.waitFor({ state: 'visible', timeout: OVERVIEW_READ_TIMEOUT });
-        if (await this.fullDetailsToggle.getAttribute('aria-expanded') !== 'true') {
-            await this.fullDetailsToggle.click();
-        }
+
+        await expect(async () => {
+            if (await this.fullDetailsToggle.getAttribute('aria-expanded') !== 'true') {
+                await this.fullDetailsToggle.click();
+            }
+            await this.fullDetails.waitFor({ state: 'visible', timeout: TOGGLE_SETTLE_TIMEOUT });
+        }).toPass({ timeout: OVERVIEW_READ_TIMEOUT, intervals: [500, 1_000, 2_000] });
     }
 
     /** The frontier declaration this SD was raised against. Behind the toggle. */
@@ -211,7 +222,7 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
     async readSubmissionProblem(): Promise<string> {
         try {
             await this.expandFullConsignmentDetails();
-            const details = await this.page.locator('#declaration-full-details').innerText();
+            const details = await this.fullDetails.innerText();
             const problem = /There is a problem\s*([\s\S]*?)(?:\n\s*\n|$)/.exec(details);
             return problem ? problem[1].trim() : '';
         } catch {
