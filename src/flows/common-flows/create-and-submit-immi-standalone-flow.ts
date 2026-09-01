@@ -75,7 +75,10 @@ export class CreateAndSubmitImmiStandaloneFlow {
         // A TGP item never typed its commodity code, description or country of origin —
         // the service copied them from the record — so the overview is the only place
         // that proves the record was applied. No-op when the item did not use TGP.
-        await this.goodsOverviewFlow.verifyTgpPopulatedFields(usedTgp ? goodsData.tgpRecord : undefined);
+        await this.goodsOverviewFlow.verifyTgpPopulatedFields(
+            usedTgp ? goodsData.tgpRecord : undefined,
+            goodsData.additionalProcedureCode
+        );
         // Goods-item-overview tabs, declared while on the goods item's overview. All six
         // tabs the IMMI goods item shows are wired, each a no-op on an empty list, so a
         // test opting into one only has to supply its data - same set as the ENS flow.

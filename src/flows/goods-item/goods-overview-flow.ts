@@ -10,6 +10,7 @@ import { DocumentReferenceData } from "../../test-data/document-reference-data";
 import { AdditionalInformationData } from "../../test-data/additional-information-data";
 import { PreviousDocumentData } from "../../test-data/previous-document-data";
 import { TgpRecordData } from "../../test-data/tgp-record-data";
+import { hidesSupplementaryUnit } from "../../helper/procedure-code-helper";
 
 /**
  * Declares the goods-item overview tabs that each hold a list of records
@@ -32,14 +33,24 @@ export class GoodsOverviewFlow {
      * Verify the goods-item fields the service populated from the chosen TGP record.
      * A no-op unless the item was actually declared from a TGP, so every other
      * journey is unaffected.
+     *
+     * The additional procedure code comes in because it decides whether one of those
+     * rows exists at all - the same rule the wizard applies to the field itself, read
+     * here from the same helper so the two cannot drift apart.
      */
-    async verifyTgpPopulatedFields(record?: TgpRecordData): Promise<void> {
+    async verifyTgpPopulatedFields(
+        record: TgpRecordData | undefined,
+        additionalProcedureCode: string
+    ): Promise<void> {
         if (!record) {
             return;
         }
 
         await ReportLog.step('Verify the goods item was populated from the TGP record', async () => {
-            await this.goodsOverviewPage.assertTgpPopulatedFields(record);
+            await this.goodsOverviewPage.assertTgpPopulatedFields(
+                record,
+                !hidesSupplementaryUnit(additionalProcedureCode)
+            );
         });
     }
 
