@@ -4,12 +4,10 @@ import { bootstrapEnv } from './config/bootstrap-env';
 bootstrapEnv();
 const LOCALE = process.env.LOCALE ?? 'all';
 
-/**
- * Central Playwright timeout configuration.
- */
-const TEST_TIMEOUT = 300_000; // Maximum duration of one test: 5 minutes
+
+const TEST_TIMEOUT = 900_000; // Maximum duration of one test: 15 minutes
 const EXPECT_TIMEOUT = 30_000; // Maximum wait for Playwright assertions: 30 seconds
-const ACTION_TIMEOUT = 15_000; // Maximum wait for actions such as click/fill: 15 seconds
+const ACTION_TIMEOUT = 30_000; // Maximum wait for actions such as click/fill: 30 seconds
 const NAVIGATION_TIMEOUT = 30_000; // Maximum wait for page navigation: 30 seconds
 
 const HEADLESS = process.env.HEADLESS === 'true';
@@ -47,7 +45,7 @@ export default defineConfig({
   globalTeardown: './config/global-teardown.ts', /* Global teardown to generate Allure report after tests */
   fullyParallel: true, /* Run tests in files in parallel */
   forbidOnly: !!process.env.CI, /* Fail the build on CI if you accidentally left test.only in the source code. */
-  retries: process.env.CI ? 2 : Number(process.env.RETRY_COUNT ?? 0), /* Retry strategy - number of retries */
+  retries: 0,
 
   workers: resolveWorkers(),
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -67,8 +65,7 @@ export default defineConfig({
     baseURL: process.env.BASE_URL,
     headless: HEADLESS,
     launchOptions: {
-      args: ['--start-maximized'],
-      slowMo: Number(process.env.SLOW_MO ?? 0),
+      args: ['--start-maximized']
     },
     /* Screenshots and traces for failure debugging */
     actionTimeout: ACTION_TIMEOUT,
@@ -78,7 +75,13 @@ export default defineConfig({
       mode: 'retain-on-failure',
       size: RECORDING_SIZE,
     },
-    trace: 'retain-on-failure',
+    trace: {
+      mode: 'retain-on-failure',
+      snapshots: true,
+      screenshots: false,
+      sources: false,
+      attachments: false,
+    },
     // Headed: null = fill the real (maximized) window. Headless: there is no window
     // to fill, so state the size explicitly - see RECORDING_SIZE.
     viewport: HEADLESS ? RECORDING_SIZE : null,

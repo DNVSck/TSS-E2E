@@ -42,6 +42,7 @@
     "report:clean": "node -e \"const fs=require('fs');fs.rmSync('allure-report-share',{recursive:true,force:true});fs.rmSync('allure-report-share.zip',{force:true});console.log('Removed allure-report-share/ and allure-report-share.zip')\"",
     "report:zip": "pnpm report:share && powershell -NoProfile -Command \"Compress-Archive -Path allure-report-share/index.html -DestinationPath allure-report-share.zip -Force\"",
     "report:open": "allure open allure-report",
+    "report:ci": "tsx --tsconfig tsconfig.json src/core/report/open-allure-report.mts",
     "report:serve": "allure open allure-results",
     "report:pdf": "tsx --tsconfig tsconfig.json src/core/report/export-allure-pdf.mts",
     "lint": "eslint . --ext .ts"

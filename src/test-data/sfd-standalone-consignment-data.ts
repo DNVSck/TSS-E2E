@@ -88,7 +88,7 @@ const defaults: SfdStandaloneConsignmentData = {
 
     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
     vehicleRegistration: 'GB12ABC',
-    portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+    portOfArrival: PORT_OF_ARRIVAL.BELFAST_GVMS_PORT,
     isControlledGoods: false,
 
     // Exporter profile. A blank/new EORI makes the app ask for the address, which

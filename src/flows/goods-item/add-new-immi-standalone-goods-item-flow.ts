@@ -25,6 +25,7 @@ export class AddNewImmiStandaloneGoodsItemFlow {
 
             await this.steps.selectGoodsProcedureCode(input);
             await this.steps.selectAdditionalProcedureCode(input);
+            await this.steps.selectSupervisingCustomsOfficeIfAsked(input);
             await this.steps.enterWarehouseIdentifierIfAsked(input);
 
             if (!usesTgp) {

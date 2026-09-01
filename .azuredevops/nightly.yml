@@ -25,7 +25,7 @@ jobs:
           environment: test
           testScope: regression
           testFilter: none
-          workers: 1
+          workers: 4
 
   - job: FunctionalTests_sit
     displayName: 'Run functional regression - sit'
@@ -38,4 +38,4 @@ jobs:
           environment: sit
           testScope: regression
           testFilter: none
-          workers: 1
+          workers: 4

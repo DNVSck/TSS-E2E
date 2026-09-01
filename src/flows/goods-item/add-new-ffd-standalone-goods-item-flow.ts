@@ -17,6 +17,7 @@ export class AddNewFfdStandaloneGoodsItemFlow {
             await this.steps.openNewGoodsRecord();
             await this.steps.selectGoodsProcedureCode(input);
             await this.steps.selectAdditionalProcedureCode(input);
+            await this.steps.selectSupervisingCustomsOfficeIfAsked(input);
             await this.steps.enterWarehouseIdentifierIfAsked(input);
             await this.steps.enterCommodityInformation(input);
             await this.steps.enterStandalonePackagingDetails(input);

@@ -5,6 +5,7 @@ import {TYPE_OF_PACKAGES} from "../constant/type-of-packages-constant";
 import { PROCEDURE_CODES } from "../constant/procedure-codes-constant";
 import { ADDITIONAL_PROCEDURE_CODES } from "../constant/additional-procedure-codes-constant";
 import { WAREHOUSE_TYPE, WarehouseTypeCode } from "../constant/warehouse-type-constant";
+import { SUPERVISING_CUSTOMS_OFFICE, SupervisingCustomsOffice } from "../constant/supervising-customs-office-constant";
 import { ITEM_CURRENCY } from "../constant/item-currency-constant";
 import { CONTAINER_SIZE } from "../constant/container-size-constant";
 import { CONTAINER_PACKED_STATUS } from "../constant/container-packed-status-constant";
@@ -67,6 +68,7 @@ export interface GoodsData {
     netMass?: string;
     procedureCode: string;
     additionalProcedureCode: string;
+    supervisingCustomsOffice: SupervisingCustomsOffice;
     warehouseType: WarehouseTypeCode;
     warehouseIdentifier: string;
     invoiceNumber?: string;
@@ -149,6 +151,11 @@ const defaults: Omit<GoodsData, 'containerIdentifierNumber' | 'warehouseIdentifi
     procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
     // "Additional procedure code"
     additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.NO_OTHER_ADDITIONAL_CODE_000,
+
+    // "Supervising customs office" - only reached on the procedure codes that ask for
+    // it, and Belfast is the office for NI movements. The same value the service used
+    // to derive by itself, so the consignment summary keeps asserting what it always did.
+    supervisingCustomsOffice: SUPERVISING_CUSTOMS_OFFICE.GBBEL004,
 
     warehouseType: WAREHOUSE_TYPE.NON_CUSTOMS_WAREHOUSE,
     // "Invoice number" (Optional field)

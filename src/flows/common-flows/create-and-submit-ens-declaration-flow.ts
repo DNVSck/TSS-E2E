@@ -81,7 +81,10 @@ export class CreateAndSubmitEnsDeclarationFlow {
         // A TGP item never typed its commodity code, description or supplementary
         // units — the service copied them from the record — so the overview is the
         // only place that proves the record was applied. No-op on every other journey.
-        await this.goodsOverviewFlow.verifyTgpPopulatedFields(usedTgp ? goodsData.tgpRecord : undefined);
+        await this.goodsOverviewFlow.verifyTgpPopulatedFields(
+            usedTgp ? goodsData.tgpRecord : undefined,
+            goodsData.additionalProcedureCode
+        );
         // Goods-item overview tabs (e.g. document references). No-op unless the goods
         // data supplies entries, so existing journeys are unaffected.
         await this.goodsOverviewFlow.declareDocumentReferences(goodsData.documentReferences);

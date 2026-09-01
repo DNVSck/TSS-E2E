@@ -58,3 +58,41 @@ steps:
       PathtoPublish: '$(Agent.TempDirectory)/reports/allure-report'
       ArtifactName: 'allure-report-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
       publishLocation: Container
+
+  - script: |
+      set -euo pipefail
+      RESULTS="$(Agent.TempDirectory)/reports/allure-results"
+      TRIMMED="$(Agent.TempDirectory)/reports/allure-results-single"
+      [ -d "$RESULTS" ] || exit 0
+
+      # Traces and videos are excluded, and this report is only viable because they are.
+      # Every attachment is inlined as base64, so the whole set has to be held in memory
+      # to encode - measured at roughly ten times its own size. A run that kept the
+      # traces produced a 72 MB index.html; the one that kept the videos never finished,
+      # the step was killed and no artifact was published at all.
+      #
+      # Neither is a loss here. Allure cannot open a trace, it only offers a download.
+      # What survives is what this report is for: which tests failed, the steps they
+      # took, and the screenshot of the failure. Video and traces stay complete in the
+      # allure-report artifact above, which `allure open` serves in full.
+      rm -rf "$TRIMMED"
+      mkdir -p "$TRIMMED"
+      for f in "$RESULTS"/*; do
+        case "$f" in *.zip|*.webm) continue;; esac
+        cp "$f" "$TRIMMED"/
+      done
+
+      node "$(Build.SourcesDirectory)/node_modules/allure/cli.js" generate "$TRIMMED" --config "$(Build.SourcesDirectory)/allure.share.mjs" -o "$(Agent.TempDirectory)/reports/allure-report-single"
+    displayName: 'Generate single-file Allure report'
+    condition: always()
+    continueOnError: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish single-file Allure report - ${{ parameters.environment }}'
+    condition: always()
+    continueOnError: true
+    inputs:
+      PathtoPublish: '$(Agent.TempDirectory)/reports/allure-report-single'
+      ArtifactName: 'allure-report-single-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
+      publishLocation: Container
+
