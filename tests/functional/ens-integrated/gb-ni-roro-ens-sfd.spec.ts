@@ -6,7 +6,7 @@ import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { previousDocument } from '../../../src/test-data/previous-document-data';
 import { documentReference } from '../../../src/test-data/document-reference-data';
 import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
-import { HAULIER_COMPANY_NAME, IMPORTER_EXW } from '../../../config/environment';
+import { IMPORTER_EXW } from '../../../config/environment';
 import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
 import { gmrData } from '../../../src/test-data/gmr-data';
 import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
@@ -23,11 +23,8 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
   // (chosen from the pool), signed in once by globalSetup. No sign-in per test.
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
 
-  test.beforeEach(async ({ representTraderFlow }) => {
+  test.beforeEach(async () => {
     await ReportLog.setFeature('GB to NI RoRo Simplified Customs Declaration Process');
-    // Agent represents the Haulier company before declaring on the Importer's
-    // behalf — a server-side session state the journeys below then run under.
-    await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
   });
 
   test('Verify ENS-SFD - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {

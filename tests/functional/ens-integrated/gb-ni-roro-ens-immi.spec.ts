@@ -10,7 +10,7 @@ import { previousDocument } from '../../../src/test-data/previous-document-data'
 import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
 import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
-import { HAULIER_COMPANY_NAME, IMPORTER_UKIMS, IMPORTER_EXW } from '../../../config/environment';
+import { IMPORTER_UKIMS, IMPORTER_EXW } from '../../../config/environment';
 import { gmrData } from '../../../src/test-data/gmr-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
@@ -25,9 +25,8 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
   // (chosen from the pool), signed in once by globalSetup. No sign-in per test.
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
 
-  test.beforeEach(async ({ representTraderFlow }) => {
+  test.beforeEach(async () => {
     await ReportLog.setFeature('GB to NI RoRo IMMI - Pre-movement');
-    await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
   });
 
   test('Verify ENS-IMMI - RoRo (Accompanied) with TGP is created and submitted successfully (4000-1EN)', { tag: ['@smoke', '@happyPath'] }, async ({

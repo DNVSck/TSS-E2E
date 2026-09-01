@@ -1,6 +1,6 @@
 import { COMPANY_PROFILE, UserCredentials, accountFor, isProfileConfigured } from '../../../src/auth/credentials';
 import { OTP_ENABLED } from '../../../config/environment';
-import { MESSAGE_CONSTANTS } from '../../../src/constant/messages-constants';
+import { ERROR_MESSAGE } from '../../../src/constant/error-message-constant';
 import { test, expect, getBaseUrl } from '../../test-hooks';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 
@@ -43,7 +43,7 @@ test.describe('TSS Portal sign-in - negative cases', () => {
         );
 
         expect(message, 'Sign-in error for a wrong password')
-            .toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
+            .toBe(ERROR_MESSAGE.INVALID_SIGN_IN_CREDENTIALS);
     });
 
     test('Verify that an incorrect username is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
@@ -57,7 +57,7 @@ test.describe('TSS Portal sign-in - negative cases', () => {
         );
 
         expect(message, 'Sign-in error for an unknown username')
-            .toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
+            .toBe(ERROR_MESSAGE.INVALID_SIGN_IN_CREDENTIALS);
     });
 
     test('Verify that missing password is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
@@ -71,7 +71,7 @@ test.describe('TSS Portal sign-in - negative cases', () => {
         );
 
         expect(message, 'Sign-in error for a missing password')
-            .toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
+            .toBe(ERROR_MESSAGE.INVALID_SIGN_IN_CREDENTIALS);
     });
 
     test('Verify that missing username is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
@@ -87,7 +87,7 @@ test.describe('TSS Portal sign-in - negative cases', () => {
         );
 
         expect(message, 'Sign-in error for a missing username')
-            .toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
+            .toBe(ERROR_MESSAGE.INVALID_SIGN_IN_CREDENTIALS);
     });
 
     test('Verify that a wrong authenticator code is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
@@ -100,7 +100,7 @@ test.describe('TSS Portal sign-in - negative cases', () => {
         const message = await signInFlow.submitWrongAuthenticatorCode(account);
 
         expect(message, 'Authenticator code error')
-            .toBe(MESSAGE_CONSTANTS.INVALID_AUTHENTICATOR_CODE);
+            .toBe(ERROR_MESSAGE.INVALID_AUTHENTICATOR_CODE);
 
         await signInFlow.completeSignInFromAuthenticatorStep(account);
     });

@@ -2,7 +2,6 @@
 import { getBaseUrl, test } from '../../test-hooks';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
-import { HAULIER_COMPANY_NAME } from '../../../config/environment';
 import { gmrData } from '../../../src/test-data/gmr-data';
 import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
@@ -14,11 +13,8 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
   // (chosen from the pool), signed in once by globalSetup. No sign-in per test.
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
 
-  test.beforeEach(async ({ representTraderFlow }) => {
+  test.beforeEach(async () => {
     await ReportLog.setFeature('GB to NI RoRo EIDR Declaration Process');
-    // Agent represents the Haulier company before declaring on the Importer's
-    // behalf — a server-side session state the journeys below then run under.
-    await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
   });
 
   test('Verify ENS-EIDR - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {

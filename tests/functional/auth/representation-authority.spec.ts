@@ -115,24 +115,27 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
     /**
      * One rejected SFD, asked twice: as the Agent itself, then representing the Importer.
      *
-     * The SFD belongs to the importer being declared for - so declaring the ENS does not
-     * by itself carry authority over what the service generated from it, and representing
-     * the importer does.
+     * The SUBMITTER rule: the SFD is generated from an ENS this Agent submitted, so the
+     * Agent holds Full over it on its own account - representing the importer it was
+     * declared FOR neither grants that nor takes it away. Until 2026-09-01 the service
+     * answered the other way and this test measured the contrast; now it measures that
+     * there is none, which is a different claim and every bit as falsifiable.
      *
-     * Both halves live in ONE test because they are the same record in the same state:
-     * splitting them would build a second rejected SFD only to ask the other half of the
-     * question, and would lose what makes the answer worth anything. This Agent account
-     * holds grants from BOTH companies, so the comparison is the same account, the same
-     * browser, the same record, seconds apart - nothing but the representation changed.
+     * Both halves still live in ONE test because they are the same record in the same
+     * state: splitting them would build a second rejected SFD only to ask the other half
+     * of the question. This Agent account holds grants from BOTH companies, so the
+     * comparison is the same account, the same browser, the same record, seconds apart -
+     * nothing but the representation changed.
      *
-     * The Importer half is exercised rather than observed: the Agent goes on to correct
-     * the holder of authorisation CDS objected to and put the SFD back in.
+     * Then the right is EXERCISED where the rule now puts it: representation is given up
+     * first, and the Agent corrects and resubmits as itself. Observing Full and using it
+     * are different claims, and the second is the one a trader would notice.
      */
-    test('Verify that the Agent cannot edit a rejected SFD on its own account, and can once it represents the Importer', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent that submitted the ENS can correct and resubmit the rejected SFD on its own account', { tag: ['@auth', '@authorisation'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
-        await ReportLog.setStory('Agent starts representing the Importer to correct the rejected SFD');
+        await ReportLog.setStory('The Agent that submitted the ENS corrects the rejected SFD as itself');
 
         await ReportLog.step('Agent declares an ENS-SFD and submits it - expect CDS to reject the SFD', async () => {
             await createDraftEnsDeclarationFlow
@@ -157,7 +160,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             records: sfd,
         };
 
-        await ReportLog.step('Agent on its own account - check it is refused every change to the rejected SFD', () =>
+        await ReportLog.step('Agent on its own account - check the submitter is offered every change to the rejected SFD', () =>
             // One party at a time, because the Agent can only represent one company at
             // once - which is the whole point of this test rather than an inconvenience.
             checkAuthorityFlow(GENERATED_DECLARATION_AUTHORITY.rejectedConsignment, {
@@ -165,14 +168,19 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             })
         );
 
-        await ReportLog.step('The same account now representing the Importer - check it is offered those changes', async () => {
+        await ReportLog.step('The same account now representing the Importer - check representing changes nothing', async () => {
             await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
             await checkAuthorityFlow(GENERATED_DECLARATION_AUTHORITY.rejectedConsignment, {
                 ...sfdCheck, parties: ['agentAsImporter'],
             });
         });
 
-        await ReportLog.step('Agent representing the Importer corrects the authorisation - expect CDS to accept it', async () => {
+        await ReportLog.step('Agent on its own account corrects the authorisation - expect CDS to accept it', async () => {
+            // Representation is given up first, so what follows is the SUBMITTER using its
+            // own right rather than the importer's borrowed one. Leaving it on would make
+            // this step pass under the old rule as well, and prove nothing about the new.
+            await representTraderFlow.stopRepresenting();
+
             // The reads ended on the goods item; the authorisation record is on a tab of
             // the consignment.
             await declarationAccessFlow.openRecord(sfd.consignment);
@@ -262,12 +270,16 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * were tried and ACCEPTED before this one (see representation-authority-data), which
      * is why the rejection is arranged where an IMMI actually declares the importer's
      * authorisation: the `1UKI` UKIMS number on the goods item.
+     *
+     * The submitter rule was measured on the SFD, and the two journeys share one row of
+     * the table - so on this journey it is a prediction until this test runs green. That
+     * is the whole reason both exist.
      */
-    test('Verify that the Agent cannot edit a rejected IMMI on its own account, and can once it represents the Importer', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent that submitted the ENS can correct and resubmit the rejected IMMI on its own account', { tag: ['@auth', '@authorisation'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, representTraderFlow, goodsOverviewFlow, checkAuthorityFlow,
     }, testInfo) => {
-        await ReportLog.setStory('The rejected IMMI is the Importer to correct, not the declaring Agent');
+        await ReportLog.setStory('The Agent that submitted the ENS corrects the rejected IMMI as itself');
 
         await ReportLog.step('Agent declares an ENS-IMMI and submits it - expect CDS to reject the IMMI', async () => {
             await createDraftEnsDeclarationFlow
@@ -294,17 +306,22 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             })
         );
 
-        await ReportLog.step('The same account now representing the Importer - check it is offered those changes', async () => {
-            // From the Agent's own browser, switched to represent the Importer: the same
-            // right the Importer holds, reached the way the SFD switch test reaches it,
-            // and without a second window for a correction only one company can make.
+        await ReportLog.step('The same account now representing the Importer - check representing changes nothing', async () => {
+            // From the Agent's own browser, switched to represent the Importer: under the
+            // submitter rule this account already held Full, so what is being asked here is
+            // that taking on a representation does not COST it anything.
             await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
             await checkAuthorityFlow(GENERATED_DECLARATION_AUTHORITY.rejectedConsignment, {
                 ...immiCheck, parties: ['agentAsImporter'],
             });
         });
 
-        await ReportLog.step('Agent representing the Importer corrects the UKIMS document - expect CDS to accept it', async () => {
+        await ReportLog.step('Agent on its own account corrects the UKIMS document - expect CDS to accept it', async () => {
+            // Representation given up first, for the reason the SFD test gives: this step
+            // exists to exercise the SUBMITTER's own right, and it would pass under the
+            // old rule too if the importer's were still being borrowed.
+            await representTraderFlow.stopRepresenting();
+
             // The correction undoes the lever exactly: the goods item's 1UKI goes back to
             // the importer's own UKIMS number. The reads left the browser on the goods
             // item, which is where that record lives.

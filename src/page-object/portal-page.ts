@@ -1,6 +1,8 @@
 import { BasePage } from "./base-page";
 import { Page, Locator} from '@playwright/test';
 import { clickLinkAndWaitForRoute } from '../helper/element-helper';
+import { BASE_URL } from '../../config/environment';
+import { StringUtil } from '../core/util/string-util';
 
 /** SIT renders the portal shell client-side and can be slow under load. */
 const PORTAL_RENDER_TIMEOUT = 45_000;
@@ -79,9 +81,34 @@ export class PortalPage extends BasePage {
         await clickLinkAndWaitForRoute(this.page, this.manageUsersLink);
     }
 
-    /** "View your draft declarations". */
+    /**
+     * "View your draft declarations".
+     *
+     * These landing-page shortcuts exist only on the portal home, so a caller deep
+     * inside a declaration is brought back to the front door first - the same thing
+     * a user would do, and the same guard AgentBanner uses for its own links.
+     */
     async openDraftDeclarations(): Promise<void> {
+        await this.returnToHomeIfAway();
         await clickLinkAndWaitForRoute(this.page, this.draftDeclarationsLink);
+    }
+
+    /**
+     * Land on the portal home unless we are already there.
+     *
+     * Decided from the URL, NOT from whether the wanted link happens to be present.
+     * That was the first attempt and it is wrong: the declarations overview carries a
+     * "Clear filters" link to itself, whose href ends "/overview" exactly like the
+     * shortcut being looked for - so a caller already on that screen was judged to be
+     * home, and then clicked something else entirely.
+     */
+    private async returnToHomeIfAway(): Promise<void> {
+        const home = StringUtil.stripTrailingSlashes(new URL(BASE_URL).pathname);
+        const here = StringUtil.stripTrailingSlashes(new URL(this.page.url()).pathname);
+
+        if (here !== home) {
+            await this.page.goto(BASE_URL);
+        }
     }
 
     /** "Complete your supplementary declarations" - the overview filtered to SD drafts. */

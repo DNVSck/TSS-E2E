@@ -82,7 +82,7 @@ export const ENS_ONLY_AUTHORITY: Record<
  */
 export const GENERATED_DECLARATION_AUTHORITY: Record<'rejectedConsignment', AuthoritySituation> = {
     rejectedConsignment: {
-        agent: READ,
+        agent: FULL,
         agentAsImporter: FULL,
         importer: FULL,
     },

@@ -251,26 +251,10 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     createAndSubmitEnsDeclarationFlow: async ({
-        portalAccessFlow,
-        initialFormDeclarationFlow,
-        movementHeaderDeclarationFlow,
-        movementOverviewFlow,
-        addNewEnsConsignmentFlow,
-        consignmentOverviewFlow,
-        addNewEnsGoodsItemFlow,
-        goodsOverviewFlow,
-        authAccount
+        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow
     }, use) => {
         await use(new CreateAndSubmitEnsDeclarationFlow(
-            portalAccessFlow,
-            initialFormDeclarationFlow,
-            movementHeaderDeclarationFlow,
-            movementOverviewFlow,
-            addNewEnsConsignmentFlow,
-            consignmentOverviewFlow,
-            addNewEnsGoodsItemFlow,
-            goodsOverviewFlow,
-            authAccount
+            createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow
         ));
     },
 
@@ -290,17 +274,10 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     createAndSubmitSfdStandaloneFlow: async ({
-        portalAccessFlow, initialFormDeclarationFlow,
-        standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
-        consignmentOverviewFlow, goodsOverviewFlow, authAccount
+        createDraftSfdStandaloneFlow, consignmentOverviewFlow
     }, use) => {
-        const addConsignment = new AddNewSfdStandaloneConsignmentFlow(
-            standaloneConsignmentSteps, movementSteps, consignmentSteps
-        );
-        const addGoodsItem = new AddNewSfdStandaloneGoodsItemFlow(goodsItemSteps);
         await use(new CreateAndSubmitSfdStandaloneFlow(
-            portalAccessFlow, initialFormDeclarationFlow, addConsignment,
-            addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+            createDraftSfdStandaloneFlow, consignmentOverviewFlow
         ));
     },
 

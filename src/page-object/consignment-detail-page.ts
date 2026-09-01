@@ -130,9 +130,11 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
      * loop ends the moment the answer changes, so a fast environment pays no more than
      * the first round trip.
      *
-     * Throws on timeout, unlike the soft assertions around it: a status that never
-     * arrives means the thing that was supposed to cause it did not happen, and every
-     * later check would be measuring the wrong state.
+     * Returns the last status it read rather than throwing on timeout, because the
+     * caller is the one that knows what a wrong status means: the journey flows treat
+     * it as fatal, the correction check reports it softly. Throwing here would take
+     * that decision away from both, and would lose the reading itself - which is the
+     * one piece of evidence a failed run needs.
      */
     async waitForStatus(
         expectedStatusKey: TranslationKey,
@@ -148,8 +150,10 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
             }
 
             await this.page.reload();
-            expect(await readFieldIfPresent(this.status), 'Consignment status').toBe(expected);
-        }).toPass({ timeout, intervals: [2_000, 3_000, 5_000] });
+            expect(status, 'Consignment status').toBe(expected);
+        })
+            .toPass({ timeout, intervals: [2_000, 3_000, 5_000] })
+            .catch(() => { /* the caller asserts; this only decides how long to wait */ });
 
         return status;
     }
