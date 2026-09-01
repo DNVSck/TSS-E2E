@@ -1,8 +1,9 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue } from '../helper/element-helper';
+import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, readErrorSummary } from '../helper/element-helper';
 
-const COMMODITY_SUBMIT_TIMEOUT = 45_000;
+
+const COMMODITY_SUBMIT_TIMEOUT = 90_000;
 
 /**
  * How long the NIRMS screen gets to appear before the wizard is taken to have skipped it.
@@ -12,6 +13,9 @@ const COMMODITY_SUBMIT_TIMEOUT = 45_000;
  * for, and every declaration that does not qualify for NIRMS pays this once.
  */
 const NIRMS_SCREEN_TIMEOUT = 5_000;
+
+/** How long to look for the supervising customs office screen before deciding it is absent. */
+const SUPERVISING_OFFICE_SCREEN_TIMEOUT = 5_000;
 
 /** The radio group on the NIRMS screen, addressed by the name its inputs post. */
 const USE_NIRMS_RADIO_NAME = 'useNirms';
@@ -52,6 +56,7 @@ export class GoodsDeclarePage extends BasePage {
     private readonly goodsProcedureCodeDropdown: Locator;
 
     private readonly additionalProcedureCodeDropdown: Locator;
+    private readonly supervisingCustomsOfficeDropdown: Locator;
     private readonly warehouseTypeDropdown: Locator;
     private readonly warehouseIdentifierInput: Locator;
 
@@ -122,6 +127,7 @@ export class GoodsDeclarePage extends BasePage {
 
         // "Warehouse identifier" - inserted into the procedure journey only for the
         // procedure codes that declare warehoused goods (see requiresWarehouseIdentifier).
+        this.supervisingCustomsOfficeDropdown = page.locator("select#supervisingCustomsOffice");
         this.warehouseTypeDropdown = page.locator("select#warehouseType");
         this.warehouseIdentifierInput = page.locator("input#warehouseIdentifier");
 
@@ -287,6 +293,33 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     /**
+     * "Supervising customs office" - the office that oversees the procedure, on its own
+     * screen ahead of the warehouse one.
+     *
+     * Only some procedure codes reach it, and the exact set is the service's rule rather
+     * than something this page can derive, so the screen is looked for rather than
+     * assumed. The caller decides when it is worth looking - see
+     * GoodsItemSteps.selectSupervisingCustomsOfficeIfAsked.
+     *
+     * Returns whether the screen was shown.
+     */
+    async selectSupervisingCustomsOfficeIfPresent(office: string): Promise<boolean> {
+        // waitFor rather than isVisible, for the reason given on answerUseNirmsIfPresent:
+        // isVisible ignores its timeout and would call a screen still painting "absent".
+        const shown = await this.supervisingCustomsOfficeDropdown
+            .waitFor({ state: 'visible', timeout: SUPERVISING_OFFICE_SCREEN_TIMEOUT })
+            .then(() => true, () => false);
+
+        if (!shown) {
+            return false;
+        }
+
+        await selectDropdownValue(this.supervisingCustomsOfficeDropdown, office);
+        await this.clickContinueButton();
+        return true;
+    }
+
+    /**
      * "Warehouse identifier" — where the goods being imported are held. Two fields on
      * one screen: the warehouse type, then its identifier.
      */
@@ -325,7 +358,7 @@ export class GoodsDeclarePage extends BasePage {
         await this.selectCommodityCode(commodityCode);
         await this.inputGoodsDescription(goodsDescription);
         await this.inputSupplementaryUnits(supplementaryUnits);
-        await this.clickContinueButton(COMMODITY_SUBMIT_TIMEOUT);
+        await this.submitCommodityScreen();
     }
 
     /**
@@ -341,7 +374,7 @@ export class GoodsDeclarePage extends BasePage {
     ): Promise<void> {
         await this.selectCommodityCode(commodityCode);
         await this.inputGoodsDescription(goodsDescription);
-        await this.clickContinueButton(COMMODITY_SUBMIT_TIMEOUT);
+        await this.submitCommodityScreen();
     }
 
     /**
@@ -472,5 +505,36 @@ export class GoodsDeclarePage extends BasePage {
     async enterStatisticalValue(statisticalValue: string): Promise<void> {
         await this.statisticalValueInput.fill(statisticalValue);
         await this.clickContinueButton();
+    }
+
+    private async submitCommodityScreen(): Promise<void> {
+        try {
+            await this.clickContinueButton(COMMODITY_SUBMIT_TIMEOUT);
+        } catch (error) {
+            throw new Error(await this.describeCommoditySubmitFailure(error as Error));
+        }
+    }
+
+    /**
+     * Every read here is allowed to fail: this runs while the page may still be
+     * navigating, and a diagnosis that threw would replace the real failure with its own.
+     */
+    private async describeCommoditySubmitFailure(error: Error): Promise<string> {
+        let path = 'a page whose URL could not be read';
+        try {
+            path = new URL(this.page.url()).pathname;
+        } catch { /* keep the placeholder */ }
+
+        const errors = await readErrorSummary(this.page);
+        const quoted = errors.map(message => `"${message}"`).join('; ');
+        const shown = errors.length
+            ? `The page shows: ${quoted}.`
+            : 'The page shows no error, so the service had not refused the form - it had '
+                + 'not answered yet. Read the POST in this run\'s trace before raising the '
+                + 'budget again.';
+
+        return `Submitting the commodity screen did not reach the next screen within `
+            + `${COMMODITY_SUBMIT_TIMEOUT / 1_000}s. Still on "${path}". ${shown}`
+            + `\n\nOriginal failure: ${error.message}`;
     }
 }

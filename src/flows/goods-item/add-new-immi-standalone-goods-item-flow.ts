@@ -1,6 +1,7 @@
 import { ReportLog } from '../../core/report/report-log';
 import { GoodsData } from '../../test-data/goods-data';
 import { GoodsItemSteps } from './goods-item-steps';
+import { hidesSupplementaryUnit } from '../../helper/procedure-code-helper';
 
 /**
  * One goods item on the IMMI standalone journey.
@@ -24,10 +25,22 @@ export class AddNewImmiStandaloneGoodsItemFlow {
 
             await this.steps.selectGoodsProcedureCode(input);
             await this.steps.selectAdditionalProcedureCode(input);
+            await this.steps.selectSupervisingCustomsOfficeIfAsked(input);
             await this.steps.enterWarehouseIdentifierIfAsked(input);
 
             if (!usesTgp) {
-                await this.steps.enterCommodityInformation(input);
+                // Unlike the ENS journeys, standalone IMMI always collects supplementary
+                // units, so only the goods item's own additional procedure code can take
+                // the field away - see hidesSupplementaryUnit for which codes do, and why
+                // the code decides rather than a flag in the test data.
+                const showsSupplementaryUnits =
+                    !hidesSupplementaryUnit(input.additionalProcedureCode);
+
+                if (showsSupplementaryUnits) {
+                    await this.steps.enterCommodityInformation(input);
+                } else {
+                    await this.steps.enterCommodityInformationWithoutSupplementaryUnits(input);
+                }
             }
 
             await this.steps.enterStandalonePackagingDetails(input);

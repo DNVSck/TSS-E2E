@@ -1,6 +1,7 @@
 import { ReportLog } from '../../core/report/report-log';
 import { GoodsData } from '../../test-data/goods-data';
 import { GoodsItemSteps } from './goods-item-steps';
+import { hidesSupplementaryUnit } from '../../helper/procedure-code-helper';
 
 /**
  * Which of the conditional goods-item screens a journey reaches. Derived from the
@@ -32,6 +33,11 @@ export interface GoodsJourneyContext {
  * standalone wizards beside this file; the order and the conditions are not, which
  * is why each journey keeps its own spine.
  */
+function asksDangerousGoods(input: GoodsData, journey: GoodsJourneyContext): boolean {
+    return journey.hasDangerousGoods
+        && (!journey.isControlledGoods || input.areGoodsControlled);
+}
+
 export class AddNewEnsGoodsItemFlow {
     constructor(private readonly steps: GoodsItemSteps) { }
 
@@ -50,6 +56,7 @@ export class AddNewEnsGoodsItemFlow {
             if (!journey.isEnsOnly) {
                 await this.steps.selectGoodsProcedureCode(input);
                 await this.steps.selectAdditionalProcedureCode(input);
+                await this.steps.selectSupervisingCustomsOfficeIfAsked(input);
                 await this.steps.enterWarehouseIdentifierIfAsked(input);
             }
 
@@ -59,16 +66,7 @@ export class AddNewEnsGoodsItemFlow {
                 await this.steps.declareControlledGoods(input);
             }
 
-            // Two gates, and neither implies the other on these journeys: IMMI asks the
-            // controlled question but never the dangerous one, while ENS-only asks the
-            // dangerous one without a controlled question before it. So the journey
-            // decides whether the screen exists at all, and the goods-level answer -
-            // when there was one - decides whether it is reached: answering "not
-            // controlled" sends the wizard straight on to the country of origin.
-            const asksDangerousGoods = journey.hasDangerousGoods
-                && (!journey.isControlledGoods || input.areGoodsControlled);
-
-            if (asksDangerousGoods) {
+            if (asksDangerousGoods(input, journey)) {
                 await this.steps.declareDangerousGoodsWithCodes(input);
             }
 
@@ -80,15 +78,8 @@ export class AddNewEnsGoodsItemFlow {
 
             // A TGP item skips the commodity screen outright — the record already
             // supplies the commodity code, description and supplementary units.
-            //
-            // SFD and IMMI then collect supplementary units on that screen; ENS-only and
-            // EIDR do not render the field. Two separate steps, not one with a flag.
             if (!usesTgp) {
-                if (journey.hasSupplementaryUnits) {
-                    await this.steps.enterCommodityInformation(input);
-                } else {
-                    await this.steps.enterCommodityInformationWithoutSupplementaryUnits(input);
-                }
+                await this.enterCommodity(input, journey);
             }
 
             // Between the commodity screen and packaging, which is where the service
@@ -118,5 +109,24 @@ export class AddNewEnsGoodsItemFlow {
             await this.steps.finishGoodsItemDeclaration();
             return usesTgp;
         });
+    }
+
+    /**
+     * The commodity screen, in whichever of its two shapes this item reaches.
+     *
+     * Two independent rules decide that. The JOURNEY decides whether the screen has a
+     * supplementary-unit field at all - SFD and IMMI have one, the others do not - and
+     * the item's own additional procedure code can then take it away again, which is
+     * what hidesSupplementaryUnit reads off the code.
+     */
+    private async enterCommodity(input: GoodsData, journey: GoodsJourneyContext): Promise<void> {
+        const showsSupplementaryUnits = journey.hasSupplementaryUnits
+            && !hidesSupplementaryUnit(input.additionalProcedureCode);
+
+        if (showsSupplementaryUnits) {
+            await this.steps.enterCommodityInformation(input);
+        } else {
+            await this.steps.enterCommodityInformationWithoutSupplementaryUnits(input);
+        }
     }
 }

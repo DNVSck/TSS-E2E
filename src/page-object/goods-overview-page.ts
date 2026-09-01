@@ -70,13 +70,21 @@ export class GoodsOverviewPage extends BasePage {
      * Soft, and every field is read before any of them is asserted, so one wrong
      * value neither hides the others nor stops the journey completing.
      */
-    async assertTgpPopulatedFields(record: TgpRecordData): Promise<void> {
+    async assertTgpPopulatedFields(record: TgpRecordData, showsSupplementaryUnits: boolean): Promise<void> {
         const useTgp = await readFieldWhenVisible(this.useTraderGoodsProfile, SUMMARY_READ_TIMEOUT);
         const chosenTgp = await readFieldWhenVisible(this.chosenTraderGoodsProfile, SUMMARY_READ_TIMEOUT);
         const commodityCode = await readFieldWhenVisible(this.commodityCode, SUMMARY_READ_TIMEOUT);
         const goodsDescription = await readFieldWhenVisible(this.goodsDescription, SUMMARY_READ_TIMEOUT);
         const countryOfOrigin = await readFieldWhenVisible(this.countryOfOrigin, SUMMARY_READ_TIMEOUT);
-        const supplementaryUnits = await readFieldWhenVisible(this.supplementaryUnits, SUMMARY_READ_TIMEOUT);
+
+        // The row is read when it should be there and COUNTED when it should not, so both
+        // outcomes are read before anything is asserted, as above.
+        const supplementaryUnits = showsSupplementaryUnits
+            ? await readFieldWhenVisible(this.supplementaryUnits, SUMMARY_READ_TIMEOUT)
+            : undefined;
+        const supplementaryUnitRows = showsSupplementaryUnits
+            ? undefined
+            : await this.supplementaryUnits.count();
 
         expect.soft(useTgp, 'Use a Trader Goods Profile').toBe(this.t!('common.yes'));
         expect.soft(chosenTgp, 'Chosen TGP record').toBe(record.recordId);
@@ -84,11 +92,22 @@ export class GoodsOverviewPage extends BasePage {
         expect.soft(goodsDescription, 'Goods description from TGP').toBe(record.goodsDescription);
         // The record holds the code; the summary list prints the name.
         expect.soft(countryOfOrigin, 'Country of origin from TGP').toBe(COUNTRY_NAME[record.countryOfOrigin]);
-        // Supplementary units are optional on the record. The row is rendered either
-        // way, showing "Not provided" when the record carries none - so that absence
-        // is asserted too rather than skipped.
-        expect.soft(supplementaryUnits, 'Supplementary units from TGP')
-            .toBe(record.supplementaryUnits || this.t!('common.notProvided'));
+
+        if (showsSupplementaryUnits) {
+            // Supplementary units are optional on the record. The row is rendered either
+            // way, showing "Not provided" when the record carries none - so that absence
+            // is asserted too rather than skipped.
+            expect.soft(supplementaryUnits, 'Supplementary units from TGP')
+                .toBe(record.supplementaryUnits || this.t!('common.notProvided'));
+        } else {
+            // Some additional procedure codes take the field off the wizard, and the
+            // summary list drops the row with it. Asserted rather than skipped: the five
+            // reads above have already established that the screen rendered, so an empty
+            // count here means the row is genuinely gone - and this fails loudly if the
+            // service ever starts showing it again.
+            expect.soft(supplementaryUnitRows, 'Supplementary units row, hidden by the additional procedure code')
+                .toBe(0);
+        }
     }
 
     async declareNewDocumentReference(): Promise<void> {

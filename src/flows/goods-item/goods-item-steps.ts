@@ -119,6 +119,36 @@ export class GoodsItemSteps {
     }
 
     /**
+     * The supervising customs office screen, which comes immediately BEFORE the
+     * warehouse identifier one.
+     *
+     * Two gates, because neither alone is right. The procedure code decides whether it
+     * is worth looking at all - a code that reaches no warehouse screen reaches no
+     * supervising office screen either, so the common journeys pay nothing. Which of the
+     * warehoused codes actually ask is the service's own rule and is not written down
+     * here, so the page then LOOKS rather than assumes.
+     *
+     * If that set is ever stated, this becomes a rule in procedure-code-helper beside
+     * requiresWarehouseIdentifier, and the probe goes away.
+     */
+    async selectSupervisingCustomsOfficeIfAsked(input: GoodsData): Promise<void> {
+        if (!requiresWarehouseIdentifier(input.procedureCode)) {
+            return;
+        }
+
+        await ReportLog.step('Select the supervising customs office', async () => {
+            const asked = await this.goodsDeclarePage.selectSupervisingCustomsOfficeIfPresent(
+                input.supervisingCustomsOffice
+            );
+
+            ReportLog.setParameter(
+                'Supervising customs office screen',
+                asked ? `answered ${input.supervisingCustomsOffice}` : 'not shown'
+            );
+        });
+    }
+
+    /**
      * "Warehouse identifier", which the wizard inserts after the procedure codes only
      * for warehousing procedure codes.
      *
