@@ -89,19 +89,19 @@ export class DeclarationOverviewPage extends BasePage {
      * list is a claim worth testing before the first answer is typed into whatever it
      * returns.
      */
-    async openSupplementaryDeclarationFor(frontierReference: string): Promise<string> {
+    async openSupplementaryDeclarationFor(lrn: string): Promise<string> {
         let href = '';
 
         await expect(async () => {
-            await this.searchByReference(frontierReference);
+            await this.searchByReference(lrn);
 
             await this.page
-                .locator(`main a[href*="${frontierReference}"]`)
+                .locator(`main a[href*="${lrn}"]`)
                 .first()
                 .waitFor({ state: 'visible', timeout: RESULTS_TIMEOUT });
 
             href = await this.supplementaryDeclarationLinks.first().getAttribute('href') ?? '';
-            expect(href, `a supplementary declaration for ${frontierReference}`).not.toBe('');
+            expect(href, `a supplementary declaration for ${lrn}`).not.toBe('');
         }).toPass({ timeout: SUPPLEMENTARY_APPEARS_TIMEOUT, intervals: [3_000, 5_000, 10_000] });
 
         await clickLinkAndWaitForRoute(this.page, this.supplementaryDeclarationLinks.first());

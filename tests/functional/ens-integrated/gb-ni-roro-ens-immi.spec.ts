@@ -35,41 +35,43 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied with TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
-    const { generatedConsignment: immi } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-      testInfo,
-      url: getBaseUrl(),
-      movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
-      consignmentOverrides: {
-        useIMMI: true,
-        headerPreviousDocuments: [
-            previousDocument({ documentReference: '4GBXI553202734852-20240501' })
-        ],
-        holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM })
-        ],
-      },
-      goodsItemOverrides: {
-        useTGP: true,
-        tgpRecord: TGP_RECORD.TEXTILES_TGP123,
-        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
-        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EN,
-        // "1UKI" is not inputted by user, but it is automatically added by system inside generated IMMI Consignment.
-        previousDocuments: [
-           previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '24GB34F7Y1O2CX8PT4' }),
-        ],
-      },
-      
-    });
+    const { generatedConsignment: immi } = await ReportLog.step('Create and submit the ENS declaration', () =>
+      createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+        testInfo,
+        url: getBaseUrl(),
+        movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
+        consignmentOverrides: {
+          useIMMI: true,
+          headerPreviousDocuments: [
+              previousDocument({ documentReference: '4GBXI553202734852-20240501' })
+          ],
+          holdersOfAuthorisation: [
+              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM })
+          ],
+        },
+        goodsItemOverrides: {
+          useTGP: true,
+          tgpRecord: TGP_RECORD.TEXTILES_TGP123,
+          procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+          additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EN,
+        },
+        
+      })
+    );
 
-    await createAndSubmitGmrFlow.addNewGmrAndSubmit(
-      gmrData(
-      {
-        route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES,
-        external_contacts_list: ['adam3.taylor@nifreight.co.uk', 'ledt@nifreight.co.uk'],
-      }
-    ));
+    await ReportLog.step('Create and submit the GMR', () =>
+      createAndSubmitGmrFlow.addNewGmrAndSubmit(
+        gmrData(
+        {
+          route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES,
+          external_contacts_list: ['adam3.taylor@nifreight.co.uk', 'ledt@nifreight.co.uk'],
+        }
+      ))
+    );
 
-    await triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi);
+    await ReportLog.step('Close the IMMI consignment through CDS', () =>
+      triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi)
+    );
   });
 
   test('Verify ENS-IMMI - RoRo (Unaccompanied) without TGP is created and submitted successfully (0700-1EL)', { tag: ['@smoke', '@happyPath'] }, async ({
@@ -77,46 +79,49 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied without TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
-    const { generatedConsignment: immi } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-      testInfo,
-      url: getBaseUrl(),
-      movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
-      consignmentOverrides: {
-        useIMMI: true,
-        headerPreviousDocuments: [
-            previousDocument({ documentReference: '4GBXI553202734852-20240501' })
-        ],
-        holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM }),
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })
-        ],
-      },
-      goodsItemOverrides: {
-        useTGP: false,
-        procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
-        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EL,
-        commodityCode: '6306290000',
-        // "1UKI" is inputted by user, checking the code list and input manually step.
-        documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
-          documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW}),
-        ],
-         previousDocuments: [
-           previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '24GB34F7Y1O2CX8PT4' }),
-        ],
-        supplementaryUnits: '1',
-        additionalInformations: [
-          additionalInformation({ code: 'ECONR', description: 'Reg No. 1234567890' }),
-        ],
-        additionalProcedureCodes: [
-          ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
-        ],
-      },
-    });
+    const { generatedConsignment: immi } = await ReportLog.step('Create and submit the ENS declaration', () =>
+      createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+        testInfo,
+        url: getBaseUrl(),
+        movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
+        consignmentOverrides: {
+          useIMMI: true,
+          headerPreviousDocuments: [
+              previousDocument({ documentReference: '4GBXI553202734852-20240501' })
+          ],
+          holdersOfAuthorisation: [
+              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM }),
+              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })
+          ],
+        },
+        goodsItemOverrides: {
+          useTGP: false,
+          procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
+          additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EL,
+          commodityCode: '6306290000',
+          // "1UKI" is inputted by user, checking the code list and input manually step.
+          documentReferences: [
+            documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
+            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW}),
+          ],
+          supplementaryUnits: '1',
+          additionalInformations: [
+            additionalInformation({ code: 'ECONR', description: 'Reg No. 1234567890' }),
+          ],
+          additionalProcedureCodes: [
+            ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
+          ],
+        },
+      })
+    );
 
-    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
+    await ReportLog.step('Create and submit the GMR', () =>
+      createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData())
+    );
 
-    await triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi);
+    await ReportLog.step('Close the IMMI consignment through CDS', () =>
+      triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi)
+    );
   });
 
   test('Verify ENS-IMMI - RoRo (Accompanied) without TGP is created and submitted successfully (4000-1SG)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({
@@ -124,39 +129,41 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied without TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
-    const { generatedConsignment: immi } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-      testInfo,
-      url: getBaseUrl(),
-      movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
-      consignmentOverrides: {
-        useIMMI: true,
-        headerPreviousDocuments: [
-            previousDocument({ documentReference: '4GBXI553202734852-20240501' })
-        ],
-        holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM })
-        ],
-      },
-      goodsItemOverrides: {
-        useTGP: false,
-        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
-        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
-        commodityCode: '6306290000',
-        // Without TGP the trader quotes their own UKIMS authorisation - the TGP tests
-        // never declare it because the service copies it into the generated IMMI.
-        documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
-        ],
-        previousDocuments: [
-          previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '24GB34F7Y1O2CX8PT4' }),
-        ],
-        supplementaryUnits: '1',
-      },
-    });
+    const { generatedConsignment: immi } = await ReportLog.step('Create and submit the ENS declaration', () =>
+      createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+        testInfo,
+        url: getBaseUrl(),
+        movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
+        consignmentOverrides: {
+          useIMMI: true,
+          headerPreviousDocuments: [
+              previousDocument({ documentReference: '4GBXI553202734852-20240501' })
+          ],
+          holdersOfAuthorisation: [
+              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM })
+          ],
+        },
+        goodsItemOverrides: {
+          useTGP: false,
+          procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+          additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
+          commodityCode: '6306290000',
+          // Without TGP the trader quotes their own UKIMS authorisation - the TGP tests
+          // never declare it because the service copies it into the generated IMMI.
+          documentReferences: [
+            documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
+          ]
+        },
+      })
+    );
 
-    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
+    await ReportLog.step('Create and submit the GMR', () =>
+      createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData())
+    );
 
-    await triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi);
+    await ReportLog.step('Close the IMMI consignment through CDS', () =>
+      triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi)
+    );
   });
 
 
@@ -165,33 +172,36 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied with TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
-    const { generatedConsignment: immi } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-      testInfo,
-      url: getBaseUrl(),
-      movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
-      consignmentOverrides: {
-        useIMMI: true,
-        headerPreviousDocuments: [
-            previousDocument({ documentReference: '4GBXI553202734852-20240501' })
-        ],
-        holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM })
-        ],
-      },
-      goodsItemOverrides: {
-        useTGP: true,
-        tgpRecord: TGP_RECORD.MACHINERY_TGP456,
-        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
-        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_NON_EXCISE_1LG,
-        previousDocuments: [
-          previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '24GB34F7Y1O2CX8PT4' }),
-        ],
-      },
-    });
+    const { generatedConsignment: immi } = await ReportLog.step('Create and submit the ENS declaration', () =>
+      createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+        testInfo,
+        url: getBaseUrl(),
+        movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
+        consignmentOverrides: {
+          useIMMI: true,
+          headerPreviousDocuments: [
+              previousDocument({ documentReference: '4GBXI553202734852-20240501' })
+          ],
+          holdersOfAuthorisation: [
+              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM })
+          ],
+        },
+        goodsItemOverrides: {
+          useTGP: true,
+          tgpRecord: TGP_RECORD.MACHINERY_TGP456,
+          procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+          additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_NON_EXCISE_1LG,
+        },
+      })
+    );
 
-    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
+    await ReportLog.step('Create and submit the GMR', () =>
+      createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData())
+    );
 
-    await triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi);
+    await ReportLog.step('Close the IMMI consignment through CDS', () =>
+      triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi)
+    );
   });
 
 });

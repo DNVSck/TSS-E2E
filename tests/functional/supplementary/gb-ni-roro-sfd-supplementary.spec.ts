@@ -46,17 +46,20 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
         }, testInfo) => {
             await ReportLog.setStory('Supplementary Declaration - from ENS-SFD - RoRo (Accompanied) - Trader DDA');
 
-            const frontierReference = await generateSdDraftFromEnsSfdFlow
-                .generateSdDraft({ testInfo, url: getBaseUrl() });
+            const sfdLrn = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement', () =>
+                generateSdDraftFromEnsSfdFlow.generateSdDraft({ testInfo, url: getBaseUrl() })
+            );
 
             // The declaration already describes this arrangement, so this route only
             // adds the deferment account number CDS wants beside the authorisation.
-            await completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
-                testInfo,
-                url: getBaseUrl(),
-                frontierReference,
-                overrides: traderDefermentSupplementaryDeclaration(),
-            });
+            await ReportLog.step('Complete and submit the supplementary declaration', () =>
+                completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
+                    testInfo,
+                    url: getBaseUrl(),
+                    lrn: sfdLrn,
+                    overrides: traderDefermentSupplementaryDeclaration(),
+                })
+            );
         }
     );
 
@@ -69,19 +72,22 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
         }, testInfo) => {
             await ReportLog.setStory('Supplementary Declaration - from ENS-SFD - RoRo (Accompanied) - TSS DDA');
 
-            const frontierReference = await generateSdDraftFromEnsSfdFlow
-                .generateSdDraft({ testInfo, url: getBaseUrl() });
+            const sfdLrn = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement', () =>
+                generateSdDraftFromEnsSfdFlow.generateSdDraft({ testInfo, url: getBaseUrl() })
+            );
 
             // Paying through TSS makes the trader's own deferment arrangement untrue, so
             // this route takes it off both levels instead of adding to it: the CGU and
             // DPO authorisations at consignment level, and the C506 and C505 documents
             // that cite them on the goods item.
-            await completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
-                testInfo,
-                url: getBaseUrl(),
-                frontierReference,
-                overrides: tssDefermentSupplementaryDeclaration(),
-            });
+            await ReportLog.step('Complete and submit the supplementary declaration', () =>
+                completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
+                    testInfo,
+                    url: getBaseUrl(),
+                    lrn: sfdLrn,
+                    overrides: tssDefermentSupplementaryDeclaration(),
+                })
+            );
         }
     );
 });

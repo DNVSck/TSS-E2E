@@ -21,11 +21,14 @@ export interface CompleteSupplementaryDeclarationOptions {
     testInfo: TestInfo;
     url: string;
     /**
-     * The local reference number of the frontier declaration this SD belongs to - an
-     * SFD's "DEC..." reference. It is how the declaration is FOUND, and then what it is
-     * checked against, so a test can never complete somebody else's SD.
+     * The local reference number of the frontier declaration this SD belongs to - the
+     * "DEC..." reference of an SFD or an EIDR. It is how the declaration is FOUND, and
+     * then what it is checked against, so a test can never complete somebody else's SD.
+     *
+     * Named for what it is rather than which journey produced it: a caller says
+     * `lrn: sfdLrn` and keeps the specific name on its own side.
      */
-    frontierReference: string;
+    lrn: string;
     overrides?: Partial<SupplementaryDeclarationData>;
     /**
      * What the declaration may settle on, when the method of payment alone does not
@@ -71,12 +74,12 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
     async completeSupplementaryDeclaration(
         options: CompleteSupplementaryDeclarationOptions
     ): Promise<string> {
-        const { testInfo, url, frontierReference } = options;
+        const { testInfo, url, lrn } = options;
         const input = supplementaryDeclaration(options.overrides);
 
         reportTestAccount(this.authAccount, 'completeSupplementaryDeclaration');
 
-        const reference = await this.openSupplementaryDeclarationFor(frontierReference, url, testInfo);
+        const reference = await this.openSupplementaryDeclarationFor(lrn, url, testInfo);
         await this.completeConsignmentHeader(input);
         await this.chooseMethodOfPayment(input);
         await this.removeHoldersOfAuthorisation(input);
@@ -97,25 +100,25 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
      * is typed into it.
      */
     private async openSupplementaryDeclarationFor(
-        frontierReference: string,
+        lrn: string,
         url: string,
         testInfo: TestInfo
     ): Promise<string> {
         return ReportLog.step(
-            `Find the supplementary declaration raised against ${frontierReference}`,
+            `Find the supplementary declaration raised against ${lrn}`,
             async () => {
                 await this.basePage.navigateToPortal(url, testInfo);
                 await this.portalPage.openDraftDeclarations();
 
                 const reference = await this.declarationOverviewPage
-                    .openSupplementaryDeclarationFor(frontierReference);
+                    .openSupplementaryDeclarationFor(lrn);
 
                 expect(reference, 'Supplementary declaration reference')
                     .toMatch(LOCAL_REFERENCE.SUP_PREFIX);
                 expect(
                     await this.overviewPage.getSimplifiedDeclarationReference(),
                     'The frontier declaration this SD was raised against'
-                ).toBe(frontierReference);
+                ).toBe(lrn);
 
                 ReportLog.setParameter('Supplementary declaration', reference);
                 return reference;

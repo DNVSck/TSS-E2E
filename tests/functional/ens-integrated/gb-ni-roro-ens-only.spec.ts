@@ -24,25 +24,29 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
   test('Verify ENS Only - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS-only - GB to NI RoRo Accompanied');
     reportTestCaseLink(ENS_ONLY);
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-      testInfo,
-      url: getBaseUrl(),
-      movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
-      consignmentOverrides: ensOnlyConsignment(),
-    });
+    await ReportLog.step('Create and submit the ENS declaration', () =>
+      createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+        testInfo,
+        url: getBaseUrl(),
+        movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
+        consignmentOverrides: ensOnlyConsignment(),
+      })
+    );
   });
 
   test('Verify ENS Only - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS-only - GB to NI RoRo Unaccompanied');
     reportTestCaseLink(ENS_ONLY);
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-      testInfo,
-      url: getBaseUrl(),
-      movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
-      consignmentOverrides: ensOnlyConsignment({
-        ensOnlyReason: ENS_ONLY_REASON.EMPTY_VEHICLE,
-      }),
-    });
+    await ReportLog.step('Create and submit the ENS declaration', () =>
+      createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+        testInfo,
+        url: getBaseUrl(),
+        movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
+        consignmentOverrides: ensOnlyConsignment({
+          ensOnlyReason: ENS_ONLY_REASON.EMPTY_VEHICLE,
+        }),
+      })
+    );
   });
 
   test('Verify ENS Only - RoRo (Accompanied), goods item requires container details, is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
@@ -50,15 +54,17 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
     reportTestCaseLink(ENS_ONLY);
     // Crossing the EU border with goods in DIFFERENT containers makes each goods item
     // declare its own container details.
-    await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-      testInfo,
-      url: getBaseUrl(),
-      movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
-      consignmentOverrides: ensOnlyConsignment({
-        ensOnlyReason: ENS_ONLY_REASON.EIDR_WITH_OWN_AUTHORISATION,
-        isGoodsCrossEUBorder: true,
-        isSameContainer: false,
-      }),
-    });
+    await ReportLog.step('Create and submit the ENS declaration', () =>
+      createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+        testInfo,
+        url: getBaseUrl(),
+        movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
+        consignmentOverrides: ensOnlyConsignment({
+          ensOnlyReason: ENS_ONLY_REASON.EIDR_WITH_OWN_AUTHORISATION,
+          isGoodsCrossEUBorder: true,
+          isSameContainer: false,
+        }),
+      })
+    );
   });
 });

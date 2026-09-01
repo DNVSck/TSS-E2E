@@ -33,98 +33,107 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
   test('Verify ENS-SFD - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('ENS SFD - GB to NI RoRo Simplified Customs Declaration Accompanied');
     reportTestCaseLink(ENS_SFD_GMR);
-    const { generatedConsignment: sfd } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-      testInfo,
-      url: getBaseUrl(),
-      movementOverrides: {
-        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-      },
-      consignmentOverrides: {
-        headerPreviousDocuments: [
-          previousDocument({ documentReference: '3XI352196303000-12345' })
-        ],
-      },
-      goodsItemOverrides: {
-        documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
-        ],
-      },
-    });
+    const { generatedConsignment: sfd } = await ReportLog.step('Create and submit the ENS declaration', () =>
+      createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+        testInfo,
+        url: getBaseUrl(),
+        movementOverrides: {
+          typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+        },
+        consignmentOverrides: {
+        },
+        goodsItemOverrides: {
+          documentReferences: [
+            documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
+          ],
+        },
+      })
+    );
 
-    await createAndSubmitGmrFlow.addNewGmrAndSubmit(
-      gmrData(
-        {
-          route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES,
-          external_contacts_list: ['adam1.taylor@nifreight.co.uk', 'ledt1@nifreight.co.uk'],
-        }
-    ));
+    await ReportLog.step('Create and submit the GMR', () =>
+      createAndSubmitGmrFlow.addNewGmrAndSubmit(
+        gmrData(
+          {
+            route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES,
+            external_contacts_list: ['adam1.taylor@nifreight.co.uk', 'ledt1@nifreight.co.uk'],
+          }
+      ))
+    );
 
-    await triggerFinalStatusThroughCdsFlow.arriveSfdConsignment(sfd);
+    await ReportLog.step('Arrive the SFD consignment through CDS', () =>
+      triggerFinalStatusThroughCdsFlow.arriveSfdConsignment(sfd)
+    );
   });
 
   test('Verify ENS-SFD - RoRo (Unaccompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('ENS SFD - GB to NI RoRo Simplified Customs Declaration UnAccompanied');
     reportTestCaseLink(ENS_SFD_GMR);
-    const { generatedConsignment: sfd } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-      testInfo,
-      url: getBaseUrl(),
-      movementOverrides: {
-        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
-      },
-      consignmentOverrides: {
-        headerPreviousDocuments: [
-          previousDocument({ documentReference: '5GB553202734852-09042025' })
-        ],
-      },
-      goodsItemOverrides: {
-        documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
-        ],
-      },
-    });
+    const { generatedConsignment: sfd } = await ReportLog.step('Create and submit the ENS declaration', () =>
+      createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+        testInfo,
+        url: getBaseUrl(),
+        movementOverrides: {
+          typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
+        },
+        consignmentOverrides: {
+        },
+        goodsItemOverrides: {
+          documentReferences: [
+            documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
+          ],
+        },
+      })
+    );
 
-    await createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData());
+    await ReportLog.step('Create and submit the GMR', () =>
+      createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData())
+    );
 
-    await triggerFinalStatusThroughCdsFlow.arriveSfdConsignment(sfd);
+    await ReportLog.step('Arrive the SFD consignment through CDS', () =>
+      triggerFinalStatusThroughCdsFlow.arriveSfdConsignment(sfd)
+    );
   });
 
   test('Verify ENS-SFD - RoRo (Accompanied) is created and submitted successfully (0700-F06)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('ENS SFD - GB to NI RoRo Simplified Customs Declaration Accompanied - excise warehousing');
     reportTestCaseLink(ENS_SFD_GMR);
-    const { generatedConsignment: sfd } = await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-      testInfo,
-      url: getBaseUrl(),
-      movementOverrides: {
-        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-      },
-      consignmentOverrides: {
-        headerPreviousDocuments: [
-          previousDocument({ documentReference: '3XI352196303000-12345' })
-        ],
-        holdersOfAuthorisation: [
-          holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })
-        ],
-      },
-      goodsItemOverrides: {
-        procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
-        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
-        documentReferences: [
-          documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
-          documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW}),
-        ],
-        additionalInformations: [
-          additionalInformation({ code: 'ECONR', description: 'Reg No. 1234567890' }),
-        ],
-      },
-    });
-
-    await createAndSubmitGmrFlow.addNewGmrAndSubmit(
-      gmrData({
-        route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES,
+    const { generatedConsignment: sfd } = await ReportLog.step('Create and submit the ENS declaration', () =>
+      createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
+        testInfo,
+        url: getBaseUrl(),
+        movementOverrides: {
+          typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+        },
+        consignmentOverrides: {
+          holdersOfAuthorisation: [
+            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })
+          ],
+        },
+        goodsItemOverrides: {
+          procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
+          additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
+          documentReferences: [
+            documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
+            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW}),
+          ],
+          additionalInformations: [
+            additionalInformation({ code: 'ECONR', description: 'Reg No. 1234567890' }),
+          ],
+        },
       })
     );
 
-    await triggerFinalStatusThroughCdsFlow.arriveSfdConsignment(sfd);
+    await ReportLog.step('Create and submit the GMR', () =>
+      createAndSubmitGmrFlow.addNewGmrAndSubmit(
+        gmrData({
+          route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES,
+        })
+      )
+    );
+
+    await ReportLog.step('Arrive the SFD consignment through CDS', () =>
+      triggerFinalStatusThroughCdsFlow.arriveSfdConsignment(sfd)
+    );
   });
 
 });
