@@ -4,10 +4,6 @@ import { AuthoritySituation } from '../flows/authority-check-flow';
 /**
  * The permission rules, as data.
  *
- * Trung's tables of 2026-08-13 written where a test can read them, so that a rule
- * changing is one edited cell rather than a hunt through a spec for every place that
- * spelled it out - and so that a rule the service breaks fails somewhere that names it.
- *
  * A row is keyed by SITUATION, not by state, because the two journeys disagree about
  * what decides access. For an integrated declaration it is the state the record is in;
  * for a standalone one it is WHO CREATED it - which is why a standalone row says nothing
@@ -26,7 +22,7 @@ const { NONE, READ, FULL } = ACCESS_LEVEL;
  * ENS-only declaration outright - not listed in its search, not served by URL. Nothing
  * is being declared on anybody's behalf, so there is no importer party to read it.
  *
- * Trung's table 1 gives the Importer Read on an ENS consignment, and that stays true
+ * Table 1 gives the Importer Read on an ENS consignment, and that stays true
  * where it was written - a declaration made FOR an importer, which is the ENS-SFD
  * journey. The two rows disagreeing is a fact about the journeys, not a contradiction.
  *
@@ -59,14 +55,12 @@ export const ENS_ONLY_AUTHORITY: Record<
     },
     rejectedConsignment: {
         agent: FULL,
+        agentAsImporter: NONE,
         importer: NONE,
     },
 };
 
 /**
- * A declaration the service GENERATES from an ENS - an SFD or an IMMI, one table for
- * both (Trung, 2026-08-14: "IMMI and SFD are the same mechanism for every party").
- *
  * Measured on each rather than assumed for one and inherited by the other: the two are
  * produced by different journeys and needed different levers to reject, so the rule
  * holding across them is a finding, not a definition. The SFD is refused by an
@@ -91,15 +85,84 @@ export const GENERATED_DECLARATION_AUTHORITY: Record<'rejectedConsignment', Auth
 /**
  * ENS integrated ending in a generated EIDR.
  *
- * The odd one out: **nobody holds Full on a generated EIDR** (Trung, 2026-08-14). Every
- * party may look it up and read it, and none may change it - so this row has no
- * contrast, and the spec passes `unfalsifiableBecause` to say so out loud rather than
- * letting assertFalsifiable stop it.
  *
  */
 export const ENS_EIDR_AUTHORITY: Record<'generatedEidrConsignment', AuthoritySituation> = {
     generatedEidrConsignment: {
         agent: READ,
+        agentAsImporter: READ,
+        importer: READ,
+    },
+};
+
+/**
+ * The GMR on a movement the Agent submitted as ITSELF.
+ *
+ * Table 1 gives the importer Read on a GMR, and that half is stated from it.
+ * The two agent cells follow the submitter rule instead: the account that made the
+ * movement holds it, and representing somebody else does not cost it that. STATED,
+ * NEVER MEASURED, like the haulier GMR row below.
+ */
+export const MOVEMENT_GMR_AUTHORITY: Record<'gmr', AuthoritySituation> = {
+    gmr: {
+        agent: FULL,
+        agentAsImporter: READ,
+        importer: READ,
+    },
+};
+
+/**
+ * An ENS declared by the Agent WHILE REPRESENTING THE HAULIER, and what it generates.
+ *
+ * The other side of the submitter rule: Full follows the company the
+ * declaration was submitted BY, plus whoever represents it. Above, the Agent submitted as
+ * itself and keeps Full whatever it does next; here it submitted as the Haulier, so
+ * giving the representation up takes the record away entirely - None, not Read.
+ *
+ * The Importer is deliberately absent: nobody has ruled on what an importer sees on a
+ * declaration a haulier submitted, and inventing that cell would dress a guess as a rule.
+ */
+export const REPRESENTED_HAULIER_AUTHORITY: Record<
+    'ensConsignment' | 'rejectedGeneratedConsignment' | 'generatedEidrConsignment' | 'gmr',
+    AuthoritySituation
+> = {
+    ensConsignment: {
+        agentAsHaulier: FULL,
+        agentNotRepresenting: NONE,
+        haulier: FULL,
+    },
+    rejectedGeneratedConsignment: {
+        agentAsHaulier: FULL,
+        agentNotRepresenting: NONE,
+        haulier: FULL,
+    },
+    // An EIDR nobody may edit, reached through a Haulier. Read where the row above says
+    // Full, because the EIDR rule outranks the submitter rule - measured 2026-09-01 on
+    // the Agent-as-itself journey. None still means None: whatever the record allows,
+    // an account representing nobody is not shown it.
+    generatedEidrConsignment: {
+        agentAsHaulier: READ,
+        agentNotRepresenting: NONE,
+        haulier: READ,
+    },
+    // The GMR, from table 1 (2026-08-13): Full for the haulier and for an
+    // agent acting as one, None for an agent acting for nobody. STATED, NEVER
+    // MEASURED - no test in this suite has ever asked a GMR about authority, on this
+    // branch or on v1, so the first green run is what turns this from a plan into a
+    // finding.
+    gmr: {
+        agentAsHaulier: FULL,
+        agentNotRepresenting: NONE,
+        haulier: FULL,
+        // The Importer on its OWN login, not an agent acting for it: the question is
+        // what a company named on the declarations aboard this movement may do with a
+        // movement somebody else filed.
+        //
+        // STATED, NOT MEASURED. Read is the answer on a GMR the Agent made itself
+        // (2026-09-02), and the importer is named on the declarations either way - but
+        // None is just as arguable, because a GMR is movement-level and this movement
+        // belongs to the haulier. The first run decides it, and None would be the more
+        // interesting answer.
         importer: READ,
     },
 };

@@ -27,9 +27,18 @@ export interface RecordTab {
      * IS its edit route, so Read renders the record as plain text.
      */
     readableRecordLinks?: true;
+    /**
+     * Whether this tab offers an "edit" BUTTON per record instead of a link on the row.
+     *
+     * True for exactly one tab: a GMR's external contacts, measured 2026-09-02. Every
+     * other table in the service makes the record's own text the edit route, so
+     * "records that can be opened" counts links there and would read a correct
+     * external-contacts table as offering nothing at all.
+     */
+    recordsEditedByButton?: true;
 }
 
-export const CONSIGNMENT_TABS: readonly RecordTab[] = [
+const CONSIGNMENT_TABS: readonly RecordTab[] = [
     { name: 'linked-goods-records', create: 'new-record', readableRecordLinks: true },
     { name: 'previous-documents', create: 'new-record' },
     { name: 'guarantee-type', create: '' },
@@ -37,7 +46,7 @@ export const CONSIGNMENT_TABS: readonly RecordTab[] = [
     { name: 'documents', create: '' },
 ];
 
-export const GOODS_ITEM_TABS: readonly RecordTab[] = [
+const GOODS_ITEM_TABS: readonly RecordTab[] = [
     { name: 'document-references', create: 'new-document-reference' },
     { name: 'attachments', create: '' },
     { name: 'additional-procedure-codes', create: 'new-additional-procedure-code' },
@@ -80,11 +89,65 @@ export const DECLARATION_TABS = {
  *
  * Consignment tabs are unchanged on both, which is why only the goods item is named.
  */
-export const IMMI_EIDR_GOODS_ITEM_TABS: readonly RecordTab[] = GOODS_ITEM_TABS.filter(tab =>
+const IMMI_EIDR_GOODS_ITEM_TABS: readonly RecordTab[] = GOODS_ITEM_TABS.filter(tab =>
     tab.name !== 'additional-fiscal-references-identification' && tab.name !== 'tax-base'
 );
 
 export const IMMI_EIDR_DECLARATION_TABS = {
     consignment: CONSIGNMENT_TABS,
     goodsItem: IMMI_EIDR_GOODS_ITEM_TABS,
+};
+
+/**
+ * The tabs a GMR record carries - a different set from any declaration, because a GMR
+ * is a vehicle movement rather than a customs record: it LISTS the declarations
+ * travelling on it, and owns only its external contacts.
+ *
+ * The three consignment tabs carry a "View" on records a reader may open, hence
+ * readableRecordLinks - the same allowance the goods-item list gets, and for the same
+ * reason: reading a movement means reading what is on it.
+ *
+ *
+ * `goodsItem` is empty because a GMR has none, and no caller passes one.
+ */
+export const GMR_TABS = {
+    consignment: [
+        { name: 'consignment-list', create: '', readableRecordLinks: true },
+        { name: 'sfd-consignments', create: '', readableRecordLinks: true },
+        { name: 'immi-consignments', create: '', readableRecordLinks: true },
+        { name: 'external-contacts', create: 'new-record', recordsEditedByButton: true },
+    ] as readonly RecordTab[],
+    goodsItem: [] as readonly RecordTab[],
+};
+
+/**
+ * The tabs a MOVEMENT header carries - a third set again, because a movement holds
+ * declarations rather than being one. Every tab is a list of records it carries: the
+ * consignments of each type, and the GMRs made for it.
+ *
+ * Swept rather than skipped since 2026-09-02. These were the last screens still asked
+ * with surfaceOnly, and the GMR is what changed the argument: its external-contacts
+ * tab offers a reader New/Edit/Delete, and nothing on the record itself said so. Four
+ * of the five tabs here are their own route and are absent from the DOM until opened,
+ * so exactly the same thing can hide behind them - most obviously "Create GMR" being
+ * offered to a company that may only read the movement.
+ *
+ * The first tab is in the DOM already, which is why the surface check was not blind:
+ * a movement header reads "New consignment", "Upload CSV" and "Associate consignment"
+ * without opening anything. It is the other four that nothing has ever asked.
+ *
+ * NAMES ARE UNMEASURED, taken from the tab routes. The first run prints what it found
+ * - "tabs shown (panel ids, in order)" - and the GMR is the warning here: its first
+ * tab is labelled "ENS Consignments" and keyed `consignment-list`.
+ */
+export const MOVEMENT_TABS = {
+    consignment: [
+        { name: 'consignment-list', create: 'new-record', readableRecordLinks: true },
+        { name: 'sfd-consignments', create: '', readableRecordLinks: true },
+        { name: 'immi-consignments', create: '', readableRecordLinks: true },
+        { name: 'eidr-consignments', create: '', readableRecordLinks: true },
+        { name: 'gmr-details', create: 'new-record', readableRecordLinks: true },
+    ] as readonly RecordTab[],
+    /** A movement holds consignments, not goods, so there is no level below this. */
+    goodsItem: [] as readonly RecordTab[],
 };

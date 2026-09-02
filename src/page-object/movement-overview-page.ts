@@ -1,26 +1,23 @@
 import { BasePage } from "./base-page";
+import { RENDER_TIMEOUT } from '../constant/timeout-constant';
+import { MOVEMENT_ROUTE } from '../constant/endpoints-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 import { summaryListValue, readFieldWhenVisible, newRecordButton } from '../helper/element-helper';
 import { StringUtil } from '../core/util/string-util';
 
-/** URL path segments used to build and await movement routes. */
-const GOODS_MOVEMENT_SEGMENT = 'goods-movement';
-const OVERVIEW_SEGMENT = 'overview';
 
-/** Waits (ms). */
-const NAV_TIMEOUT = 30_000;
-/** This heavy overview paints its summary list a beat after load. */
-const SUMMARY_READ_TIMEOUT = 20_000;
+
 const CONSIGNMENT_VIEW_TIMEOUT = 30_000;
 /**
  * SFD, IMMI and EIDR share this longer wait: each is a linked consignment the
  * backend auto-generates a little after submit — one phenomenon, one knob.
  */
-const LINKED_CONSIGNMENT_VIEW_TIMEOUT = 60_000;
+const LINKED_CONSIGNMENT_VIEW_TIMEOUT = 90_000;
+
 /** The submitted GMR appears on the GMR tab shortly after submit. */
-const GMR_VIEW_TIMEOUT = 60_000;
+const GMR_VIEW_TIMEOUT = 90_000;
 
 
 export class MovementOverviewPage extends BasePage {
@@ -127,11 +124,11 @@ export class MovementOverviewPage extends BasePage {
     }
 
     async getMovementLocalReferenceNumber(): Promise<string> {
-        return readFieldWhenVisible(this.localReferenceNumber, SUMMARY_READ_TIMEOUT);
+        return readFieldWhenVisible(this.localReferenceNumber, RENDER_TIMEOUT.SUMMARY_LIST);
     }
 
     async getMovementDeclarationStatus(): Promise<string> {
-        return readFieldWhenVisible(this.declarationStatus, SUMMARY_READ_TIMEOUT);
+        return readFieldWhenVisible(this.declarationStatus, RENDER_TIMEOUT.SUMMARY_LIST);
     }
 
     /**
@@ -248,7 +245,7 @@ export class MovementOverviewPage extends BasePage {
      * change had to be found in all three, or it broke the one that was missed.
      */
     private movementOverviewPath(movement: string): string {
-        return `/${GOODS_MOVEMENT_SEGMENT}/${movement}/${OVERVIEW_SEGMENT}`;
+        return `/${MOVEMENT_ROUTE.GOODS_MOVEMENT_SEGMENT}/${movement}/${MOVEMENT_ROUTE.OVERVIEW_SEGMENT}`;
     }
 
     /**
@@ -272,10 +269,7 @@ export class MovementOverviewPage extends BasePage {
 
     /** Any movement's overview - this runs before the number is known. */
     async waitForSubmittedMovementOverview(): Promise<void> {
-        await this.page.waitForURL(
-            this.movementOverviewPattern(String.raw`ENS\d+`),
-            { timeout: NAV_TIMEOUT }
-        );
+        await this.page.waitForURL(this.movementOverviewPattern(String.raw`ENS\d+`));
     }
 
     /**
@@ -296,7 +290,7 @@ export class MovementOverviewPage extends BasePage {
         const url = new URL(this.page.url());
         // Everything before "/goods-movement/" - the portal's own mount point, taken
         // from the live URL rather than assumed, so a re-mounted service still works.
-        const mountPoint = url.pathname.slice(0, url.pathname.indexOf(`/${GOODS_MOVEMENT_SEGMENT}/`));
+        const mountPoint = url.pathname.slice(0, url.pathname.indexOf(`/${MOVEMENT_ROUTE.GOODS_MOVEMENT_SEGMENT}/`));
 
         url.pathname = `${mountPoint}${this.movementOverviewPath(movement)}`;
         url.search = '';
@@ -305,15 +299,36 @@ export class MovementOverviewPage extends BasePage {
         await this.page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
     }
 
+    /**
+     * Walk the breadcrumb back up to the movement overview - unless we are already on
+     * it, in which case there is nothing to click and nothing to wait for.
+     *
+     * A breadcrumb lists a page's ANCESTORS, never the page itself, so on the movement
+     * overview the link this looks for does not exist. Submitting a GMR lands right
+     * there, and this spent the whole click budget on a link that was never going to be
+     * on the page (measured on sit 2026-09-02, at 60s). The guard reads the URL rather
+     * than the breadcrumb, for the same reason PortalPage.returnToHomeIfAway does: a
+     * link that happens to be absent is not proof of where you are.
+     */
     async returnToMovementOverview(): Promise<void> {
         const movement = this.currentMovementNumber();
+
+        if (this.movementOverviewPattern(movement).test(this.page.url())) {
+            return;
+        }
+
+        // A GMR record has no way back up, so the URL IS the route rather than a way
+        // round one - see goToMovementOverview, which recorded the same thing on
+        // belongs in that corner of the page yet, so this is not a gap waiting to close.
+        if (MOVEMENT_ROUTE.GMR_RECORD_PATH.test(this.page.url())) {
+            await this.goToMovementOverview();
+            return;
+        }
+
         await this.page
             .locator(`a.govuk-breadcrumbs__link[href$="${this.movementOverviewPath(movement)}"]`)
             .click();
-        await this.page.waitForURL(
-            this.movementOverviewPattern(movement),
-            { timeout: NAV_TIMEOUT }
-        );
+        await this.page.waitForURL(this.movementOverviewPattern(movement));
     }
 
     /**
@@ -327,7 +342,14 @@ export class MovementOverviewPage extends BasePage {
         viewLink: Locator,
         timeout = CONSIGNMENT_VIEW_TIMEOUT
     ): Promise<boolean> {
-        await tab.click();
+        // Only if it is not already showing. A govuk-tab that is SELECTED renders
+        // without the href this locator matches, so clicking it on the tab it already
+        // opened waits out the budget - which is exactly the state submitting a GMR
+        // leaves the page in. The card being visible is the honest test of "already
+        // open"; waitForRecordCard below still re-clicks after any reload it does.
+        if (await viewLink.count() === 0) {
+            await tab.click();
+        }
         if (!await this.waitForRecordCard(tab, viewLink, timeout)) {
             return false;
         }
@@ -383,8 +405,7 @@ export class MovementOverviewPage extends BasePage {
         try {
             await link.click();
             await this.page.waitForURL(
-                url => StringUtil.stripTrailingSlashes(url.pathname) === route,
-                { timeout: NAV_TIMEOUT }
+                url => StringUtil.stripTrailingSlashes(url.pathname) === route
             );
         } catch {
             return false;
@@ -400,18 +421,35 @@ export class MovementOverviewPage extends BasePage {
      */
     async navigateToGmrTabAndClickOnCreateGMR(): Promise<void> {
         await this.gmrDetailsTab.click();
-        await this.createGMRButton.waitFor({ state: 'visible', timeout: NAV_TIMEOUT });
+        await this.createGMRButton.waitFor({ state: 'visible' });
         await this.createGMRButton.click();
     }
 
-    /**
-     * Open the submitted GMR's detail page from the movement overview. Submitting a
-     * GMR returns here with the GMR tab active. Returns false if no GMR card appears.
-     *
-     * The same journey as opening a consignment, so it is the same method now: this
-     * one used to restate it because clickViewLink only recognised consignment URLs.
-     */
+
+    gmrOverviewUrl(): string {
+        const url = new URL(this.page.url());
+        const record = MOVEMENT_ROUTE.GMR_RECORD_PATH.exec(url.pathname);
+
+        if (!record) {
+            throw new Error(`Not on a GMR record: ${this.page.url()}`);
+        }
+
+        const recordPath = url.pathname.slice(0, record.index + record[0].length);
+
+
+        url.pathname = `${recordPath}/${MOVEMENT_ROUTE.OVERVIEW_SEGMENT}`;
+        url.search = '';
+        url.hash = '';
+        return url.toString();
+    }
+
+
     async openGmrDetailFromTab(): Promise<boolean> {
+
+        if (MOVEMENT_ROUTE.GMR_RECORD_PATH.test(this.page.url())) {
+            return true;
+        }
+
         return this.openRecordFromTab(this.gmrDetailsTab, this.gmrViewLink, GMR_VIEW_TIMEOUT);
     }
 
