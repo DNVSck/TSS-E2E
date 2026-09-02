@@ -1,7 +1,6 @@
 ﻿import { expect } from '@playwright/test';
 import { ReportLog } from '../core/report/report-log';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
-import { MrnCountryCode, mrnPrefix } from '../constant/local-reference-constants';
 import { MovementOverviewPage } from '../page-object/movement-overview-page';
 import {
     ConsignmentDetailPage, RESUBMIT_STATUS_POLL_TIMEOUT,
@@ -109,7 +108,7 @@ const noAccess = (url: string): DeclarationAccess => ({
  * compose, not something every page in the suite has, so this names the two together
  * rather than pushing tabs down onto pages that have none.
  */
-export interface RecordPage extends BasePage {
+interface RecordPage extends BasePage {
     readonly tabs: RecordTabs;
 }
 
@@ -127,7 +126,7 @@ export interface RecordPage extends BasePage {
  * test at all. Every fact returned here is named by the assertions in
  * access-level-helper, which report it where it means something: on the check it failed.
  */
-export async function readRecordSurface(
+async function readRecordSurface(
     record: RecordPage,
     url: string
 ): Promise<DeclarationAccess> {
@@ -229,6 +228,24 @@ export class DeclarationAccessFlow {
             this.movementOverviewPage.openEidrConsignmentDetail());
     }
 
+    /**
+     * Where the movement's GMR lives.
+     *
+     * Only the record itself, with no goods item: a GMR describes the vehicle, not
+     * goods, so there is nothing a level down to ask about. Its record TABS are asked
+     * though - see GMR_TABS - because a GMR carries four of them.
+     */
+    async locateGmrRecord(): Promise<RecordUrls> {
+        return ReportLog.step('Locate the GMR', async () => {
+            const opened = await this.movementOverviewPage.openGmrDetailFromTab();
+            expect(opened, 'GMR listed on the movement').toBe(true);
+
+            // The record itself, not the tab the browser happens to be on - see
+            // gmrOverviewUrl.
+            return { consignment: this.movementOverviewPage.gmrOverviewUrl() };
+        });
+    }
+
     /** The same, for a consignment already known by URL - a draft found by searching. */
     async locateRecordsAt(consignmentUrl: string): Promise<RecordUrls> {
         return this.locateRecords('consignment', () =>
@@ -249,6 +266,11 @@ export class DeclarationAccessFlow {
     /** Put the browser on a record whose URL is already known. */
     async openRecord(url: string): Promise<void> {
         await this.consignmentDetailPage.navigateToUrlDirect(url);
+    }
+
+    /** What the company THIS flow speaks for is looking at - the name is what it adds. */
+    async captureCompanyView(): Promise<Buffer> {
+        return this.consignmentDetailPage.screenshotPng();
     }
 
     /**
@@ -277,32 +299,6 @@ export class DeclarationAccessFlow {
         });
     }
 
-    /**
-     * Verify ICS2 took a correction - the check for an ENS.
-     *
-     * The other system, so the other evidence. An ENS keeps reading "Processing" whatever
-     * happens (measured 2026-08-14: on SIT it only advances once the ICS2 flow is
-     * triggered, which no test does), so its status can never tell acceptance from
-     * rejection. What ICS2 does give is a movement reference number, issued only once a
-     * submission has actually been authorised - and a declaration whose first submit was
-     * rejected had none, so an MRN of the right shape says exactly that the correction
-     * went in.
-     *
-     * traderInputIsSettled is false on purpose: the record still SHOWS the status it is
-     * leaving until the backend answers, and stopping on it would report no MRN for a
-     * correction that was accepted.
-     */
-    async verifyCorrectionAcceptedByIcs2(url: string, mrnCode: MrnCountryCode): Promise<string> {
-        return ReportLog.step('Verify the correction was authorised', async () => {
-            await this.consignmentDetailPage.navigateToUrlDirect(url);
-            const mrn = await this.consignmentDetailPage
-                .waitForMovementReferenceNumber({ traderInputIsSettled: false });
-
-            ReportLog.setParameter('MRN after resubmission', mrn);
-            expect.soft(mrn, 'MRN after resubmission').toMatch(mrnPrefix(mrnCode));
-            return mrn;
-        });
-    }
 
     /**
      * Walk to a consignment and into its first goods item, keeping both addresses.
@@ -423,42 +419,6 @@ export class DeclarationAccessFlow {
         });
     }
 
-    /**
-     * Open the generated SFD by clicking through, and report what it offers.
-     *
-     * The one read still reached this way rather than by URL: a caller that has just
-     * submitted is on the movement overview and has no address for the SFD, because the
-     * service created it rather than the journey. Everything else in these specs is
-     * asked of a record already located - see locateRecords.
-     */
-    async readSfdConsignmentAccess(): Promise<DeclarationAccess> {
-        return this.readAccess('SFD consignment', () =>
-            this.movementOverviewPage.openSfdConsignmentDetail()
-        );
-    }
-
-    /**
-     * Open one declaration by clicking through, and record what it offers.
-     *
-     * Never throws on an unreachable record: "the company cannot get to it" is a result
-     * these specs expect, not a broken run, so it is returned for the caller to assert.
-     * No HTTP status here - a click produces no response of its own to read.
-     */
-    private async readAccess(
-        resource: string,
-        openDetail: () => Promise<boolean>
-    ): Promise<DeclarationAccess> {
-        return ReportLog.step(`Read what the ${resource} offers ${this.actor || 'this company'}`, async () => {
-            if (!await openDetail()) {
-                return noAccess('');
-            }
-
-            return readRecordSurface(
-                this.consignmentDetailPage,
-                this.consignmentDetailPage.getCurrentUrl()
-            );
-        });
-    }
 
     /** Name the record AND who asked, so two companies' answers stay apart in a report. */
     private labelFor(what: string): string {

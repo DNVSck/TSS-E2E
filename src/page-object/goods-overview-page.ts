@@ -1,4 +1,5 @@
 import { BasePage } from "./base-page";
+import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import { switchToTabAndClickNew, summaryListValue, readFieldWhenVisible, newRecordButton, clickLinkAndWaitForNavigation } from '../helper/element-helper';
@@ -7,7 +8,6 @@ import { TgpRecordData } from "../test-data/tgp-record-data";
 import { COUNTRY_NAME } from "../constant/country-code-dropdown-constant";
 
 /** The goods-item overview summary list paints a beat after the item is created. */
-const SUMMARY_READ_TIMEOUT = 20_000;
 
 export class GoodsOverviewPage extends BasePage {
 
@@ -72,16 +72,16 @@ export class GoodsOverviewPage extends BasePage {
      * value neither hides the others nor stops the journey completing.
      */
     async assertTgpPopulatedFields(record: TgpRecordData, showsSupplementaryUnits: boolean): Promise<void> {
-        const useTgp = await readFieldWhenVisible(this.useTraderGoodsProfile, SUMMARY_READ_TIMEOUT);
-        const chosenTgp = await readFieldWhenVisible(this.chosenTraderGoodsProfile, SUMMARY_READ_TIMEOUT);
-        const commodityCode = await readFieldWhenVisible(this.commodityCode, SUMMARY_READ_TIMEOUT);
-        const goodsDescription = await readFieldWhenVisible(this.goodsDescription, SUMMARY_READ_TIMEOUT);
-        const countryOfOrigin = await readFieldWhenVisible(this.countryOfOrigin, SUMMARY_READ_TIMEOUT);
+        const useTgp = await readFieldWhenVisible(this.useTraderGoodsProfile, RENDER_TIMEOUT.SUMMARY_LIST);
+        const chosenTgp = await readFieldWhenVisible(this.chosenTraderGoodsProfile, RENDER_TIMEOUT.SUMMARY_LIST);
+        const commodityCode = await readFieldWhenVisible(this.commodityCode, RENDER_TIMEOUT.SUMMARY_LIST);
+        const goodsDescription = await readFieldWhenVisible(this.goodsDescription, RENDER_TIMEOUT.SUMMARY_LIST);
+        const countryOfOrigin = await readFieldWhenVisible(this.countryOfOrigin, RENDER_TIMEOUT.SUMMARY_LIST);
 
         // The row is read when it should be there and COUNTED when it should not, so both
         // outcomes are read before anything is asserted, as above.
         const supplementaryUnits = showsSupplementaryUnits
-            ? await readFieldWhenVisible(this.supplementaryUnits, SUMMARY_READ_TIMEOUT)
+            ? await readFieldWhenVisible(this.supplementaryUnits, RENDER_TIMEOUT.SUMMARY_LIST)
             : undefined;
         const supplementaryUnitRows = showsSupplementaryUnits
             ? undefined

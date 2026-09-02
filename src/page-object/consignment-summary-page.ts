@@ -1,10 +1,10 @@
 import { Page, Locator, expect } from '@playwright/test';
+import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { BasePage } from './base-page';
 import { TFunction } from '../fixtures/locale-fixture';
 import { summaryListValue, readFieldWhenVisible, clickLinkAndWaitForNavigation } from '../helper/element-helper';
 
 /** The summary list paints a beat after these pages load. */
-const SUMMARY_READ_TIMEOUT = 20_000;
 
 /**
  * What the consignment OVERVIEW and the consignment DETAIL pages have in common: both
@@ -41,7 +41,7 @@ export class ConsignmentSummaryPage extends BasePage {
      * than passing an empty string up.
      */
     async assertSupervisingCustomsOffice(expectedOffice: string): Promise<string> {
-        const office = await readFieldWhenVisible(this.supervisingCustomsOffice, SUMMARY_READ_TIMEOUT);
+        const office = await readFieldWhenVisible(this.supervisingCustomsOffice, RENDER_TIMEOUT.SUMMARY_LIST);
         expect.soft(office, 'Supervising customs office').toBe(expectedOffice);
         return office;
     }

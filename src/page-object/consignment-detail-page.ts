@@ -1,12 +1,11 @@
 import { Page, Locator, expect } from '@playwright/test';
+import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { ConsignmentSummaryPage } from './consignment-summary-page';
 import { RecordTabs } from './components/record-tabs';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { summaryListValue, readFieldWhenVisible, readFieldIfPresent } from '../helper/element-helper';
 import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
 
-/** This heavy detail page can be slow to paint under parallel load. */
-const DETAIL_READ_TIMEOUT = 15_000;
 /** The MRN is populated asynchronously after the consignment is authorised. */
 const MRN_POLL_TIMEOUT = 60_000;
 
@@ -21,7 +20,7 @@ const MRN_POLL_TIMEOUT = 60_000;
  */
 export const RESUBMIT_STATUS_POLL_TIMEOUT = 150_000;
 
-export const STATUS_POLL_TIMEOUT = 150_000;
+const STATUS_POLL_TIMEOUT = 150_000;
 
 /**
  * The MRN reduced to its alphanumeric characters. The service injects zero-width
@@ -58,7 +57,7 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
     }
 
     async getConsignmentLocalReferenceNumber(): Promise<string> {
-        return readFieldWhenVisible(this.localReferenceNumber, DETAIL_READ_TIMEOUT);
+        return readFieldWhenVisible(this.localReferenceNumber, RENDER_TIMEOUT.RECORD_DETAIL);
     }
 
     /**
@@ -118,7 +117,7 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
     }
 
     async getConsignmentStatus(): Promise<string> {
-        return readFieldWhenVisible(this.status, DETAIL_READ_TIMEOUT);
+        return readFieldWhenVisible(this.status, RENDER_TIMEOUT.RECORD_DETAIL);
     }
 
     /**
@@ -174,7 +173,7 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
      */
     async assertNoMovementReferenceNumber(): Promise<string> {
         // Ensure the summary list has painted before reading the MRN row.
-        await readFieldWhenVisible(this.status, DETAIL_READ_TIMEOUT);
+        await readFieldWhenVisible(this.status, RENDER_TIMEOUT.RECORD_DETAIL);
         const raw = await readFieldIfPresent(this.movementReferenceNumber);
         expect.soft(alphanumericOnly(raw), 'EIDR MRN (should be absent)').toBe('');
         return raw;

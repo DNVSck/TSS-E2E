@@ -1,4 +1,5 @@
 import { ConsignmentSummaryPage } from "./consignment-summary-page";
+import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
@@ -13,8 +14,6 @@ import {
     OPEN_TAB_RECORD, RECORD_LINK, RECORD_DELETE_BUTTON,
 } from './components/record-tabs';
 
-/** The overview summary list paints a beat after the draft is created. */
-const SUMMARY_READ_TIMEOUT = 20_000;
 
 /** Deleting a record re-renders the tab in place; no navigation to wait on. */
 const RECORD_DELETE_TIMEOUT = 20_000;
@@ -105,11 +104,11 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     }
 
     private async getConsignmentLocalReferenceNumber(): Promise<string> {
-        return readFieldWhenVisible(this.localReferenceNumber, SUMMARY_READ_TIMEOUT);
+        return readFieldWhenVisible(this.localReferenceNumber, RENDER_TIMEOUT.SUMMARY_LIST);
     }
 
     async getDeclarationType(): Promise<string> {
-        return readFieldWhenVisible(this.declarationType, SUMMARY_READ_TIMEOUT);
+        return readFieldWhenVisible(this.declarationType, RENDER_TIMEOUT.SUMMARY_LIST);
     }
 
     async assertEidrDeclarationType(): Promise<string> {
@@ -119,7 +118,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     }
 
     private async getConsignmentStatus(): Promise<string> {
-        return readFieldWhenVisible(this.status, SUMMARY_READ_TIMEOUT);
+        return readFieldWhenVisible(this.status, RENDER_TIMEOUT.SUMMARY_LIST);
     }
 
     /**
@@ -281,7 +280,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     async assertDraftStandaloneConsignment(
         expectedPrefix: RegExp
     ): Promise<{ consignmentReference: string; declarationStatus: string }> {
-        await this.contentRows.first().waitFor({ state: 'visible', timeout: SUMMARY_READ_TIMEOUT });
+        await this.contentRows.first().waitFor({ state: 'visible', timeout: RENDER_TIMEOUT.SUMMARY_LIST });
 
         const consignmentReference = await readFieldIfPresent(this.localReferenceNumber);
         const declarationStatus = await readFieldIfPresent(this.status);

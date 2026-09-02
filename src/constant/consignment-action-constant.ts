@@ -28,4 +28,9 @@ export const CONSIGNMENT_ACTION = {
      * check needs, since it asks whether a delete is offered at all, not which one.
      */
     DELETE_PREFIX: 'delete',
+    /**
+     * The opening of the action that OPENS a record for change ("edit:0"), for the
+     * tables that offer a button where every other tab offers a link on the row.
+     */
+    EDIT_PREFIX: 'edit',
 } as const;
