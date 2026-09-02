@@ -368,7 +368,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             // The correction undoes the lever exactly: the goods item's 1UKI goes back to
             // the importer's own UKIMS number. The reads left the browser on the goods
             // item, which is where that record lives.
-            await declarationAccessFlow.openRecord(immi.goodsItem!);
+            await declarationAccessFlow.openRecord(immi.goodsItem!); // NOSONAR - strictNullChecks makes this required; Sonar analyses without our tsconfig.
             await goodsOverviewFlow.correctDocumentReference(importerUkimsDocument());
 
             await consignmentOverviewFlow.goToConsignmentOverview();
@@ -426,7 +426,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
         await ReportLog.step('Importer corrects the UKIMS document on its own login - expect CDS to accept it', async () => {
             // The correction undoes the lever exactly: the goods item's 1UKI goes back to
             // the importer's own UKIMS number.
-            await importer!.declarations.openRecord(immi.goodsItem!);
+            await importer!.declarations.openRecord(immi.goodsItem!); // NOSONAR - strictNullChecks makes this required; Sonar analyses without our tsconfig.
             await importer!.goods.correctDocumentReference(importerUkimsDocument());
 
             await importer!.consignment.goToConsignmentOverview();
@@ -643,7 +643,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             // company the service will not show the record to cannot correct it either.
             await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
 
-            await declarationAccessFlow.openRecord(immi.goodsItem!);
+            await declarationAccessFlow.openRecord(immi.goodsItem!); // NOSONAR - strictNullChecks makes this required; Sonar analyses without our tsconfig.
             await goodsOverviewFlow.declareDocumentReferences([immiStandaloneTransportDocument()]);
 
             await consignmentOverviewFlow.goToConsignmentOverview();
@@ -703,7 +703,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
         await ReportLog.step('Importer declares the missing transport document on its own login - expect CDS to accept it', async () => {
             // A level deeper than a consignment correction: an IMMI is refused over its
             // GOODS ITEM documents, so the second session works in that item's tabs.
-            await importer!.declarations.openRecord(immi.goodsItem!);
+            await importer!.declarations.openRecord(immi.goodsItem!); // NOSONAR - strictNullChecks makes this required; Sonar analyses without our tsconfig.
             await importer!.goods.declareDocumentReferences([immiStandaloneTransportDocument()]);
 
             await importer!.consignment.goToConsignmentOverview();
