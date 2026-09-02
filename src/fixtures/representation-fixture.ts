@@ -1,6 +1,5 @@
 import { test } from '@playwright/test';
 import { canRepresentTraders } from '../auth/credentials';
-import { ReportLog } from '../core/report/report-log';
 import { PageFixtureType } from './page-fixture';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
 
@@ -39,18 +38,12 @@ export const representationFixture: ExtendParams[0] = {
         // and a profile that cannot represent has no banner to clear - either way there
         // is nothing to do and no reason to navigate.
         if (authProfile && canRepresentTraders(authProfile)) {
-            const cleared = await agentBanner.stopRepresenting();
-
-            // Silent in the ordinary case: a reset that found nothing is not a step
-            // anybody needs to read, and 40-odd of them would bury the ones that matter.
-            // A test that started dirty says so, because that means some earlier test
-            // did not end where it thought it did.
-            if (cleared) {
-                ReportLog.setParameter(
-                    'Representation on entry',
-                    'left over from an earlier test - cleared'
-                );
-            }
+            // Through the session rather than the screen. Reading the bar first cost a
+            // navigation on every test and, when the portal painted slowly, answered
+            // "not representing" for a session that was - so the reset skipped exactly
+            // when it was needed. A request cannot be wrong about that, and says nothing
+            // about whether there was anything to clear, which is a fact worth losing.
+            await agentBanner.clearRepresentation();
         }
 
         await use();

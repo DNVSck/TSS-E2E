@@ -101,7 +101,16 @@ export function isOnDemandProfile(profile: CompanyProfile): boolean {
     return ON_DEMAND_PROFILES.has(profile);
 }
 
+/**
+ * Profiles whose session can hold a representation.
+ *
+ * AGENT belongs here first: it is the profile every journey spec represents with, and
+ * leaving it out made the reset below a no-op for exactly the tests that needed it -
+ * a representation then survived into the next test on that account, which declared
+ * under the wrong company and was rejected with "Declarant EORI: Not provided".
+ */
 const REPRESENTING_PROFILES: ReadonlySet<CompanyProfile> = new Set([
+    COMPANY_PROFILE.AGENT,
     COMPANY_PROFILE.AGENT_B,
 ]);
 

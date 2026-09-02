@@ -46,7 +46,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
         await ReportLog.setFeature('Representation authority');
     });
 
-    test('Verify that the Agent, on its own account, can correct and resubmit its rejected ENS consignment', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent, on its own account, can correct and resubmit its rejected ENS consignment', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -174,7 +174,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * first, and the Agent corrects and resubmits as itself. Observing Full and using it
      * are different claims, and the second is the one a trader would notice.
      */
-    test('Verify that the Agent that submitted the ENS can correct and resubmit the rejected SFD on its own account', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent that submitted the ENS can correct and resubmit the rejected SFD on its own account', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -253,7 +253,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * holder-of-authorisation RECORD on a tab, which has no Change link at all - opening
      * the record re-enters the wizard that created it.
      */
-    test('Verify that the Importer, on its own login, can correct and resubmit a rejected SFD the Agent declared', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Importer, on its own login, can correct and resubmit a rejected SFD the Agent declared', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -318,7 +318,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * the table - so on this journey it is a prediction until this test runs green. That
      * is the whole reason both exist.
      */
-    test('Verify that the Agent that submitted the ENS can correct and resubmit the rejected IMMI on its own account', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent that submitted the ENS can correct and resubmit the rejected IMMI on its own account', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, representTraderFlow, goodsOverviewFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -392,7 +392,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * UKIMS number on its GOODS ITEM, so the second session has to reach the goods item's
      * tabs rather than the consignment's.
      */
-    test('Verify that the Importer, on its own login, can correct and resubmit a rejected IMMI the Agent declared', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Importer, on its own login, can correct and resubmit a rejected IMMI the Agent declared', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -454,7 +454,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      *
      * No correction and no resubmission, because there is nothing anybody may correct.
      */
-    test('Verify that the Agent and the Importer can read but not edit a generated EIDR', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent and the Importer can read but not edit a generated EIDR', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -508,7 +508,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * is asked about a GMR at all. Its own test for the same reason: a service that
      * refuses to create a GMR here should cost a GMR result, not a declaration one.
      */
-    test('Verify that the Agent that made the movement holds its GMR, and the Importer may only read it', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent that made the movement holds its GMR, and the Importer may only read it', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow,
         declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -594,7 +594,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
      * "this company may edit it" can only be told apart from "nobody may" while the
      * declaration is still waiting on the trader.
      */
-    test('Verify that the Agent representing the Importer can correct and resubmit a rejected standalone IMMI', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent representing the Importer can correct and resubmit a rejected standalone IMMI', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createAndSubmitImmiStandaloneFlow, declarationAccessFlow, consignmentOverviewFlow,
         goodsOverviewFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -669,7 +669,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
      * The Agent still CREATES it, because that is the situation the rule is about - a
      * standalone declaration made on the importer's behalf, not one the importer made.
      */
-    test('Verify that the Importer, on its own login, can correct and resubmit a rejected standalone IMMI the Agent created for it', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Importer, on its own login, can correct and resubmit a rejected standalone IMMI the Agent created for it', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createAndSubmitImmiStandaloneFlow, declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('Standalone IMMI - the importer corrects it on its own login');
@@ -732,7 +732,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
      * is arranged on the consignment instead - a holder of authorisation naming a party
      * that does not hold it, which is the ENS-SFD lever and the same underlying rule.
      */
-    test('Verify that the Agent representing the Importer can correct and resubmit a rejected standalone SFD', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent representing the Importer can correct and resubmit a rejected standalone SFD', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createAndSubmitSfdStandaloneFlow, declarationAccessFlow, consignmentOverviewFlow,
         representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -796,7 +796,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
      * Carries the same EXPECTED RED on "Consignment LRN" as the test above (defect 1239),
      * for the same reason and deliberately.
      */
-    test('Verify that the Importer, on its own login, can correct and resubmit a rejected standalone SFD the Agent created for it', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Importer, on its own login, can correct and resubmit a rejected standalone SFD the Agent created for it', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createAndSubmitSfdStandaloneFlow, declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('Standalone SFD - the importer corrects it on its own login');
@@ -847,7 +847,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
      * an action. What can still fail for the right reason is the refusal - the account
      * that made it is shut out the moment it stops acting for the importer.
      */
-    test('Verify that the Agent representing the Importer and the Importer can read but not edit an authorised standalone EIDR', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent representing the Importer and the Importer can read but not edit an authorised standalone EIDR', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createAndSubmitSfdStandaloneFlow, declarationAccessFlow,
         representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -886,7 +886,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
     });
 
 
-    test('Verify that an Agent company cannot reach a draft standalone declaration created by a different Agent company', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that an Agent company cannot reach a draft standalone declaration created by a different Agent company', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createDraftSfdStandaloneFlow, declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
         test.skip(
@@ -941,7 +941,7 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
         await ReportLog.setFeature('Representation authority');
     });
 
-    test('Verify that the Agent representing the Haulier holds the declaration it submitted, and is refused it once it stops representing', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent representing the Haulier holds the declaration it submitted, and is refused it once it stops representing', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -1014,7 +1014,7 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
      * the SFD above for the reason the Agent-as-itself pair gives: the two are generated
      * by different journeys, so the rule holding across both is a finding.
      */
-    test('Verify that the Agent representing the Haulier holds the IMMI it submitted, and is refused it once it stops representing', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent representing the Haulier holds the IMMI it submitted, and is refused it once it stops representing', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -1058,7 +1058,7 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
      * may correct. What is left is the half that still measures something: the account
      * that gave its representation up is shut out of a record the other two are reading.
      */
-    test('Verify that the Agent representing the Haulier can read the generated EIDR, and is refused it once it stops representing', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent representing the Haulier can read the generated EIDR, and is refused it once it stops representing', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -1114,7 +1114,7 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
      * not offering the change links Full is read from. Read the step titles before
      * concluding which.
      */
-    test('Verify that the Agent representing the Haulier holds the GMR it created, and is refused it once it stops representing', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent representing the Haulier holds the GMR it created, and is refused it once it stops representing', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
         createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
