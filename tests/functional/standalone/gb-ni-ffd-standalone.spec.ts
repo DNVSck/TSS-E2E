@@ -58,7 +58,7 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Importer Decla
     await ReportLog.setFeature('GB to NI FFD Standalone Declaration Process');
   });
 
-  test('Verify FFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitFfdStandaloneFlow }, testInfo) => {
+  test('Verify FFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@happyPath'] }, async ({ createAndSubmitFfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('FFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
     await ReportLog.step('Create and submit the FFD standalone declaration', () =>
       createAndSubmitFfdStandaloneFlow.completeFfdStandaloneFlow({

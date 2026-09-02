@@ -1,5 +1,4 @@
-﻿import { PREVIOUS_DOCUMENT_TYPE } from '../../../src/constant/previous-document-type-constant';
-import { reportTestCaseLink } from '../../../src/helper/report-helper';
+﻿import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
 import { getBaseUrl, test } from '../../test-hooks';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
@@ -29,7 +28,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     await ReportLog.setFeature('GB to NI RoRo IMMI - Pre-movement');
   });
 
-  test('Verify ENS-IMMI - RoRo (Accompanied) with TGP is created and submitted successfully (4000-1EN)', { tag: ['@smoke', '@happyPath'] }, async ({
+  test('Verify ENS-IMMI - RoRo (Accompanied) with TGP is created and submitted successfully (4000-1EN)', { tag: ['@smoke', '@happyPath', '@regression'] }, async ({
     createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied with TGP');
@@ -73,7 +72,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     );
   });
 
-  test('Verify ENS-IMMI - RoRo (Unaccompanied) without TGP is created and submitted successfully (0700-1EL)', { tag: ['@smoke', '@happyPath'] }, async ({
+  test('Verify ENS-IMMI - RoRo (Unaccompanied) without TGP is created and submitted successfully (0700-1EL)', { tag: ['@smoke', '@happyPath', '@regression'] }, async ({
     createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied without TGP');

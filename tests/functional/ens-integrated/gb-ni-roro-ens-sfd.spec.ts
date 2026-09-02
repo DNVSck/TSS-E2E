@@ -3,7 +3,6 @@ import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { getBaseUrl, test } from '../../test-hooks';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
-import { previousDocument } from '../../../src/test-data/previous-document-data';
 import { documentReference } from '../../../src/test-data/document-reference-data';
 import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
 import { IMPORTER_EXW } from '../../../config/environment';
@@ -27,7 +26,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
     await ReportLog.setFeature('GB to NI RoRo Simplified Customs Declaration Process');
   });
 
-  test('Verify ENS-SFD - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify ENS-SFD - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath', '@regression'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('ENS SFD - GB to NI RoRo Simplified Customs Declaration Accompanied');
     reportTestCaseLink(ENS_SFD_GMR);
     const { generatedConsignment: sfd } = await ReportLog.step('Create and submit the ENS declaration', () =>
@@ -62,7 +61,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
     );
   });
 
-  test('Verify ENS-SFD - RoRo (Unaccompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify ENS-SFD - RoRo (Unaccompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath', '@regression'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('ENS SFD - GB to NI RoRo Simplified Customs Declaration UnAccompanied');
     reportTestCaseLink(ENS_SFD_GMR);
     const { generatedConsignment: sfd } = await ReportLog.step('Create and submit the ENS declaration', () =>

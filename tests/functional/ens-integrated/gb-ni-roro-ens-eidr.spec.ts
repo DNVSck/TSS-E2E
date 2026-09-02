@@ -17,7 +17,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
     await ReportLog.setFeature('GB to NI RoRo EIDR Declaration Process');
   });
 
-  test('Verify ENS-EIDR - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
+  test('Verify ENS-EIDR - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath', '@regression'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied (controlled goods = No)');
     reportTestCaseLink(ENS_EIDR_GMR);
     const { transportDocumentNumber, ensMrn } = await ReportLog.step('Create and submit the ENS declaration', () =>
@@ -43,7 +43,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
     );
   });
 
-  test('Verify ENS-EIDR - RoRo (Unaccompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
+  test('Verify ENS-EIDR - RoRo (Unaccompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath', '@regression'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Unaccompanied (controlled goods = No)');
     reportTestCaseLink(ENS_EIDR_GMR);
     const { transportDocumentNumber, ensMrn } = await ReportLog.step('Create and submit the ENS declaration', () =>
@@ -66,7 +66,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
     );
   });
 
-  test('Verify ENS-EIDR - RoRo (Accompanied), goods item requires container details, is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
+  test('Verify ENS-EIDR - RoRo (Accompanied), goods item requires container details, is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath', '@regression'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied with a goods item declaring its own container');
     // Different containers on the consignment makes each goods item declare its own
     // container details.
