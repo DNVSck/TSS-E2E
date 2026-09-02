@@ -246,6 +246,11 @@ async function checkOneParty(
     // the difference across this block is exactly what THIS party got wrong.
     const errorsBefore = test.info().errors.length;
     let threw = false;
+    // Failures a tab screenshot has already illustrated. The record-level picture
+    // below is skipped when they are the only ones: a record that opened and read
+    // correctly is not what went wrong, and photographing it invites the reader to
+    // look for a fault that is on another screen.
+    let photographed = 0;
 
     try {
         // Searching first, because it navigates away from whatever is open.
@@ -265,11 +270,13 @@ async function checkOneParty(
         const deeperToAsk = level !== ACCESS_LEVEL.NONE && !question.surfaceOnly;
 
         if (deeperToAsk) {
+            const errorsBeforeTabs = test.info().errors.length;
             const consignmentTabs = await declarations.readEveryTabAccess(what);
             const failed = expectLevelAcrossTabs(level, consignmentTabs, consignmentLabel,
                 tabs.consignment, recordActions, consignment);
 
             await attachFailedTabs(failed, consignmentTabs, consignmentLabel, declarations);
+            photographed += test.info().errors.length - errorsBeforeTabs;
             // Back to the record, so the goods-item checks below and the party-level
             // screenshot in the finally both start from where they expect to.
             await declarations.openRecord(records.consignment);
@@ -282,11 +289,13 @@ async function checkOneParty(
             expectLevel(level, goodsItem, goodsLabel, refusalHeading, []);
 
             if (deeperToAsk) {
+                const errorsBeforeTabs = test.info().errors.length;
                 const goodsTabs = await declarations.readEveryTabAccess(`${what} goods item`);
                 const failed = expectLevelAcrossTabs(
                     level, goodsTabs, goodsLabel, tabs.goodsItem, [], goodsItem);
 
                 await attachFailedTabs(failed, goodsTabs, goodsLabel, declarations);
+                photographed += test.info().errors.length - errorsBeforeTabs;
                 await declarations.openRecord(records.goodsItem);
             }
         }
@@ -301,7 +310,8 @@ async function checkOneParty(
         throw error;
     } finally {
         await attachScreenshotIfFailedSince(
-            errorsBefore, consignmentLabel, () => declarations.captureCompanyView(), threw
+            errorsBefore + photographed, consignmentLabel,
+            () => declarations.captureCompanyView(), threw
         );
 
         if (ownWindow && !handBack) {

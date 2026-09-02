@@ -510,7 +510,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      */
     test('Verify that the Agent that made the movement holds its GMR, and the Importer may only read it', { tag: ['@auth', '@authorisation'] }, async ({
         createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow,
-        declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
+        declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('The GMR belongs to the account that made the movement');
 
@@ -556,14 +556,9 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             })
         );
 
-        await ReportLog.step('The same account representing the Importer - check it drops to the Importer\'s view', async () => {
-            // Not "keeps what it made": while acting for the Importer this browser sees
-            // what the Importer sees, which on a GMR is read-only.
-            await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
-            await checkAuthorityFlow(MOVEMENT_GMR_AUTHORITY.gmr, {
-                ...gmrCheck, parties: ['agentAsImporter'],
-            });
-        });
+        // No agentAsImporter here. An agent acting for a company holds what that
+        // company holds, so asking both forms of the Importer twice measures the rule
+        // twice - the GMR made for the Haulier asks the representation instead.
     });
 });
 
@@ -1163,16 +1158,23 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
             recordActions: [],
         };
 
-        const { haulier } = await ReportLog.step('Agent representing the Haulier, the Haulier itself, and the Importer - check what each is offered', () =>
+        const { haulier } = await ReportLog.step('Agent representing the Haulier, and the Haulier itself - check what each is offered', () =>
             checkAuthorityFlow(REPRESENTED_HAULIER_AUTHORITY.gmr, {
-                // The Importer answers from its OWN login here, not through an agent
-                // acting for it - what a company aboard the movement holds by itself is a
-                // different question from what a representation confers.
-                ...gmrCheck, parties: ['agentAsHaulier', 'haulier', 'importer'],
+                ...gmrCheck, parties: ['agentAsHaulier', 'haulier'],
                 // The Haulier is about to use what it was just shown, so its window stays.
                 keepOpen: ['haulier'],
             })
         );
+
+        await ReportLog.step('The same account representing the Importer instead - check what a representation confers', async () => {
+            // The Importer through an agent rather than on its own login: an agent
+            // acting for a company holds what that company holds, so this is where the
+            // rule is measured on a movement the Importer does not own.
+            await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
+            await checkAuthorityFlow(REPRESENTED_HAULIER_AUTHORITY.gmr, {
+                ...gmrCheck, parties: ['agentAsImporter'],
+            });
+        });
 
         await ReportLog.step('The Haulier, on its own login, changes the route and resubmits', async () => {
             await haulier!.declarations.openRecord(gmr.consignment);

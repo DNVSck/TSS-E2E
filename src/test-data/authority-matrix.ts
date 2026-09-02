@@ -98,15 +98,16 @@ export const ENS_EIDR_AUTHORITY: Record<'generatedEidrConsignment', AuthoritySit
 /**
  * The GMR on a movement the Agent submitted as ITSELF.
  *
- * Table 1 gives the importer Read on a GMR, and that half is stated from it.
- * The two agent cells follow the submitter rule instead: the account that made the
- * movement holds it, and representing somebody else does not cost it that. STATED,
- * NEVER MEASURED, like the haulier GMR row below.
+ * Table 1 gives the importer Read on a GMR, and that half is stated from it. The
+ * agent cell follows the submitter rule: the account that made the movement holds it.
+ *
+ * The two DIRECT logins only. An agent acting for a company holds what that company
+ * holds, so the representation is measured once, on the GMR the Haulier owns - see
+ * REPRESENTED_HAULIER_AUTHORITY.
  */
 export const MOVEMENT_GMR_AUTHORITY: Record<'gmr', AuthoritySituation> = {
     gmr: {
         agent: FULL,
-        agentAsImporter: READ,
         importer: READ,
     },
 };
@@ -154,16 +155,15 @@ export const REPRESENTED_HAULIER_AUTHORITY: Record<
         agentAsHaulier: FULL,
         agentNotRepresenting: NONE,
         haulier: FULL,
-        // The Importer on its OWN login, not an agent acting for it: the question is
-        // what a company named on the declarations aboard this movement may do with a
-        // movement somebody else filed.
+        // The Importer through an agent acting for it, which holds what the Importer
+        // holds. Measured here rather than on the Agent-owned GMR so both forms of the
+        // Importer are covered once each: the direct login there, the representation
+        // here.
         //
-        // STATED, NOT MEASURED. Read is the answer on a GMR the Agent made itself
-        // (2026-09-02), and the importer is named on the declarations either way - but
-        // None is just as arguable, because a GMR is movement-level and this movement
-        // belongs to the haulier. The first run decides it, and None would be the more
-        // interesting answer.
-        importer: READ,
+        // KNOWN RED - the same defect the Agent-owned GMR shows: the service leaves
+        // this account the Full it had, instead of dropping it to what the company it
+        // acts for holds.
+        agentAsImporter: READ,
     },
 };
 
