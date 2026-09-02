@@ -1,4 +1,5 @@
 import { BASE_URL } from '../config/environment';
+import { ReportLog } from '../src/core/report/report-log';
 import { AllureTestManager } from '../src/core/report/allure-test-manager';
 import { testMain as test } from '../src/fixtures/main-fixture';
 
@@ -36,8 +37,30 @@ test.beforeEach(() => {
     AllureTestManager.addParameter('Expected Status', testInfo.expectedStatus);
 });
 
-test.afterEach(() => {
+
+const failureSummary = (errors: readonly { message?: string }[]): string => {
+    const lines = errors
+        .map(error => (error.message ?? '').split('\n')[0].trim())
+        .filter(Boolean);
+
+    if (lines.length === 0) {
+        return '';
+    }
+
+    return [
+        `${lines.length} failure(s), in the order they were recorded:`,
+        '',
+        ...lines.map((line, index) => `${index + 1}. ${line}`),
+    ].join('\n');
+};
+
+test.afterEach(async () => {
     const testInfo = test.info();
+
+    const summary = failureSummary(testInfo.errors);
+    if (summary) {
+        await ReportLog.setDescription(summary);
+    }
 
     switch (testInfo.status) {
         case 'passed':

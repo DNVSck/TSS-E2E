@@ -8,7 +8,7 @@ import { PreviousDocumentData } from "../../test-data/previous-document-data";
 import { HolderOfAuthorisationData } from "../../test-data/holder-of-authorisation-data";
 import { TranslationKey, TFunction } from '../../fixtures/locale-fixture';
 import { isTraderInputRequiredStatus, traderInputRequiredError } from '../../helper/declaration-status-helper';
-import { MrnCountryCode, mrnPrefix } from '../../constant/local-reference-constants';
+import { MrnCountryCode, mrnPrefix, mrnOpening } from '../../constant/local-reference-constants';
 import { ConsignmentSteps } from './consignment-steps';
 
 /**
@@ -38,10 +38,7 @@ export class ConsignmentOverviewFlow {
         private readonly t: TFunction,
     ) { }
 
-    /**
-     * The expected status is a PARAMETER, not baked in: the same pair of CDS responses
-     * lands an SFD on "Arrived" and an IMMI on "Closed" (Trung, 2026-08-20).
-     */
+
     async verifyConsignmentStatus(expectedStatusKey: TranslationKey): Promise<string> {
         const expected = this.t(expectedStatusKey);
 
@@ -165,7 +162,9 @@ export class ConsignmentOverviewFlow {
             // Reported before the assertion, so a run that fails it still carries the
             // value that failed.
             ReportLog.setParameter(`${label} MRN`, mrn);
-            expect.soft(mrn, `${label} MRN`).toMatch(mrnPrefix(mrnCode));
+            expect.soft(mrn,
+                `${label} MRN (expected to open ${mrnOpening(mrnCode)})`)
+                .toMatch(mrnPrefix(mrnCode));
             return mrn;
         });
     }

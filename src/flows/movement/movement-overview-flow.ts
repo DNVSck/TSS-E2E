@@ -2,7 +2,7 @@
 import { ReportLog } from '../../core/report/report-log';
 import { MovementOverviewPage } from "../../page-object/movement-overview-page";
 import { ConsignmentDetailPage } from "../../page-object/consignment-detail-page";
-import { MRN_COUNTRY_CODE, MrnCountryCode, mrnPrefix } from '../../constant/local-reference-constants';
+import { MRN_COUNTRY_CODE, MrnCountryCode, mrnPrefix, mrnOpening } from '../../constant/local-reference-constants';
 import { isTraderInputRequiredStatus, traderInputRequiredError } from '../../helper/declaration-status-helper';
 import { TFunction } from '../../fixtures/locale-fixture';
 
@@ -60,7 +60,9 @@ export class MovementOverviewFlow {
             ReportLog.setParameter('ENS MRN', ensMrn);
             ReportLog.setParameter('ENS Consignment status (submitted)', status);
 
-            expect.soft(ensMrn, 'ENS MRN').toMatch(mrnPrefix(MRN_COUNTRY_CODE.ENS));
+            expect.soft(ensMrn,
+                `ENS MRN after submission (expected to open ${mrnOpening(MRN_COUNTRY_CODE.ENS)})`)
+                .toMatch(mrnPrefix(MRN_COUNTRY_CODE.ENS));
             return ensMrn;
         });
     }
@@ -171,7 +173,9 @@ export class MovementOverviewFlow {
             ReportLog.setParameter(`${label} LRN`, lrn);
             ReportLog.setParameter(`${label} status`, status);
 
-            expect.soft(mrn, `${label} MRN`).toMatch(mrnPrefix(mrnCode));
+            expect.soft(mrn,
+                `${label} MRN (expected to open ${mrnOpening(mrnCode)})`)
+                .toMatch(mrnPrefix(mrnCode));
 
             // The auto-generated consignment is the FIRST place this can be checked on
             // an ENS journey: the ENS consignment the test filled in has no warehouse

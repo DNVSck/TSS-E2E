@@ -1,11 +1,11 @@
 import {
     attachment,
+    description,
     epic,
     feature,
     link,
     logStep,
     parameter,
-    Status,
     step,
     story,
     tags,
@@ -29,26 +29,22 @@ export class ReportLog {
         await logStep(message);
     }
 
-    public static async warn(message: string): Promise<void> {
-        console.warn(message);
-        await logStep(message, Status.BROKEN);
-    }
-
-    public static async pass(message: string): Promise<void> {
-        console.log(message);
-        await logStep(message, Status.PASSED);
-    }
-
-    public static async fail(message: string): Promise<void> {
-        console.error(message);
-        await logStep(message, Status.FAILED);
-    }
-
     /**
      * Records a business identifier (test account, LRN, ...) in the test's Allure
      * "Parameters" table, so it is filterable and visible without scrolling the
      * step timeline. Use for short key/value facts, not log narration.
      */
+    /**
+     * Text shown on the report's Overview tab, under the title.
+     *
+     * Allure's red Error block is Playwright's FIRST error and cannot be set from a
+     * test. Soft assertions record and carry on, so that first error is often not the
+     * one that stopped the run - the description is where the whole list can go.
+     */
+    public static async setDescription(text: string): Promise<void> {
+        await description(text);
+    }
+
     public static setParameter(name: string, value: string): void {
         parameter(name, value);
     }

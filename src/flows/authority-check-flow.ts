@@ -1,4 +1,4 @@
-﻿import { expect } from '@playwright/test';
+﻿import { expect, test } from '@playwright/test';
 import { COMPANY_PROFILE, CompanyProfile } from '../auth/credentials';
 import { CompanySession } from '../fixtures/company-session-fixture';
 import {
@@ -8,9 +8,11 @@ import { RecordTab, DECLARATION_TABS } from '../constant/record-tab-constant';
 import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
 import { TFunction } from '../fixtures/locale-fixture';
 import { ReportLog } from '../core/report/report-log';
+import { attachScreenshotIfFailedSince } from '../helper/report-helper';
+import { RepresentTraderFlow } from './represent-trader-flow';
 import { ACCESS_LEVEL, AccessLevel } from '../constant/access-level-constant';
 import {
-    PARTY, Party, authorityStepTitle,
+    PARTY, Party, authorityLabel, authorityStepTitle,
     expectNoAccess, expectReadOnly, expectFullControl,
     expectReadOnlyAcrossTabs, expectFullControlAcrossTabs,
 } from '../helper/access-level-helper';
@@ -42,6 +44,7 @@ export type AuthoritySituation = Partial<Record<Party, AccessLevel>>;
  */
 const OWN_LOGIN: Partial<Record<Party, CompanyProfile>> = {
     importer: COMPANY_PROFILE.IMPORTER,
+    haulier: COMPANY_PROFILE.HAULIER,
     anotherAgent: COMPANY_PROFILE.AGENT_B,
 };
 
@@ -170,18 +173,43 @@ function expectLevel(
     expectFullControl(access, label, requiredActions);
 }
 
+/** The names of the tabs that failed - see the note on expectFullControlAcrossTabs. */
 function expectLevelAcrossTabs(
     level: AccessLevel,
     tabs: TabAccess[],
     label: string,
     expectedTabs: readonly RecordTab[],
-    alwaysEnabled: readonly string[]
-): void {
+    alwaysEnabled: readonly string[],
+    record: DeclarationAccess
+): string[] {
     if (level === ACCESS_LEVEL.READ) {
-        expectReadOnlyAcrossTabs(tabs, label, expectedTabs);
-        return;
+        return expectReadOnlyAcrossTabs(tabs, label, expectedTabs, record);
     }
-    expectFullControlAcrossTabs(tabs, label, expectedTabs, alwaysEnabled);
+    return expectFullControlAcrossTabs(tabs, label, expectedTabs, alwaysEnabled);
+}
+
+
+async function attachFailedTabs(
+    failed: string[],
+    tabs: TabAccess[],
+    label: string,
+    declarations: DeclarationAccessFlow
+): Promise<void> {
+    for (const name of failed) {
+        const tab = tabs.find(one => one.name === name);
+        if (!tab) {
+            continue;
+        }
+
+        try {
+            await declarations.openRecord(tab.access.url);
+            ReportLog.addAttachment(
+                `FAILED - ${label} - "${name}" tab`,
+                await declarations.captureCompanyView(),
+                'image/png'
+            );
+        } catch { /* the failure being illustrated matters more than the picture */ }
+    }
 }
 
 /**
@@ -207,11 +235,17 @@ async function checkOneParty(
     const declarations = ownWindow?.declarations ?? session.agent;
 
     const refusalHeading = session.t('accessDenied.heading');
-    const consignmentLabel = `${what} as ${PARTY[party]}`;
-    const goodsLabel = `${what} goods item as ${PARTY[party]}`;
+    const consignmentLabel = authorityLabel(party, level, what);
+    const goodsLabel = authorityLabel(party, level, `${what} goods item`);
 
 
     let handBack = false;
+
+    // Soft assertions do not throw, so "did this company fail?" cannot be caught - it
+    // has to be counted. Playwright collects each soft failure on testInfo.errors, so
+    // the difference across this block is exactly what THIS party got wrong.
+    const errorsBefore = test.info().errors.length;
+    let threw = false;
 
     try {
         // Searching first, because it navigates away from whatever is open.
@@ -232,8 +266,13 @@ async function checkOneParty(
 
         if (deeperToAsk) {
             const consignmentTabs = await declarations.readEveryTabAccess(what);
-            expectLevelAcrossTabs(level, consignmentTabs, consignmentLabel,
-                tabs.consignment, recordActions);
+            const failed = expectLevelAcrossTabs(level, consignmentTabs, consignmentLabel,
+                tabs.consignment, recordActions, consignment);
+
+            await attachFailedTabs(failed, consignmentTabs, consignmentLabel, declarations);
+            // Back to the record, so the goods-item checks below and the party-level
+            // screenshot in the finally both start from where they expect to.
+            await declarations.openRecord(records.consignment);
         }
 
         if (records.goodsItem !== undefined) {
@@ -244,13 +283,27 @@ async function checkOneParty(
 
             if (deeperToAsk) {
                 const goodsTabs = await declarations.readEveryTabAccess(`${what} goods item`);
-                expectLevelAcrossTabs(level, goodsTabs, goodsLabel, tabs.goodsItem, []);
+                const failed = expectLevelAcrossTabs(
+                    level, goodsTabs, goodsLabel, tabs.goodsItem, [], goodsItem);
+
+                await attachFailedTabs(failed, goodsTabs, goodsLabel, declarations);
+                await declarations.openRecord(records.goodsItem);
             }
         }
 
         handBack = Boolean(ownWindow) && Boolean(question.keepOpen?.includes(party));
         return handBack ? ownWindow : undefined;
+    } catch (error) {
+        // Recorded, not handled - so the screenshot below knows to fire. A read that
+        // TIMES OUT is the loudest failure a party can have and the one whose page most
+        // needs photographing, yet a soft-error count cannot see it.
+        threw = true;
+        throw error;
     } finally {
+        await attachScreenshotIfFailedSince(
+            errorsBefore, consignmentLabel, () => declarations.captureCompanyView(), threw
+        );
+
         if (ownWindow && !handBack) {
             await ownWindow.close();
         }
@@ -295,7 +348,7 @@ export function authorityCheckerFlowFor(session: AuthoritySession): AuthorityChe
                 );
             }
 
-            const stayedOpen = await ReportLog.step(authorityStepTitle(party, question.what),
+            const stayedOpen = await ReportLog.step(authorityStepTitle(party, level, question.what),
                 () => checkOneParty(party, level, question, session));
             if (stayedOpen) {
                 kept[party] = stayedOpen;
@@ -305,3 +358,30 @@ export function authorityCheckerFlowFor(session: AuthoritySession): AuthorityChe
         return kept;
     };
 }
+
+/**
+ * Give the representation up, then ask the same question of the same record again.
+ *
+ * The second half of every representation test, and the half that carries the claim:
+ * a company shown a record while it acts for somebody is only interesting if the same
+ * account is shown something DIFFERENT once it stops. It is also the half that needs
+ * no lever to mean anything: nothing about the record changed, only who is asking.
+ *
+ * Written out, the pair appeared eight times with three words of English between
+ * them, and a step that is copied eight times is a step that gets updated seven.
+ * eight times is a step that gets updated seven.
+ *
+ * `subject` completes "check ..." - what this record is, in the sentence a reader of
+ * the report meets it in.
+ */
+export const checkRefusedOnceRepresentationEnds = (
+    representTraderFlow: RepresentTraderFlow,
+    checkAuthorityFlow: AuthorityCheckerFlow,
+    situation: AuthoritySituation,
+    question: Omit<AuthorityQuestion, 'parties'>,
+    subject: string,
+): Promise<void> =>
+    ReportLog.step(`The same account representing nobody - check ${subject}`, async () => {
+        await representTraderFlow.stopRepresenting();
+        await checkAuthorityFlow(situation, { ...question, parties: ['agentNotRepresenting'] });
+    });

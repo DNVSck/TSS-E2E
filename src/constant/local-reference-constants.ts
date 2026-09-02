@@ -35,6 +35,13 @@ export type MrnCountryCode = (typeof MRN_COUNTRY_CODE)[keyof typeof MRN_COUNTRY_
  * is not a contract this suite defends.
  */
 export function mrnPrefix(code: MrnCountryCode): RegExp {
-    const yearSuffix = String(new Date().getFullYear()).slice(-2);
-    return new RegExp(`^${yearSuffix}${code}`);
+    return new RegExp(`^${mrnOpening(code)}`);
+}
+
+/**
+ * The same opening as text ("26XI"), for a failure message to quote. Built from the
+ * one source, so the message can never state a prefix the check does not use.
+ */
+export function mrnOpening(code: MrnCountryCode): string {
+    return `${String(new Date().getFullYear()).slice(-2)}${code}`;
 }
