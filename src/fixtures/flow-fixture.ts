@@ -36,6 +36,9 @@ import { ConcurrentLoginFlow } from '../flows/concurrent-login-flow';
 import { LocaleFixtureType } from './locale-fixture';
 import { CreateDraftEnsDeclarationFlow } from '../flows/common-flows/create-draft-ens-declaration-flow';
 import { CreateDraftSfdStandaloneFlow } from '../flows/common-flows/create-draft-sfd-standalone-flow';
+import {
+    CreateDraftImmiStandaloneFlow,
+} from '../flows/common-flows/create-draft-immi-standalone-flow';
 import { DeclarationAccessFlow } from '../flows/declaration-access-flow';
 import { AuthorityCheckerFlow, authorityCheckerFlowFor } from '../flows/authority-check-flow';
 import { CompanySessionFixtureType } from './company-session-fixture';
@@ -68,6 +71,7 @@ export type FlowFixtureType = {
     // Builds a declaration and stops at Draft. The create-and-submit flows carry it
     // to the end; the authority specs take it somewhere else.
     createDraftEnsDeclarationFlow: CreateDraftEnsDeclarationFlow;
+    createDraftImmiStandaloneFlow: CreateDraftImmiStandaloneFlow;
     createDraftSfdStandaloneFlow: CreateDraftSfdStandaloneFlow;
     initialFormDeclarationFlow: InitialFormDeclarationFlow;
     movementHeaderDeclarationFlow: MovementHeaderDeclarationFlow;
@@ -230,8 +234,12 @@ export const flowFixture: ExtendParams[0] = {
         await use(new GoodsOverviewFlow(goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage, t));
     },
 
-    createAndSubmitGmrFlow: async ({ movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage }, use) => {
-        await use(new AddNewGMRFlow(movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage));
+    createAndSubmitGmrFlow: async ({
+        movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage, t
+    }, use) => {
+        await use(new AddNewGMRFlow(
+            movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage, t
+        ));
     },
 
     ics2NotificationFlow: async ({ ics2MockApiClient }, use) => {
@@ -258,7 +266,7 @@ export const flowFixture: ExtendParams[0] = {
         ));
     },
 
-    createAndSubmitImmiStandaloneFlow: async ({
+    createDraftImmiStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
         standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
         consignmentOverviewFlow, goodsOverviewFlow, authAccount
@@ -267,9 +275,17 @@ export const flowFixture: ExtendParams[0] = {
             standaloneConsignmentSteps, movementSteps, consignmentSteps
         );
         const addGoodsItem = new AddNewImmiStandaloneGoodsItemFlow(goodsItemSteps);
-        await use(new CreateAndSubmitImmiStandaloneFlow(
+        await use(new CreateDraftImmiStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,
             addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+        ));
+    },
+
+    createAndSubmitImmiStandaloneFlow: async ({
+        createDraftImmiStandaloneFlow, consignmentOverviewFlow
+    }, use) => {
+        await use(new CreateAndSubmitImmiStandaloneFlow(
+            createDraftImmiStandaloneFlow, consignmentOverviewFlow
         ));
     },
 
@@ -302,12 +318,12 @@ export const flowFixture: ExtendParams[0] = {
     completeAndSubmitSupplementaryDeclarationFlow: async ({
         basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
         supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
-        additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, authAccount
+        additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, authAccount, t
     }, use) => {
         await use(new CompleteAndSubmitSupplementaryDeclarationFlow(
             basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
             supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
-            additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, authAccount
+            additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, t, authAccount
         ));
     },
 
