@@ -60,14 +60,13 @@ export interface UserCredentials {
  * actually runs as, so the common command (all of tests/functional) works with
  * nothing extra to remember.
  *
- * HAULIER is left out deliberately - no spec runs as one yet, and signing into an
- * account no test uses costs a login and lets an unrelated expired password block
- * the whole suite. Add a profile here the moment a spec starts using it; until
- * then the authAccount fixture fails fast and names the exact AUTH_PROFILES value.
+ *
+ * AUTH_PROFILES narrows this list, so a targeted run can still leave it out.
  */
 const DEFAULT_AUTH_PROFILES: CompanyProfile[] = [
     COMPANY_PROFILE.AGENT,
     COMPANY_PROFILE.IMPORTER,
+    COMPANY_PROFILE.HAULIER,
 ];
 
 /**
@@ -85,8 +84,13 @@ const DEFAULT_AUTH_PROFILES: CompanyProfile[] = [
  * Profiles signed in on FIRST USE rather than in globalSetup.
  *
  * Deliberately outside the default list, not missing from it. AGENT_B appears in one
- * spec file; signing it in on every run would spend a login, and an expired password
- * on it would block suites that never mention it.
+ * authority test; signing it in on every run would spend a login, and an expired
+ * password on it would block suites that never mention it.
+ *
+ * UNDER SUSPICION as of 2026-09-02: the only two tests that used this path both failed
+ * waiting for the portal sign-in link in the browser it launches - HAULIER was moved to
+ * the default list and stopped failing that way. AGENT_B is still here, so if its test
+ * keeps failing at `a[href$='/oauth']`, the mechanism is the suspect, not the account.
  */
 const ON_DEMAND_PROFILES: ReadonlySet<CompanyProfile> = new Set([
     COMPANY_PROFILE.AGENT_B,

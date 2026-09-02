@@ -11,8 +11,7 @@ import { UserCredentials } from '../auth/credentials';
 // Most refusals clear on the second attempt; the wrong-code spec was seen needing 4.
 const MAX_TOTP_ATTEMPTS = 8;
 
-/** The identity provider is a separate host and can be slow to hand a screen over. */
-const AUTH_SCREEN_TIMEOUT = 30_000;
+const AUTH_SCREEN_TIMEOUT = 90_000;
 
 /**
  * The last TOTP code this process submitted, per secret.

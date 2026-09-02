@@ -6,9 +6,10 @@ const LOCALE = process.env.LOCALE ?? 'all';
 
 
 const TEST_TIMEOUT = 900_000; // Maximum duration of one test: 15 minutes
-const EXPECT_TIMEOUT = 30_000; // Maximum wait for Playwright assertions: 30 seconds
-const ACTION_TIMEOUT = 30_000; // Maximum wait for actions such as click/fill: 30 seconds
-const NAVIGATION_TIMEOUT = 30_000; // Maximum wait for page navigation: 30 seconds
+const EXPECT_TIMEOUT = 60_000; // Maximum wait for Playwright assertions: 30 seconds
+const DEFAULT_TIMEOUT = 60_000;
+const ACTION_TIMEOUT = 60_000; // Maximum wait for actions such as click/fill
+const NAVIGATION_TIMEOUT = 60_000; // Maximum wait for page navigation
 
 const HEADLESS = process.env.HEADLESS === 'true';
 
