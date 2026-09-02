@@ -4,30 +4,7 @@ import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flo
 import { CDS_RESPONSE, DeclarationIdentity } from '../../test-data/payload/cds-notification-payload';
 import { TranslationKey } from '../../fixtures/locale-fixture';
 
-/**
- * Stands in for CDS answering a generated declaration, and waits for the portal to
- * show the status that answer drives it to.
- *
- * Named for the effect rather than for the messages. "DMSCLE" reads like "cleared",
- * but that is a guess at a wire code and a flow named after a guess spreads it. What
- * IS known is where each journey ends up - and it differs: the same two messages take
- * an SFD to "Arrived" and an IMMI to "Closed" (Trung, 2026-08-20). So there is one
- * method per outcome, each naming its own, over a shared middle that must not drift.
- *
- * A composed flow because the SEQUENCE is knowledge, not a choice a spec should make:
- * DMSACC-01 then DMSCLE-09, in that order, and only then does the consignment leave
- * "Awaiting arrival". A spec restating those two lines would be restating a fact about
- * CDS, and the second spec to do it would be free to get the order wrong.
- *
- * What is asserted here is what was OBSERVED (2026-08-20): those two messages, in that
- * order, take a generated SFD to "Arrived". The message names are left as CDS's own -
- * translating "DMSCLE-09" into a guess at its meaning would put an unchecked
- * interpretation into every report.
- *
- * No ReportLog.step of its own, for the same reason completeEnsDeclarationFlow has
- * none: every flow it calls reports its own, and a wrapper here would add a nesting
- * level and a second name for the same phase.
- */
+
 export class TriggerFinalStatusThroughCdsFlow {
     constructor(
         private readonly cdsNotificationFlow: CdsNotificationFlow,
@@ -66,17 +43,6 @@ export class TriggerFinalStatusThroughCdsFlow {
         await this.consignmentOverviewFlow.verifyConsignmentStatus('status.closed');
     }
 
-    /**
-     * Take a standalone SFD to "Arrived", and a standalone IMMI to "Closed".
-     *
-     * No record to open first, unlike the generated pair above: a standalone
-     * declaration IS the consignment, and the journey that submitted it leaves the
-     * browser on it. Where an integrated journey has to walk back to the movement and
-     * pick the right tab, these only have to ask the page already showing.
-     *
-     * The destinations are the same as their integrated counterparts (Trung,
-     * 2026-08-20), and hold for both the pre-lodged and the arrived variant.
-     */
     async arriveStandaloneSfd(sfd: DeclarationIdentity | undefined): Promise<void> {
         await this.settleWhereItStands(sfd, 'status.arrived');
     }

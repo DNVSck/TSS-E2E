@@ -11,18 +11,7 @@ import { WarehouseTypeCode } from '../constant/warehouse-type-constant';
 // Separate from the *-data.ts factories because their callers span layers: the data
 // factories use one, a page object uses the other as a default.
 
-/**
- * A valid arrival date/time for this service's forms: the current UTC (UTC+0) date
- * and time plus 30 minutes, formatted as `YYYY-MM-DDTHH:mm` for the datetime-local
- * input. The 30-minute lead keeps it safely in the future without tripping the
- * form's far-future validation.
- *
- * The lead is also what a test declaring an ARRIVED movement has to wait out, so a
- * shorter one (3 minutes was tried on feature/representative-authority) reaches those
- * cases sooner. Left at 30 here deliberately - see Trung, 2026-08-20 - because nothing
- * currently needs the shorter wait, and the reason for the number was lost once already
- * when it was changed without one.
- */
+
 export function generateValidArrivalDate(): string {
     const arrival = new Date(Date.now() + 30 * 60 * 1000);
     return DateTimeUtil.formatUtcDateTimeLocal(arrival);
@@ -135,7 +124,7 @@ const WAREHOUSE_AUTHORISATION_DIGITS = 7;
  *     | authorisation number assigned by the customs authority
  *     warehouse type, repeating the dropdown beside this field
  *
- * WORKING AROUND A DEFECT (Trung, 2026-08-19). The type letter is stated twice - once
+ * WORKING AROUND A DEFECT. The type letter is stated twice - once
  * in the screen's own dropdown and again at the front of this identifier - which is not
  * how the field is meant to work. The service currently rejects an identifier that does
  * not repeat it, so the tests repeat it. Take the prefix out when that is fixed; nothing

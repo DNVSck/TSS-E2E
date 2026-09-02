@@ -66,11 +66,6 @@ export const ensSfdDeclaration = (
 /**
  * The ENS-ONLY declaration under test - the journey that generates nothing else.
  *
- * Which is exactly why the ENS questions are asked here (Trung, 2026-08-14). An ENS
- * rejected by ICS2 still produces an SFD that goes on to CDS, so asking about the ENS on
- * an ENS-SFD journey means building a second declaration nobody is looking at, waiting
- * for it, and leaving it behind. The ENS-only journey answers the same question with one
- * declaration and no bystanders.
  *
  * `isEnsOnly` needs a reason, which ensOnlyConsignment supplies - see it for the default.
  */
@@ -192,7 +187,7 @@ export const ensImmiDeclaration = (
  * carry it. Getting that wrong would break the declaration for a reason unrelated to
  * the party being named, and the test would go red without measuring anything.
  */
-export const immiAuthorisation = (roleId?: string) =>
+const immiAuthorisation = (roleId?: string) =>
     holderOfAuthorisation({
         typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM,
         ...(roleId ? { roleId } : {}),
@@ -215,49 +210,13 @@ const ukimsOfAnotherParty = IMPORTER_UKIMS.replace(
     HAULIER_EORI.replace(/^XI/, '')
 );
 
-/**
- * Data CDS refuses on the IMMI journey.
- *
- * TWO EARLIER ATTEMPTS WERE MEASURED TO BE ACCEPTED - both reached "Awaiting arrival"
- * rather than Trader Input Required, so do not try them again:
- *
- *   1. The SFD's own lever: a UKIM holder-of-authorisation whose role ID names the
- *      haulier instead of the importer (2026-08-14). Trung confirmed that role ID IS an
- *      EORI, so the data was right and CDS simply does not refuse over it here.
- *   2. A goods item declaring no previous document at all, leaving the generated IMMI
- *      with no ENS to cite (2026-08-14).
- */
 export const immiRejectedByCds = (): Partial<EnsDeclarationOptions['goodsItemOverrides']> => ({
     documentReferences: [importerUkimsDocument(ukimsOfAnotherParty)],
 });
 
-/**
- * The `1UKI` document reference an IMMI goods item declares - the importer's UKIMS.
- *
- * Both the broken record and its correction are made from this, so the only difference
- * between them is the number itself. Correcting means putting the importer's own back
- * (`importerUkimsDocument()`), which is what makes CDS accept the resubmission.
- */
-/**
- * What CDS refuses on a STANDALONE journey - one lever per type, and neither is the
- * UKIMS lever the integrated journeys use.
- *
- * REPLACED 2026-08-19, after the UKIMS lever was measured and found to reject for the
- * WRONG REASON. `{ documentReferences: [bad 1UKI] }` is spread OVER the goods item, so on
- * IMMI it deleted the N730 the journey needs, and on SFD it added a `1UKI` with no UKIM
- * authorisation in the header to support it (both standalone consignments declare
- * `holdersOfAuthorisation: []`). CDS refused the SHAPE of the declaration - CDS12077 and
- * CDS12070, "Document Type Code / Document Category Code / Authorisation Type (Header)" -
- * not the party the UKIMS named. That was invisible while the tests only needed SOME
- * rejection; it surfaced the moment one tried to CORRECT the declaration, because no
- * change to a UKIMS number can fix a declaration that is structurally incomplete.
- *
- * A lever is only worth having if the declaration is valid in every other respect: the
- * test has to be able to put the one wrong thing right and see CDS accept it.
- */
 
 /**
- * IMMI standalone: declare the goods item with NO transport document (Trung, 2026-08-19).
+ * IMMI standalone: declare the goods item with NO transport document.
  *
  * Correct it by declaring `immiStandaloneTransportDocument()` - the very record this
  * removes - so the correction is the exact inverse of the lever.
@@ -268,7 +227,7 @@ export const immiStandaloneRejectedByCds = (): Partial<GoodsData> => ({
 
 /**
  * SFD standalone: give the consignment an Excise Warehouse authorisation it has no
- * business holding (Trung, 2026-08-19). A standalone SFD declares no holder of
+ * business holding. A standalone SFD declares no holder of
  * authorisation at all, so this adds the one record, and correcting it means putting the
  * record back to an authorisation the declaration does support.
  */

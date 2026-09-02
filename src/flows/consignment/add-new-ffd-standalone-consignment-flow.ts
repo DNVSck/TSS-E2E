@@ -90,7 +90,7 @@ export class AddNewFfdStandaloneConsignmentFlow {
     // These pick which screens the answers open. They report nothing themselves.
 
     /**
-     * SUSPECTED DEFECT (confirmed with the business 2026-08-02): FFD is not meant to
+     * SUSPECTED DEFECT: FFD is not meant to
      * ask for a buyer at all - the journey's parties are the carrier, the haulier, the
      * importer and the exporter. The app shows these screens today, so they are
      * answered to get past them; remove this once the journey is corrected.
@@ -169,7 +169,7 @@ export class AddNewFfdStandaloneConsignmentFlow {
 
         // The exporter is the last party this journey asks for. The app currently
         // follows it with "Seller is the same as exporter" and a seller EORI screen -
-        // a defect (confirmed 2026-08-02), so they are deliberately not answered here.
+        // a defect, so they are deliberately not answered here.
         // Until it is fixed the wizard stalls on those screens and this test fails at
         // the next step; that failure IS the defect signal, so leave it red.
         await this.consignmentSteps.fillExporterDetails(input.exporterEORI, toPartyAddress('exporter', input));

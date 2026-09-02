@@ -19,10 +19,6 @@ const LOCATION_OF_GOODS_OF_OTHER_PREFIX = 'GBBY';
  *     inwardProcessingLocationOfGoods(IMPORTER_IPO)
  *     // GBBYIPXIIPO89645889502320231019133850
  *
- * Confirmed with Trung 2026-08-12. It reads as an inconsistency beside the builder
- * below, which drops the same "XI" - so do not "tidy" the two into one rule. They are
- * different rules, and the resemblance between GBBYIP + XIIPO… and GBBY + IPO… is
- * exactly the trap: both produce something that starts "GBBYIP".
  */
 export function inwardProcessingLocationOfGoods(ipoAuthorisation: string): string {
     return `${LOCATION_OF_GOODS_OF_OTHER_PREFIX}IP${ipoAuthorisation}`;
