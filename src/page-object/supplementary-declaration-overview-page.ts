@@ -20,7 +20,7 @@ const TOGGLE_SETTLE_TIMEOUT = 2_000;
  * Submit to "PaymentPending" on SIT (2026-08-20). Nothing here sleeps, so a faster
  * environment pays only for the round trips it needs.
  */
-export const SUPPLEMENTARY_STATUS_POLL_TIMEOUT = 240_000;
+const SUPPLEMENTARY_STATUS_POLL_TIMEOUT = 240_000;
 
 /**
  * A supplementary declaration's overview - the screen reached from the SD list, and
@@ -180,8 +180,11 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
      * declaration spent the full four minutes before saying so, which is every failure
      * seen while this journey was being built.
      *
-     * Then throws, because a rejected declaration is still a failed one: what is saved
-     * is the waiting, not the verdict.
+     * Returns the last status read, whatever it is - including one the caller did not
+     * ask for. Whether "PaymentPending" or "Trader input required" is an acceptable
+     * place to land is a rule about the JOURNEY, so the flow decides it (see
+     * CompleteAndSubmitSupplementaryDeclarationFlow) - and deciding it here threw the
+     * status away before the report could name it.
      */
     async waitForAnyStatus(
         expectedStatusKeys: TranslationKey[],
@@ -203,9 +206,9 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
             // "Processing", and nothing noticed until the check below was added.
             await this.page.reload();
             expect(expected, 'Supplementary declaration status').toContain(status);
-        }).toPass({ timeout, intervals: [3_000, 5_000, 10_000] });
-
-        expect(expected, 'Supplementary declaration status').toContain(status);
+        })
+            .toPass({ timeout, intervals: [3_000, 5_000, 10_000] })
+            .catch(() => { /* the caller judges what it settled on - see above */ });
 
         return status;
     }

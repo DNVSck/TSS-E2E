@@ -1,13 +1,14 @@
 import { BasePage } from "./base-page";
+import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import {
     summaryListValue, readFieldWhenVisible, readFieldIfPresent, switchToTabAndClickNew, newRecordButton,
+    clickLinkAndEnterWizard,
 } from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 
 /** The GMR detail summary list can be slow to paint under parallel load. */
-const DETAIL_READ_TIMEOUT = 15_000;
 /** After submit, the GMR ID and Open status are populated asynchronously. */
 const GMR_OPEN_POLL_TIMEOUT = 60_000;
 
@@ -20,6 +21,7 @@ const GMR_OPEN_POLL_TIMEOUT = 60_000;
  */
 export class GmrDetailsPage extends BasePage {
     private readonly submitGMRButton: Locator;
+    private readonly routeIdChangeLink: Locator;
     private readonly cancelGMRButton: Locator;
     private readonly generateBarcodeButton: Locator;
 
@@ -34,6 +36,9 @@ export class GmrDetailsPage extends BasePage {
     constructor(page: Page, t: TFunction) {
         super(page, t);
         this.submitGMRButton = page.locator("button[value='submit']");
+        // The only row a GMR offers to change. Matched on the field it edits, not on
+        // the word "Change", which is translated.
+        this.routeIdChangeLink = page.locator("main a[href*='field=routeId']");
         this.cancelGMRButton = page.locator("button[value='cancel']");
         this.generateBarcodeButton = page.locator("button[value='generate-barcode']");
 
@@ -44,6 +49,17 @@ export class GmrDetailsPage extends BasePage {
         this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
         this.gmrId = summaryListValue(page, this.t!('gmrDetail.gmrId'));
         this.status = summaryListValue(page, this.t!('common.status'));
+    }
+
+    /**
+     * "Change" the route on a GMR that is already Open.
+     *
+     * Its href ends in the "_edit_" placeholder the service resolves for itself, so the
+     * link does not name where it lands - hence the wizard-entering click rather than
+     * the route-matching one, exactly as a consignment's change links are followed.
+     */
+    async changeRouteId(): Promise<void> {
+        await clickLinkAndEnterWizard(this.page, this.routeIdChangeLink, 'edit');
     }
 
     async submitGMR(): Promise<void> {
@@ -68,28 +84,25 @@ export class GmrDetailsPage extends BasePage {
     }
 
     private async getGmrStatus(): Promise<string> {
-        return readFieldWhenVisible(this.status, DETAIL_READ_TIMEOUT);
+        return readFieldWhenVisible(this.status, RENDER_TIMEOUT.RECORD_DETAIL);
     }
 
     private async getGmrLocalReferenceNumber(): Promise<string> {
-        return readFieldWhenVisible(this.localReferenceNumber, DETAIL_READ_TIMEOUT);
+        return readFieldWhenVisible(this.localReferenceNumber, RENDER_TIMEOUT.RECORD_DETAIL);
     }
 
     /**
-     * On the GMR "Check your answers" page (before submit): soft-assert the GMR is a
-     * Draft and its local reference opens with "GMR", and return both. Mirrors the
-     * draft checks on the movement- and consignment-overview pages; the checks are
-     * soft so a mismatch still reaches the report rather than throwing the values away.
+     * What the GMR "Check your answers" page says about itself, before submit.
+     *
+     * Reads, no verdict: whether "Draft" and a GMR-prefixed reference are the RIGHT
+     * answers is a rule about the journey, and AddNewGMRFlow is where the journey is
+     * known - see its verifyDraftGmr.
      */
-    async assertDraftGmr(): Promise<{ localReferenceNumber: string; status: string }> {
-        const localReferenceNumber = await this.getGmrLocalReferenceNumber();
-        const status = await this.getGmrStatus();
-
-        expect.soft(localReferenceNumber, 'GMR local reference number')
-            .toMatch(LOCAL_REFERENCE.GMR_PREFIX);
-        expect.soft(status, 'GMR status').toBe(this.t!('status.draft'));
-
-        return { localReferenceNumber, status };
+    async readDraftGmr(): Promise<{ localReferenceNumber: string; status: string }> {
+        return {
+            localReferenceNumber: await this.getGmrLocalReferenceNumber(),
+            status: await this.getGmrStatus(),
+        };
     }
 
     /**

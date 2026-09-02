@@ -12,7 +12,7 @@ import {
 } from '../../test-data/supplementary-declaration-data';
 import { submittedSupplementaryStatusKeys } from '../../helper/declaration-status-helper';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
-import { TranslationKey } from '../../fixtures/locale-fixture';
+import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount } from '../../helper/report-helper';
 import { ReportLog } from '../../core/report/report-log';
@@ -62,6 +62,10 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
         private readonly documentReferencePage: DocumentReferenceDeclarePage,
         private readonly additionalProcedureCodePage: AdditionalProcedureCodeDeclarePage,
         private readonly steps: SupplementaryDeclarationSteps,
+        // Comparing a status means comparing translated text. The keys arrive from the
+        // caller and the page reads what the screen shows, so the verdict here is the
+        // one place both have to meet.
+        private readonly t: TFunction,
         // The account this worker was assigned by the auth fixture - the same source
         // that picked the replayed session, so the report never names another account.
         private readonly authAccount: UserCredentials | null,
@@ -374,6 +378,8 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
                 try {
                     const status = await this.overviewPage.waitForAnyStatus(expected);
                     ReportLog.setParameter('Supplementary declaration status', status);
+                    expect(expected.map(key => this.t(key)),
+                        'Supplementary declaration status').toContain(status);
                 } catch (error) {
                     const problem = await this.overviewPage.readSubmissionProblem();
                     if (problem) {
