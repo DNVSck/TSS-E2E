@@ -20,6 +20,22 @@ export async function selectDropdownValue(
 // on the same list. Callers pass the label already resolved through t(), keeping the
 // lookup locale-safe. Centralises the govuk-summary-list DOM shape that the movement-,
 // consignment- and goods-overview/detail pages would otherwise each hand-build.
+/**
+ * The hrefs of a set of links, with the ones that carry none dropped.
+ *
+ * Three places asked this question with the same six lines - the actions a page
+ * offers, the tabs a record carries, the records a tab lists - and each of them uses
+ * the answer as a PERMISSION signal: a row rendered without a link is a row this
+ * company may not open. An anchor with no href is exactly that, so it is dropped
+ * here rather than counted as something openable at every call site.
+ */
+export async function hrefsOf(links: Locator): Promise<string[]> {
+    const hrefs = await links.evaluateAll(elements =>
+        elements.map(element => element.getAttribute('href') ?? '')
+    );
+    return hrefs.filter(href => href !== '');
+}
+
 export function summaryListValue(page: Page, label: string): Locator {
     return page.locator(
         `.govuk-summary-list__row:has(dt:text-is("${label}")) .govuk-summary-list__value`
@@ -410,13 +426,8 @@ export async function clickLinkAndEnterWizard(
  * branch. Unify the two when that merges; they must not drift, because a DOM change
  * would then fix one screen and break the other.
  *
- * And unify TOWARDS this one. The tabs are being dropped from the whole service - the
- * supplementary declaration's goods record already lists every section on one page, and
- * the declaration and consignment overviews are to follow (Trung, 2026-08-21). Reading
- * records without first opening the tab that holds them is the shape that survives;
- * everything built on "each tab is its own route" is not.
  */
-export function taskListRecord(page: Page, code: string): Locator {
+function taskListRecord(page: Page, code: string): Locator {
     return page.locator('li.govuk-task-list__item').filter({ hasText: `[${code}]` });
 }
 

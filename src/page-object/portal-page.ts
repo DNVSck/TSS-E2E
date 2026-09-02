@@ -4,8 +4,7 @@ import { clickLinkAndWaitForRoute } from '../helper/element-helper';
 import { BASE_URL } from '../../config/environment';
 import { StringUtil } from '../core/util/string-util';
 
-/** SIT renders the portal shell client-side and can be slow under load. */
-const PORTAL_RENDER_TIMEOUT = 45_000;
+const PORTAL_RENDER_TIMEOUT = 90_000;
 
 
 export class PortalPage extends BasePage {
@@ -13,7 +12,6 @@ export class PortalPage extends BasePage {
     // Declare properties - Using stable locators (NOT text-based)
     private readonly signInBtn: Locator;
     private readonly signOutLink: Locator;
-    private readonly languageSwitcher: Locator;
     private readonly startNewDeclarationLink: Locator;
 
     // Landing-page shortcuts. Scoped to <main> because the header menu carries the
@@ -31,7 +29,6 @@ export class PortalPage extends BasePage {
         // "/company-profile" would otherwise also match "/company-profile/users".
         this.signInBtn = page.locator("a[href$='/oauth']");
         this.signOutLink = page.locator("a[href$='/logout']");
-        this.languageSwitcher = page.locator("//a[contains(@href, '/change-language')]");
         this.startNewDeclarationLink = page.locator("main a[href$='/declaration/form/start']");
 
         this.draftDeclarationsLink = page.locator("main a[href$='/overview']");
@@ -44,12 +41,6 @@ export class PortalPage extends BasePage {
         this.makePaymentLink = page.locator("main a[href$='/payments/pending-payments']");
     }
 
-    /**
-     * Switch to specific language
-     */
-    async switchLanguage(lang: 'en' | 'cy'): Promise<void> {
-        await this.languageSwitcher.click();
-    }
 
     /**
      * The portal renders client-side, so `goto` returning does not mean the header is

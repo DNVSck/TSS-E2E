@@ -1,10 +1,11 @@
 import { Page, Locator, TestInfo } from '@playwright/test';
-import { readFieldIfPresent } from '../helper/element-helper';
+import { readFieldIfPresent, hrefsOf } from '../helper/element-helper';
 import { TFunction } from '../fixtures/locale-fixture';
-import { PortalPage } from './portal-page';
 
 /** Overview screens paint their list a beat after the route settles. */
 const CONTENT_TIMEOUT = 20_000;
+
+const WRONG_SCREEN_GRACE = 5_000;
 
 /** One action button, and whether the screen will actually let it be used. */
 export interface ActionButton {
@@ -48,17 +49,11 @@ export class BasePage {
         )
     }
 
-    /**
-     * How many rows the screen lists.
-     *
-     * Its job is to tell a rendered screen from a blank one. Any check that something
-     * is ABSENT - no actions offered, say - passes just as happily on a page that
-     * failed to load, so a caller has to establish the screen is there first.
-     */
-    async countContentRows(): Promise<number> {
-        await this.contentRows.first().waitFor({ state: 'visible', timeout: CONTENT_TIMEOUT });
-        return this.contentRows.count();
+    /** The pixels, not the Page - so a caller can name its own screenshot and no more. */
+    async screenshotPng(): Promise<Buffer> {
+        return this.page.screenshot();
     }
+
 
     /**
      * Where every action this screen offers would take you.
@@ -76,10 +71,7 @@ export class BasePage {
      * nothing" is just this list being empty.
      */
     async listActionHrefs(): Promise<string[]> {
-        const hrefs = await this.actionLinks.evaluateAll(links =>
-            links.map(link => link.getAttribute('href') ?? '')
-        );
-        return hrefs.filter(href => href !== '');
+        return hrefsOf(this.actionLinks);
     }
 
     /**
@@ -110,31 +102,16 @@ export class BasePage {
     }
 
     /**
-     * Switch to Welsh language if cy project
+ * Switch to Welsh on a cy project - or rather, where that switch used to happen.
      */
     private async switchToWelshIfNeeded(testInfo: TestInfo): Promise<void> {
-        const portalPage = new PortalPage(this.page);
-        const isCyProject = testInfo.project.name.includes('cy');
-
-        if (isCyProject) {
-            await portalPage.switchLanguage('cy');
-            await this.waitUntilLanguageSwitchSuccess('cy');
-        } else {
-            await this.waitUntilLanguageSwitchSuccess('en');
+        if (!testInfo.project.name.includes('cy')) {
+            return;
         }
-    }
 
-     // TO DO: Update this method after enabling the language switcher on the portal page. Currently, the language switcher is not available on the portal page, so this method is a placeholder for future implementation.
-    private async waitUntilLanguageSwitchSuccess(
-        lang: 'en' | 'cy'
-    ): Promise<void> {
-        const portalPage = new PortalPage(this.page);
-
-        const expectedTitles = {
-            en: 'Trader Support Service',
-            cy: 'Gwasanaeth Cymorth Masnachwyr'
-        };
-
+        // TO DO: nothing to click. The portal no longer renders a language switcher, so
+        // a cy run reads whatever the service serves. Put the switch back here when the
+        // link returns - the project check above is what it hangs off.
     }
 
     async clickContinueButton(timeout?: number): Promise<void> {
@@ -225,6 +202,27 @@ export class BasePage {
     /** The screen's heading as shown, or '' when it has none. */
     async readPageHeading(): Promise<string> {
         return readFieldIfPresent(this.pageHeading);
+    }
+
+
+    protected async waitForScreenField(field: Locator, screen: string, timeout: number): Promise<void> {
+        await field.or(this.pageHeading.first()).first().waitFor({ state: 'visible', timeout });
+
+        if (await field.isVisible()) {
+            return;
+        }
+
+        await field.waitFor({ state: 'visible', timeout: WRONG_SCREEN_GRACE })
+            .catch(() => { /* reported below, with the page that did arrive */ });
+
+        if (await field.isVisible()) {
+            return;
+        }
+
+        throw new Error(
+            `The ${screen} screen never arrived. The page showing instead is headed `
+            + `"${await this.readPageHeading()}".`
+        );
     }
 
     /**

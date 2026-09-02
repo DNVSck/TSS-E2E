@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from '../base-page';
 import { CONSIGNMENT_ACTION } from '../../constant/consignment-action-constant';
+import { hrefsOf } from '../../helper/element-helper';
 
 /**
  * How the tabbed record lists are built, in one place.
@@ -12,7 +13,7 @@ import { CONSIGNMENT_ACTION } from '../../constant/consignment-action-constant';
  */
 
 /** The panel of the tab that is OPEN - the only one in the DOM at all. */
-export const OPEN_TAB_PANEL = '.govuk-tabs__panel';
+const OPEN_TAB_PANEL = '.govuk-tabs__panel';
 
 /** One rendered record, wherever it appears. */
 export const TAB_RECORD = '.govuk-task-list__item';
@@ -72,10 +73,7 @@ export class RecordTabs extends BasePage {
      * list, which is itself an answer.
      */
     async listRoutes(): Promise<string[]> {
-        const hrefs = await this.tabLinks.evaluateAll(links =>
-            links.map(link => link.getAttribute('href') ?? '')
-        );
-        return hrefs.filter(href => href !== '');
+        return hrefsOf(this.tabLinks);
     }
 
     /**
@@ -97,10 +95,6 @@ export class RecordTabs extends BasePage {
 
     /** The records the open tab lists, and which of them can be opened. */
     async readRecords(): Promise<{ count: number; links: string[] }> {
-        const count = await this.records.count();
-        const links = await this.recordLinks.evaluateAll(anchors =>
-            anchors.map(anchor => anchor.getAttribute('href') ?? '')
-        );
-        return { count, links };
+        return { count: await this.records.count(), links: await hrefsOf(this.recordLinks) };
     }
 }
