@@ -10,8 +10,22 @@ import { ROUTES } from '../../constant/endpoints-constant';
  * on the page yet - the same reason PortalPage waits for its sign-in link. It
  * matters more here than there, because the question asked of this bar is whether
  * something is ABSENT, and an unpainted page answers that wrongly.
+ *
+ * 30s rather than 15s: under four parallel workers the portal home regularly took
+ * longer than 15s to paint the bar, and every read that timed out came back as "not
+ * representing".
  */
-const BANNER_RENDER_TIMEOUT = 15_000;
+const BANNER_RENDER_TIMEOUT = 30_000;
+
+/**
+ * What the bar says about representation - three answers, not two.
+ *
+ * `unknown` is the one that matters: the bar never painted, so the session may be
+ * representing or not and nothing on the page separates the two. Reading that as
+ * "not representing" is how a test ends up declaring under an identity it did not
+ * choose.
+ */
+export type RepresentationState = 'representing' | 'not-representing' | 'unknown';
 
 /**
  * The "Agent" phase banner TSS renders on every authenticated portal page (the
@@ -60,30 +74,74 @@ export class AgentBanner extends BasePage {
     }
 
     /**
-     * Whether the bar shows an active representation.
+     * What the bar shows, having first put the browser somewhere the bar exists.
      *
-     * Waits for the bar to exist first. A bare count() reads whatever is on the page at
-     * that instant, and right after a navigation that is usually nothing - so a session
-     * that IS representing reads as one that is not, and a caller guarding on this
-     * silently skips its guard.
-     *
-     * Returns false, rather than throwing, when the bar never appears: a page without an
-     * agent bar is not representing, which is the honest answer for every non-agent
-     * profile and every screen outside the portal.
+     * Waits for it to attach. A bare count() reads whatever is on the page at that
+     * instant, and right after a navigation that is usually nothing - so a session that
+     * IS representing reads as one that is not.
      */
-    async isRepresenting(): Promise<boolean> {
-        if (!await this.waitForBanner()) {
-            return false;
-        }
-        return await this.stopRepresentingLink.count() > 0;
-    }
-
-    async stopRepresenting(): Promise<boolean> {
+    async readRepresentation(): Promise<RepresentationState> {
         if (await this.bannerIsMissing()) {
             await this.page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
         }
 
-        if (!await this.isRepresenting()) {
+        if (!await this.waitForBanner()) {
+            return 'unknown';
+        }
+
+        return await this.stopRepresentingLink.count() > 0
+            ? 'representing'
+            : 'not-representing';
+    }
+
+    /**
+     * Clear any representation without waiting for the bar to paint.
+     *
+     * The same GET the "Stop representing" link issues, sent on the browser context's
+     * cookie jar so it lands on the same server-side session. Used by the reset that runs
+     * before every test: that reset must not be defeated by a portal painting slowly, and
+     * reading the bar first is what made it silently skip under parallel load.
+     */
+    async clearRepresentation(): Promise<void> {
+        // Relative on purpose. BASE_URL ends in /portal/ and the route carries a
+        // leading slash because it is matched as an href suffix, so an absolute join
+        // would resolve to the origin and miss the portal entirely.
+        const url = new URL(`.${ROUTES.PORTAL.STOP_REPRESENTING}`, BASE_URL);
+        const response = await this.page.request.get(url.toString());
+
+        if (!response.ok()) {
+            throw new Error(
+                `Could not clear representation: ${url} answered ${response.status()}. ` +
+                `The next test would start acting for a company it did not choose.`
+            );
+        }
+    }
+
+    /**
+     * Clear any representation through the screen, and say whether there was one.
+     *
+     * The user's own path, kept for the flows that need the bar to visibly change - see
+     * RepresentTraderFlow, which relies on the link going away and coming back.
+     *
+     * Throws instead of answering when the bar never painted. False means "there was
+     * nothing to clear", and a session that MIGHT still be representing is not that: the
+     * caller would carry on under an identity it did not choose, and the service rejects
+     * the declaration minutes later with "Declarant EORI: Not provided", pointing at CDS
+     * rather than at the read that went wrong here.
+     */
+    async stopRepresenting(): Promise<boolean> {
+        const state = await this.readRepresentation();
+
+        if (state === 'unknown') {
+            throw new Error(
+                `The Agent banner did not render within ${BANNER_RENDER_TIMEOUT}ms at ` +
+                `${this.page.url()}, so whether this session represents anybody could not ` +
+                `be read. Refusing to report it as "not representing" - that answer is ` +
+                `what lets a test declare under the wrong company.`
+            );
+        }
+
+        if (state === 'not-representing') {
             return false;
         }
 
@@ -95,7 +153,7 @@ export class AgentBanner extends BasePage {
     /**
      * Whether the bar is absent RIGHT NOW, read without waiting.
      *
-     * Deliberately instant, unlike isRepresenting. This one only decides whether to
+     * Deliberately instant, unlike readRepresentation. This one only decides whether to
      * navigate to the portal first, and being wrong costs a redundant navigation - while
      * waiting would cost the full render budget on every first call, where the page is
      * about:blank and the bar is never going to appear.

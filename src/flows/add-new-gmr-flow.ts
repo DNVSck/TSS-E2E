@@ -5,6 +5,8 @@ import { GmrDetailsPage } from "../page-object/gmr-details-page";
 import { ExternalContactDeclarePage } from "../page-object/external-contact-declare-page";
 import { ReportLog } from '../core/report/report-log';
 import { GmrData } from "../test-data/gmr-data";
+import { TFunction } from '../fixtures/locale-fixture';
+import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 
 export class AddNewGMRFlow {
 
@@ -12,7 +14,8 @@ export class AddNewGMRFlow {
         private readonly movementOverviewPage: MovementOverviewPage,
         private readonly gmrDeclarePage: GmrDeclarePage,
         private readonly gmrDetailsPage: GmrDetailsPage,
-        private readonly externalContactDeclarePage: ExternalContactDeclarePage
+        private readonly externalContactDeclarePage: ExternalContactDeclarePage,
+        private readonly t: TFunction,
     ) {}
 
     async addNewGmrAndSubmit(input: GmrData): Promise<void> {
@@ -23,7 +26,30 @@ export class AddNewGMRFlow {
         await this.declareExternalContacts(input.external_contacts_list);
         await this.verifyDraftGmr();
         await this.submitGMR();
-        await this.verifyGmrOpen();
+        await this.verifyGmrOpen('submit');
+    }
+
+    /**
+     * Change the route on a GMR that is already Open, and put it back in.
+     *
+     * The only row a GMR offers to change, and the only proof that a company shown a
+     * Change link may actually use it: being OFFERED an edit and having one ACCEPTED
+     * are different claims about a permission.
+     *
+     * The caller passes a route the GMR was not created with - resubmitting the same
+     * answer would not show the service took an edit.
+     */
+    async changeRouteAndResubmit(routeId: string): Promise<string> {
+        return ReportLog.step(`Change the GMR route to "${routeId}" and resubmit`, async () => {
+            await this.gmrDetailsPage.changeRouteId();
+            await this.gmrDeclarePage.selectRouteId(routeId);
+
+            // "Complete and submit" on the check-your-answers screen - the same finish
+            // button the creation wizard ends on.
+            await this.gmrDetailsPage.clickFinishButton();
+
+            return this.verifyGmrOpen('resubmission');
+        });
     }
 
     /**
@@ -84,7 +110,12 @@ export class AddNewGMRFlow {
      */
     private async verifyDraftGmr(): Promise<void> {
         await ReportLog.step('Validate GMR is Draft with a GMR reference', async () => {
-            const { localReferenceNumber, status } = await this.gmrDetailsPage.assertDraftGmr();
+            const { localReferenceNumber, status } = await this.gmrDetailsPage.readDraftGmr();
+
+            expect.soft(localReferenceNumber, 'GMR local reference number')
+                .toMatch(LOCAL_REFERENCE.GMR_PREFIX);
+            expect.soft(status, 'GMR status').toBe(this.t('status.draft'));
+
             ReportLog.setParameter('GMR reference', localReferenceNumber);
             ReportLog.setParameter('GMR status (draft)', status);
         });
@@ -97,19 +128,33 @@ export class AddNewGMRFlow {
     }
 
     /**
-     * Post-submit: submitting returns to the movement overview with the GMR tab
-     * active. Open the GMR's detail, then wait until it becomes "Open" and its GMR ID
-     * (opening with "GMR") has been issued. Soft checks, reported.
+     * The GMR came back Open with its ID intact - the one verdict, whether this is the
+     * first submit or a correction of an Open GMR.
+     *
+     * One method for both because the claim is identical and was drifting apart: the
+     * first submit only reported the ID it read, while a resubmission asserted it, so
+     * the journey that BUILDS a GMR was checked less than the one that edits it.
+     *
+     * openGmrDetailFromTab handles both arrivals: submitting returns to the movement
+     * overview, correcting stays on the record, and it decides which from the URL.
+     *
+     * Soft: by the time this runs the service has already accepted or refused, and a
+     * run should report which rather than stop at it.
      */
-    private async verifyGmrOpen(): Promise<void> {
-        await ReportLog.step('Validate GMR is Open with a GMR ID after submit', async () => {
+    private async verifyGmrOpen(stage: 'submit' | 'resubmission'): Promise<string> {
+        return ReportLog.step(`Validate GMR is Open with a GMR ID after ${stage}`, async () => {
             const opened = await this.movementOverviewPage.openGmrDetailFromTab();
-            expect.soft(opened, 'GMR detail opened').toBe(true);
-            if (!opened) return;
+            expect.soft(opened, `GMR detail opened after ${stage}`).toBe(true);
+            if (!opened) return '';
 
             const { gmrId, status } = await this.gmrDetailsPage.waitForGmrOpen();
+
+            expect.soft(gmrId, `GMR ID after ${stage}`).toMatch(LOCAL_REFERENCE.GMR_PREFIX);
+            expect.soft(status, `GMR status after ${stage}`).toBe(this.t('status.open'));
+
             ReportLog.setParameter('GMR ID', gmrId);
-            ReportLog.setParameter('GMR status (submitted)', status);
+            ReportLog.setParameter(`GMR status (after ${stage})`, status);
+            return status;
         });
     }
 }

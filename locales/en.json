@@ -53,5 +53,8 @@
     "processing": "Processing",
     "paymentPending": "PaymentPending",
     "taxCalculation": "Tax calculation"
+  },
+  "accessDenied": {
+    "heading": "You are not authorised to access this"
   }
 }

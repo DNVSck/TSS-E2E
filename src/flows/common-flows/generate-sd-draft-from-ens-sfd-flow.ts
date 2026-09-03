@@ -14,32 +14,7 @@ export interface GenerateSdDraftOptions {
     overrides?: Partial<SupplementaryDeclarationMovementData>;
 }
 
-/**
- * SET-UP, not a journey: it produces an auto-generated supplementary declaration DRAFT
- * out of the ENS-SFD journey, and leaves the browser in a position to work on it.
- *
- * Nobody creates a supplementary declaration. The service generates one for every
- * frontier declaration that clears, so the only way to have a draft is to make a
- * movement and let it clear - which is what this does, in the three steps that journey
- * takes:
- *
- *   1. the Agent declares an ENS-SFD movement as ITSELF. An integrated declaration is
- *      made on the agent's own account; representing first would make the whole
- *      movement the importer's.
- *   2. CDS clears the SFD. THIS is what raises the supplementary declaration - no GMR
- *      is involved (confirmed with Trung, 2026-08-21). The ENS-SFD journeys create one
- *      because a real movement needs it to cross the water, but nothing about raising
- *      an SD depends on it, and creating one only lengthens the journey.
- *   3. the Agent starts representing the importer, because the declaration is theirs
- *      and is not on the agent's own list at all.
- *
- * Returns the frontier declaration's reference, which is how the supplementary
- * declaration is then found - see DeclarationOverviewPage.openSupplementaryDeclarationFor.
- *
- * A flow rather than a helper inside a spec: every supplementary declaration test needs
- * all of this before it can start, and the order of the three steps is the part that is
- * easy to get wrong.
- */
+
 export class GenerateSdDraftFromEnsSfdFlow {
     constructor(
         private readonly createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow,

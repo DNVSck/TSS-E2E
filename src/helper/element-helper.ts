@@ -20,6 +20,22 @@ export async function selectDropdownValue(
 // on the same list. Callers pass the label already resolved through t(), keeping the
 // lookup locale-safe. Centralises the govuk-summary-list DOM shape that the movement-,
 // consignment- and goods-overview/detail pages would otherwise each hand-build.
+/**
+ * The hrefs of a set of links, with the ones that carry none dropped.
+ *
+ * Three places asked this question with the same six lines - the actions a page
+ * offers, the tabs a record carries, the records a tab lists - and each of them uses
+ * the answer as a PERMISSION signal: a row rendered without a link is a row this
+ * company may not open. An anchor with no href is exactly that, so it is dropped
+ * here rather than counted as something openable at every call site.
+ */
+export async function hrefsOf(links: Locator): Promise<string[]> {
+    const hrefs = await links.evaluateAll(elements =>
+        elements.map(element => element.getAttribute('href') ?? '')
+    );
+    return hrefs.filter(href => href !== '');
+}
+
 export function summaryListValue(page: Page, label: string): Locator {
     return page.locator(
         `.govuk-summary-list__row:has(dt:text-is("${label}")) .govuk-summary-list__value`
@@ -152,6 +168,11 @@ export async function clickLinkAndWaitForRoute(page: Page, link: Locator): Promi
     const route = StringUtil.stripTrailingSlashes(new URL(href, page.url()).pathname);
 
     for (let attempt = 1; attempt <= ROUTE_CLICK_ATTEMPTS; attempt++) {
+
+        if (StringUtil.stripTrailingSlashes(new URL(page.url()).pathname) === route) {
+            return;
+        }
+
         try {
             await link.click({ timeout: LINK_VISIBLE_TIMEOUT });
             // Wait only for the route to be committed and parsed, NOT for the page to
@@ -328,6 +349,53 @@ export async function waitForWizardStepToChange(
  * destination is described by SHAPE instead: inside the wizard, and past the
  * placeholder.
  */
+/**
+ * Click a link whose destination is NOT its href, and wait until the page has moved.
+ *
+ * The weaker sibling of clickLinkAndEnterWizard below, for links whose landing route is
+ * not knowable in advance at all. A summary list's "Change" action points at
+ * ".../edit/_edit_?field=x" and the app answers by redirecting to whichever wizard
+ * screen that field lives on, so the only honest expectation is that we are no longer
+ * where we started.
+ *
+ * Deliberately weaker, and to be used only where the destination genuinely cannot be
+ * described; anywhere the wizard segment IS known, clickLinkAndEnterWizard says so and
+ * fails on the right thing. The two overlap enough that they should be reconciled once
+ * the authority suite runs green and the real routes are observable - keeping both for
+ * now because substituting the stronger one without seeing the route would only move
+ * the guess from here to a timeout.
+ */
+export async function clickLinkAndWaitForNavigation(page: Page, link: Locator): Promise<void> {
+    await link.waitFor({ state: 'visible', timeout: LINK_VISIBLE_TIMEOUT });
+    const from = StringUtil.stripTrailingSlashes(new URL(page.url()).pathname);
+
+    for (let attempt = 1; attempt <= ROUTE_CLICK_ATTEMPTS; attempt++) {
+
+        if (StringUtil.stripTrailingSlashes(new URL(page.url()).pathname) !== from) {
+            return;
+        }
+
+        try {
+            await link.click({ timeout: LINK_VISIBLE_TIMEOUT });
+            await page.waitForURL(
+                url => StringUtil.stripTrailingSlashes(url.pathname) !== from,
+                { waitUntil: 'domcontentloaded', timeout: ROUTE_LANDING_TIMEOUT }
+            );
+            return;
+        } catch (error) {
+            if (attempt === ROUTE_CLICK_ATTEMPTS) {
+                throw new Error(
+                    `Link did not navigate away from "${from}" after ${ROUTE_CLICK_ATTEMPTS} clicks. ` +
+                    `Last failure: ${(error as Error).message}`
+                );
+            }
+            await ReportLog.info(
+                `Link did not navigate on attempt ${attempt}; clicking it again and retrying.`
+            );
+        }
+    }
+}
+
 export async function clickLinkAndEnterWizard(
     page: Page,
     link: Locator,
@@ -358,13 +426,8 @@ export async function clickLinkAndEnterWizard(
  * branch. Unify the two when that merges; they must not drift, because a DOM change
  * would then fix one screen and break the other.
  *
- * And unify TOWARDS this one. The tabs are being dropped from the whole service - the
- * supplementary declaration's goods record already lists every section on one page, and
- * the declaration and consignment overviews are to follow (Trung, 2026-08-21). Reading
- * records without first opening the tab that holds them is the shape that survives;
- * everything built on "each tab is its own route" is not.
  */
-export function taskListRecord(page: Page, code: string): Locator {
+function taskListRecord(page: Page, code: string): Locator {
     return page.locator('li.govuk-task-list__item').filter({ hasText: `[${code}]` });
 }
 

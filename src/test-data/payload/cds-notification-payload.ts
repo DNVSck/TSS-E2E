@@ -38,11 +38,6 @@ const NOTIFICATION_STATUS = 'PENDING';
 
 /**
  * Which version of the declaration a response answers.
- *
- * Fixed at what the recorded exchange sent (Trung, 2026-08-20) rather than tracked per
- * declaration. If a journey ever needs CDS to answer a different version, this becomes
- * an argument on CdsDeclarationReference again - it was one, and was taken back out
- * because nothing was choosing it.
  */
 const DECLARATION_VERSION = 2;
 

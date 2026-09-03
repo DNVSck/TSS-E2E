@@ -28,7 +28,7 @@ export interface GoodsData {
 /**
      * "Do you want to use NIRMS for these goods?" - answered only when the service asks,
      * which it does when the importer company holds a NIRMS authorisation AND the
-     * commodity supports it (Trung, 2026-08-17).
+     * commodity supports it
      *
      * Defaults to false, which BYPASSES the feature while it is still being built. When
      * it is finished, the interesting cases are the ones that answer true - and the

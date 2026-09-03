@@ -3,7 +3,22 @@ import { Page, Locator } from '@playwright/test';
 import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, readErrorSummary } from '../helper/element-helper';
 
 
-const COMMODITY_SUBMIT_TIMEOUT = 90_000;
+const COMMODITY_SUBMIT_TIMEOUT = 180_000;
+
+/**
+ * How long a screen gets to paint, and to navigate away again.
+ *
+ * The packaging screen follows the commodity screen, whose Continue returns as soon
+ * as the form is posted while the live tariff lookup is still resolving - so the tail
+ * of that work lands on the FIRST interaction with the screen after it. Both fields
+ * below can be that first interaction, depending on which one the flow fills first,
+ * and the same tail can still be running when this screen posts in its turn.
+ *
+ * Deliberately larger than ACTION_TIMEOUT rather than equal to it: an override worth
+ * writing is one that raises something. This was 30s until 2026-09-01, when the
+ * default was raised to 30s and it silently became a no-op.
+ */
+const SCREEN_PAINT_TIMEOUT = 90_000;
 
 /**
  * How long the NIRMS screen gets to appear before the wizard is taken to have skipped it.
@@ -258,8 +273,16 @@ export class GoodsDeclarePage extends BasePage {
         return true;
     }
 
+    /**
+     * The first field of the packaging screen, and therefore the first thing to notice
+     * that the packaging screen is not what the service sent - see waitForScreenField.
+     */
     async inputShippingMarks(shippingMarks: string): Promise<void> {
-        await this.shippingMarksInput.fill(shippingMarks, { timeout: 30000 });
+        // "packaging details" because that is the heading the screen carries ("Enter
+        // packaging details"): the message quotes the heading that DID arrive, so the
+        // two read side by side only if this names the same thing the page does.
+        await this.waitForScreenField(this.shippingMarksInput, 'packaging details', SCREEN_PAINT_TIMEOUT);
+        await this.shippingMarksInput.fill(shippingMarks);
     }
 
     async selectTypeOfPackages(typeOfPackages: string): Promise<void> {
@@ -275,7 +298,7 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     async inputGrossMass(grossMass: string): Promise<void> {
-        await this.grossMassInput.fill(grossMass);
+        await this.grossMassInput.fill(grossMass, { timeout: SCREEN_PAINT_TIMEOUT });
     }
 
     async inputNetMass(netMass: string): Promise<void> {
@@ -427,7 +450,7 @@ export class GoodsDeclarePage extends BasePage {
         await this.selectTypeOfPackages(typeOfPackages);
         await this.inputNumberOfPackages(numberOfPackages);
         await this.inputNumberOfPieces(numberOfPieces??'');
-        await this.clickContinueButton();
+        await this.clickContinueButton(SCREEN_PAINT_TIMEOUT);
     }
 
     /**

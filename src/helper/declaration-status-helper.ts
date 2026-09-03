@@ -40,12 +40,6 @@ export function standaloneSubmittedStatusKey(isPreLodged: boolean): TranslationK
  * declaration's status says where the goods are; an SD has no goods left to follow, so
  * its status says what is owed.
  *
- * The second is a race nothing here controls (Trung, 2026-08-20). The declaration is
- * assessed for duty and queued for payment by separate messages, and whichever arrives
- * first is the status on the page - so "Tax calculation" and "PaymentPending" are both
- * correct, and asserting on only one would fail roughly whenever the other won. Which
- * one arrived is not a fact about the declaration; it is a fact about the ordering.
- *
  * Only what has actually been measured is listed. A method with no entry throws rather
  * than falling back to a plausible one: the point of this table is to state an
  * expectation, and an invented expectation either passes for the wrong reason or fails

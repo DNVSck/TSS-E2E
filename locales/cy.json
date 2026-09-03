@@ -53,5 +53,8 @@
     "processing": "Wrthi'n prosesu",
     "paymentPending": "Taliad yn Aros",
     "taxCalculation": "Cyfrifiad treth"
+  },
+  "accessDenied": {
+    "heading": "Nid oes gennych awdurdod i gael mynediad at hyn"
   }
 }

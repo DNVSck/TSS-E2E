@@ -27,11 +27,6 @@ export class SupplementaryDeclarationGoodsRecordPage extends BasePage {
         // its action, and every section of this screen posts to the SAME action - so it
         // would match eleven buttons. Only the button's own value tells them apart.
         //
-        // This screen has no tabs - every section is on the page at once - and that is
-        // where the whole service is going: the designers are dropping tabs, so the
-        // declaration and consignment overviews will be rebuilt this way too (Trung,
-        // 2026-08-21). So this is not the odd screen out; it is the first one built the
-        // way the others will be.
         this.newDocumentReferenceButton = page.locator(
             "main button[name='action'][value='new-document-reference']"
         );

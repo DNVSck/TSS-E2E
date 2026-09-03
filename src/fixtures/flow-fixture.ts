@@ -34,6 +34,14 @@ import { CompleteAndSubmitSupplementaryDeclarationFlow } from '../flows/common-f
 import { GenerateSdDraftFromEnsSfdFlow } from '../flows/common-flows/generate-sd-draft-from-ens-sfd-flow';
 import { ConcurrentLoginFlow } from '../flows/concurrent-login-flow';
 import { LocaleFixtureType } from './locale-fixture';
+import { CreateDraftEnsDeclarationFlow } from '../flows/common-flows/create-draft-ens-declaration-flow';
+import { CreateDraftSfdStandaloneFlow } from '../flows/common-flows/create-draft-sfd-standalone-flow';
+import {
+    CreateDraftImmiStandaloneFlow,
+} from '../flows/common-flows/create-draft-immi-standalone-flow';
+import { DeclarationAccessFlow } from '../flows/declaration-access-flow';
+import { AuthorityCheckerFlow, authorityCheckerFlowFor } from '../flows/authority-check-flow';
+import { CompanySessionFixtureType } from './company-session-fixture';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
 import { APIFixtureType } from './api-fixture';
 import { SecondDeviceFixtureType } from './second-device-fixture';
@@ -46,6 +54,25 @@ export type FlowFixtureType = {
     signInFlow: SignInFlow;
     companyProfileFlow: CompanyProfileFlow;
     representTraderFlow: RepresentTraderFlow;
+
+    // Reads what a declaration lets the signed-in company do with it. Used by the
+    // representation-authority specs, not by the journey specs.
+    declarationAccessFlow: DeclarationAccessFlow;
+
+    /**
+     * Runs a row of the permission table (see src/test-data/authority-matrix).
+     *
+     * Wired here rather than in each test because what it needs - the Agent's browser,
+     * the way to open a second company's, and the translator - is the same in every one
+     * of them, and building it per test put four identical lines at the top of each.
+     */
+    checkAuthorityFlow: AuthorityCheckerFlow;
+
+    // Builds a declaration and stops at Draft. The create-and-submit flows carry it
+    // to the end; the authority specs take it somewhere else.
+    createDraftEnsDeclarationFlow: CreateDraftEnsDeclarationFlow;
+    createDraftImmiStandaloneFlow: CreateDraftImmiStandaloneFlow;
+    createDraftSfdStandaloneFlow: CreateDraftSfdStandaloneFlow;
     initialFormDeclarationFlow: InitialFormDeclarationFlow;
     movementHeaderDeclarationFlow: MovementHeaderDeclarationFlow;
     movementOverviewFlow: MovementOverviewFlow;
@@ -87,7 +114,7 @@ export type FlowFixtureType = {
 
 // LocaleFixtureType is in the union because two flows take `t` themselves - deciding
 // what a translated status means for a journey is flow-level, not page-level.
-type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType & APIFixtureType & LocaleFixtureType & SecondDeviceFixtureType>>;
+type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType & APIFixtureType & LocaleFixtureType & SecondDeviceFixtureType & CompanySessionFixtureType>>;
 
 export const flowFixture: ExtendParams[0] = {
     portalAccessFlow: async ({ basePage, portalPage }, use) => {
@@ -104,6 +131,57 @@ export const flowFixture: ExtendParams[0] = {
 
     representTraderFlow: async ({ agentBanner, representTraderPage }, use) => {
         await use(new RepresentTraderFlow(agentBanner, representTraderPage));
+    },
+
+    declarationAccessFlow: async ({
+        movementOverviewPage, consignmentDetailPage, portalPage, declarationSearchPage, consignmentOverviewPage, t
+    }, use) => {
+        await use(new DeclarationAccessFlow(
+            movementOverviewPage, consignmentDetailPage, portalPage, declarationSearchPage, consignmentOverviewPage, t
+        ));
+    },
+
+    checkAuthorityFlow: async ({ declarationAccessFlow, openAs, t }, use) => {
+        await use(authorityCheckerFlowFor({ agent: declarationAccessFlow, openAs, t }));
+    },
+
+    createDraftEnsDeclarationFlow: async ({
+        portalAccessFlow,
+        initialFormDeclarationFlow,
+        movementHeaderDeclarationFlow,
+        movementOverviewFlow,
+        addNewEnsConsignmentFlow,
+        consignmentOverviewFlow,
+        addNewEnsGoodsItemFlow,
+        goodsOverviewFlow,
+        authAccount
+    }, use) => {
+        await use(new CreateDraftEnsDeclarationFlow(
+            portalAccessFlow,
+            initialFormDeclarationFlow,
+            movementHeaderDeclarationFlow,
+            movementOverviewFlow,
+            addNewEnsConsignmentFlow,
+            consignmentOverviewFlow,
+            addNewEnsGoodsItemFlow,
+            goodsOverviewFlow,
+            authAccount
+        ));
+    },
+
+    createDraftSfdStandaloneFlow: async ({
+        portalAccessFlow, initialFormDeclarationFlow,
+        standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
+        consignmentOverviewFlow, goodsOverviewFlow, authAccount
+    }, use) => {
+        const addConsignment = new AddNewSfdStandaloneConsignmentFlow(
+            standaloneConsignmentSteps, movementSteps, consignmentSteps
+        );
+        const addGoodsItem = new AddNewSfdStandaloneGoodsItemFlow(goodsItemSteps);
+        await use(new CreateDraftSfdStandaloneFlow(
+            portalAccessFlow, initialFormDeclarationFlow, addConsignment,
+            addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+        ));
     },
 
     initialFormDeclarationFlow: async ({ initialFormDeclaraPage }, use) => {
@@ -134,8 +212,14 @@ export const flowFixture: ExtendParams[0] = {
         await use(new AddNewEnsConsignmentFlow(consignmentSteps));
     },
 
-    consignmentOverviewFlow: async ({ consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage, consignmentDetailPage, t}, use) => {
-        await use(new ConsignmentOverviewFlow(consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage, consignmentDetailPage, t));
+    consignmentOverviewFlow: async ({
+        consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage,
+        consignmentDetailPage, consignmentSteps, t
+    }, use) => {
+        await use(new ConsignmentOverviewFlow(
+            consignmentOverviewPage, previousDocumentDeclarePage, holderOfAuthorisationDeclarePage,
+            consignmentDetailPage, consignmentSteps, t
+        ));
     },
 
     goodsItemSteps: async ({ consignmentOverviewPage, goodsItemDeclarePage }, use) => {
@@ -146,12 +230,16 @@ export const flowFixture: ExtendParams[0] = {
         await use(new AddNewEnsGoodsItemFlow(goodsItemSteps));
     },
 
-    goodsOverviewFlow: async ({ goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage }, use) => {
-        await use(new GoodsOverviewFlow(goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage));
+    goodsOverviewFlow: async ({ goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage, t }, use) => {
+        await use(new GoodsOverviewFlow(goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage, t));
     },
 
-    createAndSubmitGmrFlow: async ({ movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage }, use) => {
-        await use(new AddNewGMRFlow(movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage));
+    createAndSubmitGmrFlow: async ({
+        movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage, t
+    }, use) => {
+        await use(new AddNewGMRFlow(
+            movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage, t
+        ));
     },
 
     ics2NotificationFlow: async ({ ics2MockApiClient }, use) => {
@@ -171,30 +259,14 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     createAndSubmitEnsDeclarationFlow: async ({
-        portalAccessFlow,
-        initialFormDeclarationFlow,
-        movementHeaderDeclarationFlow,
-        movementOverviewFlow,
-        addNewEnsConsignmentFlow,
-        consignmentOverviewFlow,
-        addNewEnsGoodsItemFlow,
-        goodsOverviewFlow,
-        authAccount
+        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow
     }, use) => {
         await use(new CreateAndSubmitEnsDeclarationFlow(
-            portalAccessFlow,
-            initialFormDeclarationFlow,
-            movementHeaderDeclarationFlow,
-            movementOverviewFlow,
-            addNewEnsConsignmentFlow,
-            consignmentOverviewFlow,
-            addNewEnsGoodsItemFlow,
-            goodsOverviewFlow,
-            authAccount
+            createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow
         ));
     },
 
-    createAndSubmitImmiStandaloneFlow: async ({
+    createDraftImmiStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
         standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
         consignmentOverviewFlow, goodsOverviewFlow, authAccount
@@ -203,24 +275,25 @@ export const flowFixture: ExtendParams[0] = {
             standaloneConsignmentSteps, movementSteps, consignmentSteps
         );
         const addGoodsItem = new AddNewImmiStandaloneGoodsItemFlow(goodsItemSteps);
-        await use(new CreateAndSubmitImmiStandaloneFlow(
+        await use(new CreateDraftImmiStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,
             addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
         ));
     },
 
-    createAndSubmitSfdStandaloneFlow: async ({
-        portalAccessFlow, initialFormDeclarationFlow,
-        standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
-        consignmentOverviewFlow, goodsOverviewFlow, authAccount
+    createAndSubmitImmiStandaloneFlow: async ({
+        createDraftImmiStandaloneFlow, consignmentOverviewFlow
     }, use) => {
-        const addConsignment = new AddNewSfdStandaloneConsignmentFlow(
-            standaloneConsignmentSteps, movementSteps, consignmentSteps
-        );
-        const addGoodsItem = new AddNewSfdStandaloneGoodsItemFlow(goodsItemSteps);
+        await use(new CreateAndSubmitImmiStandaloneFlow(
+            createDraftImmiStandaloneFlow, consignmentOverviewFlow
+        ));
+    },
+
+    createAndSubmitSfdStandaloneFlow: async ({
+        createDraftSfdStandaloneFlow, consignmentOverviewFlow
+    }, use) => {
         await use(new CreateAndSubmitSfdStandaloneFlow(
-            portalAccessFlow, initialFormDeclarationFlow, addConsignment,
-            addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+            createDraftSfdStandaloneFlow, consignmentOverviewFlow
         ));
     },
 
@@ -245,12 +318,12 @@ export const flowFixture: ExtendParams[0] = {
     completeAndSubmitSupplementaryDeclarationFlow: async ({
         basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
         supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
-        additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, authAccount
+        additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, authAccount, t
     }, use) => {
         await use(new CompleteAndSubmitSupplementaryDeclarationFlow(
             basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
             supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
-            additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, authAccount
+            additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, t, authAccount
         ));
     },
 

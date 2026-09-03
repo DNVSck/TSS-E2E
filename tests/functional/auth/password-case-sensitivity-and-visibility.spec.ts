@@ -1,5 +1,5 @@
 import { test, expect, getBaseUrl } from '../../test-hooks';
-import { MESSAGE_CONSTANTS } from '../../../src/constant/messages-constants';
+import { ERROR_MESSAGE } from '../../../src/constant/error-message-constant';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
 import {
@@ -80,7 +80,7 @@ test.describe('TSS Portal - Password Case-Sensitivity and Visibility (Test Case 
                     );
 
                     expect(message, `System should reject ${description}`)
-                        .toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
+                        .toBe(ERROR_MESSAGE.INVALID_SIGN_IN_CREDENTIALS);
                 });
             }
 

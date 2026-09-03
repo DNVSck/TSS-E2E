@@ -1,5 +1,5 @@
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
-import { UNLOCODE } from '../constant/unlocode-constant';
+import { UNLOCODE, UnlocodeCode } from '../constant/unlocode-constant';
 import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
@@ -116,7 +116,7 @@ export interface FfdStandaloneConsignmentData {
      *
      * There is NO seller on this journey. The app currently shows "Seller is the same
      * as exporter" and a seller EORI screen after the exporter - that is a defect
-     * (confirmed 2026-08-02), not a screen FFD is meant to have, so no seller fields
+     * not a screen FFD is meant to have, so no seller fields
      * are modelled here.
      */
     exporterEORI: string;
@@ -135,7 +135,7 @@ export interface FfdStandaloneConsignmentData {
     incoterm: string;
     isKnownUnlocode: boolean;
     deliveryCountryCode: string;
-    deliveryPlaceUnlocode: string;
+    deliveryPlaceUnlocode: UnlocodeCode;
 
     /** Answering yes opens a second screen asking what that nature is. */
     isSameNatureOfGoods: boolean;

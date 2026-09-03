@@ -1,5 +1,5 @@
 import { OTP_ENABLED } from '../../../config/environment';
-import { MESSAGE_CONSTANTS } from '../../../src/constant/messages-constants';
+import { ERROR_MESSAGE } from '../../../src/constant/error-message-constant';
 import { test, expect, getBaseUrl } from '../../test-hooks';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { COMPANY_PROFILE, UserCredentials, accountFor, isProfileConfigured } from '../../../src/auth/credentials';
@@ -61,7 +61,7 @@ test('Test Case 2545: Email normalization and invalid format validation',
         // Both malformed addresses get the SAME message. A service that answered them
         // differently would be describing its own account list to an attacker.
         expect(invalidEmailError1).toBe(invalidEmailError2);
-        expect(invalidEmailError1).toBe(MESSAGE_CONSTANTS.INVALID_SIGN_IN_CREDENTIALS);
+        expect(invalidEmailError1).toBe(ERROR_MESSAGE.INVALID_SIGN_IN_CREDENTIALS);
 
         // Step 2: Enter the email address in uppercase and valid password, then click "Sign in"
         // The system normalizes the email and authenticates the user

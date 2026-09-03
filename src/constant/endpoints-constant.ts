@@ -14,3 +14,10 @@ export const ROUTES = {
         STOP_REPRESENTING: '/stop-representing',
     }
 } as const;
+
+
+export const MOVEMENT_ROUTE = {
+    GOODS_MOVEMENT_SEGMENT: 'goods-movement',
+    OVERVIEW_SEGMENT: 'overview',
+    GMR_RECORD_PATH: /\/goods-movement-records\/GMR\d+/,
+} as const;

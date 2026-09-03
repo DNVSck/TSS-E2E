@@ -1,12 +1,13 @@
 import { BasePage } from "./base-page";
+import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
-import { switchToTabAndClickNew, summaryListValue, readFieldWhenVisible, newRecordButton } from '../helper/element-helper';
+import { switchToTabAndClickNew, summaryListValue, readFieldWhenVisible, newRecordButton, clickLinkAndWaitForNavigation } from '../helper/element-helper';
+import { OPEN_TAB_RECORD, RECORD_LINK } from './components/record-tabs';
 import { TgpRecordData } from "../test-data/tgp-record-data";
 import { COUNTRY_NAME } from "../constant/country-code-dropdown-constant";
 
 /** The goods-item overview summary list paints a beat after the item is created. */
-const SUMMARY_READ_TIMEOUT = 20_000;
 
 export class GoodsOverviewPage extends BasePage {
 
@@ -71,16 +72,16 @@ export class GoodsOverviewPage extends BasePage {
      * value neither hides the others nor stops the journey completing.
      */
     async assertTgpPopulatedFields(record: TgpRecordData, showsSupplementaryUnits: boolean): Promise<void> {
-        const useTgp = await readFieldWhenVisible(this.useTraderGoodsProfile, SUMMARY_READ_TIMEOUT);
-        const chosenTgp = await readFieldWhenVisible(this.chosenTraderGoodsProfile, SUMMARY_READ_TIMEOUT);
-        const commodityCode = await readFieldWhenVisible(this.commodityCode, SUMMARY_READ_TIMEOUT);
-        const goodsDescription = await readFieldWhenVisible(this.goodsDescription, SUMMARY_READ_TIMEOUT);
-        const countryOfOrigin = await readFieldWhenVisible(this.countryOfOrigin, SUMMARY_READ_TIMEOUT);
+        const useTgp = await readFieldWhenVisible(this.useTraderGoodsProfile, RENDER_TIMEOUT.SUMMARY_LIST);
+        const chosenTgp = await readFieldWhenVisible(this.chosenTraderGoodsProfile, RENDER_TIMEOUT.SUMMARY_LIST);
+        const commodityCode = await readFieldWhenVisible(this.commodityCode, RENDER_TIMEOUT.SUMMARY_LIST);
+        const goodsDescription = await readFieldWhenVisible(this.goodsDescription, RENDER_TIMEOUT.SUMMARY_LIST);
+        const countryOfOrigin = await readFieldWhenVisible(this.countryOfOrigin, RENDER_TIMEOUT.SUMMARY_LIST);
 
         // The row is read when it should be there and COUNTED when it should not, so both
         // outcomes are read before anything is asserted, as above.
         const supplementaryUnits = showsSupplementaryUnits
-            ? await readFieldWhenVisible(this.supplementaryUnits, SUMMARY_READ_TIMEOUT)
+            ? await readFieldWhenVisible(this.supplementaryUnits, RENDER_TIMEOUT.SUMMARY_LIST)
             : undefined;
         const supplementaryUnitRows = showsSupplementaryUnits
             ? undefined
@@ -134,4 +135,24 @@ export class GoodsOverviewPage extends BasePage {
         await switchToTabAndClickNew(this.page,this.nationalAdditionalCodesTab, this.newNationalAdditionalCodeButton);
     }
 
+
+    /**
+     * Open one document-reference record for editing, found by its DOCUMENT CODE.
+     *
+     * Never by position: the route carries an index, which makes "the first record" look
+     * like a stable address when it is only the order the service rendered, and a goods
+     * item declaring two documents would hand the wrong one to a correction without
+     * anything noticing.
+     *
+     * A bare substring here, unlike the bracketed match authorisation type codes need:
+     * customs document codes are four characters and none is a prefix of another, so
+     * "N730" cannot pick up a neighbour the way "EXW" would pick up "EXWH".
+     *
+     * Scoped to the open tab panel, so a record on another tab cannot be matched.
+     */
+    async openDocumentReferenceRecord(documentCode: string): Promise<void> {
+        const record = this.page.locator(OPEN_TAB_RECORD).filter({ hasText: documentCode });
+
+        await clickLinkAndWaitForNavigation(this.page, record.locator(RECORD_LINK));
+    }
 }

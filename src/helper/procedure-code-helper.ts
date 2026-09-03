@@ -23,14 +23,6 @@ export function requiresWarehouseIdentifier(procedureCode: string): boolean {
         || WAREHOUSED_SUFFIXES.some(suffix => code.endsWith(suffix));
 }
 
-/**
- * Additional procedure codes for which the service HIDES the supplementary-unit field
- * (IMMI, from 2026-08-31 - Trung).
- *
- * Kept as a list rather than folded into the caller for the same reason the warehouse
- * rule is: the service's own rule is stated once here, so a test that changes its
- * additional procedure code gets the right screen with nothing else to remember.
- */
 const HIDES_SUPPLEMENTARY_UNIT: ReadonlySet<string> = new Set(['1SG', '1EN']);
 
 /**

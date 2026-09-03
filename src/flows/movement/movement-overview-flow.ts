@@ -2,7 +2,7 @@
 import { ReportLog } from '../../core/report/report-log';
 import { MovementOverviewPage } from "../../page-object/movement-overview-page";
 import { ConsignmentDetailPage } from "../../page-object/consignment-detail-page";
-import { MRN_COUNTRY_CODE, MrnCountryCode, mrnPrefix } from '../../constant/local-reference-constants';
+import { MRN_COUNTRY_CODE, MrnCountryCode, mrnPrefix, mrnOpening } from '../../constant/local-reference-constants';
 import { isTraderInputRequiredStatus, traderInputRequiredError } from '../../helper/declaration-status-helper';
 import { TFunction } from '../../fixtures/locale-fixture';
 
@@ -45,20 +45,24 @@ export class MovementOverviewFlow {
      * how far the mock has taken the declaration, so pinning one would flake. All
      * value checks are soft.
      */
-    async verifyEnsConsignmentDetail(): Promise<string> {
+    async verifyEnsConsignmentDetail(
+        options: { traderInputIsSettled?: boolean } = {}
+    ): Promise<string> {
         return ReportLog.step('Validate ENS consignment MRN after submission', async () => {
             const opened = await this.movementOverviewPage.openEnsConsignmentDetail();
             expect.soft(opened, 'ENS consignment listed').toBe(true);
             if (!opened) return '';
 
-            const ensMrn = await this.consignmentDetailPage.waitForMovementReferenceNumber();
+            const ensMrn = await this.consignmentDetailPage.waitForMovementReferenceNumber(options);
             const status = await this.consignmentDetailPage.getConsignmentStatus();
             // Report before asserting, so the values are in the report whether the
             // assertion below passes or fails.
             ReportLog.setParameter('ENS MRN', ensMrn);
             ReportLog.setParameter('ENS Consignment status (submitted)', status);
 
-            expect.soft(ensMrn, 'ENS MRN').toMatch(mrnPrefix(MRN_COUNTRY_CODE.ENS));
+            expect.soft(ensMrn,
+                `ENS MRN after submission (expected to open ${mrnOpening(MRN_COUNTRY_CODE.ENS)})`)
+                .toMatch(mrnPrefix(MRN_COUNTRY_CODE.ENS));
             return ensMrn;
         });
     }
@@ -169,7 +173,9 @@ export class MovementOverviewFlow {
             ReportLog.setParameter(`${label} LRN`, lrn);
             ReportLog.setParameter(`${label} status`, status);
 
-            expect.soft(mrn, `${label} MRN`).toMatch(mrnPrefix(mrnCode));
+            expect.soft(mrn,
+                `${label} MRN (expected to open ${mrnOpening(mrnCode)})`)
+                .toMatch(mrnPrefix(mrnCode));
 
             // The auto-generated consignment is the FIRST place this can be checked on
             // an ENS journey: the ENS consignment the test filled in has no warehouse
@@ -191,6 +197,66 @@ export class MovementOverviewFlow {
             }
 
             return { lrn, mrn };
+        });
+    }
+
+    /**
+     * Verify the ENS consignment was REJECTED back to the trader.
+     *
+     * The opposite expectation to verifyEnsConsignmentDetail, and the reason it is a
+     * separate method rather than a flag: the authority specs submit deliberately
+     * invalid data to reach this state, so here "Trader Input Required" is the
+     * precondition of the test, not its failure.
+     *
+     * Hard assertions, unlike the soft ones the happy-path checks use. This is the
+     * spine of those tests - every permission check that follows is about a rejected
+     * consignment, so if the rejection never happened the rest measures nothing and
+     * should not be allowed to report a result at all.
+     */
+    async verifyEnsConsignmentTraderInputRequired(): Promise<string> {
+        return this.verifyTraderInputRequired('ENS', () =>
+            this.movementOverviewPage.openEnsConsignmentDetail()
+        );
+    }
+
+    /**
+     * The auto-generated SFD's own rejection - a DIFFERENT event from the ENS one
+     * above, not a consequence of it. ENS submits through ICS2 and SFD through CDS,
+     * so each is accepted or rejected on its own, and an ENS sitting at Trader Input
+     * Required still produced an SFD that went on to CDS.
+     */
+    async verifySfdConsignmentTraderInputRequired(): Promise<string> {
+        return this.verifyTraderInputRequired('SFD', () =>
+            this.movementOverviewPage.openSfdConsignmentDetail()
+        );
+    }
+
+    /**
+     * The auto-generated IMMI's own rejection. The same CDS refusal the SFD can meet -
+     * an authorisation naming a party that does not hold it - reached by the other
+     * journey, so the authority tests can ask their questions of an IMMI as well.
+     */
+    async verifyImmiConsignmentTraderInputRequired(): Promise<string> {
+        return this.verifyTraderInputRequired('IMMI', () =>
+            this.movementOverviewPage.openImmiConsignmentDetail()
+        );
+    }
+
+    private async verifyTraderInputRequired(
+        label: string,
+        openDetail: () => Promise<boolean>
+    ): Promise<string> {
+        return ReportLog.step(`Verify the ${label} consignment was rejected back to the trader`, async () => {
+            const opened = await openDetail();
+            expect(opened, `${label} consignment listed`).toBe(true);
+
+            const status = await this.consignmentDetailPage.waitForStatus('status.traderInputRequired');
+            // Reported before the assertion, so a run that reached some other status
+            // still carries the one it reached.
+            ReportLog.setParameter(`${label} Consignment status (submitted)`, status);
+            expect(status, `${label} consignment status`).toBe(this.t('status.traderInputRequired'));
+
+            return status;
         });
     }
 

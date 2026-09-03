@@ -82,9 +82,17 @@ export class AddNewEnsGoodsItemFlow {
                 await this.enterCommodity(input, journey);
             }
 
-            // Between the commodity screen and packaging, which is where the service
-            // inserted it (the screen's own Back link points at commodity-information).
-            await this.steps.answerNirmsIfAsked(input);
+            // The NIRMS question follows the COMMODITY, because whether the service asks
+            // it at all depends on the commodity - so it sits wherever the commodity
+            // became known, and that is not the same place on both routes.
+            //
+            // Without TGP the commodity was just typed in, so the screen comes next, as
+            // its own Back link says ("...~nirms-confirmation" returns to
+            // commodity-information). With TGP there IS no commodity screen and the
+            // service asks at the end instead - see after the invoice screen below.
+            if (!usesTgp) {
+                await this.steps.answerNirmsIfAsked(input);
+            }
 
             await this.steps.enterPackagingDetails(input);
             await this.steps.enterWeightInformation(input);
@@ -96,6 +104,10 @@ export class AddNewEnsGoodsItemFlow {
 
             if (journey.hasInvoiceDetails) {
                 await this.steps.enterItemPrice(input);
+            }
+
+            if (usesTgp) {
+                await this.steps.answerNirmsIfAsked(input);
             }
 
             // On IMMI the country-of-origin screen comes here, after the invoice

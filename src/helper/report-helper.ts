@@ -1,3 +1,4 @@
+import { test } from '@playwright/test';
 import { ReportLog } from '../core/report/report-log';
 import { UserCredentials } from '../auth/credentials';
 import { GoodsData } from '../test-data/goods-data';
@@ -73,4 +74,26 @@ export function reportDeclarationCodes(goods: GoodsData): void {
  */
 export function reportTestCaseLink(testCaseId: string): void {
     ReportLog.setTestCaseLink(testCaseId, `${TEST_LINK_CONFIG.TEST_CASES_URL}${testCaseId}`);
+}
+
+/**
+ * Two ways to fail, and both are needed. A SOFT assertion does not throw, so it can
+ * only be COUNTED - errorsBefore against testInfo.errors, where Playwright collects
+ * them. A hard one throws, and while the caller is unwinding it is not on that list
+ * yet - so counting alone misses exactly the failures that stop a test dead, which is
+ * how the picture most worth having became the one never taken.
+ */
+export async function attachScreenshotIfFailedSince(
+    errorsBefore: number,
+    label: string,
+    capture: () => Promise<Buffer>,
+    threw = false
+): Promise<void> {
+    if (!threw && test.info().errors.length === errorsBefore) {
+        return;
+    }
+
+    try {
+        ReportLog.addAttachment(`FAILED - ${label}`, await capture(), 'image/png');
+    } catch { /* the failure being reported matters more than the picture of it */ }
 }

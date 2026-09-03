@@ -1,5 +1,6 @@
 ﻿import { ReportLog } from '../../core/report/report-log';
 import { GoodsOverviewPage } from "../../page-object/goods-overview-page";
+import { TFunction } from '../../fixtures/locale-fixture';
 import { DocumentReferenceDeclarePage } from "../../page-object/document-reference-declare-page";
 import { AdditionalInformationDeclarePage } from "../../page-object/additional-information-declare-page";
 import { PreviousDocumentDeclarePage } from "../../page-object/header-previous-documents-declare-page";
@@ -27,6 +28,10 @@ export class GoodsOverviewFlow {
         private readonly additionalProcedureCodeDeclarePage: AdditionalProcedureCodeDeclarePage,
         private readonly taricAdditionalCodeDeclarePage: TaricAdditionalCodeDeclarePage,
         private readonly nationalAdditionalCodeDeclarePage: NationalAdditionalCodeDeclarePage,
+        // Held for the same reason the other flows hold it: the values below are compared
+        // against translated text, but deciding whether the record was applied is this
+        // layer's judgement, not the page's.
+        private readonly t: TFunction,
     ) { }
 
     /**
@@ -145,6 +150,24 @@ export class GoodsOverviewFlow {
                     await this.nationalAdditionalCodeDeclarePage.declareNationalAdditionalCode(code);
                 });
             }
+        });
+    }
+
+    /**
+     * Correct a document reference already on this goods item.
+     *
+     * Opening the record re-enters the wizard it was created through, so the same step
+     * that declared it declares it again - exactly as correcting a holder-of-authorisation
+     * record does. Assumes the goods item is open on its Document references tab, which
+     * is the tab it opens on.
+     */
+    async correctDocumentReference(
+        item: DocumentReferenceData,
+        documentCode: string = item.documentCode
+    ): Promise<void> {
+        await ReportLog.step(`Correct the "${documentCode}" document reference`, async () => {
+            await this.goodsOverviewPage.openDocumentReferenceRecord(documentCode);
+            await this.documentReferenceDeclarePage.declareDocumentReference(item);
         });
     }
 }

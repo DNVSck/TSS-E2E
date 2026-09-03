@@ -12,7 +12,7 @@ import {
 } from '../../test-data/supplementary-declaration-data';
 import { submittedSupplementaryStatusKeys } from '../../helper/declaration-status-helper';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
-import { TranslationKey } from '../../fixtures/locale-fixture';
+import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount } from '../../helper/report-helper';
 import { ReportLog } from '../../core/report/report-log';
@@ -21,11 +21,14 @@ export interface CompleteSupplementaryDeclarationOptions {
     testInfo: TestInfo;
     url: string;
     /**
-     * The local reference number of the frontier declaration this SD belongs to - an
-     * SFD's "DEC..." reference. It is how the declaration is FOUND, and then what it is
-     * checked against, so a test can never complete somebody else's SD.
+     * The local reference number of the frontier declaration this SD belongs to - the
+     * "DEC..." reference of an SFD or an EIDR. It is how the declaration is FOUND, and
+     * then what it is checked against, so a test can never complete somebody else's SD.
+     *
+     * Named for what it is rather than which journey produced it: a caller says
+     * `lrn: sfdLrn` and keeps the specific name on its own side.
      */
-    frontierReference: string;
+    lrn: string;
     overrides?: Partial<SupplementaryDeclarationData>;
     /**
      * What the declaration may settle on, when the method of payment alone does not
@@ -59,6 +62,10 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
         private readonly documentReferencePage: DocumentReferenceDeclarePage,
         private readonly additionalProcedureCodePage: AdditionalProcedureCodeDeclarePage,
         private readonly steps: SupplementaryDeclarationSteps,
+        // Comparing a status means comparing translated text. The keys arrive from the
+        // caller and the page reads what the screen shows, so the verdict here is the
+        // one place both have to meet.
+        private readonly t: TFunction,
         // The account this worker was assigned by the auth fixture - the same source
         // that picked the replayed session, so the report never names another account.
         private readonly authAccount: UserCredentials | null,
@@ -71,12 +78,12 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
     async completeSupplementaryDeclaration(
         options: CompleteSupplementaryDeclarationOptions
     ): Promise<string> {
-        const { testInfo, url, frontierReference } = options;
+        const { testInfo, url, lrn } = options;
         const input = supplementaryDeclaration(options.overrides);
 
         reportTestAccount(this.authAccount, 'completeSupplementaryDeclaration');
 
-        const reference = await this.openSupplementaryDeclarationFor(frontierReference, url, testInfo);
+        const reference = await this.openSupplementaryDeclarationFor(lrn, url, testInfo);
         await this.completeConsignmentHeader(input);
         await this.chooseMethodOfPayment(input);
         await this.removeHoldersOfAuthorisation(input);
@@ -97,25 +104,25 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
      * is typed into it.
      */
     private async openSupplementaryDeclarationFor(
-        frontierReference: string,
+        lrn: string,
         url: string,
         testInfo: TestInfo
     ): Promise<string> {
         return ReportLog.step(
-            `Find the supplementary declaration raised against ${frontierReference}`,
+            `Find the supplementary declaration raised against ${lrn}`,
             async () => {
                 await this.basePage.navigateToPortal(url, testInfo);
                 await this.portalPage.openDraftDeclarations();
 
                 const reference = await this.declarationOverviewPage
-                    .openSupplementaryDeclarationFor(frontierReference);
+                    .openSupplementaryDeclarationFor(lrn);
 
                 expect(reference, 'Supplementary declaration reference')
                     .toMatch(LOCAL_REFERENCE.SUP_PREFIX);
                 expect(
                     await this.overviewPage.getSimplifiedDeclarationReference(),
                     'The frontier declaration this SD was raised against'
-                ).toBe(frontierReference);
+                ).toBe(lrn);
 
                 ReportLog.setParameter('Supplementary declaration', reference);
                 return reference;
@@ -155,7 +162,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
             // knowing the UN/LOCODE takes it outright, not knowing it asks for the
             // country and then the place. Whichever the wizard did not go to is simply
             // not on the page, so both are offered and only one can match.
-            await this.steps.enterUnlocodeIfAsked(input);
+            await this.steps.selectUnlocodeIfAsked(input);
             await this.steps.selectDeliveryCountryIfAsked(input);
             await this.steps.selectDeliveryPlaceIfAsked(input);
 
@@ -371,6 +378,8 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
                 try {
                     const status = await this.overviewPage.waitForAnyStatus(expected);
                     ReportLog.setParameter('Supplementary declaration status', status);
+                    expect(expected.map(key => this.t(key)),
+                        'Supplementary declaration status').toContain(status);
                 } catch (error) {
                     const problem = await this.overviewPage.readSubmissionProblem();
                     if (problem) {

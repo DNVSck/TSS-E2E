@@ -77,7 +77,10 @@ export class CompanyProfileFlow {
 
 
     private async readPermissions(page: BasePage, screen: string): Promise<ScreenPermissions> {
-        const rowCount = await page.countContentRows();
+        // Waited for, not merely counted: any check that something is ABSENT passes
+        // just as happily on a page that failed to load.
+        await page.waitForContent();
+        const rowCount = await page.renderedRowCount();
         const actionHrefs = await page.listActionHrefs();
 
         ReportLog.setParameter(`${screen} - rows`, String(rowCount));
