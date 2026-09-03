@@ -184,17 +184,23 @@ export const companySessionFixture: ExtendParams[0] = {
             return {
                 ...buildCompanySession(await context.newPage(), t, profile),
                 close: async () => {
-                    await context.close();
-                    lock?.release();
+                    try {
+                        await context.close();
+                    } finally {
+                        lock?.release();
+                    }
                 },
             };
         });
 
         // Whatever a test did not close itself. Closing an already-closed context is a
         // no-op, and releasing a released lock is too, so an early close() costs nothing.
-        for (const { context, lock } of opened) {
-            await context.close();
-            lock?.release();
-        }
+        await Promise.allSettled(opened.map(async ({ context, lock }) => {
+            try {
+                await context.close();
+            } finally {
+                lock?.release();
+            }
+        }));
     },
 };
