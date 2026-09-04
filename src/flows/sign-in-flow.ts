@@ -70,7 +70,7 @@ export class SignInFlow {
             const passwordPageUrl = this.basePage.getCurrentUrl();
 
             await this.signInPage.submitCredentials(credentials.username, credentials.password);
-            await this.signInPage.waitForAuthenticatorCodeStep();
+            await this.signInPage.completeVerificationMethodSelection();
 
             const mfaPageUrl = this.basePage.getCurrentUrl();
 
@@ -135,7 +135,11 @@ export class SignInFlow {
         // to touch the field is inputTotp's fill, which auto-waits for the action timeout
         // and then reports a field it could not fill - which reads as a broken input
         // rather than a page that had simply not rendered yet.
-        await this.signInPage.waitForAuthenticatorCodeStep();
+        //
+        // Also handles Keycloak's "Choose how to verify your identity" screen, which
+        // now sits between credentials and the OTP screen - always picking the
+        // authenticator-app option.
+        await this.signInPage.completeVerificationMethodSelection();
 
         // inputTotp owns the retry across TOTP windows: a code refused because its
         // window has just rolled is resubmitted on the next one.

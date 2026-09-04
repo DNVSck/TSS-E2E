@@ -1,12 +1,50 @@
 import { COMPANY_PROFILE, UserCredentials, accountFor, isProfileConfigured } from '../../../src/auth/credentials';
 import { OTP_ENABLED } from '../../../config/environment';
-import { ERROR_MESSAGE } from '../../../src/constant/error-message-constant';
 import { test, expect, getBaseUrl } from '../../test-hooks';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
+import { ERROR_MESSAGE } from '../../../src/constant/error-message-constant';
 
 const INVALID_CREDENTIAL_TEST_ID = '2536';
 const INVALID_MFA_CODE_TEST_ID = '2537';
 const NO_CREDENTIAL_CACHE_TEST_ID = '2551';
+
+interface RejectedCredentialCase {
+    title: string;
+    description: string;
+    getUsername: (account: UserCredentials) => string;
+    getPassword: (account: UserCredentials) => string;
+}
+
+const REJECTED_CREDENTIAL_CASES: RejectedCredentialCase[] = [
+    {
+        title: 'Verify that an incorrect password is refused',
+        description: 'a wrong password',
+        getUsername: account => account.username,
+        // Derived from the real password rather than written out, so this stays wrong
+        // on the day the password is rotated.
+        getPassword: account => `${account.password}-wrong`,
+    },
+    {
+        title: 'Verify that an incorrect username is refused',
+        description: 'an unknown username',
+        getUsername: () => 'no.such.user.automation@example.invalid',
+        getPassword: account => account.password,
+    },
+    {
+        title: 'Verify that missing password is refused',
+        description: 'a missing password',
+        getUsername: account => account.username,
+        getPassword: () => '',
+    },
+    {
+        title: 'Verify that missing username is refused',
+        description: 'a missing username',
+        // The real password, with no username to attach it to. No account is named, so
+        // nothing here counts against one.
+        getUsername: () => '',
+        getPassword: account => account.password,
+    },
+];
 
 test.describe('TSS Portal sign-in - negative cases', () => {
 
@@ -30,67 +68,23 @@ test.describe('TSS Portal sign-in - negative cases', () => {
         await signInFlow.restoreSignedInState(account, { baseUrl: getBaseUrl(), testInfo });
     });
 
-    test('Verify that an incorrect password is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
-        reportTestCaseLink(INVALID_CREDENTIAL_TEST_ID);
-        await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+    for (const { title, description, getUsername, getPassword } of REJECTED_CREDENTIAL_CASES) {
+        test(title, { tag: ['@auth', '@negative', '@regression'] }, async ({ signInFlow }, testInfo) => {
+            reportTestCaseLink(INVALID_CREDENTIAL_TEST_ID);
+            await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
 
-        // Derived from the real password rather than written out, so this stays wrong
-        // on the day the password is rotated.
-        const message = await signInFlow.submitRejectedCredentials(
-            account.username,
-            `${account.password}-wrong`,
-            'a wrong password'
-        );
+            const message = await signInFlow.submitRejectedCredentials(
+                getUsername(account),
+                getPassword(account),
+                description
+            );
 
-        expect(message, 'Sign-in error for a wrong password')
-            .toBe(ERROR_MESSAGE.INVALID_SIGN_IN_CREDENTIALS);
-    });
+            expect(message, `Sign-in error for ${description}`)
+                .toBe(ERROR_MESSAGE.INVALID_SIGN_IN_CREDENTIALS);
+        });
+    }
 
-    test('Verify that an incorrect username is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
-        reportTestCaseLink(INVALID_CREDENTIAL_TEST_ID);
-        await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
-
-        const message = await signInFlow.submitRejectedCredentials(
-            'no.such.user.automation@example.invalid',
-            account.password,
-            'an unknown username'
-        );
-
-        expect(message, 'Sign-in error for an unknown username')
-            .toBe(ERROR_MESSAGE.INVALID_SIGN_IN_CREDENTIALS);
-    });
-
-    test('Verify that missing password is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
-        reportTestCaseLink(INVALID_CREDENTIAL_TEST_ID);
-        await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
-
-        const message = await signInFlow.submitRejectedCredentials(
-            account.username,
-            '',
-            'a missing password'
-        );
-
-        expect(message, 'Sign-in error for a missing password')
-            .toBe(ERROR_MESSAGE.INVALID_SIGN_IN_CREDENTIALS);
-    });
-
-    test('Verify that missing username is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
-        reportTestCaseLink(INVALID_CREDENTIAL_TEST_ID);
-        await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
-
-        // The real password, with no username to attach it to. No account is named, so
-        // nothing here counts against one.
-        const message = await signInFlow.submitRejectedCredentials(
-            '',
-            account.password,
-            'a missing username'
-        );
-
-        expect(message, 'Sign-in error for a missing username')
-            .toBe(ERROR_MESSAGE.INVALID_SIGN_IN_CREDENTIALS);
-    });
-
-    test('Verify that a wrong authenticator code is refused', { tag: ['@auth', '@negative'] }, async ({ signInFlow }, testInfo) => {
+    test('Verify that a wrong authenticator code is refused', { tag: ['@auth', '@negative', '@regression'] }, async ({ signInFlow }, testInfo) => {
         test.skip(!OTP_ENABLED, 'This environment does not ask for an authenticator code.');
         reportTestCaseLink(INVALID_MFA_CODE_TEST_ID);
 
