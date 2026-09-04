@@ -1,5 +1,5 @@
 import { TestInfo } from '@playwright/test';
-import { PortalPage } from '../page-object/portal-page';
+import { NavigationBanner } from '../page-object/components/navigation-banner';
 import { SignInFlow } from './sign-in-flow';
 import { ReportLog } from '../core/report/report-log';
 import { UserCredentials } from '../auth/credentials';
@@ -25,16 +25,18 @@ export interface ConcurrentLoginInput {
  * missed the next fix made to the original. The second device's flow is built by
  * secondDeviceFixture and was, until this, unused.
  *
- * The portal pages are still needed, and for the part that carries the test's meaning:
- * signing in proves each device CAN sign in, but the question is whether device B
- * signing in ended device A's session - so device A is read again at the end, after B.
+ * The navigation bars are still needed, and for the part that carries the test's
+ * meaning: signing in proves each device CAN sign in, but the question is whether
+ * device B signing in ended device A's session - so device A is read again at the end,
+ * after B. The bar rather than the landing page, because "Sign out" is rendered on
+ * every screen and so answers wherever the browser happens to be standing.
  */
 export class ConcurrentLoginFlow {
     constructor(
         private readonly deviceASignInFlow: SignInFlow,
-        private readonly deviceAPortalPage: PortalPage,
+        private readonly deviceABanner: NavigationBanner,
         private readonly deviceBSignInFlow: SignInFlow,
-        private readonly deviceBPortalPage: PortalPage,
+        private readonly deviceBBanner: NavigationBanner,
     ) { }
 
     async signInOnBothDevices(input: ConcurrentLoginInput): Promise<ConcurrentLoginResult> {
@@ -55,8 +57,8 @@ export class ConcurrentLoginFlow {
 
         // Device A is read AFTER device B signed in - that is the whole question. Reading
         // it before would only repeat what signing in already proved.
-        const deviceASignedIn = await this.deviceAPortalPage.isSignedIn();
-        const deviceBSignedIn = await this.deviceBPortalPage.isSignedIn();
+        const deviceASignedIn = await this.deviceABanner.isSignedIn();
+        const deviceBSignedIn = await this.deviceBBanner.isSignedIn();
 
         ReportLog.setParameter('Device A still signed in after B', String(deviceASignedIn));
         ReportLog.setParameter('Device B signed in', String(deviceBSignedIn));

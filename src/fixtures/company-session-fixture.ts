@@ -28,7 +28,7 @@ import { NationalAdditionalCodeDeclarePage } from '../page-object/national-addit
 import { DeclarationAccessFlow } from '../flows/declaration-access-flow';
 import { PortalPage } from '../page-object/portal-page';
 import { DeclarationSearchPage } from '../page-object/declaration-search-page';
-import { LocaleFixtureType } from './locale-fixture';
+import { LocaleFixtureType, localeForProject } from './locale-fixture';
 
 /**
  * A second company, signed in alongside the one the test itself runs as.
@@ -176,8 +176,13 @@ export const companySessionFixture: ExtendParams[0] = {
                 }
             }
 
+            // The locale is not inherited: use.locale reaches only the context the test
+            // runner builds, and this one is built here. Without it the pages below read
+            // their labels through t() in the project's language while the service serves
+            // English, so the Welsh project could never match a single one.
             const context = await browser.newContext({
                 storageState: sessionFor(profile, testInfo.parallelIndex),
+                locale: localeForProject(testInfo.project),
             });
             opened.push({ context, lock });
 

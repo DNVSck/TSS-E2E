@@ -39,8 +39,6 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
     private readonly fullDetails: Locator;
     private readonly startNowButton: Locator;
     private readonly goodsRecordLinks: Locator;
-    private readonly goodsRecordsTab: Locator;
-    private readonly holderOfAuthorisationTab: Locator;
     private readonly methodOfPaymentChangeLink: Locator;
     private readonly submitButton: Locator;
     private readonly simplifiedDeclarationReference: Locator;
@@ -49,24 +47,21 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
         super(page, t);
 
         this.declarationReference = page.locator('.govuk-summary-card__title strong');
-        // The service's own class for the tag. The rest of that element's class list
-        // carries an untranslated i18n key ("govuk-tag--declaration-list.statuses.draft")
-        // which changes with the status, so only this half is matched on.
-        this.status = page.locator('span.declaration-status');
+        // The plain GOV.UK tag, scoped to <main>. It no longer carries a class naming the
+        // status - only a colour that changes with it - and govuk-tag is reused by the
+        // phase banner above for "Beta" and "Representing: <company>". Inside main it is
+        // the only one, measured on two declarations 2026-09-03.
+        this.status = page.locator('main strong.govuk-tag');
         // One button for both directions - it flips aria-expanded and its own label
         // ("Show"/"Hide full consignment details"), so there is one element here, not two.
         // Matched on what it CONTROLS rather than on that label, which is translated.
         this.fullDetailsToggle = page.locator("button[aria-controls='declaration-full-details']");
         this.fullDetails = page.locator('#declaration-full-details');
         this.startNowButton = page.locator('main a.govuk-button--start');
-        // A goods record is the only link on this screen whose href ENDS in /overview -
-        // the tabs all carry a "#overview-tab" fragment after it.
+        // A goods record is the only link on this screen whose href ENDS in /overview.
+        // Everything else this screen offers ends in its own segment - amend-details,
+        // transport-details, previous-documents/<n>, holder-of-authorisation/<n>/edit.
         this.goodsRecordLinks = page.locator("main a[href$='/overview']");
-        // Each tab is its own route, so these are links rather than panels to reveal.
-        this.goodsRecordsTab = page.locator("main a[href$='/overview/#overview-tab']");
-        this.holderOfAuthorisationTab = page.locator(
-            "main a[href$='/overview/holder-of-authorisation#overview-tab']"
-        );
         this.methodOfPaymentChangeLink = page.locator("main a[href*='field=methodOfPayment']");
         this.submitButton = page.locator("button[name='action'][value='submit-consignment']");
         this.simplifiedDeclarationReference = summaryListValue(
@@ -141,19 +136,12 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
         await clickLinkAndEnterWizard(this.page, this.methodOfPaymentChangeLink, 'update');
     }
 
-    /** "Holder of authorisation" - its own route, not a panel this page hides. */
-    async openHolderOfAuthorisationTab(): Promise<void> {
-        await clickLinkAndWaitForRoute(this.page, this.holderOfAuthorisationTab);
-    }
-
-    /** "Goods records" - the tab this overview opens on. */
-    async openGoodsRecordsTab(): Promise<void> {
-        await clickLinkAndWaitForRoute(this.page, this.goodsRecordsTab);
-    }
-
     /**
      * Remove a holder of authorisation by its type code ("CGU", "DPO"), and report
-     * whether there was one to remove. Assumes the tab is already open.
+     * whether there was one to remove.
+     *
+     * No tab to open first - this screen is flat, like the goods record it links to, so
+     * the holders are already on the page the caller is standing on.
      */
     async removeHolderOfAuthorisation(typeCode: string): Promise<boolean> {
         return removeTaskListRecord(this.page, typeCode);

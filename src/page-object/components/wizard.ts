@@ -11,7 +11,7 @@ import { currentWizardStep, waitForWizardStepToChange } from '../../helper/eleme
  * (see currentWizardStep), so that question costs a string comparison rather than a
  * locator and a timeout.
  *
- * A component, beside AgentBanner and PartyBlock, because it is the same kind of thing:
+ * A component, beside RepresentationBanner and PartyBlock, because it is the same kind of thing:
  * a piece of page-level state that belongs to no single screen. It is deliberately NOT
  * called a Page - it is not one.
  *

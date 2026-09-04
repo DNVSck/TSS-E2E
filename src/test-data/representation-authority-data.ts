@@ -7,7 +7,7 @@ import { PREVIOUS_DOCUMENT_TYPE } from '../constant/previous-document-type-const
 import { ConsignmentData, ensOnlyConsignment } from './consignment-data';
 import { EnsDeclarationOptions } from '../flows/common-flows/create-draft-ens-declaration-flow';
 import { previousDocument } from './previous-document-data';
-import { documentReference } from './document-reference-data';
+import { documentReference, ensSfdGoodsDocuments } from './document-reference-data';
 import { GoodsData } from './goods-data';
 import { holderOfAuthorisation, HolderOfAuthorisationData } from './holder-of-authorisation-data';
 import { DOCUMENT_CODE } from '../constant/document-code-constant';
@@ -53,13 +53,7 @@ export const ensSfdDeclaration = (
         ...consignmentOverrides,
     },
     goodsItemOverrides: {
-        documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.C672,
-                documentStatus: DOCUMENT_STATUS.AC,
-                documentReference: '0054037-0054047',
-            }),
-        ],
+        documentReferences: ensSfdGoodsDocuments(),
     },
 });
 
@@ -85,13 +79,7 @@ export const ensOnlyDeclaration = (
         ...consignmentOverrides,
     }),
     goodsItemOverrides: {
-        documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.C672,
-                documentStatus: DOCUMENT_STATUS.AC,
-                documentReference: '0054037-0054047',
-            }),
-        ],
+        documentReferences: ensSfdGoodsDocuments(),
     },
 });
 
@@ -140,7 +128,8 @@ export const rejectedByCds = (): Partial<ConsignmentData> => ({
  */
 export const ensImmiDeclaration = (
     testInfo: TestInfo,
-    goodsItemOverrides: Partial<EnsDeclarationOptions['goodsItemOverrides']> = {}
+    goodsItemOverrides: Partial<EnsDeclarationOptions['goodsItemOverrides']> = {},
+    consignmentOverrides: Partial<ConsignmentData> = {}
 ): EnsDeclarationOptions => ({
     testInfo,
     url: BASE_URL,
@@ -154,6 +143,7 @@ export const ensImmiDeclaration = (
         ],
         // Valid, so the only thing wrong with a rejected IMMI is what the lever changed.
         holdersOfAuthorisation: [immiAuthorisation()],
+        ...consignmentOverrides,
     },
     goodsItemOverrides: {
         useTGP: false,
@@ -250,7 +240,10 @@ export function importerUkimsDocument(ukims: string = IMPORTER_UKIMS) {
  * above, an EIDR authority test has no rejection to arrange, because nobody may edit a
  * generated EIDR whatever state it is in.
  */
-export const ensEidrDeclaration = (testInfo: TestInfo): EnsDeclarationOptions => ({
+export const ensEidrDeclaration = (
+    testInfo: TestInfo,
+    consignmentOverrides: Partial<ConsignmentData> = {}
+): EnsDeclarationOptions => ({
     testInfo,
     url: BASE_URL,
     movementOverrides: {
@@ -261,5 +254,6 @@ export const ensEidrDeclaration = (testInfo: TestInfo): EnsDeclarationOptions =>
         headerPreviousDocuments: [
             previousDocument({ documentReference: '3XI352196303000-12345' })
         ],
+        ...consignmentOverrides,
     },
 });

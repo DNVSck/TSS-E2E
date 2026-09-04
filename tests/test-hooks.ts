@@ -57,6 +57,12 @@ const failureSummary = (errors: readonly { message?: string }[]): string => {
 test.afterEach(async () => {
     const testInfo = test.info();
 
+    if (testInfo.status !== 'passed') {
+        ReportLog.setParameter(
+            'Failures recorded at teardown', String(testInfo.errors.length)
+        );
+    }
+
     const summary = failureSummary(testInfo.errors);
     if (summary) {
         await ReportLog.setDescription(summary);

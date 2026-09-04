@@ -29,6 +29,10 @@ export class AddNewSfdStandaloneConsignmentFlow {
             await this.movementSteps.openTransportDetails();
             await this.standaloneSteps.declarePreLodgedOrArrived(input.isPreLodged);
 
+            if (input.representationType) {
+                await this.standaloneSteps.selectRepresentationType(input.representationType);
+            }
+
             await this.movementSteps.chooseTypeOfMovement(input.typeOfMovement);
             await this.movementSteps.inputVehicleRegistrationNumber(input.vehicleRegistration);
 

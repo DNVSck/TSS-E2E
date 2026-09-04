@@ -14,14 +14,7 @@
  */
 export const CONSIGNMENT_ACTION = {
     SUBMIT: 'submit-consignment',
-    CANCEL: 'cancel-consignment',
-    /**
-     * What "Cancel" is called on a declaration the service has already AUTHORISED - a
-     * standalone EIDR, measured 2026-08-14. Withdrawing something already accepted asks
-     * for confirmation, so it posts its own value; the plain CANCEL above belongs to a
-     * consignment still waiting to be submitted or corrected.
-     */
-    CANCEL_WITH_CONFIRMATION: 'cancel-with-confirmation',
+    CANCEL: 'cancel-with-confirmation',
     /**
      * Removing a record is named differently on every tab ("delete:<id>",
      * "delete-document-reference:0"), so only the opening is common - which is all a

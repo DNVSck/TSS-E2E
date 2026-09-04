@@ -48,7 +48,6 @@ const CONSIGNMENT_TABS: readonly RecordTab[] = [
 
 const GOODS_ITEM_TABS: readonly RecordTab[] = [
     { name: 'document-references', create: 'new-document-reference' },
-    { name: 'attachments', create: '' },
     { name: 'additional-procedure-codes', create: 'new-additional-procedure-code' },
     { name: 'national-additional-codes', create: 'new-national-additional-code' },
     { name: 'taric-additional-codes', create: 'new-taric-additional-code' },

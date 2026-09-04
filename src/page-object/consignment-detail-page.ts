@@ -3,7 +3,9 @@ import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { ConsignmentSummaryPage } from './consignment-summary-page';
 import { RecordTabs } from './components/record-tabs';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
-import { summaryListValue, readFieldWhenVisible, readFieldIfPresent } from '../helper/element-helper';
+import {
+    summaryListValue, readFieldWhenVisible, readFieldIfPresent, readErrorSummary,
+} from '../helper/element-helper';
 import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
 
 /** The MRN is populated asynchronously after the consignment is authorised. */
@@ -177,5 +179,9 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
         const raw = await readFieldIfPresent(this.movementReferenceNumber);
         expect.soft(alphanumericOnly(raw), 'EIDR MRN (should be absent)').toBe('');
         return raw;
+    }
+
+    async readValidationErrors(): Promise<string[]> {
+        return readErrorSummary(this.page);
     }
 }

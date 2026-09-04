@@ -43,8 +43,7 @@ export const localeFixture = {
     testInfo: TestInfo
   ) =>  {
 
-    const projectName = testInfo.project.name;
-    const currentLocale = projectName.includes(LOCALES_CONSTANT.CY_GB) ? LOCALES_CONSTANT.CY_GB : LOCALES_CONSTANT.EN_GB;
+    const currentLocale = localeForProject(testInfo.project);
 
     // A parameter, not a step: which locale a test ran under is a FACT about the test,
     // not a unit of work it performed. As steps these were three lines on every test's
@@ -53,40 +52,59 @@ export const localeFixture = {
     // in the report, where anyone reading a failure would look for it.
     ReportLog.setParameter('Locale', currentLocale);
 
-    let messages: Record<string, any> = {};
-
-    if (currentLocale === LOCALES_CONSTANT.CY_GB) {
-      const messagesPath = path.resolve(process.cwd(), localeCyPath);
-      messages = require(messagesPath);
-    } else {
-      const messagesPath = path.resolve(process.cwd(), localeEnPath);
-      messages = require(messagesPath);
-    }
-
-    const t: TFunction = (key: string): string => {
-      const keys = key.split('.');
-      let value: any = messages;
-      for (const k of keys) {
-        if (value && typeof value === 'object' && k in value) {
-          value = value[k];
-        } else {
-          throw new TypeError(
-            `Translation key not found: ${key} for locale: ${currentLocale}`
-          );
-        }
-      }
-      if (typeof value === 'string') {
-        return value;
-      } else {
-        throw new TypeError(
-          `Translation value is not a string: ${key} for locale: ${currentLocale}`
-        );
-      }
-    };
-
-    await use(t);
+    await use(createTranslator(currentLocale));
   },
 };
+
+/**
+ * Which language a project runs in, taken from the locale it declares.
+ *
+ * The declared option rather than the project's name: the name is a label, and
+ * matching "cy" inside it makes any future project whose name happens to contain
+ * those letters silently Welsh. `use.locale` is the same value the browser is given,
+ * so the strings a test expects cannot drift from the language it is served.
+ *
+ * Exported because two callers need the same answer and must not disagree: the
+ * translator picks the strings a test expects, and BasePage puts the portal into the
+ * language those strings are written in.
+ *
+ * English when a project declares nothing, which is what the service serves anyway.
+ */
+export function localeForProject(project: TestInfo['project']): string {
+    return project.use.locale ?? LOCALES_CONSTANT.EN_GB;
+}
+
+/**
+ * A translator outside the fixture, for code that runs before any test exists.
+ *
+ * globalSetup signs in through the same page object the specs use, and that page
+ * object reads its labels from the locale files - but a fixture needs a TestInfo to
+ * pick the locale from, and globalSetup has none.
+ */
+export function createTranslator(locale: string): TFunction {
+  const messagesPath = path.resolve(
+    process.cwd(), locale === LOCALES_CONSTANT.CY_GB ? localeCyPath : localeEnPath
+  );
+  const messages: Record<string, any> = require(messagesPath);
+
+  return (key: string): string => {
+    let value: any = messages;
+
+    for (const k of key.split('.')) {
+      if (value && typeof value === 'object' && k in value) {
+        value = value[k];
+      } else {
+        throw new TypeError(`Translation key not found: ${key} for locale: ${locale}`);
+      }
+    }
+
+    if (typeof value !== 'string') {
+      throw new TypeError(`Translation value is not a string: ${key} for locale: ${locale}`);
+    }
+
+    return value;
+  };
+}
 
 // Export test with locale fixture
 export const testLocale = base.extend<LocaleFixtureType>(localeFixture);

@@ -2,7 +2,7 @@ import { BasePage } from './base-page';
 import { Page, Locator, expect } from '@playwright/test';
 import { generateTotpCode } from '../core/util/totp-auth';
 import { UserCredentials } from '../auth/credentials';
-import { LOGIN_ACTIONS } from '../constant/login-actions-constants';
+import { TFunction } from '../fixtures/locale-fixture';
 
 // Sized for code REUSE, not for a mistyped code. A TOTP code can be spent once: sign
 // the same account in twice inside one 30-second window and the second attempt
@@ -36,39 +36,85 @@ export class SignInPage extends BasePage {
     private readonly emailAddressInput: Locator;
     private readonly passwordInput: Locator;
     private readonly signInButton: Locator;
-    private readonly authenticatorAppRadio: Locator;
     private readonly totpCodeInput: Locator;
-    private readonly totpErrorMessage: Locator;
+    // One summary serves every screen the provider shows - the password form and both
+    // code screens. A refused code no longer marks its own field, so this is also how
+    // inputTotp tells a refusal from a success.
     private readonly errorSummaryMessage: Locator;
     private readonly passwordShowHideButton: Locator;
+    private readonly authenticatorAppOption: Locator;
+    private readonly emailCodeOption: Locator;
+    private readonly emailCodeInput: Locator;
 
-    constructor(page: Page) {
-        super(page);
+    constructor(page: Page, t: TFunction) {
+        super(page, t);
         this.emailAddressInput = page.locator("input#username");
         this.passwordInput = page.locator("input#password");
         this.signInButton = page.locator("input#kc-login");
-        // "Choose how to verify your identity" screen. Its radio inputs carry
-        // session-scoped UUIDs for id/value (authenticationExecution-<uuid>),
-        // regenerated on every login attempt, so the visible label is the only
-        // stable way to select one - never key this off id or value.
-        this.authenticatorAppRadio = page.getByRole('radio', {
-            name: LOGIN_ACTIONS.AUTHENTICATOR_APP_OPTION_LABEL,
-        });
-        // Renamed from "otp" to "totp" by Keycloak - confirmed live on sit,
-        // 2026-09-02, alongside the new verification-method screen.
         this.totpCodeInput = page.locator("input#totp");
-        // The OTP screen's error moved into the shared .govuk-error-summary
-        // component - it is no longer a field-level message under its own id.
-        // Kept as its own named field for readability at call sites even
-        // though it now aliases errorSummaryMessage.
-        // Keycloak's "Invalid authenticator code." message on the OTP screen.
         this.errorSummaryMessage = page.locator('.govuk-error-summary__list li');
-        this.totpErrorMessage = this.errorSummaryMessage;
-        // The GOV.UK password-input component's own JS hook. NOT the aria-label: that
-        // reads 'Show password' before the first click and 'Hide password' after it, so
-        // a locator keyed on it stops matching the moment the button is used - measured
-        // on sit, 2026-08-21. This class is the same in both states.
         this.passwordShowHideButton = page.locator('.govuk-js-password-input-toggle');
+
+        this.authenticatorAppOption = page.getByRole('radio', {
+            name: t('signIn.verifyIdentity.authenticatorApp'), exact: true,
+        });
+        this.emailCodeOption = page.getByRole('radio', {
+            name: t('signIn.verifyIdentity.emailCode'), exact: true,
+        });
+
+        this.emailCodeInput = page.locator('input#code');
+
+    }
+
+    /**
+     * Get past "Choose how to verify your identity", if it is shown at all.
+     *
+     * Conditional: the identity provider only asks when the account has more than one
+     * credential type configured, so the OTP field is RACED against the options - a
+     * plain wait on either spends its whole budget whenever the other one arrived.
+     *
+     */
+    async selectAuthenticatorApp(): Promise<void> {
+        await this.totpCodeInput.or(this.authenticatorAppOption)
+            .first().waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
+
+        // The OTP screen won the race, so this account was never asked to choose.
+        if (!await this.authenticatorAppOption.isVisible()) return;
+
+        await this.chooseVerification(this.authenticatorAppOption);
+    }
+
+    /**
+     * Ask for the code by email instead.
+     *
+     * Written ahead of any caller: no environment this suite runs against exposes a
+     * mailbox it can read, so the journey cannot be finished here yet. Waits rather
+     * than races, unlike the authenticator path - a caller asking for email wants this
+     * screen, so its absence is a failure and not a branch.
+     */
+    async selectEmailCode(): Promise<void> {
+        await this.emailCodeOption.waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
+        await this.chooseVerification(this.emailCodeOption);
+    }
+
+    /**
+     * Submit a code that arrived by email.
+     *
+     * Takes the code rather than generating one, unlike {@link inputTotp}: an emailed
+     * code has no secret to derive it from, so whoever reads the mailbox supplies it.
+     */
+    async submitEmailCode(code: string): Promise<void> {
+        await this.emailCodeInput.waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
+        await this.emailCodeInput.fill(code);
+        await this.signInButton.click();
+        await this.page.waitForLoadState('domcontentloaded');
+    }
+
+    /** Tick one of the verification options and move on. */
+    private async chooseVerification(option: Locator): Promise<void> {
+        await option.check();
+        await this.signInButton.click();
+        await this.page.waitForLoadState('domcontentloaded');
     }
 
     /** Fill in the username/password and submit. */
@@ -103,53 +149,27 @@ export class SignInPage extends BasePage {
         return (await this.errorSummaryMessage.first().innerText()).trim();
     }
 
-    /** The OTP screen's field-level error, read once it has rendered. */
+    /**
+     * What the OTP screen said about a refused code.
+     *
+     * Reads the same summary as the password screen, but kept under its own name: the
+     * caller is asking a different question, and a spec reporting "Authenticator code
+     * error" should not read as if it were checking a password.
+     */
     async getAuthenticatorCodeErrorMessage(): Promise<string> {
-        await this.totpErrorMessage
-            .waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
-        return (await this.totpErrorMessage.innerText()).trim();
+        return this.getSignInErrorMessage();
     }
 
-    /** Wait until the identity provider has handed over the authenticator-code screen. */
+    /**
+     * Wait until the identity provider has handed over the authenticator-code screen.
+     *
+     * Answers the credential-choice step on the way when it is shown: the contract is
+     * "the OTP field is up when this returns", and since that step the screen is no
+     * longer reachable by waiting alone.
+     */
     async waitForAuthenticatorCodeStep(): Promise<void> {
+        await this.selectAuthenticatorApp();
         await this.totpCodeInput.waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
-    }
-
-    /**
-     * Pick the authenticator-app option on Keycloak's "Choose how to verify
-     * your identity" screen and submit. Always this option, never email: it's
-     * the only method every test account has a working secret for - see
-     * UserCredentials.totpSecret - email delivery has no automatable inbox in
-     * this suite.
-     */
-    async chooseAuthenticatorAppVerification(): Promise<void> {
-        await this.authenticatorAppRadio.waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
-        await this.authenticatorAppRadio.check();
-        await this.signInButton.click();
-        await this.page.waitForLoadState('domcontentloaded');
-    }
-
-    /**
-     * Get from submitted-credentials to OTP-screen-ready, whether or not
-     * Keycloak inserts the "Choose how to verify your identity" screen in
-     * between. Races the two possible next screens rather than probing one -
-     * locator.isVisible() checks the DOM synchronously and does not wait for
-     * an element to appear, so a probe taken right after signIn() (which has
-     * no waitForLoadState) can land mid-navigation and read false on a method
-     * screen that hasn't rendered yet. Waiting on whichever screen shows up
-     * keeps this working unchanged on an environment/account where the method
-     * screen never appears at all.
-     */
-    async completeVerificationMethodSelection(): Promise<void> {
-        await this.totpCodeInput.or(this.authenticatorAppRadio)
-            .first().waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
-
-        if (!(await this.authenticatorAppRadio.isVisible())) {
-            return;
-        }
-
-        await this.chooseAuthenticatorAppVerification();
-        await this.waitForAuthenticatorCodeStep();
     }
 
     /**
@@ -163,6 +183,10 @@ export class SignInPage extends BasePage {
 
 
     async inputTotp(secret: string): Promise<void> {
+        // Callers that reach here straight from signIn - globalSetup does - have not
+        // passed the credential-choice step yet. A no-op once it is behind us.
+        await this.selectAuthenticatorApp();
+
         // Seeded from what this process already spent for this secret rather than from
         // undefined, so the FIRST attempt waits out a spent window instead of burning a
         // failed login attempt to discover it - see spentTotpCodes.
@@ -180,7 +204,7 @@ export class SignInPage extends BasePage {
 
             // On the freshly loaded page: the error present means the code was
             // refused; its absence means we are through the OTP step.
-            if (!(await this.totpErrorMessage.isVisible())) {
+            if (!(await this.errorSummaryMessage.first().isVisible())) {
                 return;
             }
 

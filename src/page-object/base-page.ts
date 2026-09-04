@@ -1,6 +1,8 @@
 import { Page, Locator, TestInfo } from '@playwright/test';
 import { readFieldIfPresent, hrefsOf } from '../helper/element-helper';
-import { TFunction } from '../fixtures/locale-fixture';
+import { TFunction, localeForProject } from '../fixtures/locale-fixture';
+import { LOCALES_CONSTANT } from '../constant/locales-constant';
+import { NavigationBanner } from './components/navigation-banner';
 
 /** Overview screens paint their list a beat after the route settles. */
 const CONTENT_TIMEOUT = 20_000;
@@ -33,12 +35,18 @@ export class BasePage {
         return this.page.locator('.govuk-summary-list__row');
     }
 
+    private readonly navigationBanner: NavigationBanner;
+
     protected get actionLinks(): Locator {
         return this.page.locator('.govuk-summary-list__actions a');
     }
 
     constructor(protected readonly page: Page, t?: TFunction) {
         this.t = t;
+
+        // The header is on every signed-in screen, so the base holds it rather than each
+        // page re-declaring it. Only the language switch is driven from here.
+        this.navigationBanner = new NavigationBanner(page);
 
         this.commonContinueButton = page.locator(
             "button.govuk-button[value='next']"
@@ -105,13 +113,13 @@ export class BasePage {
  * Switch to Welsh on a cy project - or rather, where that switch used to happen.
      */
     private async switchToWelshIfNeeded(testInfo: TestInfo): Promise<void> {
-        if (!testInfo.project.name.includes('cy')) {
+        const locale = localeForProject(testInfo.project);
+
+        if (locale === LOCALES_CONSTANT.EN_GB) {
             return;
         }
 
-        // TO DO: nothing to click. The portal no longer renders a language switcher, so
-        // a cy run reads whatever the service serves. Put the switch back here when the
-        // link returns - the project check above is what it hangs off.
+        await this.navigationBanner.switchLanguageTo(locale);
     }
 
     async clickContinueButton(timeout?: number): Promise<void> {

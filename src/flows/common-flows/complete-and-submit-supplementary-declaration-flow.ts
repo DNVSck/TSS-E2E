@@ -210,8 +210,6 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
         await ReportLog.step(
             'Remove the authorisations that no longer describe how this is paid',
             async () => {
-                await this.overviewPage.openHolderOfAuthorisationTab();
-
                 for (const typeCode of input.holdersOfAuthorisationToRemove) {
                     const removed = await this.overviewPage.removeHolderOfAuthorisation(typeCode);
                     ReportLog.setParameter(
@@ -219,9 +217,6 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
                         removed ? 'removed' : 'not present'
                     );
                 }
-
-                // Back to the tab the goods record is opened from.
-                await this.overviewPage.openGoodsRecordsTab();
             }
         );
     }

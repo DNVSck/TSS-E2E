@@ -1,4 +1,4 @@
-import { NavigationMenu } from '../page-object/components/navigation-menu';
+import { PortalPage } from '../page-object/portal-page';
 import { BasePage } from '../page-object/base-page';
 import { CompanyProfilePage } from '../page-object/company-profile-page';
 import { CompanyProfileUsersPage } from '../page-object/company-profile-users-page';
@@ -30,15 +30,22 @@ export interface CompanyUsersPermissions extends ScreenPermissions {
 
 export class CompanyProfileFlow {
     constructor(
-        private readonly navigationMenu: NavigationMenu,
+        private readonly portalPage: PortalPage,
         private readonly companyProfilePage: CompanyProfilePage,
         private readonly companyProfileUsersPage: CompanyProfileUsersPage,
     ) { }
 
-    /** Open the company profile from the header menu and read what it offers. */
+    /**
+     * Open the company profile and read what it offers.
+     *
+     * From the portal landing page, not the header: the super-navigation menu that
+     * used to carry this link is gone from the service - measured on sit, where its
+     * toggle renders nowhere in either language - and "View business profile" in the
+     * page body is the way in now.
+     */
     async openCompanyProfile(): Promise<CompanyProfilePermissions> {
         return ReportLog.step('Open the company profile', async () => {
-            await this.navigationMenu.openCompanyProfile();
+            await this.portalPage.openCompanyProfile();
 
             const permissions = await this.readPermissions(this.companyProfilePage, 'Company profile');
             const availableActions = await this.companyProfilePage.listAvailableActions();

@@ -117,6 +117,12 @@ export class ConsignmentDeclarePage extends BasePage {
      * for it, and an unknown EORI is rejected outright. Fail here with the app's
      * own message rather than several screens later.
      */
+
+    async selectRepresentationType(representationType: string): Promise<void> {
+        await checkRadioByValue(this.page, 'representationType', representationType);
+        await this.clickContinueButton();
+    }
+
     async inputImporterEORI(importerEORI: string): Promise<void> {
         const outcome = await this.importer.submitEori(importerEORI, EORI_OUTCOME_TIMEOUT_MS);
 

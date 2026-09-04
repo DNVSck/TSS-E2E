@@ -12,6 +12,7 @@ import { COMPANY_PROFILE_ACTION } from '../constant/company-profile-action-const
  */
 export class CompanyProfilePage extends BasePage {
     private readonly viewUsersLink: Locator;
+    private readonly viewTradersLink: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -19,6 +20,11 @@ export class CompanyProfilePage extends BasePage {
         // By href, not by its "View users" label - the label is translated. Matched on
         // the end of the href so it holds without the "/portal" prefix too.
         this.viewUsersLink = page.locator("a[href$='/company-profile/users']");
+
+        // Scoped to <main>: while a representation is running the phase banner above
+        // carries a "Switch business" link to the very same href, and an unscoped
+        // selector would match both.
+        this.viewTradersLink = page.locator("main a[href$='/company-profile/traders']");
     }
 
     /**
@@ -31,6 +37,17 @@ export class CompanyProfilePage extends BasePage {
      */
     async openUsersList(): Promise<void> {
         await clickLinkAndWaitForRoute(this.page, this.viewUsersLink);
+    }
+
+    /**
+     * Follow "View businesses you're authorised to represent".
+     *
+     * The only way in from a session that represents nobody. The strip that used to
+     * offer "Select a company" on every page is now rendered only WHILE a
+     * representation is running, so there is nothing to click until one exists.
+     */
+    async openTradersList(): Promise<void> {
+        await clickLinkAndWaitForRoute(this.page, this.viewTradersLink);
     }
 
     /**

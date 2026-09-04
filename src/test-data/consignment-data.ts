@@ -33,6 +33,8 @@ export interface ConsignmentData {
     ensOnlyReason?: string;
 
     importerEORI: string;
+
+    representationType?: string;
     importerName: string;
     importerStreetName: string;
     importerStreetNumber: string;

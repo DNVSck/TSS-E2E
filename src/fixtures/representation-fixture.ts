@@ -33,7 +33,7 @@ type ExtendParams = Parameters<
 >;
 
 export const representationFixture: ExtendParams[0] = {
-    representationReset: [async ({ authProfile, agentBanner }, use) => {
+    representationReset: [async ({ authProfile, representationBanner }, use) => {
         // Anonymous specs (the accessibility and sign-in ones) must start signed out,
         // and a profile that cannot represent has no banner to clear - either way there
         // is nothing to do and no reason to navigate.
@@ -43,7 +43,7 @@ export const representationFixture: ExtendParams[0] = {
             // "not representing" for a session that was - so the reset skipped exactly
             // when it was needed. A request cannot be wrong about that, and says nothing
             // about whether there was anything to clear, which is a fact worth losing.
-            await agentBanner.clearRepresentation();
+            await representationBanner.clearRepresentation();
         }
 
         await use();

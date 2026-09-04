@@ -1,5 +1,6 @@
 import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
+import { IMPORTER_SDE } from '../../config/environment';
 
 /**
  * One "document reference" record — the shape behind the goods item's
@@ -39,3 +40,16 @@ export const documentReference = (overrides?: Partial<DocumentReferenceData>): D
     ...defaults,
     ...overrides,
 });
+
+export const ensSfdGoodsDocuments = (): DocumentReferenceData[] => [
+    documentReference({
+        documentCode: DOCUMENT_CODE.C672,
+        documentStatus: DOCUMENT_STATUS.AC,
+        documentReference: '0054037-0054047',
+    }),
+    documentReference({
+        documentCode: DOCUMENT_CODE.C512,
+        documentStatus: undefined,
+        documentReference: IMPORTER_SDE,
+    }),
+];

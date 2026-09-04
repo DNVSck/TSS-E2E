@@ -64,7 +64,7 @@ test.describe('TSS Portal sign-in - browser security (Test Case 2549)', () => {
 
     test('Verify browser security: back button and history protection after MFA',
         { tag: ['@auth', '@security', '@regression'] },
-        async ({ signInFlow, basePage, signInPage, portalPage }, testInfo) => {
+        async ({ signInFlow, basePage, signInPage, navigationBanner }, testInfo) => {
             reportTestCaseLink(TEST_CASE_ID);
 
             // Captured in Step 1, consumed in Step 2. Held here rather than inside
@@ -81,7 +81,7 @@ test.describe('TSS Portal sign-in - browser security (Test Case 2549)', () => {
 
                 await signInFlow.completeSignInFromAuthenticatorStep(account);
 
-                const isSignedIn = await portalPage.isSignedIn();
+                const isSignedIn = await navigationBanner.isSignedIn();
                 expect(isSignedIn, 'User should be authenticated').toBe(true);
 
                 const dashboardUrl = await basePage.getCurrentUrl();
@@ -90,7 +90,7 @@ test.describe('TSS Portal sign-in - browser security (Test Case 2549)', () => {
                 await signInFlow.clickBrowserBackButton();
                 const isMfaVisible = await signInPage.isOtpScreenVisible();
                 expect(isMfaVisible, 'MFA screen should NOT be visible after back button').toBe(false);
-                const stillSignedIn = await portalPage.isSignedIn();
+                const stillSignedIn = await navigationBanner.isSignedIn();
                 expect(stillSignedIn, 'User should still be signed in after back button').toBe(true);
 
                 ReportLog.setParameter('Step 1 Status', 'PASSED - Back button protection verified');

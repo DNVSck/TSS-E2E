@@ -121,16 +121,20 @@ export const flowFixture: ExtendParams[0] = {
         await use(new PortalAccessFlow(basePage, portalPage));
     },
 
-    signInFlow: async ({ basePage, portalPage, signInPage }, use) => {
-        await use(new SignInFlow(basePage, portalPage, signInPage));
+    signInFlow: async ({ basePage, portalPage, signInPage, navigationBanner }, use) => {
+        await use(new SignInFlow(basePage, portalPage, signInPage, navigationBanner));
     },
 
-    companyProfileFlow: async ({ navigationMenu, companyProfilePage, companyProfileUsersPage }, use) => {
-        await use(new CompanyProfileFlow(navigationMenu, companyProfilePage, companyProfileUsersPage));
+    companyProfileFlow: async ({ portalPage, companyProfilePage, companyProfileUsersPage }, use) => {
+        await use(new CompanyProfileFlow(portalPage, companyProfilePage, companyProfileUsersPage));
     },
 
-    representTraderFlow: async ({ agentBanner, representTraderPage }, use) => {
-        await use(new RepresentTraderFlow(agentBanner, representTraderPage));
+    representTraderFlow: async ({
+        representationBanner, representTraderPage, portalPage, companyProfilePage
+    }, use) => {
+        await use(new RepresentTraderFlow(
+            representationBanner, representTraderPage, portalPage, companyProfilePage
+        ));
     },
 
     declarationAccessFlow: async ({
@@ -345,10 +349,10 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     concurrentLoginFlow: async ({
-        signInFlow, portalPage, secondDeviceSignInFlow, secondDevicePortalPage
+        signInFlow, navigationBanner, secondDeviceSignInFlow, secondDeviceNavigationBanner
     }, use) => {
         await use(new ConcurrentLoginFlow(
-            signInFlow, portalPage, secondDeviceSignInFlow, secondDevicePortalPage
+            signInFlow, navigationBanner, secondDeviceSignInFlow, secondDeviceNavigationBanner
         ));
     },
 };

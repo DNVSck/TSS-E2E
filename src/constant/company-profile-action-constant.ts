@@ -42,7 +42,7 @@ export const COMPANY_PROFILE_ACTION = {
     ENTRY_IN_DECLARANTS_RECORDS_NUMBER: 'scdpEidrNumber',
 
     // Duty deferment and guarantees
-    XI_DDA_FOR_CUSTOMS: 'xiDdaForCustoms',
+    XI_DDA_FOR_CUSTOMS: 'hasDda',
     XI_DEFERMENT_ACCOUNT_NUMBER: 'xiDefermentAccountNumber',
     GUARANTEE_REFERENCE_EXEMPTION: 'guaranteeReferenceExemption',
     XI_GUARANTEE_REFERENCE_NUMBER: 'xiGuaranteeReferenceNumber',

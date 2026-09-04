@@ -2,10 +2,27 @@ import { chromium } from '@playwright/test';
 import { OTP_ENABLED, ENV, BASE_URL } from '../../config/environment';
 import { PortalPage } from '../page-object/portal-page';
 import { SignInPage } from '../page-object/sign-in-page';
+import { createTranslator } from '../fixtures/locale-fixture';
+import { LOCALES_CONSTANT } from '../constant/locales-constant';
 import { authStatePath, isAuthStateFresh, isSessionYoungEnough, AUTH_STATE_TTL_MINUTES } from './auth-state';
 import { CompanyProfile, UserCredentials, accountFor, getCredentialsPool, profilesToAuthenticate } from './credentials';
 
 const SIGN_IN_TIMEOUT_MS = 60_000;
+
+/**
+ * How long the portal gets to answer when this file opens it.
+ *
+ * Set explicitly because nothing else sets it: playwright.config's
+ * navigationTimeout lives under `use`, which reaches pages the test runner builds -
+ * and globalSetup launches its own browser, so that navigation silently ran on the
+ * library default of 30s, the only one in the suite that did.
+ *
+ * 30s is not enough here for a reason particular to this file: every profile is
+ * signed in at once, so six contexts ask a cold portal for its landing page in the
+ * same instant. Measured on sit 2026-09-03 - three of six timed out at 30s while
+ * the other three came back.
+ */
+const PORTAL_OPEN_TIMEOUT_MS = 90_000;
 
 /**
  * Signs in one account per parallel worker (per requested profile) and caches
@@ -106,9 +123,14 @@ async function signInAndSaveState(
 
     try {
         const portalPage = new PortalPage(page);
-        const signInPage = new SignInPage(page);
+        // English: globalSetup launches a context with no locale override, so the
+        // identity provider serves its default. A spec signing in under the Welsh
+        // project gets its own translator from the fixture.
+        const signInPage = new SignInPage(page, createTranslator(LOCALES_CONSTANT.EN_GB));
 
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+        await page.goto(BASE_URL, {
+            waitUntil: 'domcontentloaded', timeout: PORTAL_OPEN_TIMEOUT_MS,
+        });
         await portalPage.clickSignIn();
         await signInPage.signIn(credentials);
 

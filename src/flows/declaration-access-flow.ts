@@ -293,8 +293,24 @@ export class DeclarationAccessFlow {
                 .waitForStatus(expectedStatusKey, RESUBMIT_STATUS_POLL_TIMEOUT);
 
             ReportLog.setParameter('Status after resubmission', status);
-            expect.soft(status, 'Status after resubmission')
-                .not.toBe(this.t('status.traderInputRequired'));
+
+            // Why, not just what. The status alone says the correction was refused and
+            // stops there; the overview carries the CDS codes that name the field, and
+            // without them the next reader has to open a trace to learn that a header
+            // correction left a goods-item relation unsatisfied.
+            const refused = status === this.t('status.traderInputRequired');
+            const reasons = refused
+                ? await this.consignmentDetailPage.readValidationErrors()
+                : [];
+
+            if (reasons.length > 0) {
+                ReportLog.setParameter('CDS refused it because', reasons.join(' | '));
+            }
+
+            expect.soft(status, reasons.length > 0
+                ? `Status after resubmission - CDS still refuses it: ${reasons.join(' | ')}`
+                : 'Status after resubmission'
+            ).not.toBe(this.t('status.traderInputRequired'));
             return status;
         });
     }

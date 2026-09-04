@@ -120,6 +120,13 @@ export class ConsignmentSteps {
         });
     }
 
+
+    async selectRepresentationType(representationType: string): Promise<void> {
+        await ReportLog.step('Select representation type', async () => {
+            await this.consignmentDeclarePage.selectRepresentationType(representationType);
+        });
+    }
+
     /** "Is the buyer's EORI the same as the importer's?" carries only the radio. */
     async declareBuyerSameAsImporter(isSame: boolean): Promise<void> {
         await ReportLog.step('Answer "Is the buyer the same as the importer?"', async () => {

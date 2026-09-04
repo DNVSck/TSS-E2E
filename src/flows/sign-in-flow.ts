@@ -2,6 +2,7 @@ import { TestInfo } from '@playwright/test';
 import { BasePage } from '../page-object/base-page';
 import { PortalPage } from '../page-object/portal-page';
 import { SignInPage } from '../page-object/sign-in-page';
+import { NavigationBanner } from '../page-object/components/navigation-banner';
 import { ReportLog } from '../core/report/report-log';
 import { UserCredentials } from '../auth/credentials';
 import { generateInvalidTotpCode } from '../core/util/totp-auth';
@@ -31,6 +32,7 @@ export class SignInFlow {
         private readonly basePage: BasePage,
         private readonly portalPage: PortalPage,
         private readonly signInPage: SignInPage,
+        private readonly navigationBanner: NavigationBanner,
     ) { }
 
     /** Open the portal signed-out and hand over to the identity provider. */
@@ -70,7 +72,7 @@ export class SignInFlow {
             const passwordPageUrl = this.basePage.getCurrentUrl();
 
             await this.signInPage.submitCredentials(credentials.username, credentials.password);
-            await this.signInPage.completeVerificationMethodSelection();
+            await this.signInPage.waitForAuthenticatorCodeStep();
 
             const mfaPageUrl = this.basePage.getCurrentUrl();
 
@@ -107,7 +109,7 @@ export class SignInFlow {
         await ReportLog.step('Restore a signed-in session (clears the failed-attempt counter)', async () => {
             await this.basePage.navigateToPortal(input.baseUrl, input.testInfo);
 
-            if (await this.portalPage.isSignedIn()) {
+            if (await this.navigationBanner.isSignedIn()) {
                 return;
             }
 
@@ -135,11 +137,7 @@ export class SignInFlow {
         // to touch the field is inputTotp's fill, which auto-waits for the action timeout
         // and then reports a field it could not fill - which reads as a broken input
         // rather than a page that had simply not rendered yet.
-        //
-        // Also handles Keycloak's "Choose how to verify your identity" screen, which
-        // now sits between credentials and the OTP screen - always picking the
-        // authenticator-app option.
-        await this.signInPage.completeVerificationMethodSelection();
+        await this.signInPage.waitForAuthenticatorCodeStep();
 
         // inputTotp owns the retry across TOTP windows: a code refused because its
         // window has just rolled is resubmitted on the next one.

@@ -3,6 +3,7 @@ import { Page, Locator} from '@playwright/test';
 import { clickLinkAndWaitForRoute } from '../helper/element-helper';
 import { BASE_URL } from '../../config/environment';
 import { StringUtil } from '../core/util/string-util';
+import { NavigationBanner } from './components/navigation-banner';
 
 const PORTAL_RENDER_TIMEOUT = 90_000;
 
@@ -11,7 +12,9 @@ export class PortalPage extends BasePage {
 
     // Declare properties - Using stable locators (NOT text-based)
     private readonly signInBtn: Locator;
-    private readonly signOutLink: Locator;
+    // The service navigation bar, composed rather than injected: it is part of the
+    // layout this page renders in, and it holds no state worth sharing.
+    private readonly banner: NavigationBanner;
     private readonly startNewDeclarationLink: Locator;
 
     // Landing-page shortcuts. Scoped to <main> because the header menu carries the
@@ -21,6 +24,7 @@ export class PortalPage extends BasePage {
     private readonly companyProfileLink: Locator;
     private readonly manageUsersLink: Locator;
     private readonly makePaymentLink: Locator;
+    private readonly gmrViewLink: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -28,10 +32,12 @@ export class PortalPage extends BasePage {
         // not there under a local dev server. Ends-with rather than contains because
         // "/company-profile" would otherwise also match "/company-profile/users".
         this.signInBtn = page.locator("a[href$='/oauth']");
-        this.signOutLink = page.locator("a[href$='/logout']");
+        this.banner = new NavigationBanner(page);
         this.startNewDeclarationLink = page.locator("main a[href$='/declaration/form/start']");
 
-        this.draftDeclarationsLink = page.locator("main a[href$='/overview']");
+        this.draftDeclarationsLink = page.locator(
+            "main a[href$='/overview']:not(.govuk-button)"
+        );
         // Contains, not ends-with: this one carries filter state after the path.
         this.supplementaryDeclarationsLink = page.locator(
             "main a[href*='/overview?action-quick-filter=sd-Draft']"
@@ -39,6 +45,7 @@ export class PortalPage extends BasePage {
         this.companyProfileLink = page.locator("main a[href$='/company-profile']");
         this.manageUsersLink = page.locator("main a[href$='/company-profile/users']");
         this.makePaymentLink = page.locator("main a[href$='/payments/pending-payments']");
+        this.gmrViewLink = page.locator("main a[href$='/gmr-overview']");
     }
 
 
@@ -62,8 +69,15 @@ export class PortalPage extends BasePage {
     // clickLinkAndWaitForRoute rather than a bare click: these links can swallow a
     // click without navigating.
 
-    /** "Manage your company profile". */
+    /**
+     * "View business profile".
+     *
+     * Home first, like the other landing-page shortcuts: this is the way into the
+     * traders list now, and a representation is started from wherever the journey
+     * happens to have got to.
+     */
     async openCompanyProfile(): Promise<void> {
+        await this.returnHome();
         await clickLinkAndWaitForRoute(this.page, this.companyProfileLink);
     }
 
@@ -76,12 +90,24 @@ export class PortalPage extends BasePage {
      * "View your draft declarations".
      *
      * These landing-page shortcuts exist only on the portal home, so a caller deep
-     * inside a declaration is brought back to the front door first - the same thing
-     * a user would do, and the same guard AgentBanner uses for its own links.
+     * inside a declaration is brought back to the front door first, by following the
+     * header's own "Go to homepage" link - the same thing a user would do.
      */
     async openDraftDeclarations(): Promise<void> {
-        await this.returnToHomeIfAway();
+        await this.returnHome();
         await clickLinkAndWaitForRoute(this.page, this.draftDeclarationsLink);
+    }
+
+    private async openGmrView(): Promise<void> {
+        await this.returnHome();
+        await clickLinkAndWaitForRoute(this.page, this.gmrViewLink);
+    }
+
+    private async returnHome(): Promise<void> {
+        await this.banner.goToHomepage();
+        await this.startNewDeclarationLink.waitFor({
+            state: 'visible', timeout: PORTAL_RENDER_TIMEOUT,
+        });
     }
 
     /**
@@ -112,10 +138,6 @@ export class PortalPage extends BasePage {
         await clickLinkAndWaitForRoute(this.page, this.makePaymentLink);
     }
 
-    /** Hands over to the identity provider, which then asks for confirmation. */
-    async clickSignOut(): Promise<void> {
-        await this.signOutLink.click();
-    }
 
     /**
      * Waits until the portal shows the signed-in landing page. The session
@@ -131,9 +153,6 @@ export class PortalPage extends BasePage {
         await this.signInBtn.waitFor({ state: 'visible', timeout: timeoutMs });
     }
 
-    async isSignedIn(): Promise<boolean> {
-        return this.signOutLink.isVisible();
-    }
 
     async isSignedOut(): Promise<boolean> {
         return this.signInBtn.isVisible();

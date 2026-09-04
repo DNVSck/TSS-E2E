@@ -39,7 +39,11 @@ export class DeclarationSearchPage extends BasePage {
      */
     async findDeclarationsByReference(reference: string): Promise<string[]> {
         await this.searchInput.waitFor({ state: 'visible', timeout: SEARCH_TIMEOUT });
-        await this.searchInput.fill(reference);
+        await expect(async () => {
+            await this.searchInput.fill(reference);
+            await expect(this.searchInput).toHaveValue(reference, { timeout: 1_000 });
+        }).toPass({ timeout: SEARCH_TIMEOUT });
+
         await this.updateResultsButton.click();
 
         // The positive anchor. Submitting reloads the page and the form comes back

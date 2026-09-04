@@ -1,5 +1,7 @@
-import { AgentBanner } from '../page-object/components/agent-banner';
+import { RepresentationBanner } from '../page-object/components/representation-banner';
 import { RepresentTraderPage } from '../page-object/represent-trader-page';
+import { PortalPage } from '../page-object/portal-page';
+import { CompanyProfilePage } from '../page-object/company-profile-page';
 import { ReportLog } from '../core/report/report-log';
 
 /**
@@ -16,31 +18,38 @@ import { ReportLog } from '../core/report/report-log';
  */
 export class RepresentTraderFlow {
     constructor(
-        private readonly agentBanner: AgentBanner,
+        private readonly representationBanner: RepresentationBanner,
         private readonly representTraderPage: RepresentTraderPage,
+        private readonly portalPage: PortalPage,
+        private readonly companyProfilePage: CompanyProfilePage,
     ) { }
 
     async representTrader(companyName: string): Promise<void> {
         await ReportLog.step(`Start representing "${companyName}"`, async () => {
-            // Stop first, even though the banner offers "Select a different company"
-            // and switching straight across works. What that route does not leave is
-            // anything to WAIT on: the "Stop representing" link is already on the page,
-            // so waitUntilRepresenting below would pass on the OLD representation and
-            // the test would carry on - possibly declaring on behalf of the previous
-            // company - before the new one took effect. Stopping first makes the link
-            // go away and come back, which is a real signal.
+            // Finish any session already running, even though "Switch business" would
+            // move straight across. What that route does not leave is anything to WAIT
+            // on: the strip is already on the page, so waitUntilRepresenting below
+            // would pass on the OLD representation and the test would carry on -
+            // possibly declaring on behalf of the previous company - before the new one
+            // took effect. Finishing first makes the strip go away and come back, which
+            // is a real signal.
             //
             // Not hypothetical on a shared session. Representing is SERVER-SIDE state
             // and is not part of the replayed storageState, so a session left
             // representing by an earlier test arrives here still doing so - and no
             // journey spec turns it off at the end.
-            //
-            // A no-op when not representing, which is every first call.
-            await this.agentBanner.stopRepresenting();
+            await this.representationBanner.clearRepresentation();
 
-            await this.agentBanner.openTradersList();
+            // Portal home -> "View business profile" -> "View businesses you're
+            // authorised to represent". The strip that used to carry a "Select a
+            // company" link on every page is now rendered only DURING a representation,
+            // so a session that represents nobody has nothing to click and has to walk
+            // in through the profile.
+            await this.portalPage.openCompanyProfile();
+            await this.companyProfilePage.openTradersList();
+
             await this.representTraderPage.startRepresenting(companyName);
-            await this.agentBanner.waitUntilRepresenting();
+            await this.representationBanner.waitUntilRepresenting();
         });
         // Surface who the Agent is representing in the Allure "Parameters" table
         // so a run is trackable without scrolling the step timeline. Only specs
@@ -59,7 +68,7 @@ export class RepresentTraderFlow {
      */
     async stopRepresenting(): Promise<void> {
         await ReportLog.step('Stop representing', async () => {
-            await this.agentBanner.stopRepresenting();
+            await this.representationBanner.clearRepresentation();
         });
     }
 }

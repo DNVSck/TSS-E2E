@@ -386,11 +386,54 @@ pnpm lint
 > env you are hitting. Smoke vs functional is a **scope** split (a `@smoke`-tagged subset
 > vs the whole `tests/functional` folder), not an environment one.
 
+### By functional flow
+
+One script per journey, so a run can be scoped to the flow under test without knowing
+where its spec lives. Swap `:sit` for `:test` to change environment.
+
+| Flow | Command |
+| --- | --- |
+| ENS only | `pnpm test:ens-only:sit` |
+| ENS-SFD | `pnpm test:ens-sfd:sit` |
+| ENS-EIDR | `pnpm test:ens-eidr:sit` |
+| ENS-IMMI | `pnpm test:ens-immi:sit` |
+| SFD Standalone | `pnpm test:sfd-standalone:sit` |
+| IMMI Standalone | `pnpm test:immi-standalone:test` |
+| FFD Standalone | `pnpm test:ffd-standalone:sit` |
+| Supplementary declaration | `pnpm test:sd:sit` |
+| Sign-in and account | `pnpm test:auth:sit` |
+| Representation authority | `pnpm test:represent:sit` |
+| Accessibility (WCAG) | `pnpm test:a11y:sit` |
+| Welsh (any path above) | `pnpm test:cy:sit <path>` |
+
+Narrow to one case by appending `-g` with part of its title. It is a regular
+expression, so write `.` where the title has brackets:
+
+```powershell
+pnpm test:ens-sfd:sit -g "0700-F06"
+pnpm test:sfd-standalone:sit -g "SFD Standalone - Prelodged - RoRo .Accompanied. is created"
+```
+
+The flow scripts run with a visible browser, which is usually what a manual tester
+wants. For a headless run, set the variable first:
+
+```powershell
+$env:HEADLESS="true"; pnpm test:ens-sfd:sit
+```
+
+> **IMMI Standalone is `test` only.** No company on SIT is IMMI-enabled, so the
+> Declaration type screen offers only Simplified and Standard there and the run stops
+> on the third screen for a reason that has nothing to do with the test.
+
+> **Add `--workers=1` for flows that use a single-account profile** — the
+> representation authority suite is the one to watch. Pooled profiles
+> (`AGENT_USER_NAME_1..4`) are safe at the scripts’ default of 4.
+
 ### Ad-hoc runs
 
 ```powershell
 # A single spec
-$env:ENV="sit"; pnpm test tests/functional/gb-ni-roro-ens-only.spec.ts --project=chromium-en
+$env:ENV="sit"; pnpm test tests/functional/ens-integrated/gb-ni-roro-ens-only.spec.ts --project=chromium-en
 
 # With visible browser / step debugger / UI mode
 $env:ENV="sit"; pnpm test:headed ...
@@ -398,7 +441,7 @@ $env:ENV="sit"; pnpm test:debug ...
 $env:ENV="sit"; pnpm test:ui ...
 
 # IMMI Standalone (test env only)
-$env:ENV="test"; pnpm test tests/functional/gb-ni-roro-immi-standalone.spec.ts --project=chromium-en
+$env:ENV="test"; pnpm test tests/functional/standalone/gb-ni-roro-immi-standalone.spec.ts --project=chromium-en
 ```
 
 ### Reports
@@ -478,7 +521,7 @@ export class PortalPage extends BasePage {
    journey-specific data overrides:
 
 ```typescript
-// tests/functional/gb-ni-roro-ens-only.spec.ts
+// tests/functional/ens-integrated/gb-ni-roro-ens-only.spec.ts
 import { getBaseUrl, test } from '../test-hooks';
 import { COMPANY_PROFILE } from '../../src/core/auth/credentials';
 

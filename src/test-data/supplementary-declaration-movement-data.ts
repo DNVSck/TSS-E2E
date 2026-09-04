@@ -2,10 +2,8 @@ import { MovementData } from './movements-data';
 import { ConsignmentData } from './consignment-data';
 import { GoodsData } from './goods-data';
 import { previousDocument } from './previous-document-data';
-import { documentReference } from './document-reference-data';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
-import { DOCUMENT_CODE } from '../constant/document-code-constant';
-import { DOCUMENT_STATUS } from '../constant/document-status-constant';
+import { ensSfdGoodsDocuments } from './document-reference-data';
 
 /**
  * The frontier movement a supplementary declaration is raised FROM.
@@ -35,13 +33,7 @@ const defaults: SupplementaryDeclarationMovementData = {
         ],
     },
     goodsItemOverrides: {
-        documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.C672,
-                documentStatus: DOCUMENT_STATUS.AC,
-                documentReference: '0054037-0054047',
-            }),
-        ],
+        documentReferences: ensSfdGoodsDocuments(),
     },
 };
 

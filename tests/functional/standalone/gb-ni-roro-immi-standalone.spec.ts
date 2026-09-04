@@ -76,7 +76,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     );
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP is created and submitted successfully (4000-1SG)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP is created and submitted successfully (4000-1SG)', { tag: ['@smoke', '@regression', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP');
     reportTestCaseLink(IMMI_PRELODGED);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>

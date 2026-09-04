@@ -1,5 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import { bootstrapEnv } from './config/bootstrap-env';
+import { LOCALES_CONSTANT } from './src/constant/locales-constant';
 
 bootstrapEnv();
 const LOCALE = process.env.LOCALE ?? 'all';
@@ -94,7 +95,7 @@ export default defineConfig({
    * (test.use), not here: the accessibility specs must run against an
    * anonymous, signed-out portal. */
   projects: [
-    { name: 'chromium-en', use: { browserName: 'chromium' as const } },
-    { name: 'chromium-cy', use: { browserName: 'chromium' as const } },
+    { name: 'chromium-en', use: { browserName: 'chromium' as const, locale: LOCALES_CONSTANT.EN_GB } },
+    { name: 'chromium-cy', use: { browserName: 'chromium' as const, locale: LOCALES_CONSTANT.CY_GB } },
   ],
 });

@@ -1,4 +1,4 @@
-import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
+﻿import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
@@ -16,12 +16,12 @@ import {
 /**
  * The SFD standalone consignment (the app's "Simplified Declaration").
  *
- * Only the fields the SFD wizard asks for. SFD never shows the "Representation
- * information" screen, so there is no representationType here - unlike IMMI and FFD.
- * It does have the vehicle screen, and its arrival screen asks for a date/time when
- * the movement is pre-lodged.
+ * Only the fields the SFD wizard asks for. It has the vehicle screen, and its arrival
+ * screen asks for a date/time when the movement is pre-lodged.
  */
 export interface SfdStandaloneConsignmentData {
+    representationType?: string;
+
     /**
      * "Is this a pre-lodged or arrived movement?" - the first screen of the wizard, and
      * the answer the arrival date below has to agree with.

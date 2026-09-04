@@ -35,7 +35,7 @@ export const RECORD_DELETE_BUTTON =
  * The tabbed record lists a declaration overview carries - "Linked goods records",
  * "Holder of authorisation", "Document references" and the rest.
  *
- * A component rather than something every page inherits, the same way AgentBanner is:
+ * A component rather than something every page inherits, the same way RepresentationBanner is:
  * only the consignment and goods-item overviews have these tabs, and putting them on
  * BasePage handed them to the sign-in screen and every wizard step as well.
  *

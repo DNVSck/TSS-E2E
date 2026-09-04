@@ -3,10 +3,11 @@ import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { getBaseUrl, test } from '../../test-hooks';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
-import { documentReference } from '../../../src/test-data/document-reference-data';
+import {
+    documentReference, ensSfdGoodsDocuments,
+} from '../../../src/test-data/document-reference-data';
 import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
 import { IMPORTER_EXW } from '../../../config/environment';
-import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
 import { gmrData } from '../../../src/test-data/gmr-data';
 import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
 import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
@@ -39,9 +40,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
         consignmentOverrides: {
         },
         goodsItemOverrides: {
-          documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
-          ],
+          documentReferences: ensSfdGoodsDocuments(),
         },
       })
     );
@@ -74,9 +73,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
         consignmentOverrides: {
         },
         goodsItemOverrides: {
-          documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
-          ],
+          documentReferences: ensSfdGoodsDocuments(),
         },
       })
     );
@@ -109,8 +106,8 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
           procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
-            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW}),
+            ...ensSfdGoodsDocuments(),
+            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined, documentReference: IMPORTER_EXW }),
           ],
           additionalInformations: [
             additionalInformation({ code: 'ECONR', description: 'Reg No. 1234567890' }),

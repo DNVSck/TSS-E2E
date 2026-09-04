@@ -1,9 +1,7 @@
 ﻿import { COMPANY_PROFILE, isProfileConfigured } from '../../../src/auth/credentials';
 import { BASE_URL, IMPORTER_COMPANY_NAME, HAULIER_COMPANY_NAME } from '../../../config/environment';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
-import { documentReference } from '../../../src/test-data/document-reference-data';
-import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
-import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
+import { ensSfdGoodsDocuments } from '../../../src/test-data/document-reference-data';
 import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
 import {
     immiStandaloneGoodsItem, immiStandaloneTransportDocument,
@@ -524,13 +522,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
                     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
                 },
                 goodsItemOverrides: {
-                    documentReferences: [
-                        documentReference({
-                            documentCode: DOCUMENT_CODE.C672,
-                            documentStatus: DOCUMENT_STATUS.AC,
-                            documentReference: '0054037-0054047',
-                        }),
-                    ],
+                    documentReferences: ensSfdGoodsDocuments(),
                 },
             });
         });
@@ -870,7 +862,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             what: 'the standalone EIDR',
             records: eidr,
             tabs: IMMI_EIDR_DECLARATION_TABS,
-            recordActions: [CONSIGNMENT_ACTION.CANCEL_WITH_CONFIRMATION],
+            recordActions: [CONSIGNMENT_ACTION.CANCEL],
         };
 
         await ReportLog.step('Agent representing the Importer and Importer on its own login - check what each is offered', () =>
@@ -951,7 +943,7 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
             await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
 
             return createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensSfdDeclaration(testInfo, rejectedByCds()));
+                .createDraftEnsDeclaration(ensSfdDeclaration(testInfo, { ...rejectedByCds(), representationType: REPRESENTATION_TYPE.DIRECT }));
         });
 
         // The ENS is asked while it is still a DRAFT, and stopping here before submitting
@@ -1024,7 +1016,7 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
             await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
 
             await createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensImmiDeclaration(testInfo, immiRejectedByCds()));
+                .createDraftEnsDeclaration(ensImmiDeclaration(testInfo, immiRejectedByCds(), { representationType: REPRESENTATION_TYPE.DIRECT }));
 
             await consignmentOverviewFlow.goToConsignmentOverview();
             await consignmentOverviewFlow.submitConsignment();
@@ -1068,7 +1060,7 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
             await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
 
             await createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensEidrDeclaration(testInfo));
+                .createDraftEnsDeclaration(ensEidrDeclaration(testInfo, { representationType: REPRESENTATION_TYPE.DIRECT }));
 
             await consignmentOverviewFlow.goToConsignmentOverview();
             await consignmentOverviewFlow.submitConsignment();
@@ -1129,14 +1121,11 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
                 movementOverrides: {
                     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
                 },
+                consignmentOverrides: {
+                    representationType: REPRESENTATION_TYPE.DIRECT,
+                },
                 goodsItemOverrides: {
-                    documentReferences: [
-                        documentReference({
-                            documentCode: DOCUMENT_CODE.C672,
-                            documentStatus: DOCUMENT_STATUS.AC,
-                            documentReference: '0054037-0054047',
-                        }),
-                    ],
+                    documentReferences: ensSfdGoodsDocuments(),
                 },
             });
         });

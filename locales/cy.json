@@ -7,7 +7,11 @@
     "pageTitle": "Mewngofnodwch i'ch cyfrif",
     "emailLabel": "Cyfeiriad E-bost",
     "passwordLabel": "Cyfrinair",
-    "submitButton": "Mewngofnodi"
+    "submitButton": "Mewngofnodi",
+    "verifyIdentity": {
+      "authenticatorApp": "Cael cod ar eich ap dilysu",
+      "emailCode": "Derbyn cod drwy e-bost"
+    }
   },
   "common": {
     "localReferenceNumber": "Rhif cyfeirnod lleol",
@@ -31,7 +35,7 @@
     "countryOfOrigin": "Gwlad wreiddiol"
   },
   "movementHeaderOverview": {
-    "declarationStatus": "Status y datganiad"
+    "declarationStatus": "Statws y datganiad"
   },
   "consignmentDetail": {
     "movementReferenceNumber": "Rhif cyfeirnod symud"

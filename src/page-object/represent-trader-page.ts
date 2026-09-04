@@ -3,9 +3,10 @@ import { BasePage } from './base-page';
 
 /**
  * The "Traders that you can represent" list (/company-profile/traders), reached
- * from the Agent banner's "Select" link (see AgentBanner). Its only job is to pick
- * a trader row and start representing that company; the banner (Select/Stop/who)
- * is a cross-page concern and lives in AgentBanner, not here.
+ * from the business profile - see CompanyProfilePage.openTradersList. Its only job
+ * is to pick a trader row and start representing that company; the strip that says
+ * who is being represented is a cross-page concern and lives in RepresentationBanner,
+ * not here.
  */
 export class RepresentTraderPage extends BasePage {
     /** A trader row is any row that carries a "start representing" form. */

@@ -3,7 +3,7 @@ import { PortalPage } from '../page-object/portal-page'
 import { SignInPage } from '../page-object/sign-in-page';
 import { CompanyProfilePage } from '../page-object/company-profile-page';
 import { CompanyProfileUsersPage } from '../page-object/company-profile-users-page';
-import { NavigationMenu } from '../page-object/components/navigation-menu';
+import { NavigationBanner } from '../page-object/components/navigation-banner';
 import { BasePage } from '../page-object/base-page';
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
@@ -24,7 +24,7 @@ import { ExternalContactDeclarePage } from '../page-object/external-contact-decl
 import { TaricAdditionalCodeDeclarePage } from '../page-object/taric-additional-code-declare-page';
 import { NationalAdditionalCodeDeclarePage } from '../page-object/national-additional-code-declare-page';
 import { RepresentTraderPage } from '../page-object/represent-trader-page';
-import { AgentBanner } from '../page-object/components/agent-banner';
+import { RepresentationBanner } from '../page-object/components/representation-banner';
 import { ConsignmentDetailPage } from '../page-object/consignment-detail-page';
 import { StandaloneConsignmentDeclarePage } from '../page-object/standalone-consignment-declare-page';
 import { FfdStandaloneConsignmentDeclarePage } from '../page-object/ffd-standalone-consignment-declare-page';
@@ -44,9 +44,9 @@ export type PageFixtureType = {
     signInPage: SignInPage;
     companyProfilePage: CompanyProfilePage;
     companyProfileUsersPage: CompanyProfileUsersPage;
-    navigationMenu: NavigationMenu;
+    navigationBanner: NavigationBanner;
     representTraderPage: RepresentTraderPage;
-    agentBanner: AgentBanner;
+    representationBanner: RepresentationBanner;
     consignmentDetailPage: ConsignmentDetailPage;
     initialFormDeclaraPage: InitialFormDeclaraPage;
     movementDeclarePage: MovementDeclarePage;
@@ -93,8 +93,8 @@ export const pageFixture: ExtendParams[0] = {
         await use(new PortalPage(page));
     },
 
-    signInPage: async ({ page }, use) => {
-        await use(new SignInPage(page));
+    signInPage: async ({ page, t }, use) => {
+        await use(new SignInPage(page, t));
     },
 
     companyProfilePage: async ({ page }, use) => {
@@ -105,16 +105,16 @@ export const pageFixture: ExtendParams[0] = {
         await use(new CompanyProfileUsersPage(page));
     },
 
-    navigationMenu: async ({ page }, use) => {
-        await use(new NavigationMenu(page));
+    navigationBanner: async ({ page }, use) => {
+        await use(new NavigationBanner(page));
     },
 
     representTraderPage: async ({ page }, use) => {
         await use(new RepresentTraderPage(page));
     },
 
-    agentBanner: async ({ page }, use) => {
-        await use(new AgentBanner(page));
+    representationBanner: async ({ page }, use) => {
+        await use(new RepresentationBanner(page));
     },
 
     initialFormDeclaraPage: async ({ page }, use) => {

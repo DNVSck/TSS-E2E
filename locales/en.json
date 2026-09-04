@@ -7,7 +7,11 @@
     "pageTitle": "Sign in to your account",
     "emailLabel": "Email Address",
     "passwordLabel": "Password",
-    "submitButton": "Sign in"
+    "submitButton": "Sign in",
+    "verifyIdentity": {
+      "authenticatorApp": "Get a code on your authenticator app",
+      "emailCode": "Receive a code by email"
+    }
   },
   "common": {
     "localReferenceNumber": "Local reference number",

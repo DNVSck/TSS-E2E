@@ -31,6 +31,11 @@ export class AddNewEnsConsignmentFlow {
                 await this.consignmentSteps.fillBuyerDetails(input.buyerEORI, toPartyAddress('buyer', input));
             } else {
                 await this.consignmentSteps.fillImporterEori(input.importerEORI);
+
+                if (input.representationType) {
+                    await this.consignmentSteps.selectRepresentationType(input.representationType);
+                }
+
                 await this.fillBuyerInformation(input);
                 await this.consignmentSteps.declareUseImmi(input.useIMMI, input.importerEORI);
 
