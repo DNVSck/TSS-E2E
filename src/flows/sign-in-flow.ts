@@ -6,6 +6,7 @@ import { NavigationBanner } from '../page-object/components/navigation-banner';
 import { ReportLog } from '../core/report/report-log';
 import { UserCredentials } from '../auth/credentials';
 import { generateInvalidTotpCode } from '../core/util/totp-auth';
+import { OTP_ENABLED } from '../../config/environment';
 
 /** The identity provider redirects twice before the portal renders signed-in. */
 const SIGN_IN_TIMEOUT_MS = 60_000;
@@ -132,6 +133,12 @@ export class SignInFlow {
     }
 
     private async completeAuthenticatorStep(credentials: UserCredentials): Promise<void> {
+
+        if (!OTP_ENABLED) {
+            await this.portalPage.waitUntilSignedIn(SIGN_IN_TIMEOUT_MS);
+            return;
+        }
+
         // The authenticator screen arrives on its own page load, so it is given a budget
         // of its own rather than the ambient action timeout. Without this, the first thing
         // to touch the field is inputTotp's fill, which auto-waits for the action timeout

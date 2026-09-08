@@ -1,5 +1,5 @@
 import { Page, Locator, TestInfo } from '@playwright/test';
-import { readFieldIfPresent, hrefsOf } from '../helper/element-helper';
+import { readFieldIfPresent, hrefsOf, clickToLeaveScreen } from '../helper/element-helper';
 import { TFunction, localeForProject } from '../fixtures/locale-fixture';
 import { LOCALES_CONSTANT } from '../constant/locales-constant';
 import { NavigationBanner } from './components/navigation-banner';
@@ -126,8 +126,15 @@ export class BasePage {
         await this.commonContinueButton.click({ timeout });
     }
 
+    /**
+     * "Complete and submit" - the button that ends a wizard.
+     *
+     * Through clickToLeaveScreen because these screens swallow the first click while
+     * they hydrate, and a swallowed submit is not visible here: the next step goes
+     * looking for a screen that never opened and blames its own locator.
+     */
     async clickFinishButton(): Promise<void> {
-        await this.commonFinishButton.click();
+        await clickToLeaveScreen(this.page, this.commonFinishButton);
     }
 
     /**

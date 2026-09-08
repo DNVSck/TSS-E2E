@@ -1,6 +1,6 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectAutocompleteValue } from '../helper/element-helper';
+import { fillInputValue, selectAutocompleteValue } from '../helper/element-helper';
 import { AdditionalInformationData } from '../test-data/additional-information-data';
 
 /**
@@ -30,9 +30,8 @@ export class AdditionalInformationDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
-    /** "Provide a description for your additional information code". */
     async enterDescription(description: string): Promise<void> {
-        await this.descriptionInput.fill(description);
+        await fillInputValue(this.descriptionInput, description);
         await this.clickContinueButton();
     }
 

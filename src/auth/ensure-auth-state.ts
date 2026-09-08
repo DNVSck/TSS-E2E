@@ -135,6 +135,7 @@ async function signInAndSaveState(
         await signInPage.signIn(credentials);
 
         if (OTP_ENABLED) {
+            await signInPage.waitForAuthenticatorCodeStep();
             await signInPage.inputTotp(credentials.totpSecret!);
         }
 
@@ -177,27 +178,38 @@ function buildSignInError(credentials: UserCredentials, label: string, url: stri
 }
 
 /**
- * Sign a profile in the first time a test asks for it, rather than in globalSetup.
+ * Make sure this worker's account for a profile has a session young enough to use,
+ * signing it in if it does not. Returns the milliseconds that cost - 0 when the
+ * session was already young enough - so a caller can give exactly that much back to
+ * the test's budget, the way an account lock hands back what queueing took.
  *
- * For a profile only one spec uses. Signing it in on every run costs a login the other
- * suites never need, and an expired password on it would block them all - so it earns
- * its session by being asked for.
+ * Two callers, one rule. A profile kept out of globalSetup earns its session the first
+ * time a test asks for it - signing it in on every run costs a login the other suites
+ * never need, and an expired password on it would block them all. A profile globalSetup
+ * DID sign in comes back here later for the opposite reason: that one sign-in happens
+ * at t=0 and every test replays the file it wrote, so a run longer than the identity
+ * provider's idle window reaches its later tests signed out.
  *
  * isSessionYoungEnough, not isAuthStateFresh: this asks whether THIS run already signed
  * the profile in, which must hold even when session REPLAY across runs is switched off.
  * Using the replay guard here would sign in again for every test that touched the
  * profile, spending a login each time and colliding with its own TOTP window.
+ *
+ * Nothing here serialises anything. A caller reaching this for a profile several
+ * workers share must already hold that account's lock, or two of them can sign one
+ * account in inside the same 30-second TOTP window and produce the same code.
  */
 export async function signInOnDemand(
     profile: CompanyProfile,
     parallelIndex: number
-): Promise<void> {
+): Promise<number> {
     const account = accountFor(profile, parallelIndex);
 
     if (isSessionYoungEnough(account.profile, account.accountNumber)) {
-        return;
+        return 0;
     }
 
+    const startedAt = Date.now();
     const browser = await chromium.launch({ headless: true });
 
     try {
@@ -205,4 +217,6 @@ export async function signInOnDemand(
     } finally {
         await browser.close();
     }
+
+    return Date.now() - startedAt;
 }

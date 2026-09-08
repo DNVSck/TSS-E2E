@@ -28,3 +28,22 @@ const DEFERMENT_AUTHORISATION_PREFIX = /^[A-Z]{2}DPO/;
 export function defermentAccountNumber(defermentAuthorisation: string): string {
     return defermentAuthorisation.replace(DEFERMENT_AUTHORISATION_PREFIX, '');
 }
+
+/** The country an authorisation opens with - "XI", "GB". */
+const AUTHORISATION_COUNTRY = /^[A-Z]{2}/;
+
+/**
+ * An Inward Processing authorisation as the [10200] additional information states it:
+ * the number without its country.
+ *
+ *     XIIPO89645889502320231019133850  ->  IPO89645889502320231019133850
+ *
+ * The same authorisation the goods item cites as the C601 document, which keeps its
+ * country - so the two forms sit side by side on one declaration and only one of them
+ * is stripped. Derived rather than held as a second environment variable, for the
+ * reason on defermentAccountNumber: one IS the other with its prefix removed, and
+ * storing them apart invites a number that belongs to no authorisation.
+ */
+export function inwardProcessingAuthorisationNumber(ipoAuthorisation: string): string {
+    return ipoAuthorisation.replace(AUTHORISATION_COUNTRY, '');
+}

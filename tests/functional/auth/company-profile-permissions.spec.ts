@@ -12,7 +12,8 @@ test.describe('TSS Portal company profile - edit permissions', () => {
         'PRIMARY_HOLDER_USER_NAME and NON_PRIMARY_HOLDER_USER_NAME are not both configured for this environment'
     );
 
-    test('An account holder can edit the company profile and its users', { tag: ['@auth', '@authorisation', '@regression'] }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
+
+    test('An account holder can edit the company profile and its users', { tag: ['@auth', '@authorisation', '@regression'], lock: COMPANY_PROFILE.PRIMARY_HOLDER }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
         const account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
 
         await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });
@@ -42,7 +43,7 @@ test.describe('TSS Portal company profile - edit permissions', () => {
     });
 
 
-    test('A user who is not the account holder gets view-only', { tag: ['@auth', '@authorisation', '@regression'] }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
+    test('A user who is not the account holder gets view-only', { tag: ['@auth', '@authorisation', '@regression'], lock: COMPANY_PROFILE.NON_PRIMARY_HOLDER }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
         const account = getCredentials(COMPANY_PROFILE.NON_PRIMARY_HOLDER);
 
         await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });

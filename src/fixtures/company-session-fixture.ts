@@ -1,10 +1,11 @@
 import { test, BrowserContext, Page } from '@playwright/test';
-import {
-    CompanyProfile, accountFor, isSingleAccountProfile, isOnDemandProfile,
-} from '../auth/credentials';
-import { sessionFor } from '../auth/auth-state';
-import { signInOnDemand } from '../auth/ensure-auth-state';
-import { acquireAccountLock, AccountLock } from '../auth/account-lock';
+import { BASE_URL } from '../../config/environment';
+import { CompanyProfile, accountFor } from '../auth/credentials';
+import { authStatePath, isSessionYoungEnough, sessionFor } from '../auth/auth-state';
+import { BasePage } from '../page-object/base-page';
+import { SignInPage } from '../page-object/sign-in-page';
+import { NavigationBanner } from '../page-object/components/navigation-banner';
+import { SignInFlow } from '../flows/sign-in-flow';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
 import { ConsignmentDetailPage } from '../page-object/consignment-detail-page';
 import { ConsignmentOverviewPage } from '../page-object/consignment-overview-page';
@@ -148,64 +149,74 @@ type ExtendParams = Parameters<
 >;
 
 export const companySessionFixture: ExtendParams[0] = {
-    openAs: async ({ browser, t, authProfile }, use, testInfo) => {
-        const opened: { context: BrowserContext; lock?: AccountLock }[] = [];
+    openAs: async ({ browser, t }, use, testInfo) => {
+        const opened: BrowserContext[] = [];
 
         await use(async (profile: CompanyProfile): Promise<CompanySession> => {
-            // Queue for a company only one account can be signed in as - see the note on
-            // openAs. The spec's own profile is skipped: authAccount holds that lock
-            // already, and this process cannot wait on itself.
-            const lock = isSingleAccountProfile(profile) && profile !== authProfile
-                ? await acquireAccountLock(accountFor(profile, testInfo.parallelIndex), testInfo.title)
-                : undefined;
-
-            // Queueing must not come out of the test's own budget, or the LAST test in
-            // the queue fails rather than the slow one. A timeout of 0 means no timeout
-            // (the debug runners set it), and adding to that would make it two.
-            if (lock && lock.waitedMs > 0 && testInfo.timeout > 0) {
-                testInfo.setTimeout(testInfo.timeout + lock.waitedMs);
-            }
-
-            if (isOnDemandProfile(profile)) {
-                const startedAt = Date.now();
-                await signInOnDemand(profile, testInfo.parallelIndex);
-                const signInMs = Date.now() - startedAt;
-
-                if (signInMs > 0 && testInfo.timeout > 0) {
-                    testInfo.setTimeout(testInfo.timeout + signInMs);
-                }
-            }
+            // Nothing serialises here. A company only one account can be signed in as
+            // must not be opened by two tests at once, and that is declared by the spec
+            // as a named lock - the runner will not start two tests sharing one, so no
+            // worker sits waiting inside a fixture for its turn.
+            //
+            // Whether this run holds a session for this company worth replaying. One
+            // globalSetup signed in does; one only a single spec asks for does not, and
+            // one that aged out while the run went on no longer does.
+            const account = accountFor(profile, testInfo.parallelIndex);
+            const replayable = isSessionYoungEnough(account.profile, account.accountNumber);
 
             // The locale is not inherited: use.locale reaches only the context the test
             // runner builds, and this one is built here. Without it the pages below read
             // their labels through t() in the project's language while the service serves
             // English, so the Welsh project could never match a single one.
+            //
+            // The storage state IS inherited, which is why the empty one is stated
+            // rather than left out: a context built from the test's own browser carries
+            // that test's session unless told otherwise, and the sign-in below would
+            // then wait for a sign-in link a signed-in page never has.
             const context = await browser.newContext({
-                storageState: sessionFor(profile, testInfo.parallelIndex),
+                storageState: replayable
+                    ? sessionFor(profile, testInfo.parallelIndex)
+                    : { cookies: [], origins: [] },
                 locale: localeForProject(testInfo.project),
             });
-            opened.push({ context, lock });
+            opened.push(context);
+
+            const page = await context.newPage();
+
+            if (!replayable) {
+
+                const startedAt = Date.now();
+
+                await new SignInFlow(
+                    new BasePage(page),
+                    new PortalPage(page),
+                    new SignInPage(page, t),
+                    new NavigationBanner(page),
+                ).signIn(account, { baseUrl: BASE_URL, testInfo });
+
+                // Kept for the rest of the run, so a second test asking for this company
+                // replays rather than spending another login on it.
+                await context.storageState({
+                    path: authStatePath(account.profile, account.accountNumber),
+                });
+
+                // Signing in must not come out of the test's own budget. A timeout of 0
+                // means no timeout - the debug runners set it - and adding to that would
+                // turn "unlimited" into a few seconds.
+                const signInMs = Date.now() - startedAt;
+                if (signInMs > 0 && testInfo.timeout > 0) {
+                    testInfo.setTimeout(testInfo.timeout + signInMs);
+                }
+            }
 
             return {
-                ...buildCompanySession(await context.newPage(), t, profile),
-                close: async () => {
-                    try {
-                        await context.close();
-                    } finally {
-                        lock?.release();
-                    }
-                },
+                ...buildCompanySession(page, t, profile),
+                close: () => context.close(),
             };
         });
 
         // Whatever a test did not close itself. Closing an already-closed context is a
-        // no-op, and releasing a released lock is too, so an early close() costs nothing.
-        await Promise.allSettled(opened.map(async ({ context, lock }) => {
-            try {
-                await context.close();
-            } finally {
-                lock?.release();
-            }
-        }));
+        // no-op, so an early close() costs nothing.
+        await Promise.allSettled(opened.map(context => context.close()));
     },
 };

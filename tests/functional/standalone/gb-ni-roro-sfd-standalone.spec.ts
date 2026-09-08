@@ -101,12 +101,14 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
   });
 });
 
-test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Declare by themself', () => {
+test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Declare by themself', { lock: COMPANY_PROFILE.IMPORTER }, () => {
   // The importer signs in as their OWN company, so there is NO representation and no
   // representTrader in the hook below - which is also why these journeys leave
   // representationType undefined: the "Representation information" screen the describe
   // above answers is never shown to a trader declaring for itself. What is under test
   // here is that the same declarations are accepted without an agent in front of them.
+  // The lock on the describe above: this company has one login, so its tests take
+  // turns wherever they live. Every spec running as it must name the same lock.
   test.use({ authProfile: COMPANY_PROFILE.IMPORTER });
 
   test.beforeEach(async () => {

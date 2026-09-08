@@ -25,7 +25,11 @@ export class AddNewImmiStandaloneGoodsItemFlow {
 
             await this.steps.selectGoodsProcedureCode(input);
             await this.steps.selectAdditionalProcedureCode(input);
-            await this.steps.selectSupervisingCustomsOfficeIfAsked(input);
+
+            // No supervising office step, unlike the standard and simplified wizards
+            // beside this one: IMMI is not a route that asks for it, and the service
+            // supplies the office itself. What it chose is checked on the consignment
+            // overview - see CreateDraftImmiStandaloneFlow.
             await this.steps.enterWarehouseIdentifierIfAsked(input);
 
             if (!usesTgp) {

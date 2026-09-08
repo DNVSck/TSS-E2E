@@ -56,7 +56,15 @@ export class AddNewEnsGoodsItemFlow {
             if (!journey.isEnsOnly) {
                 await this.steps.selectGoodsProcedureCode(input);
                 await this.steps.selectAdditionalProcedureCode(input);
-                await this.steps.selectSupervisingCustomsOfficeIfAsked(input);
+
+                // The supervising office is asked on the standard and simplified
+                // routes; IMMI is not one of them - the service fills that field in
+                // for itself there, and the consignment overview is where this suite
+                // checks the value it chose.
+                if (!journey.useIMMI) {
+                    await this.steps.selectSupervisingCustomsOfficeIfAsked(input);
+                }
+
                 await this.steps.enterWarehouseIdentifierIfAsked(input);
             }
 
@@ -70,9 +78,7 @@ export class AddNewEnsGoodsItemFlow {
                 await this.steps.declareDangerousGoodsWithCodes(input);
             }
 
-            // On SFD the country-of-origin screen precedes the commodity screen. IMMI
-            // instead asks it near the end, after the invoice screen — see below.
-            if (journey.hasInvoiceDetails && !journey.useIMMI) {
+            if (journey.hasInvoiceDetails && !usesTgp) {
                 await this.steps.enterCountryOfOrigin(input);
             }
 
@@ -108,14 +114,6 @@ export class AddNewEnsGoodsItemFlow {
 
             if (usesTgp) {
                 await this.steps.answerNirmsIfAsked(input);
-            }
-
-            // On IMMI the country-of-origin screen comes here, after the invoice
-            // screen. A TGP item never reaches it: the record carries the country of
-            // origin, so the app runs its own route ("...with-tgp-journey") that ends
-            // at the invoice screen and goes straight to check-your-answers.
-            if (journey.useIMMI && !usesTgp) {
-                await this.steps.enterCountryOfOrigin(input);
             }
 
             await this.steps.finishGoodsItemDeclaration();

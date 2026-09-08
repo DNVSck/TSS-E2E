@@ -23,6 +23,35 @@ export function requiresWarehouseIdentifier(procedureCode: string): boolean {
         || WAREHOUSED_SUFFIXES.some(suffix => code.endsWith(suffix));
 }
 
+/**
+ * The procedure codes that make the service ask for a supervising customs office
+ * (DE 5/27), stated by CDS as a list rather than as a pattern - so it is written out
+ * here rather than derived.
+ *
+ * A DIFFERENT set from the warehoused codes above, and deliberately kept apart. The
+ * two overlap without either containing the other: 0153, 0154, 4053, 4054, 4253,
+ * 4254, 5300, 5351, 5353 and 5354 ask for an office and never for a warehouse, while
+ * every 61xx and 71xx code asks for a warehouse and never for an office. Sharing one
+ * rule between the two screens silently skipped the first group.
+ */
+const SUPERVISING_OFFICE_CODES: ReadonlySet<string> = new Set([
+    '0153', '0154', '0171', '0178', '0700', '0721', '0751', '0753', '0754', '0771',
+    '0778', '4053', '4054', '4071', '4078', '4253', '4254', '4271', '4278', '5300',
+    '5351', '5353', '5354', '5371', '5378',
+]);
+
+/**
+ * Whether the goods-item wizard will ask for a supervising customs office.
+ *
+ * The code is only half the condition: DE 5/27 applies to the standard, simplified
+ * and supplementary routes, and never to IMMI, where the service fills the office in
+ * for itself. The route is not knowable from a procedure code, so the journey flow
+ * decides whether to ask this at all - see AddNewEnsGoodsItemFlow.
+ */
+export function requiresSupervisingCustomsOffice(procedureCode: string): boolean {
+    return SUPERVISING_OFFICE_CODES.has(procedureCode.trim());
+}
+
 const HIDES_SUPPLEMENTARY_UNIT: ReadonlySet<string> = new Set(['1SG', '1EN']);
 
 /**
