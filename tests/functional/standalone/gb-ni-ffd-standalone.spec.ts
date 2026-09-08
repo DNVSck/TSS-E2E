@@ -47,11 +47,13 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Agent Represen
 });
 
 
-test.describe('GB to NI RoRo FFD Standalone Declaration Process - Importer Declare by themself', () => {
+test.describe('GB to NI RoRo FFD Standalone Declaration Process - Importer Declare by themself', { lock: COMPANY_PROFILE.IMPORTER }, () => {
   // The importer signs in as their OWN company, so there is NO representation:
   // no representTrader here, and representationType is left undefined so the flow
   // skips the "Representation information" screen.
 
+  // The lock on the describe above: this company has one login, so its tests take
+  // turns wherever they live. Every spec running as it must name the same lock.
   test.use({ authProfile: COMPANY_PROFILE.IMPORTER });
 
   test.beforeEach(async () => {

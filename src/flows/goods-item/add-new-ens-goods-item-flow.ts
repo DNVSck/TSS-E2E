@@ -56,7 +56,15 @@ export class AddNewEnsGoodsItemFlow {
             if (!journey.isEnsOnly) {
                 await this.steps.selectGoodsProcedureCode(input);
                 await this.steps.selectAdditionalProcedureCode(input);
-                await this.steps.selectSupervisingCustomsOfficeIfAsked(input);
+
+                // The supervising office is asked on the standard and simplified
+                // routes; IMMI is not one of them - the service fills that field in
+                // for itself there, and the consignment overview is where this suite
+                // checks the value it chose.
+                if (!journey.useIMMI) {
+                    await this.steps.selectSupervisingCustomsOfficeIfAsked(input);
+                }
+
                 await this.steps.enterWarehouseIdentifierIfAsked(input);
             }
 

@@ -19,7 +19,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
     await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
   });
 
-  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@regression', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Prelodged - RoRo (Accompanied)');
     reportTestCaseLink(SFD_STANDALONE);
     const sfd = await ReportLog.step('Create and submit the SFD standalone declaration', () =>
@@ -58,7 +58,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
     );
   });
 
-  test('Verify SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@smoke', '@regression'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Prelodged - RoRo (Accompanied)');
     reportTestCaseLink(SFD_EIDR_STANDALONE);
     await ReportLog.step('Create and submit the SFD standalone declaration', () =>
@@ -94,12 +94,15 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
   });
 });
 
-test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Declare by themself', () => {
+test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Declare by themself', { lock: COMPANY_PROFILE.IMPORTER }, () => {
   // The importer signs in as their OWN company, so there is NO representation and no
   // representTrader in the hook below. SFD has no "Representation information" screen
   // either way, so the journeys themselves are identical to the describe above - what
   // is under test here is that the same declarations are accepted from the trader
   // directly, without an agent standing in front of them.
+  //
+  // The lock on the describe above: this company has one login, so its tests take
+  // turns wherever they live. Every spec running as it must name the same lock.
   test.use({ authProfile: COMPANY_PROFILE.IMPORTER });
 
   test.beforeEach(async () => {
@@ -122,7 +125,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
     );
   });
 
-  test('Verify SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath', '@smoke'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself');
     const sfd = await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({

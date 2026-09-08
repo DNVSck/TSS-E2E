@@ -54,8 +54,30 @@ export class PortalPage extends BasePage {
         await this.signInBtn.click({ timeout: PORTAL_RENDER_TIMEOUT });
     }
 
+    /**
+     * "Start a new declaration" - the front door of every journey.
+     *
+     * Races the link against the sign-in link rather than waiting for the one that is
+     * wanted. A context replays a session signed in once per run, so a run that
+     * outlives it serves the signed-out landing page here - where this link never
+     * arrives, and a plain click spends its whole budget before reporting a locator
+     * that was never the problem. Same budget as the other portal waits: the landing
+     * page renders client-side and the ambient action timeout is lower.
+     */
     async startTssJourney(): Promise<void> {
-        await this.startNewDeclarationLink.click();
+        await this.startNewDeclarationLink.or(this.signInBtn).first()
+            .waitFor({ state: 'visible', timeout: PORTAL_RENDER_TIMEOUT });
+
+        if (await this.isSignedOut()) {
+            throw new Error(
+                'Portal home offered "Sign in" instead of "Start a new declaration" - the ' +
+                'session replayed into this context is no longer valid. It is signed in ' +
+                'once per run and renewed per test in worker-auth-fixture, so reaching ' +
+                'here signed out means the session died mid-test, not between tests.'
+            );
+        }
+
+        await this.startNewDeclarationLink.click({ timeout: PORTAL_RENDER_TIMEOUT });
     }
 
     // Landing-page shortcuts. Each assumes the browser is on the portal landing page.

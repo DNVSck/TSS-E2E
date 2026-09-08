@@ -2,7 +2,9 @@ import { ConsignmentOverviewPage } from '../../page-object/consignment-overview-
 import { GoodsDeclarePage } from '../../page-object/goods-declare-page';
 import { GoodsData } from '../../test-data/goods-data';
 import { ReportLog } from '../../core/report/report-log';
-import { requiresWarehouseIdentifier } from '../../helper/procedure-code-helper';
+import {
+    requiresSupervisingCustomsOffice, requiresWarehouseIdentifier,
+} from '../../helper/procedure-code-helper';
 
 /**
  * One method per goods-item wizard screen: binds the test data to the page object
@@ -122,28 +124,29 @@ export class GoodsItemSteps {
      * The supervising customs office screen, which comes immediately BEFORE the
      * warehouse identifier one.
      *
-     * Two gates, because neither alone is right. The procedure code decides whether it
-     * is worth looking at all - a code that reaches no warehouse screen reaches no
-     * supervising office screen either, so the common journeys pay nothing. Which of the
-     * warehoused codes actually ask is the service's own rule and is not written down
-     * here, so the page then LOOKS rather than assumes.
+     * Decided from the DE 5/27 code list, not from the warehouse rule. Those were the
+     * same gate until the two trigger sets were published and turned out to overlap
+     * without either containing the other - which meant the ten codes that ask for an
+     * office and no warehouse were skipped, and the wizard was left sitting on a screen
+     * nobody answered.
      *
-     * If that set is ever stated, this becomes a rule in procedure-code-helper beside
-     * requiresWarehouseIdentifier, and the probe goes away.
+     * The caller decides whether its route asks at all: this fills the screen rather
+     * than looking for it, so a journey that reaches here on a listed code and finds
+     * nothing fails saying so, instead of walking past a screen in silence.
      */
     async selectSupervisingCustomsOfficeIfAsked(input: GoodsData): Promise<void> {
-        if (!requiresWarehouseIdentifier(input.procedureCode)) {
+        if (!requiresSupervisingCustomsOffice(input.procedureCode)) {
             return;
         }
 
         await ReportLog.step('Select the supervising customs office', async () => {
-            const asked = await this.goodsDeclarePage.selectSupervisingCustomsOfficeIfPresent(
+            await this.goodsDeclarePage.selectSupervisingCustomsOffice(
                 input.supervisingCustomsOffice
             );
 
             ReportLog.setParameter(
-                'Supervising customs office screen',
-                asked ? `answered ${input.supervisingCustomsOffice}` : 'not shown'
+                'Supervising customs office',
+                input.supervisingCustomsOffice
             );
         });
     }

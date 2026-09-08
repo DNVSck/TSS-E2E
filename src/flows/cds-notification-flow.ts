@@ -1,6 +1,6 @@
 import { CdsMockApiClient } from '../api-client/cds-mock-api-client';
 import { ReportLog } from '../core/report/report-log';
-import { IS_CDS_MOCK_AVAILABLE } from '../../config/environment';
+import { ENV, IS_CDS_MOCK_AVAILABLE } from '../../config/environment';
 import {
     buildCdsNotification, DeclarationIdentity, CdsResponseMessage,
 } from '../test-data/payload/cds-notification-payload';
@@ -30,9 +30,6 @@ export class CdsNotificationFlow {
 
     /**
      * Push one CDS response back to the portal.
-     *
-     * Skipped where no mock CDS is configured: on an environment wired to the real CDS
-     * there is nothing to stand in for.
      */
     async sendResponse(
         response: CdsResponseMessage,
@@ -41,14 +38,7 @@ export class CdsNotificationFlow {
         // silenced with a "!".
         declaration: DeclarationIdentity | undefined
     ): Promise<void> {
-        if (!IS_CDS_MOCK_AVAILABLE) {
-            await ReportLog.step(
-                `CDS ${response.name} - skipped (no mock CDS configured)`,
-                async () => { }
-            );
-            return;
-        }
-
+        this.assertMockConfigured(response);
         this.assertIdentified(response, declaration);
 
         await ReportLog.step(
@@ -56,6 +46,25 @@ export class CdsNotificationFlow {
             () => this.cdsMockApiClient.sendDeclarationResponse(
                 buildCdsNotification(response, declaration)
             )
+        );
+    }
+
+    /**
+     * Refuse to answer as CDS without the token that lets us.
+     *
+     * This used to skip quietly, on the reasoning that an environment wired to the real
+     * CDS has nothing to stand in for. What that hid is the case it cannot tell apart:
+     * a run that simply forgot CDS_TOKEN. Nothing then moves the consignment, the status
+     * stays where submission left it, and the journey ends green having proved none of
+     * the thing it exists to prove. A test that cannot fail is worse than one that does.
+     */
+    private assertMockConfigured(response: CdsResponseMessage): void {
+        if (IS_CDS_MOCK_AVAILABLE) return;
+
+        throw new Error(
+            `Cannot send ${response.name}: no CDS_TOKEN is set, so nothing can answer as CDS ` +
+            `and the consignment will never leave the status submitting left it in. ` +
+            `Set CDS_TOKEN in .env.${ENV}, or run a suite that does not trigger CDS.`
         );
     }
 

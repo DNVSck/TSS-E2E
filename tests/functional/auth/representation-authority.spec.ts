@@ -1,5 +1,7 @@
 ﻿import { COMPANY_PROFILE, isProfileConfigured } from '../../../src/auth/credentials';
-import { BASE_URL, IMPORTER_COMPANY_NAME, HAULIER_COMPANY_NAME } from '../../../config/environment';
+import {
+    BASE_URL, IMPORTER_COMPANY_NAME, HAULIER_COMPANY_NAME, IS_ISC2_MOCK,
+} from '../../../config/environment';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { documentReference } from '../../../src/test-data/document-reference-data';
 import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
@@ -36,8 +38,6 @@ import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-typ
 import { checkRefusedOnceRepresentationEnds } from '../../../src/flows/authority-check-flow';
 import { test } from '../../test-hooks';
 
-// One unnamed screenshot per company window; the named ones below replace them.
-test.use({ screenshot: 'off' });
 
 test.describe('ENS Integrated declaration authority - Agent declares as itself', () => {
     test.use({ authProfile: COMPANY_PROFILE.AGENT });
@@ -46,11 +46,19 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
         await ReportLog.setFeature('Representation authority');
     });
 
-    test('Verify that the Agent, on its own account, can correct and resubmit its rejected ENS consignment', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
-        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
-        declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
+    /**
+     * The draft half of the authority question, asked on its own.
+     *
+     * Split from the rejection test below because the two need different things of the
+     * environment: a draft can be raised anywhere, while a rejection can only come from
+     * an ICS2 that refuses the movement. Kept together, the half that cannot run on a
+     * mocked environment took the half that can down with it - or worse, the test
+     * returned early and reported green having measured half of what it names.
+     */
+    test('Verify that the Agent and the Importer are offered the right actions on a draft ENS consignment', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
+        createDraftEnsDeclarationFlow, declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
-        await ReportLog.setStory('Agent on its own account - reach, reject, correct, resubmit');
+        await ReportLog.setStory('Agent on its own account - what a draft offers');
 
         const draft = await ReportLog.step('Agent declares an ENS consignment and leaves it in draft', () =>
             createDraftEnsDeclarationFlow
@@ -79,6 +87,26 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
                 recordActions: [MOVEMENT_ACTION.CANCEL_DECLARATION],
             });
         });
+
+    });
+
+    test('Verify that the Agent, on its own account, can correct and resubmit its rejected ENS consignment', { tag: ['@auth', '@authorisation', '@regression'] }, async ({
+        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
+        declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
+    }, testInfo) => {
+        // This test starts from a REJECTED consignment, and only ICS2 refusing the
+        // movement produces one. A mock ICS2 authorises it instead, so "Trader Input
+        // Required" is unreachable and there would be nothing to correct - a red saying
+        // nothing about authority. The draft half of the same question is the test
+        // above, which is why skipping here costs no coverage.
+        test.skip(IS_ISC2_MOCK, 'A mock ICS2 authorises the movement, so no rejection can be produced');
+
+        await ReportLog.setStory('Agent on its own account - reach, reject, correct, resubmit');
+
+        const draft = await ReportLog.step('Agent declares an ENS consignment and leaves it in draft', () =>
+            createDraftEnsDeclarationFlow
+                .createDraftEnsDeclaration(ensOnlyDeclaration(testInfo, rejectedByIcs2()))
+        );
 
         let rejected: Awaited<ReturnType<typeof declarationAccessFlow.locateEnsConsignmentRecords>> | undefined;
 

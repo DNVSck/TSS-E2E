@@ -1,9 +1,9 @@
 import { test } from '@playwright/test';
 import {
-    CompanyProfile, UserCredentials, accountFor, profilesToAuthenticate, isSingleAccountProfile,
+    CompanyProfile, UserCredentials, accountFor, profilesToAuthenticate,
 } from '../auth/credentials';
 import { authStatePath } from '../auth/auth-state';
-import { acquireAccountLock } from '../auth/account-lock';
+import { signInOnDemand } from '../auth/ensure-auth-state';
 
 export type WorkerAuthFixtureType = {
     /**
@@ -13,6 +13,19 @@ export type WorkerAuthFixtureType = {
      *
      * It picks this worker's account from the profile's pool and replays that
      * account's cached session, so no two concurrent workers share one session.
+     *
+     * A profile whose pool holds ONE login has no second account to hand out, so its
+     * tests must not run at the same time. That is declared, not derived - the spec
+     * names a lock beside the profile:
+     *
+     *     test.describe('...', { lock: COMPANY_PROFILE.IMPORTER }, () => {
+     *         test.use({ authProfile: COMPANY_PROFILE.IMPORTER });
+     *
+     * The profile name IS the lock name, so there is one string to agree on and no
+     * table mapping one to the other. Nothing here can check it: a lock is declared
+     * when tests are collected and TestInfo does not carry it, so a spec that runs as
+     * a single-login profile and forgets the lock will quietly run twice at once.
+     * Giving the profile a pool removes the question rather than answering it.
      *
      * Null (the default) means an anonymous, signed-out test — the accessibility
      * specs must run against the logged-out portal, so signed-in is opt-in.
@@ -63,43 +76,42 @@ export const workerAuthFixture: ExtendParams[0] = {
         }
 
         assertProfileAuthenticated(authProfile);
-        const account = accountFor(authProfile, testInfo.parallelIndex);
 
-        // A pooled profile gives this worker its own account, so nothing to serialise.
-        if (!isSingleAccountProfile(authProfile)) {
-            await use(account);
-            return;
-        }
-
-        // One login for every worker: hold it for the whole test so tests using this
-        // profile take turns, wherever they live. Other profiles keep running around it.
-        const lock = await acquireAccountLock(account, testInfo.title);
-
-        // Waiting for the turn must not come out of the test's own budget - without
-        // this the queue eats the timeout and the LAST test in it fails, not the slow one.
-        //
-        // A timeout of 0 means NO timeout (playwright test --debug, and the VS Code
-        // debug runner, both set it). Adding to it would turn "unlimited" into the few
-        // milliseconds the lock file took to create, and the test dies in beforeEach
-        // with "Test timeout of 2ms exceeded" - which reads like anything but this.
-        if (lock.waitedMs > 0 && testInfo.timeout > 0) {
-            testInfo.setTimeout(testInfo.timeout + lock.waitedMs);
-        }
-
-        try {
-            await use(account);
-        } finally {
-            lock.release();
-        }
+        // Nothing queues here. A profile whose pool holds one login cannot be run by
+        // two workers at once, and a spec says so by declaring a named lock - see the
+        // note on authProfile. The runner refuses to START two tests sharing a lock
+        // name, so the wait happens in the scheduler instead of inside a fixture,
+        // where it used to hold a worker idle long enough for its session to expire.
+        await use(accountFor(authProfile, testInfo.parallelIndex));
     },
 
     // Override Playwright's built-in storageState so it is resolved per worker:
     // each worker replays its own account's session (pool[parallelIndex]), so no
     // two concurrent workers share one session file.
-    storageState: async ({ authAccount }, use) => {
+    storageState: async ({ authAccount }, use, testInfo) => {
         if (!authAccount) {
             await use(undefined);
             return;
+        }
+
+        // Renew a session that aged out mid-run, rather than replaying a dead one.
+        // globalSetup signs in once at t=0 and every test replays the file it wrote,
+        // so a run longer than the identity provider's idle window reaches its later
+        // tests signed out - which surfaces as the portal home never offering "Start
+        // a new declaration", naming a locator that was never the problem.
+        //
+        // Two workers must never renew ONE account at the same moment: a TOTP code is
+        // bound to a 30-second window, so both would submit the same code and the
+        // second is rejected. What prevents it is the lock a single-login profile's
+        // spec declares - the runner will not start two such tests concurrently - so
+        // the safety of this line lives in the spec, not here.
+        const signInMs = await signInOnDemand(authAccount.profile, testInfo.parallelIndex);
+
+        // Signing in must not come out of the test's own budget, for the same reason
+        // queueing must not - see the note above. Nothing is added when the session
+        // was still young, because nothing was spent.
+        if (signInMs > 0 && testInfo.timeout > 0) {
+            testInfo.setTimeout(testInfo.timeout + signInMs);
         }
 
         await use(authStatePath(authAccount.profile, authAccount.accountNumber));

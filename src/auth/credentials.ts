@@ -263,15 +263,6 @@ function readPoolAccount(
 }
 
 
-/**
- * True when the profile has a single login that every worker is handed. Its tests
- * cannot run concurrently, so they take turns on the account lock - see the
- * authAccount fixture.
- */
-export function isSingleAccountProfile(profile: CompanyProfile): boolean {
-    return getCredentialsPool(profile).length === 1;
-}
-
 export function accountFor(profile: CompanyProfile, parallelIndex: number): UserCredentials {
     const pool = getCredentialsPool(profile);
 

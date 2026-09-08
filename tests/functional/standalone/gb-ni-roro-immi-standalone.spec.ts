@@ -14,10 +14,13 @@ import { documentReference } from '../../../src/test-data/document-reference-dat
 import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
 import { additionalInformation } from '../../../src/test-data/additional-information-data';
+import { inwardProcessingAuthorisationNumber } from '../../../src/helper/authorisation-helper';
 import { previousDocument } from '../../../src/test-data/previous-document-data';
 import { PREVIOUS_DOCUMENT_TYPE } from '../../../src/constant/previous-document-type-constant';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { locationOfGoodsOfOther, inwardProcessingLocationOfGoods } from '../../../src/helper/location-of-goods-helper';
+import { PORT_OF_ARRIVAL } from '../../../src/constant/port-of-arrival-constant';
+import { WAREHOUSE_TYPE } from '../../../src/constant/warehouse-type-constant';
 
 const IMMI_PRELODGED = '4442';
 const IMMI_ARRIVED = '4443';
@@ -76,7 +79,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     );
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP is created and submitted successfully (4000-1SG)', { tag: ['@smoke', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP is created and submitted successfully (4000-1SG)', { tag: ['@smoke', '@regression', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct with TGP');
     reportTestCaseLink(IMMI_PRELODGED);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -160,8 +163,11 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         consignmentOverrides: {
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
           representationType: REPRESENTATION_TYPE.DIRECT,
+          holdersOfAuthorisation: [
+              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })
+          ],
         },
-  
+
         goodsItemOverrides: immiStandaloneGoodsItem({
           useTGP: true,
           tgpRecord: TGP_RECORD.MACHINERY_TGP456,
@@ -169,7 +175,14 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EL,
           documentReferences: [
             documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
+            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW }),
             documentReference({ documentCode: DOCUMENT_CODE.N730, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
+          ],
+           additionalInformations: [
+            additionalInformation({ code: 'ECONR', description: 'Reg No. 1234567890' })
+          ],
+          additionalProcedureCodes: [
+            ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
           ],
         }),
       })
@@ -191,6 +204,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         consignmentOverrides: {
           isPreLodged: false,
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
           representationType: REPRESENTATION_TYPE.DIRECT,
         },
         goodsItemOverrides: immiStandaloneGoodsItem({
@@ -285,9 +299,13 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
             documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW}),
           ],
           additionalInformations: [
-            // 10200 restates the IP authorisation from the C601 above, prefixed with "IP".
             additionalInformation({ code: 'ECONR', description: 'Reg No. 1234567890' }),
-            additionalInformation({ code: 'GEN45', description: '10200' }),
+            // 10200 restates the IP authorisation the C601 above cites, without the
+            // country the document keeps - see inwardProcessingAuthorisationNumber.
+            additionalInformation({
+              code: '10200',
+              description: inwardProcessingAuthorisationNumber(IMPORTER_IPO),
+            }),
           ],
   
           // Declared on the "Additional procedure codes" tab, on TOP of the 1EN chosen
@@ -317,7 +335,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
           isPreLodged: false,
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
           representationType: REPRESENTATION_TYPE.DIRECT,
-          locationOfGoods: locationOfGoodsOfOther(IMPORTER_IPO),
+          locationOfGoods: locationOfGoodsOfOther(IMPORTER_CWP),
           headerPreviousDocuments: [
             previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: '4GBXI896458895015-0611EC04' }),
             previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCS, documentReference: 'DEF' }),
@@ -333,9 +351,10 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
           tgpRecord: TGP_RECORD.TEXTILES_TGP123,
           procedureCode: PROCEDURE_CODES.FREE_CIRC_FROM_CW_4071,
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_NON_EXCISE_1LG,
+          warehouseType: WAREHOUSE_TYPE.PRIVATE_CUSTOMS_WAREHOUSE,
           documentReferences: [
             documentReference({ documentCode: DOCUMENT_CODE.N760, documentStatus: DOCUMENT_STATUS.AC,   documentReference: '0054039' }),
-            documentReference({ documentCode: DOCUMENT_CODE.C601, documentStatus: undefined,            documentReference: IMPORTER_IPO }),
+            //documentReference({ documentCode: DOCUMENT_CODE.C601, documentStatus: undefined,            documentReference: IMPORTER_IPO }),
             documentReference({ documentCode: DOCUMENT_CODE.C517, documentStatus: undefined,            documentReference: IMPORTER_CWP }),
           ],
   
@@ -364,6 +383,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
           isPreLodged: false,
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
           representationType: REPRESENTATION_TYPE.INDIRECT,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
         },
   
         goodsItemOverrides: immiStandaloneGoodsItem({
@@ -392,6 +412,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
           isPreLodged: false,
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
           representationType: REPRESENTATION_TYPE.DIRECT,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
         },
   
         goodsItemOverrides: immiStandaloneGoodsItem({
@@ -409,10 +430,12 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
   });
 });
 
-test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Declare by themself', () => {
+test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Declare by themself', { lock: COMPANY_PROFILE.IMPORTER }, () => {
   // The importer signs in as their OWN company, so there is NO representation:
   // no representTrader here, and representationType is left undefined so the flow
   // skips the "Representation information" screen.
+  // The lock on the describe above: this company has one login, so its tests take
+  // turns wherever they live. Every spec running as it must name the same lock.
   test.use({ authProfile: COMPANY_PROFILE.IMPORTER });
 
   test.beforeEach(async () => {
@@ -526,6 +549,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           isPreLodged: false,
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
           representationType: undefined,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
         },
         goodsItemOverrides: immiStandaloneGoodsItem({
           useTGP: true,

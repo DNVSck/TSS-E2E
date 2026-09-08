@@ -15,6 +15,69 @@ export async function selectDropdownValue(
     await expect(dropdown).toHaveValue(value);
 }
 
+/** How long a filled value gets to survive before the fill is tried again. */
+const VALUE_STICKS_TIMEOUT = 1_000;
+/** How long to keep re-filling a field the page keeps clearing. */
+const FILL_RETRY_TIMEOUT = 15_000;
+
+
+export async function fillInputValue(
+    input: Locator,
+    value: string,
+    timeout = FILL_RETRY_TIMEOUT
+): Promise<void> {
+    await expect(async () => {
+        await input.fill(value);
+        await expect(input).toHaveValue(value, { timeout: VALUE_STICKS_TIMEOUT });
+    }).toPass({ timeout });
+}
+
+/** How long ONE click gets to take the wizard off the screen it is on. */
+const SUBMIT_LANDING_TIMEOUT = 10_000;
+const SUBMIT_CLICK_ATTEMPTS = 3;
+
+/**
+ * Click a button that ends a wizard screen, and make sure the screen actually ended.
+ *
+ * These pages swallow the first click while they are still hydrating: Playwright
+ * dispatches it, the app ignores it, and the run carries on to hunt for a field of the
+ * next screen that never opened. Observed on sit 2026-09-08 on the "Complete and
+ * submit" of the additional-information wizard.
+ *
+ * Retrying is safe for the same reason it is safe in switchToTabAndClickNew, and only
+ * for that reason: the route is what says whether anything happened. A submit that did
+ * not leave the screen did not commit, so clicking again cannot write a second record.
+ * A submit that DID commit has already changed the URL, and this returns without
+ * clicking anything.
+ */
+export async function clickToLeaveScreen(page: Page, button: Locator): Promise<void> {
+    const from = StringUtil.stripTrailingSlashes(new URL(page.url()).pathname);
+
+    for (let attempt = 1; attempt <= SUBMIT_CLICK_ATTEMPTS; attempt++) {
+        await button.click();
+
+        try {
+            await page.waitForURL(
+                url => StringUtil.stripTrailingSlashes(url.pathname) !== from,
+                { waitUntil: 'domcontentloaded', timeout: SUBMIT_LANDING_TIMEOUT }
+            );
+            return;
+        } catch (error) {
+            if (attempt === SUBMIT_CLICK_ATTEMPTS) {
+                throw new Error(
+                    `The screen at "${from}" did not close after ${SUBMIT_CLICK_ATTEMPTS} clicks. ` +
+                    `Errors on the page: ${(await readErrorSummary(page)).join('; ') || 'none'}. ` +
+                    `Last failure: ${(error as Error).message}`
+                );
+            }
+
+            // Say so in the report: an app that needs a second click is worth knowing
+            // about even when the retry rescues the run.
+            await ReportLog.info(`The screen did not close on attempt ${attempt}; clicking again.`);
+        }
+    }
+}
+
 // Locate a GOV.UK summary-list row's value by its label. The label is exact-matched
 // (:text-is) so e.g. "Status" is not also satisfied by a "Goods domestic status" row
 // on the same list. Callers pass the label already resolved through t(), keeping the

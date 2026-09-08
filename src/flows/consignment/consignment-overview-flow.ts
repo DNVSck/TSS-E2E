@@ -44,7 +44,15 @@ export class ConsignmentOverviewFlow {
 
         return ReportLog.step(`Wait for the consignment to reach ${expected}`, async () => {
             const status = await this.consignmentDetailPage.waitForStatus(expectedStatusKey);
+            // Reported before it is asserted, so the report still names the status the
+            // consignment came to rest on when the line below throws.
             ReportLog.setParameter('Consignment status', status);
+
+            // The verdict belongs here. waitForStatus deliberately swallows its own
+            // timeout and hands back whatever it last read - it decides how long to
+            // wait, not whether the answer is right - so without this a consignment
+            // that never moved ended the journey green.
+            expect(status, `Consignment status (waited for ${expected})`).toBe(expected);
             return status;
         });
     }

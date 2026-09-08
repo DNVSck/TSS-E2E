@@ -29,9 +29,6 @@ const SCREEN_PAINT_TIMEOUT = 90_000;
  */
 const NIRMS_SCREEN_TIMEOUT = 5_000;
 
-/** How long to look for the supervising customs office screen before deciding it is absent. */
-const SUPERVISING_OFFICE_SCREEN_TIMEOUT = 5_000;
-
 /** The radio group on the NIRMS screen, addressed by the name its inputs post. */
 const USE_NIRMS_RADIO_NAME = 'useNirms';
 
@@ -319,27 +316,13 @@ export class GoodsDeclarePage extends BasePage {
      * "Supervising customs office" - the office that oversees the procedure, on its own
      * screen ahead of the warehouse one.
      *
-     * Only some procedure codes reach it, and the exact set is the service's rule rather
-     * than something this page can derive, so the screen is looked for rather than
-     * assumed. The caller decides when it is worth looking - see
-     * GoodsItemSteps.selectSupervisingCustomsOfficeIfAsked.
-     *
-     * Returns whether the screen was shown.
+     * Which procedure codes reach it is the caller's rule to know - see
+     * GoodsItemSteps.selectSupervisingCustomsOfficeIfAsked - so this one fills the
+     * screen and moves on, the same as any other wizard step.
      */
-    async selectSupervisingCustomsOfficeIfPresent(office: string): Promise<boolean> {
-        // waitFor rather than isVisible, for the reason given on answerUseNirmsIfPresent:
-        // isVisible ignores its timeout and would call a screen still painting "absent".
-        const shown = await this.supervisingCustomsOfficeDropdown
-            .waitFor({ state: 'visible', timeout: SUPERVISING_OFFICE_SCREEN_TIMEOUT })
-            .then(() => true, () => false);
-
-        if (!shown) {
-            return false;
-        }
-
+    async selectSupervisingCustomsOffice(office: string): Promise<void> {
         await selectDropdownValue(this.supervisingCustomsOfficeDropdown, office);
         await this.clickContinueButton();
-        return true;
     }
 
     /**

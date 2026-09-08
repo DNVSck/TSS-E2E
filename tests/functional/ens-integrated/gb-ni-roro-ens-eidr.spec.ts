@@ -66,7 +66,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
     );
   });
 
-  test('Verify ENS-EIDR - RoRo (Accompanied), goods item requires container details, is created and submitted successfully (4000-000)', { tag: ['@smoke', '@happyPath', '@regression'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
+  test('Verify ENS-EIDR - RoRo (Accompanied), goods item requires container details, is created and submitted successfully (4000-000)', { tag: ['@happyPath', '@regression'] }, async ({ createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, ics2NotificationFlow }, testInfo) => {
     await ReportLog.setStory('EIDR - GB to NI RoRo Accompanied with a goods item declaring its own container');
     // Different containers on the consignment makes each goods item declare its own
     // container details.
