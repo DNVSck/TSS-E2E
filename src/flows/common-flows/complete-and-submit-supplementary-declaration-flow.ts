@@ -20,15 +20,8 @@ import { ReportLog } from '../../core/report/report-log';
 export interface CompleteSupplementaryDeclarationOptions {
     testInfo: TestInfo;
     url: string;
-    /**
-     * The local reference number of the frontier declaration this SD belongs to - the
-     * "DEC..." reference of an SFD or an EIDR. It is how the declaration is FOUND, and
-     * then what it is checked against, so a test can never complete somebody else's SD.
-     *
-     * Named for what it is rather than which journey produced it: a caller says
-     * `lrn: sfdLrn` and keeps the specific name on its own side.
-     */
-    lrn: string;
+    movementLrn: string;
+    frontierLrn: string;
     overrides?: Partial<SupplementaryDeclarationData>;
     /**
      * What the declaration may settle on, when the method of payment alone does not
@@ -78,12 +71,11 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
     async completeSupplementaryDeclaration(
         options: CompleteSupplementaryDeclarationOptions
     ): Promise<string> {
-        const { testInfo, url, lrn } = options;
         const input = supplementaryDeclaration(options.overrides);
 
         reportTestAccount(this.authAccount, 'completeSupplementaryDeclaration');
 
-        const reference = await this.openSupplementaryDeclarationFor(lrn, url, testInfo);
+        const reference = await this.openSupplementaryDeclarationFor(options);
         await this.completeConsignmentHeader(input);
         await this.chooseMethodOfPayment(input);
         await this.removeHoldersOfAuthorisation(input);
@@ -94,35 +86,37 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
     }
 
     /**
-     * Find the declaration raised against this frontier declaration, open it, and prove
-     * it really is the right one.
+     * Find the declaration raised under this movement, open it, and prove it really is
+     * the right one.
      *
      * The proof matters more here than anywhere else in the suite. The importer account
      * on SIT carries hundreds of SD drafts, the suite adds to them on every run, and
      * they are indistinguishable on the list - so "the one the search returned" has to
-     * be checked against the declaration it claims to belong to before a single answer
-     * is typed into it.
+     * be checked before a single answer is typed into it. It is checked against the
+     * FRONTIER declaration rather than the movement that found it, so the reference
+     * that proves the match is not the one that produced it.
      */
     private async openSupplementaryDeclarationFor(
-        lrn: string,
-        url: string,
-        testInfo: TestInfo
+        options: CompleteSupplementaryDeclarationOptions
     ): Promise<string> {
+        const { testInfo, url, movementLrn, frontierLrn } = options;
+
         return ReportLog.step(
-            `Find the supplementary declaration raised against ${lrn}`,
+            `Find the supplementary declaration raised under ${movementLrn}`,
             async () => {
                 await this.basePage.navigateToPortal(url, testInfo);
                 await this.portalPage.openDraftDeclarations();
 
                 const reference = await this.declarationOverviewPage
-                    .openSupplementaryDeclarationFor(lrn);
+                    .openSupplementaryDeclarationFor(movementLrn);
 
                 expect(reference, 'Supplementary declaration reference')
                     .toMatch(LOCAL_REFERENCE.SUP_PREFIX);
                 expect(
                     await this.overviewPage.getSimplifiedDeclarationReference(),
-                    'The frontier declaration this SD was raised against'
-                ).toBe(lrn);
+                    `The frontier declaration this SD was raised from `
+                    + `(found under movement ${movementLrn})`
+                ).toBe(frontierLrn);
 
                 ReportLog.setParameter('Supplementary declaration', reference);
                 return reference;

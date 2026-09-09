@@ -28,6 +28,7 @@ export interface EnsDeclarationOptions {
 export interface DraftEnsDeclaration {
     /** The ENS consignment reference (DEC...) - what the overview search looks it up by. */
     consignmentReference: string;
+    movementLrn: string;
     transportDocumentNumber: string;
     /** Which conditional screens this journey reached; a post-submit check needs it. */
     goodsJourney: GoodsJourneyContext;
@@ -82,7 +83,7 @@ export class CreateDraftEnsDeclarationFlow {
         await this.accessFlow.openService({ baseUrl: url, testInfo });
         await this.routeFlow.completeInitialFormDeclaration(routeData);
         await this.movementHeaderFlow.completeNewGoodsMovementDeclaration(movementData);
-        await this.movementOverviewFlow.verifyDraftMovementOverview();
+        const movementLrn = await this.movementOverviewFlow.verifyDraftMovementOverview();
         await this.addNewEnsConsignmentFlow.addNewEnsConsignment(consignmentData);
         // Report the consignment reference (DEC...) as soon as its draft exists, so a
         // run captures it even if a later step fails.
@@ -110,6 +111,7 @@ export class CreateDraftEnsDeclarationFlow {
 
         return {
             consignmentReference,
+            movementLrn,
             transportDocumentNumber: consignmentData.transportDocumentNumber,
             goodsJourney,
             procedureCode: goodsData.procedureCode,

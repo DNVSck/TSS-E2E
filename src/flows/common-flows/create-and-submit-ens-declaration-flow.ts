@@ -7,6 +7,7 @@ import { SUPERVISING_CUSTOMS_OFFICE } from '../../constant/supervising-customs-o
 
 export interface EnsDeclarationResult {
     transportDocumentNumber: string;
+    movementLrn: string;
     ensMrn: string;
     generatedConsignment?: GeneratedConsignment;
 }
@@ -29,6 +30,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
 
         return {
             transportDocumentNumber: draft.transportDocumentNumber,
+            movementLrn: draft.movementLrn,
             ensMrn,
             generatedConsignment,
         };
