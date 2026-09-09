@@ -19,3 +19,14 @@ export const TSS_DOMAIN = 'nc-tss.uk';
 export function tssOrigin(environment: string): string {
     return `https://${environment}.${TSS_DOMAIN}`;
 }
+
+/**
+ * The origin of an environment's case-management app ("sit", "sit2").
+ *
+ * A subdomain OF the environment rather than a path on it - case-management.sit.nc-tss.uk,
+ * not sit.nc-tss.uk/case-management - so it cannot be built from tssOrigin by appending,
+ * and gets its own function for the same reason that one has one.
+ */
+export function caseManagementOrigin(environment: string): string {
+    return `https://case-management.${environment}.${TSS_DOMAIN}`;
+}

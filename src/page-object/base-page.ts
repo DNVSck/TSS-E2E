@@ -1,5 +1,7 @@
 import { Page, Locator, TestInfo } from '@playwright/test';
-import { readFieldIfPresent, hrefsOf, clickToLeaveScreen } from '../helper/element-helper';
+import {
+    readFieldIfPresent, hrefsOf, clickToLeaveScreen, clickLinkAndWaitForRoute,
+} from '../helper/element-helper';
 import { TFunction, localeForProject } from '../fixtures/locale-fixture';
 import { LOCALES_CONSTANT } from '../constant/locales-constant';
 import { NavigationBanner } from './components/navigation-banner';
@@ -18,6 +20,8 @@ export interface ActionButton {
 export class BasePage {
     protected readonly commonContinueButton: Locator;
     protected readonly commonFinishButton: Locator;
+    protected readonly commonBackLink: Locator;
+    protected readonly commonSummaryValues: Locator;
     protected readonly t?: TFunction;
 
     /**
@@ -55,6 +59,10 @@ export class BasePage {
         this.commonFinishButton = page.locator(
             "button.govuk-button[value='finish']"
         )
+
+        this.commonBackLink = page.locator("a[data-module='govuk-back-link']");
+
+        this.commonSummaryValues = page.locator('.govuk-summary-list__value');
     }
 
     /** The pixels, not the Page - so a caller can name its own screenshot and no more. */
@@ -135,6 +143,10 @@ export class BasePage {
      */
     async clickFinishButton(): Promise<void> {
         await clickToLeaveScreen(this.page, this.commonFinishButton);
+    }
+
+    async clickBackLink(): Promise<void> {
+        await clickLinkAndWaitForRoute(this.page, this.commonBackLink);
     }
 
     /**

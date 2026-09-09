@@ -39,7 +39,9 @@ export class AddNewImmiStandaloneConsignmentFlow {
             // Asked on both branches, unlike FFD, which skips it once the goods have
             // arrived. The pre-lodged/arrived difference is in the VALUE, and the data
             // factory has already resolved it - see ImmiStandaloneConsignmentData.
-            await this.movementSteps.inputArrivalDateTime(input.arrivalDateTime);
+            await this.movementSteps.inputArrivalDateTime(
+                input.arrivalDateTime, { collectsYear: !input.isPreLodged }
+            );
             await this.enterArrivalLocation(input);
 
             await this.consignmentSteps.fillExporterDetails(input.exporterEORI, toPartyAddress('exporter', input));

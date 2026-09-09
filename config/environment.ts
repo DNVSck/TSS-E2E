@@ -1,5 +1,5 @@
 import { LOCALES_CONSTANT } from '../src/constant/locales-constant';
-import { tssOrigin } from '../src/constant/tss-host-constant';
+import { tssOrigin, caseManagementOrigin } from '../src/constant/tss-host-constant';
 
 export type Locale = 'all' | 'en' | 'cy';
 
@@ -151,4 +151,8 @@ export const CDS_MOCK_HOST = tssOrigin(ENV);
 export const CDS_TOKEN = process.env.CDS_TOKEN?.trim() ?? '';
 
 export const IS_CDS_MOCK_AVAILABLE = CDS_TOKEN !== '';
+
+export const CASE_MANAGEMENT_HOST = caseManagementOrigin(ENV);
+export const CASE_MANAGEMENT_USER_NAME = process.env.CASE_MANAGEMENT_USER_NAME?.trim() ?? '';
+export const CASE_MANAGEMENT_PASSWORD = process.env.CASE_MANAGEMENT_PASSWORD?.trim() ?? '';
 

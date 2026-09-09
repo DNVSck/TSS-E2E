@@ -1,11 +1,13 @@
 import { APIRequestContext, request, test } from '@playwright/test';
 import {
   RMQ_HOST, RMQ_USERNAME, RMQ_PWD,
-  CDS_MOCK_HOST, CDS_TOKEN,
+  CDS_MOCK_HOST, CDS_TOKEN, CASE_MANAGEMENT_HOST,
 } from '../../config/environment';
 import { StringUtil } from '../core/util/string-util';
 import { CdsMockApiClient } from '../api-client/cds-mock-api-client';
 import { Ics2MockApiClient } from '../api-client/ics2-mock-api-client';
+import { CaseManagementApiClient } from '../api-client/case-management-api-client';
+import { caseManagementSession } from '../auth/case-management-session';
 
 /**
  * A base URL a relative path can be appended to.
@@ -41,6 +43,8 @@ export type APIFixtureType = {
   cdsMockApiRequest: APIRequestContext;
   cdsMockApiClient: CdsMockApiClient;
   ics2MockApiClient: Ics2MockApiClient;
+  caseManagementApiRequest: APIRequestContext;
+  caseManagementApiClient: CaseManagementApiClient;
 }
 
 type ExtendParams = Parameters<typeof test.extend<APIFixtureType>>;
@@ -82,6 +86,27 @@ export const apiFixture: ExtendParams[0] = {
 
   ics2MockApiClient: async ({ rmqApiRequest }, use) => {
     await use(new Ics2MockApiClient(rmqApiRequest));
+  },
+
+
+  caseManagementApiRequest: async ({}, // NOSONAR typescript:S3799
+     use) => {
+    const session = await caseManagementSession();
+    const ctx = await request.newContext({
+      baseURL: serviceBase(CASE_MANAGEMENT_HOST),
+      storageState: session.storageState,
+      extraHTTPHeaders: {
+        'Content-Type': 'application/json',
+        'x-xsrf-token': session.xsrfToken,
+      },
+    });
+
+    await use(ctx);
+    await ctx.dispose();
+  },
+
+  caseManagementApiClient: async ({ caseManagementApiRequest }, use) => {
+    await use(new CaseManagementApiClient(caseManagementApiRequest));
   },
 };
 

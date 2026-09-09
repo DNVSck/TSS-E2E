@@ -1,7 +1,6 @@
 import { BasePage } from "./base-page";
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 import { fillInputValue, selectAutocompleteValue } from '../helper/element-helper';
-import { AdditionalInformationData } from '../test-data/additional-information-data';
 
 /**
  * The "New additional information" wizard, reached from the goods item's
@@ -32,18 +31,17 @@ export class AdditionalInformationDeclarePage extends BasePage {
 
     async enterDescription(description: string): Promise<void> {
         await fillInputValue(this.descriptionInput, description);
+        await expect(this.descriptionInput).toHaveValue(description);
         await this.clickContinueButton();
+    }
+
+    async listSummaryValues(): Promise<string[]> {
+        await this.commonSummaryValues.first().waitFor({ state: 'visible' });
+        return (await this.commonSummaryValues.allInnerTexts()).map(value => value.trim());
     }
 
     /** "Check your answers" — the "Complete and submit" button commits the record. */
     async confirmAndSubmit(): Promise<void> {
         await this.clickFinishButton();
-    }
-
-    /** The whole wizard for a single additional-information record. */
-    async declareAdditionalInformation(input: AdditionalInformationData): Promise<void> {
-        await this.selectAdditionalInformationCode(input.code);
-        await this.enterDescription(input.description);
-        await this.confirmAndSubmit();
     }
 }

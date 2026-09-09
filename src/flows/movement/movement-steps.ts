@@ -1,5 +1,5 @@
 import { TaskListPage } from '../../page-object/task-list-page';
-import { MovementDeclarePage } from '../../page-object/movement-declare-page';
+import { MovementDeclarePage, ArrivalDateTimeOptions } from '../../page-object/movement-declare-page';
 import { ReportLog } from '../../core/report/report-log';
 
 /**
@@ -134,9 +134,12 @@ export class MovementSteps {
 
     // ===================== Arrival =====================
 
-    async inputArrivalDateTime(arrivalDateTime?: string): Promise<void> {
+    async inputArrivalDateTime(
+        arrivalDateTime?: string,
+        options?: ArrivalDateTimeOptions
+    ): Promise<void> {
         await ReportLog.step('Input when the goods will arrive', async () => {
-            await this.movementDeclarePage.inputArrivalDateTime(arrivalDateTime);
+            await this.movementDeclarePage.inputArrivalDateTime(arrivalDateTime, options);
             await this.movementDeclarePage.clickContinueButton();
         });
     }

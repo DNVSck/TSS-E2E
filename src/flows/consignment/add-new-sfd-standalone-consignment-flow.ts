@@ -42,7 +42,9 @@ export class AddNewSfdStandaloneConsignmentFlow {
             // timing out on a port dropdown that was one screen further on. The
             // pre-lodged/arrived difference is in the VALUE, which the data factory has
             // already resolved.
-            await this.movementSteps.inputArrivalDateTime(input.arrivalDateTime);
+            await this.movementSteps.inputArrivalDateTime(
+                input.arrivalDateTime, { collectsYear: !input.isPreLodged }
+            );
             await this.movementSteps.selectPortOfArrival(input.portOfArrival);
 
             await this.consignmentSteps.declareControlledGoods(input.isControlledGoods);

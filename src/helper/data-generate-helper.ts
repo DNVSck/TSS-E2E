@@ -12,8 +12,11 @@ import { WarehouseTypeCode } from '../constant/warehouse-type-constant';
 // factories use one, a page object uses the other as a default.
 
 
+const ARRIVAL_LEAD_MS = 30 * 60 * 1000;
+const ARRIVAL_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
+
 export function generateValidArrivalDate(): string {
-    const arrival = new Date(Date.now() + 30 * 60 * 1000);
+    const arrival = new Date(Date.now() + ARRIVAL_LEAD_MS);
     return DateTimeUtil.formatUtcDateTimeLocal(arrival);
 }
 
@@ -25,12 +28,14 @@ export function generateValidArrivalDate(): string {
  * not arrived yet, so its time must be ahead; an arrived one is already here, so a time
  * in the future contradicts the answer given on the wizard's first screen.
  *
- * Kept 30 minutes back rather than days: the screen collects day, month, hour and minute
- * but NO year, so anything far in the past is read against the current year and lands
- * somewhere nobody intended - and around 1 January it lands in the wrong one entirely.
+ * A month back, far enough that the arrival cannot be mistaken for the run that created
+ * it. That is only safe while every caller is an arrived standalone journey, because
+ * that screen collects a year: on a screen without one, a month back is read against the
+ * current year and lands in the FUTURE whenever the offset crosses 1 January. A caller
+ * on a yearless screen must bring this value back under a day.
  */
 export function generatePastArrivalDate(): string {
-    const arrival = new Date(Date.now() - 30 * 60 * 1000);
+    const arrival = new Date(Date.now() - ARRIVAL_LOOKBACK_MS);
     return DateTimeUtil.formatUtcDateTimeLocal(arrival);
 }
 

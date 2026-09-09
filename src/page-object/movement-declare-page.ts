@@ -5,7 +5,9 @@ import { SEPARATE_HAULIER } from "../constant/separate-haulier-constant";
 import { generateValidArrivalDate } from '../helper/data-generate-helper';
 import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
 
-
+export interface ArrivalDateTimeOptions {
+    collectsYear?: boolean;
+}
 
 export class MovementDeclarePage extends BasePage {
 
@@ -30,6 +32,7 @@ export class MovementDeclarePage extends BasePage {
 
     private readonly arrivalDayInput: Locator;
     private readonly arrivalMonthInput: Locator;
+    private readonly arrivalYearInput: Locator;
 
     private readonly arrivalTimeHourInput: Locator;
     private readonly arrivalTimeMinuteInput: Locator;
@@ -84,6 +87,7 @@ export class MovementDeclarePage extends BasePage {
         //"Enter arrival date and time"
         this.arrivalDayInput = page.locator("input#arrivalDate-day");
         this.arrivalMonthInput = page.locator("input#arrivalDate-month");
+        this.arrivalYearInput = page.locator("input#arrivalDate-year");
         this.arrivalTimeHourInput = page.locator("input#arrivalTime-hour");
         this.arrivalTimeMinuteInput = page.locator("input#arrivalTime-minute");
 
@@ -198,13 +202,29 @@ export class MovementDeclarePage extends BasePage {
         await this.portOfArrivalOthersInput.fill(locationOfGoods);
     }
 
-    async inputArrivalDateTime(arrivalDateTime?: string): Promise<void> {
+    async inputArrivalDateTime(
+        arrivalDateTime?: string,
+        options: ArrivalDateTimeOptions = {}
+    ): Promise<void> {
         const value = arrivalDateTime ?? generateValidArrivalDate();
 
-        const [, month, day, hour, minute] = value.split(/[-T:]/);
+        const [year, month, day, hour, minute] = value.split(/[-T:]/);
+
+        if (!year || !month || !day || !hour || !minute) {
+            throw new Error(
+                `Arrival date/time "${value}" is not a full date and time - expected `
+                + `YYYY-MM-DDTHH:mm (the shape generateValidArrivalDate returns), so the `
+                + `screen cannot be filled.`
+            );
+        }
 
         await this.arrivalDayInput.fill(day);
         await this.arrivalMonthInput.fill(month);
+
+        if (options.collectsYear) {
+            await this.arrivalYearInput.fill(year);
+        }
+
         await this.arrivalTimeHourInput.fill(hour);
         await this.arrivalTimeMinuteInput.fill(minute);
     }

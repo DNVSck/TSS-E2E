@@ -1,4 +1,5 @@
-﻿import { ReportLog } from '../../core/report/report-log';
+﻿import { expect } from '@playwright/test';
+import { ReportLog } from '../../core/report/report-log';
 import { GoodsOverviewPage } from "../../page-object/goods-overview-page";
 import { TFunction } from '../../fixtures/locale-fixture';
 import { DocumentReferenceDeclarePage } from "../../page-object/document-reference-declare-page";
@@ -12,6 +13,8 @@ import { AdditionalInformationData } from "../../test-data/additional-informatio
 import { PreviousDocumentData } from "../../test-data/previous-document-data";
 import { TgpRecordData } from "../../test-data/tgp-record-data";
 import { hidesSupplementaryUnit } from "../../helper/procedure-code-helper";
+
+const DESCRIPTION_ATTEMPTS = 3;
 
 /**
  * Declares the goods-item overview tabs that each hold a list of records
@@ -83,10 +86,47 @@ export class GoodsOverviewFlow {
             for (const [index, item] of items.entries()) {
                 await ReportLog.step(`Add additional information ${index + 1} of ${items.length}`, async () => {
                     await this.goodsOverviewPage.declareNewAdditionalInformation();
-                    await this.additionalInformationDeclarePage.declareAdditionalInformation(item);
+                    await this.additionalInformationDeclarePage.selectAdditionalInformationCode(item.code);
+                    await this.additionalInformationDeclarePage.enterDescription(item.description);
+                    await this.ensureDescriptionReachedTheRecord(item);
+                    await this.additionalInformationDeclarePage.confirmAndSubmit();
                 });
             }
         });
+    }
+
+
+    private async ensureDescriptionReachedTheRecord(item: AdditionalInformationData): Promise<void> {
+        let summary: string[] = [];
+
+        for (let attempt = 1; attempt <= DESCRIPTION_ATTEMPTS; attempt++) {
+            summary = await this.additionalInformationDeclarePage.listSummaryValues();
+
+            if (summary.includes(item.description)) {
+                return;
+            }
+
+            if (attempt === DESCRIPTION_ATTEMPTS) {
+                break;
+            }
+
+            await ReportLog.info(
+                `Additional information "${item.code}" reached Check your answers without its `
+                + `description on attempt ${attempt}; going back to enter it again.`
+            );
+
+            await this.additionalInformationDeclarePage.clickBackLink();
+            await this.additionalInformationDeclarePage.enterDescription(item.description);
+        }
+
+        ReportLog.setParameter(`Additional information ${item.code}`, summary.join(' | '));
+
+        expect(
+            summary,
+            `additional information "${item.code}" should carry its description after `
+            + `${DESCRIPTION_ATTEMPTS} attempts - values shown on Check your answers `
+            + `(a dropped field reads "Not provided")`
+        ).toContain(item.description);
     }
 
     /**
