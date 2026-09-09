@@ -7,6 +7,8 @@ import { CompanyProfile, UserCredentials, accountFor, getCredentialsPool, profil
 
 const SIGN_IN_TIMEOUT_MS = 60_000;
 
+const PORTAL_OPEN_TIMEOUT_MS = 60_000;
+
 /**
  * Signs in one account per parallel worker (per requested profile) and caches
  * each session, so no test ever performs an interactive sign-in. `workerCount`
@@ -108,7 +110,9 @@ async function signInAndSaveState(
         const portalPage = new PortalPage(page);
         const signInPage = new SignInPage(page);
 
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+        await page.goto(BASE_URL, {
+            waitUntil: 'domcontentloaded', timeout: PORTAL_OPEN_TIMEOUT_MS,
+        });
         await portalPage.clickSignIn();
         await signInPage.signIn(credentials);
 
