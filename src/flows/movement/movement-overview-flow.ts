@@ -28,12 +28,13 @@ export class MovementOverviewFlow {
         await this.movementOverviewPage.waitForSubmittedMovementOverview();
     }
 
-    async verifyDraftMovementOverview(): Promise<void> {
-        await ReportLog.step('Validate goods movement overview', async () => {
+    async verifyDraftMovementOverview(): Promise<string> {
+        return ReportLog.step('Validate goods movement overview', async () => {
             const { localReferenceNumber, declarationStatus } =
                 await this.movementOverviewPage.assertDraftMovementOverview();
             ReportLog.setParameter('Movement LRN', localReferenceNumber);
             ReportLog.setParameter('Movement status', declarationStatus);
+            return localReferenceNumber;
         });
     }
 

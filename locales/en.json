@@ -55,7 +55,7 @@
     "traderInputRequired": "Trader Input Required",
     "closed": "Closed",
     "processing": "Processing",
-    "paymentPending": "PaymentPending",
+    "paymentPending": "Pending payment",
     "taxCalculation": "Tax calculation"
   },
   "accessDenied": {

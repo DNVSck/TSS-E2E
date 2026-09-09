@@ -14,6 +14,11 @@ export interface GenerateSdDraftOptions {
     overrides?: Partial<SupplementaryDeclarationMovementData>;
 }
 
+export interface SupplementaryDeclarationSource {
+    movementLrn: string;
+    frontierLrn: string;
+}
+
 
 export class GenerateSdDraftFromEnsSfdFlow {
     constructor(
@@ -25,11 +30,11 @@ export class GenerateSdDraftFromEnsSfdFlow {
     /** Declare an ENS-SFD movement, clear it, and represent the trader it belongs to. */
     async generateSdDraft(
         options: GenerateSdDraftOptions
-    ): Promise<string> {
+    ): Promise<SupplementaryDeclarationSource> {
         const { testInfo, url } = options;
         const input = supplementaryDeclarationMovement(options.overrides);
 
-        const { generatedConsignment: sfd } = await this.createAndSubmitEnsDeclarationFlow
+        const { generatedConsignment: sfd, movementLrn } = await this.createAndSubmitEnsDeclarationFlow
             .completeEnsDeclarationFlow({
                 testInfo,
                 url,
@@ -55,8 +60,9 @@ export class GenerateSdDraftFromEnsSfdFlow {
         await this.representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
 
         // Reported as well as returned, so a run that later fails to find the SD says
-        // which declaration it was looking for.
+        // which movement it was looking under and which declaration it expected.
+        ReportLog.setParameter('Supplementary declaration raised under', movementLrn);
         ReportLog.setParameter('Supplementary declaration raised from', sfd.lrn);
-        return sfd.lrn;
+        return { movementLrn, frontierLrn: sfd.lrn };
     }
 }

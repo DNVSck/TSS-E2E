@@ -73,35 +73,34 @@ export class DeclarationOverviewPage extends BasePage {
     }
 
     /**
-     * Find and open the supplementary declaration raised against a frontier
-     * declaration, and return its own reference.
+     * Find and open the supplementary declaration raised under a movement, and return
+     * its own reference.
      *
-     * Searching the FRONTIER reference returns two rows - that declaration and its SD -
-     * of which only one is a supplementary declaration, so the TYPE of the link is what
-     * identifies it rather than its position. The SD carries the frontier reference on
-     * its "Simplified Declaration Reference" row, which is what makes it findable this
-     * way; see SupplementaryDeclarationOverviewPage.getSimplifiedDeclarationReference,
-     * which the flow uses to prove the pair really is a pair.
+     * Searching the MOVEMENT reference returns three cards - the movement itself, the
+     * frontier declaration it generated, and the SD raised from that - of which only
+     * one is a supplementary declaration, so the TYPE of the link is what identifies it
+     * rather than its position. Each card carries a "Linked movement" row naming the
+     * movement, which is what makes an SD findable this way; the frontier declaration's
+     * own DEC... reference does not find it.
      *
-     * The wait below checks that the list really is the answer to this query: the
-     * frontier declaration has a row of its own among the results, and waiting for it
-     * is cheap. It is kept even though searchByReference now navigates - a filtered
-     * list is a claim worth testing before the first answer is typed into whatever it
-     * returns.
+     * The wait below checks that the list really is the answer to this query: every
+     * card links back to the movement searched for, and waiting for one is cheap. It is
+     * kept even though searchByReference now navigates - a filtered list is a claim
+     * worth testing before the first answer is typed into whatever it returns.
      */
-    async openSupplementaryDeclarationFor(lrn: string): Promise<string> {
+    async openSupplementaryDeclarationFor(movementLrn: string): Promise<string> {
         let href = '';
 
         await expect(async () => {
-            await this.searchByReference(lrn);
+            await this.searchByReference(movementLrn);
 
             await this.page
-                .locator(`main a[href*="${lrn}"]`)
+                .locator(`main a[href*="${movementLrn}"]`)
                 .first()
                 .waitFor({ state: 'visible', timeout: RESULTS_TIMEOUT });
 
             href = await this.supplementaryDeclarationLinks.first().getAttribute('href') ?? '';
-            expect(href, `a supplementary declaration for ${lrn}`).not.toBe('');
+            expect(href, `a supplementary declaration under ${movementLrn}`).not.toBe('');
         }).toPass({ timeout: SUPPLEMENTARY_APPEARS_TIMEOUT, intervals: [3_000, 5_000, 10_000] });
 
         await clickLinkAndWaitForRoute(this.page, this.supplementaryDeclarationLinks.first());

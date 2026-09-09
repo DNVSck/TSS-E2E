@@ -39,7 +39,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
         }, testInfo) => {
             await ReportLog.setStory('Supplementary Declaration - from ENS-SFD - RoRo (Accompanied) - Trader DDA');
 
-            const sfdLrn = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement', () =>
+            const { movementLrn, frontierLrn } = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement', () =>
                 generateSdDraftFromEnsSfdFlow.generateSdDraft({ testInfo, url: getBaseUrl() })
             );
 
@@ -49,7 +49,8 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
                 completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
                     testInfo,
                     url: getBaseUrl(),
-                    lrn: sfdLrn,
+                    movementLrn,
+                    frontierLrn,
                     overrides: traderDefermentSupplementaryDeclaration(),
                 })
             );
@@ -65,7 +66,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
         }, testInfo) => {
             await ReportLog.setStory('Supplementary Declaration - from ENS-SFD - RoRo (Accompanied) - TSS DDA');
 
-            const sfdLrn = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement', () =>
+            const { movementLrn, frontierLrn } = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement', () =>
                 generateSdDraftFromEnsSfdFlow.generateSdDraft({ testInfo, url: getBaseUrl() })
             );
 
@@ -77,7 +78,8 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
                 completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
                     testInfo,
                     url: getBaseUrl(),
-                    lrn: sfdLrn,
+                    movementLrn,
+                    frontierLrn,
                     overrides: tssDefermentSupplementaryDeclaration(),
                 })
             );
