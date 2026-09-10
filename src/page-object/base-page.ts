@@ -1,6 +1,6 @@
 import { Page, Locator, TestInfo } from '@playwright/test';
 import {
-    readFieldIfPresent, hrefsOf, clickToLeaveScreen, clickLinkAndWaitForRoute,
+    readFieldIfPresent, hrefsOf, clickLinkAndWaitForRoute,
 } from '../helper/element-helper';
 import { TFunction, localeForProject } from '../fixtures/locale-fixture';
 import { LOCALES_CONSTANT } from '../constant/locales-constant';
@@ -142,7 +142,7 @@ export class BasePage {
      * looking for a screen that never opened and blames its own locator.
      */
     async clickFinishButton(): Promise<void> {
-        await clickToLeaveScreen(this.page, this.commonFinishButton);
+        await this.commonFinishButton.click();
     }
 
     async clickBackLink(): Promise<void> {

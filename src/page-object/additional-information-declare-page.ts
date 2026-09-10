@@ -1,6 +1,8 @@
 import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
-import { fillInputValue, selectAutocompleteValue } from '../helper/element-helper';
+import {
+    fillInputValue, selectAutocompleteValue, clickToLeaveScreen,
+} from '../helper/element-helper';
 
 /**
  * The "New additional information" wizard, reached from the goods item's
@@ -42,6 +44,6 @@ export class AdditionalInformationDeclarePage extends BasePage {
 
     /** "Check your answers" — the "Complete and submit" button commits the record. */
     async confirmAndSubmit(): Promise<void> {
-        await this.clickFinishButton();
+        await clickToLeaveScreen(this.page, this.commonFinishButton);
     }
 }

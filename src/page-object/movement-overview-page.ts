@@ -19,6 +19,8 @@ const LINKED_CONSIGNMENT_VIEW_TIMEOUT = 90_000;
 /** The submitted GMR appears on the GMR tab shortly after submit. */
 const GMR_VIEW_TIMEOUT = 90_000;
 
+const CONSIGNMENT_WIZARD_OPEN_TIMEOUT = 30_000;
+
 
 export class MovementOverviewPage extends BasePage {
 
@@ -113,6 +115,31 @@ export class MovementOverviewPage extends BasePage {
 
     async clickNewENSConsignment(): Promise<void> {
         await this.newENSConsignmentBtn.click();
+        await this.waitForConsignmentWizard();
+    }
+
+    private async waitForConsignmentWizard(): Promise<void> {
+        const from = new URL(this.page.url()).pathname;
+
+        try {
+            await this.page.waitForURL(
+                url => url.pathname.includes(MOVEMENT_ROUTE.NEW_CONSIGNMENT_SEGMENT),
+                { waitUntil: 'domcontentloaded', timeout: CONSIGNMENT_WIZARD_OPEN_TIMEOUT }
+            );
+        } catch {
+            const now = new URL(this.page.url()).pathname;
+
+            throw new Error(
+                `"New consignment" did not open the consignment wizard within `
+                + `${CONSIGNMENT_WIZARD_OPEN_TIMEOUT / 1000}s - expected a URL containing `
+                + `"${MOVEMENT_ROUTE.NEW_CONSIGNMENT_SEGMENT}", the page is on "${now}". `
+                + (now === from
+                    ? 'It never left the overview, so the button took the click and the app '
+                    + 'ignored it - nothing was created.'
+                    : `It left "${from}" for somewhere else, so the button leads somewhere `
+                    + 'this no longer recognises.')
+            );
+        }
     }
 
     async clickUploadCSV(): Promise<void> {

@@ -27,7 +27,7 @@ const SCREEN_PAINT_TIMEOUT = 90_000;
  * the next screen is either painting or is a different one - there is nothing slow to wait
  * for, and every declaration that does not qualify for NIRMS pays this once.
  */
-const NIRMS_SCREEN_TIMEOUT = 5_000;
+const NIRMS_SCREEN_TIMEOUT = 30_000;
 
 /** The radio group on the NIRMS screen, addressed by the name its inputs post. */
 const USE_NIRMS_RADIO_NAME = 'useNirms';

@@ -34,48 +34,126 @@ export async function fillInputValue(
 
 /** How long ONE click gets to take the wizard off the screen it is on. */
 const SUBMIT_LANDING_TIMEOUT = 10_000;
+/**
+ * How much longer a submit gets once the button proves it was taken.
+ *
+ * The navigation default, because by then this IS just a slow navigation: the click
+ * landed, the service is working, and the only question left is how long it takes.
+ */
+const SUBMIT_IN_FLIGHT_TIMEOUT = 60_000;
+/**
+ * How long one of these clicks gets to be delivered.
+ *
+ * Well below the 60-second action default, and deliberately: this helper is only ever
+ * used on a button the run is standing in front of, on a screen it has just filled in.
+ * A button that cannot take a click within ten seconds is not going to take one in
+ * sixty - it has been disabled or the screen has moved - and spending the default is
+ * exactly what turned a slow submit into a two-minute failure.
+ */
+const SUBMIT_CLICK_TIMEOUT = 10_000;
 const SUBMIT_CLICK_ATTEMPTS = 3;
 
 /**
  * Click a button that ends a wizard screen, and make sure the screen actually ended.
  *
- * These pages swallow the first click while they are still hydrating: Playwright
- * dispatches it, the app ignores it, and the run carries on to hunt for a field of the
- * next screen that never opened. Observed on sit 2026-09-08 on the "Complete and
- * submit" of the additional-information wizard.
+ * Opt-in, and used by ONE screen - see AdditionalInformationDeclarePage. That screen
+ * swallows the first click while it is still hydrating: Playwright dispatches it, the
+ * app ignores it, and the run carries on to hunt for a field of the next screen that
+ * never opened. Observed on sit 2026-09-08.
+ *
+ * Every other wizard clicks plainly through BasePage.clickFinishButton. This was
+ * briefly the default for all of them and had to be pulled back: on a screen that
+ * disables its own submit button while the service works, the retry below spends the
+ * action timeout waiting for a button that is not coming back, and a submit that had
+ * already succeeded is reported as a failure.
  *
  * Retrying is safe for the same reason it is safe in switchToTabAndClickNew, and only
  * for that reason: the route is what says whether anything happened. A submit that did
  * not leave the screen did not commit, so clicking again cannot write a second record.
  * A submit that DID commit has already changed the URL, and this returns without
  * clicking anything.
+ *
+ * The URL is not the only witness, though, and waiting for it alone is what used to
+ * turn a SLOW submit into a red test: the click landed, the screen disabled its own
+ * button while the service worked, and the retry then spent the full action timeout
+ * waiting for a disabled button to become clickable again. So the button is asked too -
+ * one that can no longer be clicked has already taken the click, and the only thing
+ * left to do is wait longer.
  */
 export async function clickToLeaveScreen(page: Page, button: Locator): Promise<void> {
     const from = StringUtil.stripTrailingSlashes(new URL(page.url()).pathname);
+    let clicks = 0;
+    let refusal = '';
+    let delivered = false;
 
-    for (let attempt = 1; attempt <= SUBMIT_CLICK_ATTEMPTS; attempt++) {
-        await button.click();
+    while (clicks < SUBMIT_CLICK_ATTEMPTS) {
+        refusal = await deliverClick(button);
+        clicks++;
+        delivered ||= refusal === '';
 
-        try {
-            await page.waitForURL(
-                url => StringUtil.stripTrailingSlashes(url.pathname) !== from,
-                { waitUntil: 'domcontentloaded', timeout: SUBMIT_LANDING_TIMEOUT }
-            );
+        if (await leftScreen(page, from, SUBMIT_LANDING_TIMEOUT)) {
             return;
-        } catch (error) {
-            if (attempt === SUBMIT_CLICK_ATTEMPTS) {
-                throw new Error(
-                    `The screen at "${from}" did not close after ${SUBMIT_CLICK_ATTEMPTS} clicks. ` +
-                    `Errors on the page: ${(await readErrorSummary(page)).join('; ') || 'none'}. ` +
-                    `Last failure: ${(error as Error).message}`
-                );
-            }
-
-            // Say so in the report: an app that needs a second click is worth knowing
-            // about even when the retry rescues the run.
-            await ReportLog.info(`The screen did not close on attempt ${attempt}; clicking again.`);
         }
+
+        if (refusal || !await isStillClickable(button)) {
+            if (delivered && await leftScreen(page, from, SUBMIT_IN_FLIGHT_TIMEOUT)) {
+                return;
+            }
+            break;
+        }
+
+        await ReportLog.info(`The screen did not close on attempt ${clicks}; clicking again.`);
     }
+
+    throw new Error(
+        `The screen at "${from}" did not close after ${clicks} click(s). ` +
+        `Errors on the page: ${(await readErrorSummary(page)).join('; ') || 'none'}. ` +
+        `The submit button ${await describeButton(button, refusal, delivered)}.`
+    );
+}
+
+
+async function deliverClick(button: Locator): Promise<string> {
+    try {
+        await button.click({ timeout: SUBMIT_CLICK_TIMEOUT });
+        return '';
+    } catch (error) {
+        return (error as Error).message.split('\n')[0];
+    }
+}
+
+async function describeButton(
+    button: Locator,
+    refusal: string,
+    delivered: boolean
+): Promise<string> {
+    if (await isStillClickable(button)) {
+        return 'is still clickable, so the clicks reached it and the screen simply stayed';
+    }
+
+    const because = refusal ? ` (${refusal})` : '';
+
+    return delivered
+        ? `took a click and then stopped accepting them${because} - it is disabled or gone, `
+        + 'so the click WAS taken and the service never landed'
+        : `never accepted a click at all${because} - it was disabled or missing before this `
+        + 'ran, so look at what left the screen in that state rather than at the service';
+}
+
+async function leftScreen(page: Page, from: string, timeout: number): Promise<boolean> {
+    try {
+        await page.waitForURL(
+            url => StringUtil.stripTrailingSlashes(url.pathname) !== from,
+            { waitUntil: 'domcontentloaded', timeout }
+        );
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function isStillClickable(button: Locator): Promise<boolean> {
+    return await button.isVisible() && await button.isEnabled();
 }
 
 // Locate a GOV.UK summary-list row's value by its label. The label is exact-matched
