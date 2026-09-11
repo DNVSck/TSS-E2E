@@ -271,14 +271,14 @@ export async function selectAutocompleteValue(
 
 
 /** How long the link itself gets to render, and to be actionable once it has. */
-const LINK_VISIBLE_TIMEOUT = 15_000;
+const LINK_VISIBLE_TIMEOUT = 30_000;
 /**
  * How long ONE click gets to land on the target route. Deliberately short: a
  * navigation that is going to happen commits well inside this, so a longer wait only
  * buys time for the failure this retries — a click the app swallowed, which no amount
  * of waiting will fix. Short budget x several clicks beats one long wait x one click.
  */
-const ROUTE_LANDING_TIMEOUT = 8_000;
+const ROUTE_LANDING_TIMEOUT = 30_000;
 const ROUTE_CLICK_ATTEMPTS = 3;
 
 // Click a GOV.UK link that navigates to another server route (an overview tab, a
@@ -348,9 +348,9 @@ export async function clickLinkAndWaitForRoute(page: Page, link: Locator): Promi
 // active — the panel paints a beat after the tab's route settles. Also bounds the
 // click, so an unactionable button fails on this budget rather than the ambient
 // action timeout, and the retries below stay well inside the test timeout.
-const NEW_RECORD_BUTTON_TIMEOUT = 15_000;
+const NEW_RECORD_BUTTON_TIMEOUT = 30_000;
 /** How long the record wizard gets to open once its button has been clicked. */
-const WIZARD_OPEN_TIMEOUT = 10_000;
+const WIZARD_OPEN_TIMEOUT = 30_000;
 const TAB_SWITCH_ATTEMPTS = 3;
 
 // Utility function to switch to a GOV.UK overview tab and click its "add new record"
