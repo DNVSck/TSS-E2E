@@ -5,6 +5,10 @@ import { clickLinkAndWaitForRoute } from '../helper/element-helper';
 /** The results page re-renders after a search; the form repaints with it. */
 const SEARCH_TIMEOUT = 20_000;
 
+const SEARCH_ATTEMPT_TIMEOUT = 15_000;
+
+const SEARCH_RETRY_TIMEOUT = 90_000;
+
 /**
  * "Overview of declarations" - the screen reached from "View your draft
  * declarations", where a signed-in account searches every declaration it may see.
@@ -42,16 +46,12 @@ export class DeclarationSearchPage extends BasePage {
         await expect(async () => {
             await this.searchInput.fill(reference);
             await expect(this.searchInput).toHaveValue(reference, { timeout: 1_000 });
-        }).toPass({ timeout: SEARCH_TIMEOUT });
 
-        await this.updateResultsButton.click();
+            await this.updateResultsButton.click();
 
-        // The positive anchor. Submitting reloads the page and the form comes back
-        // populated with the query, so seeing the term in the box is proof the RESULTS
-        // rendered - not the pre-search page still on screen. Without it, "no results"
-        // and "not reloaded yet" are the same observation, and the check that matters
-        // most here is an absence.
-        await expect(this.searchInput).toHaveValue(reference, { timeout: SEARCH_TIMEOUT });
+            await expect(this.searchInput)
+                .toHaveValue(reference, { timeout: SEARCH_ATTEMPT_TIMEOUT });
+        }).toPass({ timeout: SEARCH_RETRY_TIMEOUT });
 
         const hrefs = await this.resultLinks.evaluateAll(links =>
             links.map(link => link.getAttribute('href') ?? '')

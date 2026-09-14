@@ -2,6 +2,7 @@ import { request, APIRequestContext, Cookie } from '@playwright/test';
 import { formAction, hiddenFields, hasField } from '../helper/html-form-helper';
 import {
     CASE_MANAGEMENT_HOST, CASE_MANAGEMENT_USER_NAME, CASE_MANAGEMENT_PASSWORD, ENV,
+    assertEnvSet,
 } from '../../config/environment';
 
 const APP_PATH = '/businessapplication/';
@@ -79,18 +80,12 @@ async function followSignIn(context: APIRequestContext): Promise<StorageState> {
 }
 
 function assertCredentialsPresent(): void {
-    const missing = [
-        ['CASE_MANAGEMENT_USER_NAME', CASE_MANAGEMENT_USER_NAME],
-        ['CASE_MANAGEMENT_PASSWORD', CASE_MANAGEMENT_PASSWORD],
-    ].filter(([, value]) => !value).map(([key]) => key);
-
-    if (missing.length > 0) {
-        throw new Error(
-            `Cannot sign in to case management on "${ENV}": ${missing.join(' and ')} not set `
-            + `in .env.${ENV}. Every call to that service is made as an administrator, so `
-            + `nothing can be asked of it without one.`
-        );
-    }
+    assertEnvSet(
+        { CASE_MANAGEMENT_USER_NAME, CASE_MANAGEMENT_PASSWORD },
+        'Cannot sign in to case management',
+        'Every call to that service is made as an administrator, so nothing can be '
+        + 'asked of it without one.'
+    );
 }
 
 function readXsrfToken(cookies: Cookie[]): string {

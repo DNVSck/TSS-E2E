@@ -81,10 +81,10 @@ export class ConsignmentOverviewFlow {
      * The expected prefix comes from the journey (IMMI "GLR", SFD "SFD", FFD "FFD"),
      * so this checks the journey that ran rather than any standalone reference.
      */
-    async verifyStandaloneConsignmentLrn(expectedPrefix: RegExp): Promise<string> {
+    async verifyStandaloneConsignmentLrn(expectedPrefix?: RegExp): Promise<string> {
         return ReportLog.step('Validate standalone consignment LRN', async () => {
             const { consignmentReference, declarationStatus } =
-                await this.consignmentOverviewPage.assertDraftStandaloneConsignment(expectedPrefix);
+                await this.consignmentOverviewPage.readDraftStandaloneConsignment(expectedPrefix);
             ReportLog.setParameter('Consignment LRN', consignmentReference);
             // Only once submitted does this overview carry a Status row; reporting an
             // empty parameter before then would read as "status unknown/blank" rather

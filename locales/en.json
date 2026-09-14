@@ -44,7 +44,12 @@
     "simplifiedDeclarationReference": "Simplified Declaration Reference"
   },
   "gmrDetail": {
-    "gmrId": "GMR ID"
+    "gmrId": "GMR ID",
+    "vehicleRegistrationNumber": "Vehicle registration number",
+    "trailerRegistrationNumber": "Trailer registration number",
+    "isTrailerUnaccompanied": "Is trailer unaccompanied?",
+    "inspectionRequired": "Inspection required",
+    "reportToLocations": "Report to locations"
   },
   "status": {
     "draft": "Draft",
@@ -52,6 +57,9 @@
     "awaitingArrival": "Awaiting arrival",
     "arrived": "Arrived",
     "open": "Open",
+    "checkedIn": "Checked in",
+    "embarked": "Embarked",
+    "completed": "Completed",
     "traderInputRequired": "Trader Input Required",
     "closed": "Closed",
     "processing": "Processing",

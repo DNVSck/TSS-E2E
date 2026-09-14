@@ -68,13 +68,19 @@ export class CreateDraftImmiStandaloneFlow {
         reportTestAccount(this.authAccount, 'createDraftImmiStandalone');
         reportDeclarationCodes(goodsData);
 
-        await this.accessFlow.openService({ baseUrl: url, testInfo });
-        await this.initialFormFlow.completeInitialFormDeclaration(initialFormData({
+        // Held rather than passed inline: the company this journey declares for gates
+        // two screens at opposite ends of it - the standalone type here and the TGP
+        // question on the goods item - and reading both from one value is what stops
+        // them drifting apart.
+        const initialForm = initialFormData({
             typeOfSubmission: INITIAL_FORM_DECLARATION.TYPE_OF_SUBMISSION.STANDALONE,
             standaloneDeclarationType:
                 INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.INTERNAL_MARKET_MOVEMENT_INFORMATION,
             typeOfEnsSubmission: undefined,
-        }));
+        });
+
+        await this.accessFlow.openService({ baseUrl: url, testInfo });
+        await this.initialFormFlow.completeInitialFormDeclaration(initialForm);
         await this.addConsignmentFlow.addNewImmiStandaloneConsignment(consignmentData);
         // Report the LRN as soon as the draft exists, before anything that could fail.
         // IMMI stamps a "GLR" reference, so asserting the prefix asserts the journey
@@ -85,7 +91,8 @@ export class CreateDraftImmiStandaloneFlow {
         await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
         await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
 
-        const usedTgp = await this.addGoodsItemFlow.addNewImmiStandaloneGoodsItem(goodsData);
+        const usedTgp = await this.addGoodsItemFlow
+            .addNewImmiStandaloneGoodsItem(goodsData, initialForm.declaringForEori);
         // A TGP item never typed its commodity code, description or country of origin -
         // the service copied them from the record - so the overview is the only place
         // that proves the record was applied. No-op when the item did not use TGP.

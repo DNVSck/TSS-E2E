@@ -41,7 +41,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct without TGP is created and submitted successfully (0700-1EL)', { tag: ['@smoke' , '@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct without TGP is created and submitted successfully (0700-1EL)', { tag: ['@smoke' , '@regression' , '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct without TGP');
     reportTestCaseLink(IMMI_PRELODGED);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -104,7 +104,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     );
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Indirect is created and submitted successfully (4000-1EN)', { tag: ['@smoke', '@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Indirect is created and submitted successfully (4000-1EN)', { tag: ['@smoke', '@regression', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Indirect');
     reportTestCaseLink(IMMI_PRELODGED);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -127,7 +127,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     );
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Indirect with TGP is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Indirect with TGP is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Indirect with TGP - 4000 - 1LG');
     reportTestCaseLink(IMMI_PRELODGED);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -153,7 +153,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
   });
 
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Direct with TGP and excise warehouse is created and submitted successfully (0700-1EL)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Direct with TGP and excise warehouse is created and submitted successfully (0700-1EL)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Unaccompanied) - Direct with TGP and excise warehouse - 0700 - 1EL');
     reportTestCaseLink(IMMI_PRELODGED);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -194,7 +194,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
   });
 
 
-  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@e2e', '@happyPath', '@smoke'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@happyPath', '@smoke'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Direct - 4000 - 1LG');
     reportTestCaseLink(IMMI_ARRIVED);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -222,7 +222,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     );
   });
 
-    test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with Inward Processing is created and submitted successfully (4051-1EN)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+    test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with Inward Processing is created and submitted successfully (4051-1EN)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with Inward Processing - 4051 - 1EN');
     reportTestCaseLink(IMMI_ARRIVED_4051_1EN);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -271,7 +271,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     );
   });
 
-  test('Verify IMMI Standalone - Arrived - RoRo (Unaccompanied) - Indirect is created and submitted successfully (0751-1EL)', { tag: ['@smoke', '@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Arrived - RoRo (Unaccompanied) - Indirect is created and submitted successfully (0751-1EL)', { tag: ['@smoke', '@regression', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Unaccompanied) - Indirect - 0751 - 1EL');
     reportTestCaseLink(IMMI_ARRIVED);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -324,7 +324,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
     );
   });
 
-  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with TGP is created and submitted successfully (4071-1LG)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with TGP is created and submitted successfully (4071-1LG)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Direct with TGP - 4071 - 1LG');
     reportTestCaseLink(IMMI_ARRIVED_4071_1LG);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -372,7 +372,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
   });
 
 
-  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Indirect with TGP is created and submitted successfully (4000-1EN)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Indirect with TGP is created and submitted successfully (4000-1EN)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Indirect with TGP - 4000 - 1EN');
     reportTestCaseLink(IMMI_ARRIVED);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -401,7 +401,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
   });
 
 
-  test('Verify IMMI Standalone - Arrived - RoRo (Unaccompanied) - Direct with supplementary units is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Arrived - RoRo (Unaccompanied) - Direct with supplementary units is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Unaccompanied) - Direct with supplementary units - 4000 - 1LG');
     reportTestCaseLink(IMMI_ARRIVED);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -442,7 +442,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
     await ReportLog.setFeature('GB to NI IMMI Standalone Declaration Process');
   });
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-1SG)', { tag: ['@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-1SG)', { tag: ['@regression' , '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
     reportTestCaseLink(IMMI_PRELODGED_4000_1SG);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -467,7 +467,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
   });
 
 
-  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself with TGP is created and submitted successfully (4000-1SG)', { tag: ['@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself with TGP is created and submitted successfully (4000-1SG)', { tag: ['@regression' , '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself with TGP');
     reportTestCaseLink(IMMI_PRELODGED_TGP_4000_1SG);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -492,7 +492,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
     );
   });
 
-   test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (0771-1EL)', { tag: ['@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+   test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (0771-1EL)', { tag: ['@regression' , '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself');
     reportTestCaseLink(IMMI_ARRIVED_0771_1EL);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
@@ -538,7 +538,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
   });
 
 
-  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself with TGP is created and submitted successfully (4000-1SG)', { tag: ['@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself with TGP is created and submitted successfully (4000-1SG)', { tag: ['@regression' , '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself with TGP');
     reportTestCaseLink(IMMI_ARRIVED_TGP_4000_1SG);
     const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>

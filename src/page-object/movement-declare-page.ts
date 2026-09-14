@@ -7,6 +7,7 @@ import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper
 
 export interface ArrivalDateTimeOptions {
     collectsYear?: boolean;
+    collectsTime?: boolean;
 }
 
 export class MovementDeclarePage extends BasePage {
@@ -225,8 +226,10 @@ export class MovementDeclarePage extends BasePage {
             await this.arrivalYearInput.fill(year);
         }
 
-        await this.arrivalTimeHourInput.fill(hour);
-        await this.arrivalTimeMinuteInput.fill(minute);
+        if (options.collectsTime ?? true) {
+            await this.arrivalTimeHourInput.fill(hour);
+            await this.arrivalTimeMinuteInput.fill(minute);
+        }
     }
 
     async inputImoAndNationalityOfMeanOfTransport(imoNumber: string, nationalityOfMeanOfTransport: string): Promise<void> {

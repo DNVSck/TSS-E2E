@@ -2,8 +2,10 @@
 import { FullConfig } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { initAllureResults, getAllureResultsDir } from '../src/core/report/allure-report-manager';
-import { ensureAuthState } from '../src/auth/ensure-auth-state';
+import {
+  initAllureResults, getAllureResultsDir, writeSetupFailures, SetupFailure,
+} from '../src/core/report/allure-report-manager';
+import { ensureAuthState, SignInFailedError } from '../src/auth/ensure-auth-state';
 import { LOCALE } from './environment';
 
 async function globalSetup(config: FullConfig) {
@@ -28,7 +30,30 @@ async function globalSetup(config: FullConfig) {
   // it skip logging in accounts no worker will use. Lives here rather than in a
   // Playwright "setup project" so a successful sign-in does not show up as a
   // passing test in the report.
-  await ensureAuthState(config.workers);
+  try {
+    await ensureAuthState(config.workers);
+  } catch (error) {
+    writeSetupFailures(asSetupFailures(error));
+    throw error;
+  }
+}
+
+function asSetupFailures(error: unknown): SetupFailure[] {
+  if (error instanceof SignInFailedError) {
+    return error.failures.map(failure => ({
+      name: `Sign in ${failure.account}`,
+      suite: 'Authentication',
+      message: failure.message,
+      stack: failure.stack,
+    }));
+  }
+
+  return [{
+    name: 'Sign in the accounts this run needs',
+    suite: 'Authentication',
+    message: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack ?? '' : '',
+  }];
 }
 
 export default globalSetup;

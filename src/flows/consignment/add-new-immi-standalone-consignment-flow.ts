@@ -40,7 +40,8 @@ export class AddNewImmiStandaloneConsignmentFlow {
             // arrived. The pre-lodged/arrived difference is in the VALUE, and the data
             // factory has already resolved it - see ImmiStandaloneConsignmentData.
             await this.movementSteps.inputArrivalDateTime(
-                input.arrivalDateTime, { collectsYear: !input.isPreLodged }
+                input.arrivalDateTime,
+                { collectsYear: !input.isPreLodged, collectsTime: input.isPreLodged }
             );
             await this.enterArrivalLocation(input);
 

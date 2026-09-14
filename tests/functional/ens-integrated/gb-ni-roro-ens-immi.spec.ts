@@ -10,12 +10,10 @@ import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-typ
 import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { IMPORTER_UKIMS, IMPORTER_EXW } from '../../../config/environment';
-import { gmrData } from '../../../src/test-data/gmr-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
 import { TGP_RECORD } from '../../../src/test-data/tgp-record-data';
 import { additionalInformation } from '../../../src/test-data/additional-information-data';
-import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
 
 const ENS_IMMI_GMR = '4437';
 
@@ -29,7 +27,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
   });
 
   test('Verify ENS-IMMI - RoRo (Accompanied) with TGP is created and submitted successfully (4000-1EN)', { tag: ['@smoke', '@happyPath', '@regression'] }, async ({
-    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow
+    createAndSubmitEnsDeclarationFlow, triggerFinalStatusThroughCdsFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied with TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
@@ -57,23 +55,13 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
       })
     );
 
-    await ReportLog.step('Create and submit the GMR', () =>
-      createAndSubmitGmrFlow.addNewGmrAndSubmit(
-        gmrData(
-        {
-          route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES,
-          external_contacts_list: ['adam3.taylor@nifreight.co.uk', 'ledt@nifreight.co.uk'],
-        }
-      ))
-    );
-
     await ReportLog.step('Close the IMMI consignment through CDS', () =>
       triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi)
     );
   });
 
   test('Verify ENS-IMMI - RoRo (Unaccompanied) without TGP is created and submitted successfully (0700-1EL)', { tag: ['@smoke', '@happyPath', '@regression'] }, async ({
-    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow
+    createAndSubmitEnsDeclarationFlow, triggerFinalStatusThroughCdsFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied without TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
@@ -113,17 +101,13 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
       })
     );
 
-    await ReportLog.step('Create and submit the GMR', () =>
-      createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData())
-    );
-
     await ReportLog.step('Close the IMMI consignment through CDS', () =>
       triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi)
     );
   });
 
-  test('Verify ENS-IMMI - RoRo (Accompanied) without TGP is created and submitted successfully (4000-1SG)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({
-    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow
+  test('Verify ENS-IMMI - RoRo (Accompanied) without TGP is created and submitted successfully (4000-1SG)', { tag: ['@regression', '@happyPath'] }, async ({
+    createAndSubmitEnsDeclarationFlow, triggerFinalStatusThroughCdsFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Accompanied without TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
@@ -155,18 +139,14 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
       })
     );
 
-    await ReportLog.step('Create and submit the GMR', () =>
-      createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData())
-    );
-
     await ReportLog.step('Close the IMMI consignment through CDS', () =>
       triggerFinalStatusThroughCdsFlow.closeImmiConsignment(immi)
     );
   });
 
 
-  test('Verify ENS-IMMI - RoRo (Unaccompanied) with TGP is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({
-    createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow, triggerFinalStatusThroughCdsFlow
+  test('Verify ENS-IMMI - RoRo (Unaccompanied) with TGP is created and submitted successfully (4000-1LG)', { tag: ['@regression', '@happyPath'] }, async ({
+    createAndSubmitEnsDeclarationFlow, triggerFinalStatusThroughCdsFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Pre-movement - GB to NI RoRo IMMI Unaccompanied with TGP');
     reportTestCaseLink(ENS_IMMI_GMR);
@@ -191,10 +171,6 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_NON_EXCISE_1LG,
         },
       })
-    );
-
-    await ReportLog.step('Create and submit the GMR', () =>
-      createAndSubmitGmrFlow.addNewGmrAndSubmit(gmrData())
     );
 
     await ReportLog.step('Close the IMMI consignment through CDS', () =>

@@ -44,7 +44,12 @@
     "simplifiedDeclarationReference": "Cyfeirnod Datganiad Symlach"
   },
   "gmrDetail": {
-    "gmrId": "ID GMR"
+    "gmrId": "ID GMR",
+    "vehicleRegistrationNumber": "Rhif cofrestru'r cerbyd",
+    "trailerRegistrationNumber": "Rhif cofrestru'r trelar",
+    "isTrailerUnaccompanied": "A yw'r trelar heb oruchwyliaeth?",
+    "inspectionRequired": "Angen archwiliad",
+    "reportToLocations": "Adrodd i'r lleoliadau"
   },
   "status": {
     "draft": "Drafft",
@@ -52,6 +57,9 @@
     "awaitingArrival": "Yn aros i gyrraedd",
     "arrived": "Wedi cyrraedd",
     "open": "Ar agor",
+    "checkedIn": "Wedi cofrestru",
+    "embarked": "Cychwyn ar daith",
+    "completed": "Wedi'i gwblhau",
     "traderInputRequired": "Mewnbwn Masnachwr sy'n Ofynnol",
     "closed": "Ar gau",
     "processing": "Wrthi'n prosesu",

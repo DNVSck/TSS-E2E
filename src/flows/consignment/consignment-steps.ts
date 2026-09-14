@@ -2,7 +2,6 @@ import { MovementOverviewPage } from '../../page-object/movement-overview-page';
 import { ConsignmentDeclarePage } from '../../page-object/consignment-declare-page';
 import { PartyAddress } from '../../page-object/components/party-block';
 import { ReportLog } from '../../core/report/report-log';
-import { ENV } from '../../../config/environment';
 
 /**
  * One method per consignment wizard screen: it owns that screen's Allure step name,
@@ -72,20 +71,15 @@ export class ConsignmentSteps {
     /**
      * Whether the IMMI question is put at all depends on the importer entered a
      * moment ago, not on the signed-in account: an importer without IMMI enabled goes
-     * straight to controlled goods. That is a property of the environment's importer,
-     * so it holds for the whole run — hence the diagnostic rather than a silent skip.
+     * straight to controlled goods. Reported back rather than judged here — whether
+     * that importer SHOULD have been asked is a permission the flow reads from the
+     * Portal API, and a step that has not read it can only guess.
+     *
+     * Returns whether the question was put.
      */
-    async declareUseImmi(useIMMI: boolean, importerEORI: string): Promise<void> {
+    async declareUseImmiIfAsked(useIMMI: boolean): Promise<boolean> {
         if (!await this.consignmentDeclarePage.isUseImmiQuestionShown()) {
-            if (useIMMI) {
-                throw new Error(
-                    `Test data sets "useIMMI" but the IMMI question was never asked for importer ` +
-                    `${importerEORI}. IMMI is not enabled on that importer in "${ENV}", so no ` +
-                    `IMMI journey can run against it. Enable it, or point IMPORTER_EORI in .env.${ENV} ` +
-                    `at an importer that has it.`
-                );
-            }
-            return;
+            return false;
         }
 
         await ReportLog.step('Answer "Do you want to use IMMI?"', async () => {
@@ -95,6 +89,8 @@ export class ConsignmentSteps {
             }
             await this.consignmentDeclarePage.selectUseIMMINo();
         });
+
+        return true;
     }
 
     /** Asked when IMMI is declined, and when the importer was never offered it. */

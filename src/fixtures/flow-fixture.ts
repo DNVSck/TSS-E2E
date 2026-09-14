@@ -10,6 +10,10 @@ import { StandaloneConsignmentSteps } from '../flows/consignment/standalone-cons
 import { MovementOverviewFlow } from '../flows/movement/movement-overview-flow';
 import { PageFixtureType } from './page-fixture';
 import { CreateAndSubmitEnsDeclarationFlow } from '../flows/common-flows/create-and-submit-ens-declaration-flow';
+import { RaiseMovementForGmrFlow } from '../flows/common-flows/raise-movement-for-gmr-flow';
+import {
+    RaiseMovementForGmrThroughApiFlow,
+} from '../flows/common-flows/trader-api/raise-movement-for-gmr-through-api-flow';
 import { CreateAndSubmitImmiStandaloneFlow } from '../flows/common-flows/create-and-submit-immi-standalone-flow';
 import { CreateAndSubmitSfdStandaloneFlow } from '../flows/common-flows/create-and-submit-sfd-standalone-flow';
 import { CreateAndSubmitFfdStandaloneFlow } from '../flows/common-flows/create-and-submit-ffd-standalone-flow';
@@ -24,14 +28,19 @@ import { AddNewEnsConsignmentFlow } from '../flows/consignment/add-new-ens-consi
 import { ConsignmentOverviewFlow } from '../flows/consignment/consignment-overview-flow';
 import { AddNewEnsGoodsItemFlow } from '../flows/goods-item/add-new-ens-goods-item-flow';
 import { GoodsOverviewFlow } from '../flows/goods-item/goods-overview-flow';
-import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
+import { AddNewGMRFlow } from '../flows/gmr/add-new-gmr-flow';
+import { GmrOverviewFlow } from '../flows/gmr/gmr-overview-flow';
 import { RepresentTraderFlow } from '../flows/represent-trader-flow';
 import { Ics2NotificationFlow } from '../flows/ics2-notification-flow';
 import { CdsNotificationFlow } from '../flows/cds-notification-flow';
+import { GvmsNotificationFlow } from '../flows/gvms-notification-flow';
 import { TriggerFinalStatusThroughCdsFlow } from '../flows/common-flows/trigger-final-status-through-cds-flow';
+import { TriggerGmrStatusThroughGvmsFlow } from '../flows/gmr/trigger-gmr-status-through-gvms-flow';
 import { SupplementaryDeclarationSteps } from '../flows/supplementary-declaration/supplementary-declaration-steps';
 import { CompleteAndSubmitSupplementaryDeclarationFlow } from '../flows/common-flows/complete-and-submit-supplementary-declaration-flow';
 import { GenerateSdDraftFromEnsSfdFlow } from '../flows/common-flows/generate-sd-draft-from-ens-sfd-flow';
+import { DeclareEnsThroughApiFlow } from '../flows/common-flows/trader-api/declare-ens-through-api-flow';
+import { GenerateSdDraftThroughApiFlow } from '../flows/common-flows/trader-api/generate-sd-draft-through-api-flow';
 import { ConcurrentLoginFlow } from '../flows/concurrent-login-flow';
 import { LocaleFixtureType } from './locale-fixture';
 import { CreateDraftEnsDeclarationFlow } from '../flows/common-flows/create-draft-ens-declaration-flow';
@@ -87,15 +96,20 @@ export type FlowFixtureType = {
     goodsItemSteps: GoodsItemSteps;
     addNewEnsGoodsItemFlow: AddNewEnsGoodsItemFlow;
     goodsOverviewFlow: GoodsOverviewFlow;
+    gmrOverviewFlow: GmrOverviewFlow;
     createAndSubmitGmrFlow: AddNewGMRFlow; // This flow is added here as it relies on multiple other flows, and it will be used in multiple places, so it makes sense to have it as a common flow
 
     // Common Flows for ENS integrated flow: ENS Only, ENS-SFD, ENS-IMMI, ENS-EIDR
     ics2NotificationFlow: Ics2NotificationFlow;
     cdsNotificationFlow: CdsNotificationFlow;
+    gvmsNotificationFlow: GvmsNotificationFlow;
     triggerFinalStatusThroughCdsFlow: TriggerFinalStatusThroughCdsFlow;
+    triggerGmrStatusThroughGvmsFlow: TriggerGmrStatusThroughGvmsFlow;
 
     // Common Flows
     createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow;
+    raiseMovementForGmrFlow: RaiseMovementForGmrFlow;
+    raiseMovementForGmrThroughApiFlow: RaiseMovementForGmrThroughApiFlow;
     // One flow per standalone journey: each owns its consignment wizard AND its goods
     // wizard, so a spec asks for the journey it tests by name. Those two wizards are
     // assembled inside the common flow below, which is their only consumer.
@@ -108,6 +122,8 @@ export type FlowFixtureType = {
     // journey that produced it rather than instead of it.
     supplementaryDeclarationSteps: SupplementaryDeclarationSteps;
     generateSdDraftFromEnsSfdFlow: GenerateSdDraftFromEnsSfdFlow;
+    declareEnsThroughApiFlow: DeclareEnsThroughApiFlow;
+    generateSdDraftThroughApiFlow: GenerateSdDraftThroughApiFlow;
     completeAndSubmitSupplementaryDeclarationFlow: CompleteAndSubmitSupplementaryDeclarationFlow;
     concurrentLoginFlow: ConcurrentLoginFlow;
 }
@@ -188,8 +204,12 @@ export const flowFixture: ExtendParams[0] = {
         ));
     },
 
-    initialFormDeclarationFlow: async ({ initialFormDeclaraPage }, use) => {
-        await use(new InitialFormDeclarationFlow(initialFormDeclaraPage));
+    initialFormDeclarationFlow: async ({
+        initialFormDeclaraPage, companyPermissionService
+    }, use) => {
+        await use(new InitialFormDeclarationFlow(
+            initialFormDeclaraPage, companyPermissionService
+        ));
     },
 
     movementSteps: async ({ goodsMovementTaskListPage, movementDeclarePage }, use) => {
@@ -212,8 +232,8 @@ export const flowFixture: ExtendParams[0] = {
         await use(new MovementOverviewFlow(movementOverviewPage, consignmentDetailPage, t));
     },
 
-    addNewEnsConsignmentFlow: async ({ consignmentSteps }, use) => {
-        await use(new AddNewEnsConsignmentFlow(consignmentSteps));
+    addNewEnsConsignmentFlow: async ({ consignmentSteps, companyPermissionService }, use) => {
+        await use(new AddNewEnsConsignmentFlow(consignmentSteps, companyPermissionService));
     },
 
     consignmentOverviewFlow: async ({
@@ -230,19 +250,33 @@ export const flowFixture: ExtendParams[0] = {
         await use(new GoodsItemSteps(consignmentOverviewPage, goodsItemDeclarePage));
     },
 
-    addNewEnsGoodsItemFlow: async ({ goodsItemSteps }, use) => {
-        await use(new AddNewEnsGoodsItemFlow(goodsItemSteps));
+    addNewEnsGoodsItemFlow: async ({
+        goodsItemSteps, companyPermissionService, traderGoodsProfileService, tariffService,
+        authAccount
+    }, use) => {
+        await use(new AddNewEnsGoodsItemFlow(
+            goodsItemSteps, companyPermissionService, traderGoodsProfileService, tariffService,
+            authAccount
+        ));
     },
 
     goodsOverviewFlow: async ({ goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage, t }, use) => {
         await use(new GoodsOverviewFlow(goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage, t));
     },
 
-    createAndSubmitGmrFlow: async ({
+    gmrOverviewFlow: async ({
         movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage, t
     }, use) => {
-        await use(new AddNewGMRFlow(
+        await use(new GmrOverviewFlow(
             movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage, t
+        ));
+    },
+
+    createAndSubmitGmrFlow: async ({
+        movementOverviewPage, gmrDeclarePage, gmrDetailsPage, gmrOverviewFlow, t
+    }, use) => {
+        await use(new AddNewGMRFlow(
+            movementOverviewPage, gmrDeclarePage, gmrDetailsPage, gmrOverviewFlow, t
         ));
     },
 
@@ -254,11 +288,23 @@ export const flowFixture: ExtendParams[0] = {
         await use(new CdsNotificationFlow(cdsMockApiClient));
     },
 
+    gvmsNotificationFlow: async ({ gvmsMockApiClient }, use) => {
+        await use(new GvmsNotificationFlow(gvmsMockApiClient));
+    },
+
     triggerFinalStatusThroughCdsFlow: async ({
         cdsNotificationFlow, movementOverviewFlow, consignmentOverviewFlow,
     }, use) => {
         await use(new TriggerFinalStatusThroughCdsFlow(
             cdsNotificationFlow, movementOverviewFlow, consignmentOverviewFlow
+        ));
+    },
+
+    triggerGmrStatusThroughGvmsFlow: async ({
+        gvmsNotificationFlow, gmrService, gmrOverviewFlow, t,
+    }, use) => {
+        await use(new TriggerGmrStatusThroughGvmsFlow(
+            gvmsNotificationFlow, gmrService, gmrOverviewFlow, t
         ));
     },
 
@@ -270,15 +316,34 @@ export const flowFixture: ExtendParams[0] = {
         ));
     },
 
+    raiseMovementForGmrFlow: async ({
+        createAndSubmitEnsDeclarationFlow, ics2NotificationFlow
+    }, use) => {
+        await use(new RaiseMovementForGmrFlow(
+            createAndSubmitEnsDeclarationFlow, ics2NotificationFlow
+        ));
+    },
+
+    raiseMovementForGmrThroughApiFlow: async ({
+        declareEnsThroughApiFlow, declarationAccessFlow, basePage
+    }, use) => {
+        await use(new RaiseMovementForGmrThroughApiFlow(
+            declareEnsThroughApiFlow, declarationAccessFlow, basePage
+        ));
+    },
+
     createDraftImmiStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
         standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
-        consignmentOverviewFlow, goodsOverviewFlow, authAccount
+        consignmentOverviewFlow, goodsOverviewFlow, authAccount, traderGoodsProfileService,
+        companyPermissionService
     }, use) => {
         const addConsignment = new AddNewImmiStandaloneConsignmentFlow(
             standaloneConsignmentSteps, movementSteps, consignmentSteps
         );
-        const addGoodsItem = new AddNewImmiStandaloneGoodsItemFlow(goodsItemSteps);
+        const addGoodsItem = new AddNewImmiStandaloneGoodsItemFlow(
+            goodsItemSteps, companyPermissionService, traderGoodsProfileService, authAccount
+        );
         await use(new CreateDraftImmiStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,
             addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
@@ -316,6 +381,24 @@ export const flowFixture: ExtendParams[0] = {
     }, use) => {
         await use(new GenerateSdDraftFromEnsSfdFlow(
             createAndSubmitEnsDeclarationFlow, triggerFinalStatusThroughCdsFlow, representTraderFlow
+        ));
+    },
+
+    declareEnsThroughApiFlow: async ({
+        movementService, consignmentService, goodsService,
+        simplifiedFrontierDeclarationService, internalMarketMovementService
+    }, use) => {
+        await use(new DeclareEnsThroughApiFlow(
+            movementService, consignmentService, goodsService,
+            simplifiedFrontierDeclarationService, internalMarketMovementService
+        ));
+    },
+
+    generateSdDraftThroughApiFlow: async ({
+        declareEnsThroughApiFlow, cdsNotificationFlow, representTraderFlow, basePage
+    }, use) => {
+        await use(new GenerateSdDraftThroughApiFlow(
+            declareEnsThroughApiFlow, cdsNotificationFlow, representTraderFlow, basePage
         ));
     },
 

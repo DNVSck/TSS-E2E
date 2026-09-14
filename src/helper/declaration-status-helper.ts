@@ -112,3 +112,16 @@ export function traderInputRequiredError(label: string, status: string): Error {
         `here: the consignment overview carries the validation errors that say why.`
     );
 }
+
+
+export function isDeclarationStatus(actual: string, expected: string): boolean {
+    return actual.trim().toLowerCase() === expected.trim().toLowerCase();
+}
+
+const REGEXP_SPECIAL_CHARACTERS = /[.*+?^${}()|[\]\\]/g;
+
+/** The same comparison as a matcher, for the polls that assert on a status. */
+export function declarationStatusPattern(expected: string): RegExp {
+    const escaped = expected.replaceAll(REGEXP_SPECIAL_CHARACTERS, String.raw`\$&`);
+    return new RegExp(String.raw`^\s*${escaped}\s*$`, 'i');
+}

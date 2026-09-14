@@ -2,6 +2,10 @@ import { toPartyAddress } from '../../page-object/components/party-block';
 import { ReportLog } from '../../core/report/report-log';
 import { ConsignmentData } from '../../test-data/consignment-data';
 import { ConsignmentSteps } from './consignment-steps';
+import {
+    CompanyPermissionService,
+} from '../../api-service/portal-api/company-permission-service';
+import { ENV } from '../../../config/environment';
 
 /**
  * One consignment on the four ENS-integrated journeys (ENS-only, EIDR, SFD, IMMI).
@@ -12,7 +16,10 @@ import { ConsignmentSteps } from './consignment-steps';
  * movement screens, which is why each journey keeps its own spine.
  */
 export class AddNewEnsConsignmentFlow {
-    constructor(private readonly consignmentSteps: ConsignmentSteps) { }
+    constructor(
+        private readonly consignmentSteps: ConsignmentSteps,
+        private readonly companyPermissionService: CompanyPermissionService,
+    ) { }
 
     async addNewEnsConsignment(input: ConsignmentData): Promise<void> {
         await ReportLog.step('Add new ENS consignment', async () => {
@@ -37,7 +44,7 @@ export class AddNewEnsConsignmentFlow {
                 }
 
                 await this.fillBuyerInformation(input);
-                await this.consignmentSteps.declareUseImmi(input.useIMMI, input.importerEORI);
+                await this.declareUseImmi(input);
 
                 // Accepting IMMI is the only answer that retires the question.
                 if (!input.useIMMI) {
@@ -58,6 +65,29 @@ export class AddNewEnsConsignmentFlow {
 
             await this.consignmentSteps.finishConsignmentDeclaration();
         });
+    }
+
+    private async declareUseImmi(input: ConsignmentData): Promise<void> {
+        const asked = await this.consignmentSteps.declareUseImmiIfAsked(input.useIMMI);
+
+        ReportLog.setParameter('IMMI question', asked ? 'asked' : 'not asked');
+
+        if (!input.useIMMI || asked) {
+            return;
+        }
+
+        const grant = await this.companyPermissionService.readPermissionGrant(input.importerEORI);
+
+        throw new Error(
+            grant.hasUkimsAccess
+                ? `The IMMI question was never put, but ${input.importerEORI} HAS UKIMS access `
+                + `(access_ukims true), so the service should have asked it. No test data `
+                + `explains this - the screen that was owed was not offered.`
+                : `Test data sets "useIMMI" but ${input.importerEORI} has no UKIMS access on `
+                + `"${ENV}" - the Portal API answers access_ukims false - so the IMMI question `
+                + `is never put and no IMMI journey can run against it. Enable UKIMS on that `
+                + `importer, or point IMPORTER_EORI in .env.${ENV} at one that has it.`
+        );
     }
 
     private async declareEnsOnlyChoice(input: ConsignmentData): Promise<void> {

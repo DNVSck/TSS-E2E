@@ -45,16 +45,19 @@ export class GoodsItemSteps {
      * fills the commodity code, goods description, supplementary units and country
      * of origin from the record and runs a route that skips those screens.
      *
-     * The question only appears when the signed-in trader has a TGP profile — a fact
-     * about the environment — so its presence is detected rather than declared. A
-     * test that asked for TGP but never saw the screen fails: its TGP path was not
-     * exercised, so a green result would be misleading.
+     * The question only appears when the importer's goods profile is open to whoever
+     * is declaring — a fact about the environment — so its presence is detected here
+     * and judged by the flow, which is the layer that has read that permission.
+     *
+     * Reports BOTH facts, because they are not the same question: a screen that was
+     * never put and a screen answered "no" both leave the item without TGP, and only
+     * the first one is worth failing over.
      *
      * Detection happens OUTSIDE the Allure step on purpose. Wrapping it would emit a
      * step named "Answer ..." even on an account that was never asked the question,
      * recording an answer that was never given.
      */
-    async declareTgp(input: GoodsData): Promise<boolean> {
+    async declareTgp(input: GoodsData): Promise<{ asked: boolean; usesTgp: boolean }> {
         const record = input.tgpRecord;
 
         // The answer and the record are separate fields, so they can disagree. Check
@@ -78,16 +81,7 @@ export class GoodsItemSteps {
         }
 
         if (!await this.goodsDeclarePage.isUseTgpQuestionShown()) {
-            if (input.useTGP) {
-                throw new Error(
-                    'Test data sets "useTGP" but the app never asked the TGP question, so the ' +
-                    'TGP path was not exercised. Two things produce this, in the order worth ' +
-                    'checking: the signed-in trader has no TGP profile set up, OR the trader ' +
-                    'does have one and the app failed to offer the screen - which is a product ' +
-                    'defect, not a test-data problem.'
-                );
-            }
-            return false;
+            return { asked: false, usesTgp: false };
         }
 
         await ReportLog.step('Answer "Do you want to use a Trader Goods Profile?"', async () => {
@@ -96,14 +90,14 @@ export class GoodsItemSteps {
 
         // Guarded above: useTGP and a record now agree, so this also ends the no branch.
         if (!record) {
-            return false;
+            return { asked: true, usesTgp: false };
         }
 
         await ReportLog.step('Enter the Trader Goods Profile number', async () => {
             await this.goodsDeclarePage.selectTgpNumber(record.lookup);
         });
 
-        return true;
+        return { asked: true, usesTgp: true };
     }
 
     // ===================== Procedure codes =====================
@@ -291,13 +285,17 @@ export class GoodsItemSteps {
      * The NIRMS screen, when the service shows it. A no-op otherwise - see
      * GoodsDeclarePage.answerUseNirmsIfPresent for why this one cannot be decided from
      * the journey's own flags.
+     *
+     * Returns whether the screen was shown, so the flow can hold that against what the
+     * importer's authorisation and the commodity's tariff say it should have been.
      */
-    async answerNirmsIfAsked(input: GoodsData): Promise<void> {
-        await ReportLog.step('Answer NIRMS', async () => {
+    async answerNirmsIfAsked(input: GoodsData): Promise<boolean> {
+        return ReportLog.step('Answer NIRMS', async () => {
             const asked = await this.goodsDeclarePage.answerUseNirmsIfPresent(input.useNirms);
 
             const answer = input.useNirms ? 'Yes' : 'No';
             ReportLog.setParameter('NIRMS screen', asked ? `answered ${answer}` : 'not shown');
+            return asked;
         });
     }
 

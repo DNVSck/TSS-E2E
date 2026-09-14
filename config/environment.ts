@@ -1,5 +1,8 @@
 import { LOCALES_CONSTANT } from '../src/constant/locales-constant';
-import { tssOrigin, caseManagementOrigin } from '../src/constant/tss-host-constant';
+import {
+  TSS_DOMAIN, CASE_MANAGEMENT_SUBDOMAIN, AUTH_SUBDOMAIN, TRADER_API_BASE_PATH,
+  PORTAL_API_BASE_PATH, KEYCLOAK_TOKEN_PATH,
+} from '../src/constant/tss-host-constant';
 
 export type Locale = 'all' | 'en' | 'cy';
 
@@ -51,6 +54,29 @@ function reportMissingEnv(): void {
 }
 
 export const ENV = process.env.ENV!;
+
+/**
+ * The origin of a host on this estate, subdomain labels first - tssOrigin(ENV) for the
+ * environment itself, tssOrigin(AUTH_SUBDOMAIN, ENV) for a subdomain of it. Every URL
+ * below is assembled through it, so the scheme and the dots are written in one place.
+ */
+function tssOrigin(...labels: string[]): string {
+  return `https://${labels.join('.')}.${TSS_DOMAIN}`;
+}
+
+export function assertEnvSet(
+  values: Record<string, string>,
+  cannot: string,
+  why: string
+): void {
+  const missing = Object.entries(values).filter(([, value]) => !value).map(([key]) => key);
+
+  if (missing.length === 0) {
+    return;
+  }
+
+  throw new Error(`${cannot} on "${ENV}": ${missing.join(' and ')} not set in .env.${ENV}. ${why}`);
+}
 
 /** Whether the environment requires the TOTP/OTP step during sign in. */
 export const OTP_ENABLED = boolOrDefault(process.env.OTP_ENABLED);
@@ -152,7 +178,18 @@ export const CDS_TOKEN = process.env.CDS_TOKEN?.trim() ?? '';
 
 export const IS_CDS_MOCK_AVAILABLE = CDS_TOKEN !== '';
 
-export const CASE_MANAGEMENT_HOST = caseManagementOrigin(ENV);
+export const GVMS_PUSH_SECRET = process.env.GVMS_PUSH_SECRET?.trim() ?? '';
+
+export const IS_GVMS_MOCK_AVAILABLE = GVMS_PUSH_SECRET !== '';
+
+export const CASE_MANAGEMENT_HOST = tssOrigin(CASE_MANAGEMENT_SUBDOMAIN, ENV);
 export const CASE_MANAGEMENT_USER_NAME = process.env.CASE_MANAGEMENT_USER_NAME?.trim() ?? '';
 export const CASE_MANAGEMENT_PASSWORD = process.env.CASE_MANAGEMENT_PASSWORD?.trim() ?? '';
+
+export const TRADER_API_BASE_URL = `${tssOrigin(ENV)}${TRADER_API_BASE_PATH}`;
+export const TRADER_API_TOKEN_URL = `${tssOrigin(AUTH_SUBDOMAIN, ENV)}${KEYCLOAK_TOKEN_PATH}`;
+export const TRADER_API_CLIENT_ID = process.env.TRADER_API_CLIENT_ID?.trim() ?? '';
+export const TRADER_API_CLIENT_SECRET = process.env.TRADER_API_CLIENT_SECRET?.trim() ?? '';
+
+export const PORTAL_API_BASE_URL = `${tssOrigin(ENV)}${PORTAL_API_BASE_PATH}`;
 

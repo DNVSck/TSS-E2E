@@ -300,7 +300,11 @@ export class MovementOverviewPage extends BasePage {
     }
 
     /**
-     * Land on the movement overview from anywhere, by URL.
+     * Land on the movement overview from anywhere, by URL - unless the browser is
+     * already on it or on one of its tab sub-routes, which the tab click below can
+     * reach without a navigation. Going anyway raced the app: landing on /overview
+     * from a tab makes it navigate straight back down to that tab, and that second
+     * navigation cancels this one (seen on sit 2026-09-14).
      *
      * The exception to this page object's rule of following the user's own path, and it
      * earns it: a GMR record page has NO route back up to the movement. Checked on
@@ -318,12 +322,17 @@ export class MovementOverviewPage extends BasePage {
         // Everything before "/goods-movement/" - the portal's own mount point, taken
         // from the live URL rather than assumed, so a re-mounted service still works.
         const mountPoint = url.pathname.slice(0, url.pathname.indexOf(`/${MOVEMENT_ROUTE.GOODS_MOVEMENT_SEGMENT}/`));
+        const overviewPath = `${mountPoint}${this.movementOverviewPath(movement)}`;
 
-        url.pathname = `${mountPoint}${this.movementOverviewPath(movement)}`;
+        if (url.pathname === overviewPath || url.pathname.startsWith(`${overviewPath}/`)) {
+            return;
+        }
+
+        url.pathname = overviewPath;
         url.search = '';
         url.hash = '';
 
-        await this.page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
+        await this.page.goto(url.toString(), { waitUntil: 'commit' });
     }
 
     /**
@@ -477,6 +486,12 @@ export class MovementOverviewPage extends BasePage {
             return true;
         }
 
+        return this.openRecordFromTab(this.gmrDetailsTab, this.gmrViewLink, GMR_VIEW_TIMEOUT);
+    }
+
+
+    async reopenGmrDetailFromTab(): Promise<boolean> {
+        await this.goToMovementOverview();
         return this.openRecordFromTab(this.gmrDetailsTab, this.gmrViewLink, GMR_VIEW_TIMEOUT);
     }
 

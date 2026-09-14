@@ -1,6 +1,6 @@
 import { BasePage } from './base-page';
-import { Page, Locator, expect } from '@playwright/test';
-import { generateTotpCode } from '../core/util/totp-auth';
+import { Page, Locator } from '@playwright/test';
+import { freshTotpCode } from '../core/util/totp-auth';
 import { UserCredentials } from '../auth/credentials';
 import { TFunction } from '../fixtures/locale-fixture';
 
@@ -14,22 +14,6 @@ const MAX_TOTP_ATTEMPTS = 8;
 
 const AUTH_SCREEN_TIMEOUT = 90_000;
 
-/**
- * The last TOTP code this process submitted, per secret.
- *
- * A code can be spent once. Without this, the only way a sign-in learns the current
- * window is already spent is by SUBMITTING the spent code and being refused - and
- * every refusal is a failed login attempt, which Keycloak's brute-force detector
- * counts. A suite that signs the same account in for every test therefore spends its
- * way towards a temporary lockout, and a locked account answers correct credentials
- * with 'Invalid username or password' - indistinguishable from a wrong password, so
- * the lockout arrives disguised as a product bug.
- *
- * Remembering what was spent turns that failed login into a wait. Module scope, so
- * every page object in the worker shares it; a secret whose window has already
- * rolled costs nothing, because waitForNextCode returns as soon as the code differs.
- */
-const spentTotpCodes = new Map<string, string>();
 
 export class SignInPage extends BasePage {
 
@@ -187,20 +171,10 @@ export class SignInPage extends BasePage {
         // passed the credential-choice step yet. A no-op once it is behind us.
         await this.selectAuthenticatorApp();
 
-        // Seeded from what this process already spent for this secret rather than from
-        // undefined, so the FIRST attempt waits out a spent window instead of burning a
-        // failed login attempt to discover it - see spentTotpCodes.
-        let lastCode: string | undefined = spentTotpCodes.get(secret);
-
         for (let attempt = 1; attempt <= MAX_TOTP_ATTEMPTS; attempt++) {
-            if (lastCode !== undefined) {
-                await this.waitForNextCode(secret, lastCode);
-            }
-
-            const code = generateTotpCode(secret);
-            lastCode = code;
-            spentTotpCodes.set(secret, code);
-            await this.submitCode(code);
+            // freshTotpCode waits out a window this process has already spent, so the
+            // FIRST attempt never burns a failed login discovering that.
+            await this.submitCode(await freshTotpCode(secret));
 
             // On the freshly loaded page: the error present means the code was
             // refused; its absence means we are through the OTP step.
@@ -229,15 +203,6 @@ export class SignInPage extends BasePage {
         );
     }
 
-    /**
-     * Condition-based wait: block until the generator yields a code different from
-     * the rejected one, i.e. the next 30-second window has begun.
-     */
-    private async waitForNextCode(secret: string, lastCode: string): Promise<void> {
-        await expect
-            .poll(() => generateTotpCode(secret), { timeout: 35_000, intervals: [500] })
-            .not.toBe(lastCode);
-    }
 
     /** Fill the OTP code, submit, and wait for the resulting page to load. */
     private async submitCode(code: string): Promise<void> {

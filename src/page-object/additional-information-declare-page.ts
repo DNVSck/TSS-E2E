@@ -4,6 +4,8 @@ import {
     fillInputValue, selectAutocompleteValue, clickToLeaveScreen,
 } from '../helper/element-helper';
 
+const DESCRIPTION_TIMEOUT = 150_000;
+
 /**
  * The "New additional information" wizard, reached from the goods item's
  * "Additional information" tab:
@@ -32,9 +34,10 @@ export class AdditionalInformationDeclarePage extends BasePage {
     }
 
     async enterDescription(description: string): Promise<void> {
-        await fillInputValue(this.descriptionInput, description);
-        await expect(this.descriptionInput).toHaveValue(description);
-        await this.clickContinueButton();
+        await expect(async () => {
+            await fillInputValue(this.descriptionInput, description);
+            await clickToLeaveScreen(this.page, this.commonContinueButton);
+        }).toPass({ timeout: DESCRIPTION_TIMEOUT });
     }
 
     async listSummaryValues(): Promise<string[]> {

@@ -1,12 +1,13 @@
 import { BasePage } from "./base-page";
 import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
-import { TFunction } from '../fixtures/locale-fixture';
+import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
     summaryListValue, readFieldWhenVisible, readFieldIfPresent, switchToTabAndClickNew, newRecordButton,
     clickLinkAndEnterWizard,
 } from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
+import { MOVEMENT_ROUTE } from '../constant/endpoints-constant';
 
 /** The GMR detail summary list can be slow to paint under parallel load. */
 /** After submit, the GMR ID and Open status are populated asynchronously. */
@@ -32,6 +33,11 @@ export class GmrDetailsPage extends BasePage {
     private readonly localReferenceNumber: Locator;
     private readonly gmrId: Locator;
     private readonly status: Locator;
+    private readonly vehicleRegistrationNumber: Locator;
+    private readonly trailerRegistrationNumber: Locator;
+    private readonly isTrailerUnaccompanied: Locator;
+    private readonly inspectionRequired: Locator;
+    private readonly reportToLocations: Locator;
 
     constructor(page: Page, t: TFunction) {
         super(page, t);
@@ -46,9 +52,50 @@ export class GmrDetailsPage extends BasePage {
 
         this.newExternalContactButton = newRecordButton(page, '/external-contacts');
 
-        this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
-        this.gmrId = summaryListValue(page, this.t!('gmrDetail.gmrId'));
-        this.status = summaryListValue(page, this.t!('common.status'));
+        this.localReferenceNumber = summaryListValue(page, t('common.localReferenceNumber'));
+        this.gmrId = summaryListValue(page, t('gmrDetail.gmrId'));
+        this.status = summaryListValue(page, t('common.status'));
+
+        this.vehicleRegistrationNumber =
+            summaryListValue(page, t('gmrDetail.vehicleRegistrationNumber'));
+        this.trailerRegistrationNumber =
+            summaryListValue(page, t('gmrDetail.trailerRegistrationNumber'));
+        this.isTrailerUnaccompanied =
+            summaryListValue(page, t('gmrDetail.isTrailerUnaccompanied'));
+        this.inspectionRequired =
+            summaryListValue(page, t('gmrDetail.inspectionRequired'));
+        this.reportToLocations =
+            summaryListValue(page, t('gmrDetail.reportToLocations'));
+    }
+
+    /**
+     * The transport identity the GMR inherited from its movement. Accompanied movements
+     * carry a vehicle registration and unaccompanied ones a trailer registration, so the
+     * row that does not apply is absent rather than blank - hence read-if-present on
+     * both, and the caller decides which one it expected.
+     */
+    async readTransportIdentity(): Promise<{
+        vehicleRegistrationNumber: string;
+        trailerRegistrationNumber: string;
+        isTrailerUnaccompanied: string;
+    }> {
+        return {
+            vehicleRegistrationNumber: await readFieldIfPresent(this.vehicleRegistrationNumber),
+            trailerRegistrationNumber: await readFieldIfPresent(this.trailerRegistrationNumber),
+            isTrailerUnaccompanied: await readFieldIfPresent(this.isTrailerUnaccompanied),
+        };
+    }
+
+    /**
+     * "Inspection required" and, when it is Yes, the locations to report to. The
+     * locations row is absent entirely when no inspection is due, which is why this
+     * reads rather than waits.
+     */
+    async readInspection(): Promise<{ required: string; reportToLocations: string }> {
+        return {
+            required: await readFieldIfPresent(this.inspectionRequired),
+            reportToLocations: await readFieldIfPresent(this.reportToLocations),
+        };
     }
 
     /**
@@ -112,22 +159,50 @@ export class GmrDetailsPage extends BasePage {
      * returns the last-read values so the caller can soft-assert (and report) them.
      */
     async waitForGmrOpen(): Promise<{ gmrId: string; status: string }> {
-        const openLabel = this.t!('status.open');
+        return this.waitForGmrStatus('status.open');
+    }
+
+    /**
+     * The same wait for any status GVMS can move a GMR to. The GMR ID is held to the
+     * same rule throughout: once issued it stays, so a status that arrives without it
+     * is not the answer.
+     *
+     * Refuses to read anywhere but the GMR record. "Status" is a summary-list row on
+     * the movement overview and on every consignment too, so a caller that had
+     * navigated away would read a different record's status and be believed.
+     */
+    async waitForGmrStatus(
+        expectedStatusKey: TranslationKey
+    ): Promise<{ gmrId: string; status: string }> {
+        this.refuseUnlessOnGmrRecord();
+
+        const expected = this.t!(expectedStatusKey);
         let gmrId = '';
         let status = '';
 
         await expect(async () => {
             status = await readFieldIfPresent(this.status);
             gmrId = await readFieldIfPresent(this.gmrId);
-            if (status !== openLabel || !LOCAL_REFERENCE.GMR_PREFIX.test(gmrId)) {
+            if (status !== expected || !LOCAL_REFERENCE.GMR_PREFIX.test(gmrId)) {
                 await this.page.reload();
             }
-            expect(status, 'GMR status Open').toBe(openLabel);
+            expect(status, `GMR status ${expected}`).toBe(expected);
             expect(gmrId, 'GMR ID issued').toMatch(LOCAL_REFERENCE.GMR_PREFIX);
         })
             .toPass({ timeout: GMR_OPEN_POLL_TIMEOUT, intervals: [2_000, 3_000, 5_000] })
             .catch(() => { /* soft: return whatever was last read for the caller to report */ });
 
         return { gmrId, status };
+    }
+
+    private refuseUnlessOnGmrRecord(): void {
+        if (MOVEMENT_ROUTE.GMR_RECORD_PATH.test(this.page.url())) {
+            return;
+        }
+
+        throw new Error(
+            `A GMR status can only be read on the GMR record, and the page open instead `
+            + `is "${this.page.url()}".`
+        );
     }
 }

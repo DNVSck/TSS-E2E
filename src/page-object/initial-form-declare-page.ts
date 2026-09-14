@@ -80,6 +80,23 @@ export class InitialFormDeclaraPage extends BasePage {
         await this.clickContinueButton();
     }
 
+    /**
+     * Whether this screen offers the Internal Market Movement option at all.
+     *
+     * Waiting on whichever of the three options arrives first tells "the screen has
+     * painted and IMMI is not among the choices" apart from "the screen has not
+     * painted yet", without spending a timeout on the answer.
+     */
+    async isInternalMarketMovementOffered(): Promise<boolean> {
+        await this.internalMarketMovementInformationOption
+            .or(this.simplifiedDeclarationOption)
+            .or(this.standardDeclarationOption)
+            .first()
+            .waitFor();
+
+        return this.internalMarketMovementInformationOption.isVisible();
+    }
+
     async selectStandaloneDeclarationType(standaloneDeclarationType: string): Promise<void> {
         if (
             standaloneDeclarationType.includes(

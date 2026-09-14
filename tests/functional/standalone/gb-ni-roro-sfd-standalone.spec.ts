@@ -5,6 +5,7 @@ import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { sfdStandaloneGoodsItem } from '../../../src/test-data/sfd-standalone-goods-item-data';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { IMPORTER_COMPANY_NAME } from '../../../config/environment';
+import { PORT_OF_ARRIVAL } from '../../../src/constant/port-of-arrival-constant';
 
 const SFD_STANDALONE = '4440';
 const SFD_EIDR_STANDALONE = '4614';
@@ -43,7 +44,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
   // An arrived movement is the same declaration minus the arrival date/time screen, and
   // it settles on "Arrived" instead of "Awaiting arrival" - the flow derives both from
   // isPreLodged, so the override below is the only difference from the test above.
-  test('Verify SFD Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify SFD Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Arrived - RoRo (Accompanied)');
     const sfd = await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
@@ -53,6 +54,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
           representationType: REPRESENTATION_TYPE.DIRECT,
           isPreLodged: false,
           isControlledGoods: true,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
         },
         goodsItemOverrides: sfdStandaloneGoodsItem(),
       })
@@ -84,7 +86,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
   // pre-lodged or arrived, having no arrival to wait for. That makes this test worth
   // running despite reading like the one above - it is the only one that proves the
   // arrived route does NOT settle on "Arrived".
-  test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Arrived - RoRo (Accompanied)');
     await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
@@ -94,6 +96,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
           representationType: REPRESENTATION_TYPE.DIRECT,
           isPreLodged: false,
           isControlledGoods: false,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
         },
         goodsItemOverrides: sfdStandaloneGoodsItem(),
       })
@@ -115,7 +118,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
     await ReportLog.setFeature('GB to NI SFD Standalone Declaration Process');
   });
 
-  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
     const sfd = await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
@@ -131,7 +134,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
     );
   });
 
-  test('Verify SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath', '@smoke'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+  test('Verify SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath', '@smoke'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself');
     const sfd = await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
@@ -140,6 +143,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
         consignmentOverrides: {
           isPreLodged: false,
           isControlledGoods: true,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
         },
         goodsItemOverrides: sfdStandaloneGoodsItem(),
       })
@@ -150,7 +154,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
     );
   });
 
-  test('Verify SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
     await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
@@ -165,7 +169,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
     );
   });
 
-  test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
+  test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself');
     await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
@@ -174,6 +178,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
         consignmentOverrides: {
           isPreLodged: false,
           isControlledGoods: false,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
         },
         goodsItemOverrides: sfdStandaloneGoodsItem(),
       })

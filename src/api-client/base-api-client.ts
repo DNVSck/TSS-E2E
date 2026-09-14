@@ -41,9 +41,16 @@ function relativeToBase(path: string): string {
 export abstract class BaseApiClient {
     protected constructor(protected readonly request: APIRequestContext) { }
 
-    protected async post(path: string, body?: unknown): Promise<APIResponse> {
+    protected async post(
+        path: string,
+        body?: unknown,
+        headers?: Record<string, string>
+    ): Promise<APIResponse> {
         const route = relativeToBase(path);
-        const response = await this.request.post(route, body === undefined ? undefined : { data: body });
+        const response = await this.request.post(route, {
+            ...(body === undefined ? {} : { data: body }),
+            ...(headers ? { headers } : {}),
+        });
         await this.assertSucceeded('POST', route, response);
         return response;
     }

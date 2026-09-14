@@ -21,6 +21,15 @@ function submittedStatusKey(data: SfdStandaloneConsignmentData): TranslationKey 
     if (!data.isControlledGoods) {
         return 'status.authorised';
     }
+
+    // An arrived SFD does not land on "Arrived" at submit: the service takes it to
+    // "Processing" and only the CDS responses move it on - see arriveStandaloneSfd,
+    // which is where "Arrived" is asserted. Stated here rather than in the shared rule
+    // because it has only been measured on this journey.
+    if (!data.isPreLodged) {
+        return 'status.processing';
+    }
+
     return standaloneSubmittedStatusKey(data.isPreLodged);
 }
 

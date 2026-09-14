@@ -17,7 +17,7 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
     await ReportLog.setFeature('GB to NI RoRo ENS-only Declaration Process');
   });
 
-  test('Verify ENS Only - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@regression' , '@e2e', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
+  test('Verify ENS Only - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@regression' , '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS-only - GB to NI RoRo Accompanied');
     reportTestCaseLink(ENS_ONLY);
     await ReportLog.step('Create and submit the ENS declaration', () =>
@@ -30,7 +30,7 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
     );
   });
 
-  test('Verify ENS Only - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
+  test('Verify ENS Only - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@regression', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS-only - GB to NI RoRo Unaccompanied');
     reportTestCaseLink(ENS_ONLY);
     await ReportLog.step('Create and submit the ENS declaration', () =>
@@ -45,7 +45,7 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
     );
   });
 
-  test('Verify ENS Only - RoRo (Accompanied), goods item requires container details, is created and submitted successfully', { tag: ['@regression', '@e2e', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
+  test('Verify ENS Only - RoRo (Accompanied), goods item requires container details, is created and submitted successfully', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS-only - GB to NI RoRo Accompanied with a goods item declaring its own container');
     reportTestCaseLink(ENS_ONLY);
     // Crossing the EU border with goods in DIFFERENT containers makes each goods item

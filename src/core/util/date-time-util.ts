@@ -258,4 +258,10 @@ export class DateTimeUtil {
         return date.toISOString().slice(0, 16);
     }
 
+    static toUkDateTime(utcDateTimeLocal: string): string {
+        const [date, time] = utcDateTimeLocal.split('T');
+        const [year, month, day] = date.split('-');
+        return `${day}/${month}/${year} ${time}:00`;
+    }
+
 }

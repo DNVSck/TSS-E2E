@@ -32,7 +32,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
 
     test(
         'Verify the supplementary declaration raised by an ENS-SFD movement is completed and submitted successfully (4000-1SG)- Trader DDA - No Payment through TSS',
-        { tag: ['@regression', '@e2e', '@happyPath'] },
+        { tag: ['@e2e', '@happyPath'] },
         async ({
             generateSdDraftFromEnsSfdFlow,
             completeAndSubmitSupplementaryDeclarationFlow,
@@ -59,7 +59,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
 
     test(
         'Verify the supplementary declaration raised by an ENS-SFD movement is completed and submitted successfully (4000-1SG)- TSS DDA - Payment through TSS',
-        { tag: ['@regression', '@e2e', '@happyPath'] },
+        { tag: ['@e2e', '@happyPath'] },
         async ({
             generateSdDraftFromEnsSfdFlow,
             completeAndSubmitSupplementaryDeclarationFlow,
@@ -81,6 +81,31 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
                     movementLrn,
                     frontierLrn,
                     overrides: tssDefermentSupplementaryDeclaration(),
+                })
+            );
+        }
+    );
+
+    test(
+        'Verify the supplementary declaration raised by an ENS-SFD movement declared through the Trader API is completed and submitted successfully (4000-1SG) - Trader DDA',
+        { tag: ['@smoke', '@regression', '@happyPath'] },
+        async ({
+            generateSdDraftThroughApiFlow,
+            completeAndSubmitSupplementaryDeclarationFlow,
+        }, testInfo) => {
+            await ReportLog.setStory('Supplementary Declaration - from ENS-SFD declared through the Trader API - Trader DDA');
+
+            const { movementLrn, frontierLrn } = await ReportLog.step('Raise the supplementary declaration from a movement declared through the Trader API', () =>
+                generateSdDraftThroughApiFlow.generateSdDraft({ testInfo, url: getBaseUrl() })
+            );
+
+            await ReportLog.step('Complete and submit the supplementary declaration', () =>
+                completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
+                    testInfo,
+                    url: getBaseUrl(),
+                    movementLrn,
+                    frontierLrn,
+                    overrides: traderDefermentSupplementaryDeclaration(),
                 })
             );
         }

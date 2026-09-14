@@ -16,7 +16,7 @@ import { HolderOfAuthorisationDeclarePage } from '../page-object/holder-of-autho
 import { ConsignmentSteps } from '../flows/consignment/consignment-steps';
 import { ConsignmentOverviewFlow } from '../flows/consignment/consignment-overview-flow';
 import { GoodsOverviewFlow } from '../flows/goods-item/goods-overview-flow';
-import { AddNewGMRFlow } from '../flows/add-new-gmr-flow';
+import { GmrOverviewFlow } from '../flows/gmr/gmr-overview-flow';
 import { GmrDeclarePage } from '../page-object/gmr-declare-page';
 import { GmrDetailsPage } from '../page-object/gmr-details-page';
 import { ExternalContactDeclarePage } from '../page-object/external-contact-declare-page';
@@ -71,7 +71,7 @@ export interface CompanySession {
      * to be done from the agent's browser, which proves the wrong thing: the agent had
      * already submitted it once.
      */
-    readonly gmr: AddNewGMRFlow;
+    readonly gmr: GmrOverviewFlow;
 
     /**
      * Close this company's window as soon as it has done its part.
@@ -120,7 +120,7 @@ function buildCompanySession(
         declarations: new DeclarationAccessFlow(
             movement, record, new PortalPage(page), new DeclarationSearchPage(page), overview, t, profile
         ),
-        gmr: new AddNewGMRFlow(
+        gmr: new GmrOverviewFlow(
             movement,
             new GmrDeclarePage(page),
             new GmrDetailsPage(page, t),

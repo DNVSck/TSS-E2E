@@ -125,6 +125,7 @@ export class CreateDraftEnsDeclarationFlow {
      */
     private buildGoodsJourney(consignmentData: ConsignmentData): GoodsJourneyContext {
         return {
+            importerEORI: consignmentData.importerEORI,
             useIMMI: !consignmentData.isEnsOnly && consignmentData.useIMMI,
             isEnsOnly: consignmentData.isEnsOnly,
             isControlledGoods: !consignmentData.isEnsOnly && consignmentData.isControlledGoods,

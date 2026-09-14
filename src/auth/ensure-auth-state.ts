@@ -5,7 +5,10 @@ import { SignInPage } from '../page-object/sign-in-page';
 import { createTranslator } from '../fixtures/locale-fixture';
 import { LOCALES_CONSTANT } from '../constant/locales-constant';
 import { authStatePath, isAuthStateFresh, isSessionYoungEnough, AUTH_STATE_TTL_MINUTES } from './auth-state';
-import { CompanyProfile, UserCredentials, accountFor, getCredentialsPool, profilesToAuthenticate } from './credentials';
+import {
+    CompanyProfile, UserCredentials, accountFor, accountEnvKey, getCredentialsPool,
+    profilesToAuthenticate,
+} from './credentials';
 
 const SIGN_IN_TIMEOUT_MS = 60_000;
 
@@ -23,6 +26,22 @@ const SIGN_IN_TIMEOUT_MS = 60_000;
  * the other three came back.
  */
 const PORTAL_OPEN_TIMEOUT_MS = 90_000;
+
+export interface SignInFailure {
+    account: string;
+    message: string;
+    stack: string;
+}
+
+export class SignInFailedError extends Error {
+    constructor(readonly failures: SignInFailure[], attempted: number) {
+        super(
+            `Auth: ${failures.length} of ${attempted} sign-in(s) failed.\n\n` +
+            failures.map(failure => failure.message).join('\n\n')
+        );
+        this.name = 'SignInFailedError';
+    }
+}
 
 /**
  * Signs in one account per parallel worker (per requested profile) and caches
@@ -67,7 +86,7 @@ export async function ensureAuthState(workerCount: number): Promise<void> {
         const results = await Promise.allSettled(
             stale.map(account => signInAndSaveState(browser, account))
         );
-        assertNoSignInFailures(results, stale.length);
+        assertNoSignInFailures(results, stale);
     } finally {
         await browser.close();
     }
@@ -87,28 +106,29 @@ function selectAccounts(profiles: CompanyProfile[], workerCount: number): UserCr
 }
 
 /** Throw if any concurrent sign-in rejected, naming every failure at once. */
-function assertNoSignInFailures(results: PromiseSettledResult<void>[], attempted: number): void {
-    const failures = results
-        .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-        .map(r => (r.reason instanceof Error ? r.reason.message : String(r.reason)));
+function assertNoSignInFailures(
+    results: PromiseSettledResult<void>[],
+    accounts: UserCredentials[]
+): void {
+    const failures = results.flatMap((result, index) =>
+        result.status === 'rejected'
+            ? [{
+                account: accountLabel(accounts[index]),
+                message: result.reason instanceof Error
+                    ? result.reason.message : String(result.reason),
+                stack: result.reason instanceof Error ? result.reason.stack ?? '' : '',
+            }]
+            : []
+    );
 
     if (failures.length > 0) {
-        throw new Error(
-            `Auth: ${failures.length} of ${attempted} sign-in(s) failed.\n\n` +
-            failures.join('\n\n')
-        );
+        throw new SignInFailedError(failures, accounts.length);
     }
 }
 
-/** Human label + env-var hints for one account, indexed or not. */
+/** Human label for one account, indexed or not. */
 function accountLabel(c: UserCredentials): string {
     return c.accountNumber === undefined ? c.profile : `${c.profile} account ${c.accountNumber}`;
-}
-
-function envKey(c: UserCredentials, field: string): string {
-    return c.accountNumber === undefined
-        ? `${c.profile}_${field}`
-        : `${c.profile}_${field}_${c.accountNumber}`;
 }
 
 async function signInAndSaveState(
@@ -155,7 +175,7 @@ function assertTotpSecretPresent(credentials: UserCredentials, label: string): v
     if (OTP_ENABLED && !credentials.totpSecret) {
         throw new Error(
             `OTP_ENABLED is true but no TOTP secret is set for ${label}. ` +
-            `Set ${envKey(credentials, 'TOTP_SECRET')} in .env.${ENV}.`
+            `Set ${accountEnvKey(credentials, 'TOTP_SECRET')} in .env.${ENV}.`
         );
     }
 }
@@ -164,14 +184,14 @@ function assertTotpSecretPresent(credentials: UserCredentials, label: string): v
 function buildSignInError(credentials: UserCredentials, label: string, url: string, error: unknown): Error {
     const reason = error instanceof Error ? error.message : String(error);
     const stuckOnAuthServer = url.includes('/realms/');
-    const totpHint = OTP_ENABLED ? ` / ${envKey(credentials, 'TOTP_SECRET')}` : '';
+    const totpHint = OTP_ENABLED ? ` / ${accountEnvKey(credentials, 'TOTP_SECRET')}` : '';
 
     return new Error(
         `Auth: failed to sign in as ${label} on "${ENV}" (${url}).\n` +
         (stuckOnAuthServer
             ? 'The browser never left the identity provider, so a credential was rejected. '
             : '') +
-        `Check ${envKey(credentials, 'USER_NAME')} / ${envKey(credentials, 'PASSWORD')}` +
+        `Check ${accountEnvKey(credentials, 'USER_NAME')} / ${accountEnvKey(credentials, 'PASSWORD')}` +
         `${totpHint} in .env.${ENV}.\n` +
         `Underlying error: ${reason}`
     );

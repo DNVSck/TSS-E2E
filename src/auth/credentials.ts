@@ -199,6 +199,25 @@ export function isProfileConfigured(profile: CompanyProfile): boolean {
     );
 }
 
+
+export function accountEnvKey(account: UserCredentials, field: string): string {
+    const perAccount = envName(account.profile, field, account.accountNumber);
+
+    if (process.env[perAccount]?.trim()) {
+        return perAccount;
+    }
+
+    const shared = envName(account.profile, field);
+
+    return process.env[shared]?.trim() ? shared : perAccount;
+}
+
+function envName(profile: CompanyProfile, field: string, accountNumber?: number): string {
+    return accountNumber === undefined
+        ? `${profile}_${field}`
+        : `${profile}_${field}_${accountNumber}`;
+}
+
 export function getCredentials(profile: CompanyProfile): UserCredentials {
     const username = process.env[`${profile}_USER_NAME`]?.trim();
     const password = process.env[`${profile}_PASSWORD`]?.trim();
@@ -238,8 +257,8 @@ function readPoolAccount(
     username: string
 ): UserCredentials {
     const field = (name: string): string | undefined =>
-        process.env[`${profile}_${name}_${accountNumber}`]?.trim()
-        || process.env[`${profile}_${name}`]?.trim()
+        process.env[envName(profile, name, accountNumber)]?.trim()
+        || process.env[envName(profile, name)]?.trim()
         || undefined;
 
     const password = field('PASSWORD');

@@ -2,6 +2,18 @@ import { ReportLog } from '../../core/report/report-log';
 import { GoodsData } from '../../test-data/goods-data';
 import { GoodsItemSteps } from './goods-item-steps';
 import { hidesSupplementaryUnit } from '../../helper/procedure-code-helper';
+import {
+    nirmsExpectation, nirmsNeedsTariff, NirmsExpectation,
+} from '../../helper/nirms-helper';
+import {
+    CompanyPermissionService,
+} from '../../api-service/portal-api/company-permission-service';
+import {
+    TraderGoodsProfileService, describeTgpGap,
+} from '../../api-service/portal-api/trader-goods-profile-service';
+import { TariffService } from '../../api-service/portal-api/tariff-service';
+import { COMPANY_PROFILE, UserCredentials } from '../../auth/credentials';
+import { ENV } from '../../../config/environment';
 
 /**
  * Which of the conditional goods-item screens a journey reaches. Derived from the
@@ -15,6 +27,7 @@ import { hidesSupplementaryUnit } from '../../helper/procedure-code-helper';
  * already captured an invoice currency.
  */
 export interface GoodsJourneyContext {
+    readonly importerEORI: string;
     readonly useIMMI: boolean;
     readonly isEnsOnly: boolean;
     readonly isControlledGoods: boolean;
@@ -39,7 +52,13 @@ function asksDangerousGoods(input: GoodsData, journey: GoodsJourneyContext): boo
 }
 
 export class AddNewEnsGoodsItemFlow {
-    constructor(private readonly steps: GoodsItemSteps) { }
+    constructor(
+        private readonly steps: GoodsItemSteps,
+        private readonly companyPermissionService: CompanyPermissionService,
+        private readonly traderGoodsProfileService: TraderGoodsProfileService,
+        private readonly tariffService: TariffService,
+        private readonly authAccount: UserCredentials | null,
+    ) { }
 
     /**
      * Returns whether the item was declared from a TGP record — the caller needs it
@@ -50,7 +69,7 @@ export class AddNewEnsGoodsItemFlow {
             await this.steps.openNewGoodsRecord();
 
             // The TGP screen is the first goods screen, but only on the IMMI journey.
-            const usesTgp = journey.useIMMI ? await this.steps.declareTgp(input) : false;
+            const usesTgp = journey.useIMMI ? await this.declareTgp(input, journey) : false;
 
             // ENS-only has no procedure codes; every other journey starts here.
             if (!journey.isEnsOnly) {
@@ -97,7 +116,7 @@ export class AddNewEnsGoodsItemFlow {
             // commodity-information). With TGP there IS no commodity screen and the
             // service asks at the end instead - see after the invoice screen below.
             if (!usesTgp) {
-                await this.steps.answerNirmsIfAsked(input);
+                await this.answerNirms(input, journey);
             }
 
             await this.steps.enterPackagingDetails(input);
@@ -113,11 +132,106 @@ export class AddNewEnsGoodsItemFlow {
             }
 
             if (usesTgp) {
-                await this.steps.answerNirmsIfAsked(input);
+                await this.answerNirms(input, journey);
             }
 
             await this.steps.finishGoodsItemDeclaration();
             return usesTgp;
+        });
+    }
+
+    private async declareTgp(input: GoodsData, journey: GoodsJourneyContext): Promise<boolean> {
+        const permission = await this.traderGoodsProfileService
+            .readTgpPermission(journey.importerEORI);
+
+        const declaringAsAgent = this.authAccount?.profile === COMPANY_PROFILE.AGENT;
+        const expected = declaringAsAgent
+            ? permission.allowsTssAccess && permission.allowsThirdPartyAccess
+            : permission.allowsTssAccess;
+
+        if (input.useTGP && !expected) {
+            throw new Error(
+                `Test data sets "useTGP" but the TGP question is never put for `
+                + `${journey.importerEORI} on "${ENV}": ${describeTgpGap(permission, declaringAsAgent)}. `
+                + `The TGP path cannot be exercised against that importer.`
+            );
+        }
+
+        const { asked, usesTgp } = await this.steps.declareTgp(input);
+
+        ReportLog.setParameter('TGP question', asked ? 'asked' : 'not asked');
+
+        if (asked !== expected) {
+            const asThirdParty = declaringAsAgent ? ' to a third party' : '';
+
+            throw new Error(
+                expected
+                    ? `The TGP question was never put, but ${journey.importerEORI} grants every `
+                    + `permission it needs${asThirdParty}, so the `
+                    + `service should have asked. Nothing in the test data explains this - the `
+                    + `screen that was owed was not offered.`
+                    : `The TGP question was put, but ${describeTgpGap(permission, declaringAsAgent)}. `
+                    + `The permissions and the screen disagree.`
+            );
+        }
+
+        return usesTgp;
+    }
+
+    /**
+     * "Do you want to use NIRMS for these goods?"
+     *
+     * Always needs the importer's NIRMS authorisation, and then a second condition that
+     * is NOT the same on every journey - see nirmsExpectation.
+     */
+    private async answerNirms(input: GoodsData, journey: GoodsJourneyContext): Promise<void> {
+        const { expected, because } = await this.expectedNirmsScreen(input, journey);
+
+        if (input.useNirms && !expected) {
+            throw new Error(
+                `Test data sets "useNirms" but the NIRMS screen is never put for this item on `
+                + `"${ENV}": ${because}.`
+            );
+        }
+
+        const asked = await this.steps.answerNirmsIfAsked(input);
+
+        if (asked === expected) {
+            return;
+        }
+
+        throw new Error(
+            expected
+                ? `The NIRMS screen was never shown, but it was owed: ${because}. Nothing in `
+                + `the test data explains this - the screen was not offered.`
+                : `The NIRMS screen was shown, but it should not have been: ${because}. `
+                + `The service and what it permits disagree.`
+        );
+    }
+
+    private async expectedNirmsScreen(
+        input: GoodsData,
+        journey: GoodsJourneyContext
+    ): Promise<NirmsExpectation> {
+        const grant = journey.isEnsOnly
+            ? undefined
+            : await this.companyPermissionService.readPermissionGrant(journey.importerEORI);
+
+        const facts = {
+            isEnsOnly: journey.isEnsOnly,
+            useIMMI: journey.useIMMI,
+            importerEORI: journey.importerEORI,
+            hasNirmsAuthorisation: grant?.hasNirmsAuthorisation ?? false,
+            additionalProcedureCode: input.additionalProcedureCode,
+            commodityCode: input.commodityCode,
+            countryOfOrigin: input.countryOfOrigin,
+        };
+
+        return nirmsExpectation({
+            ...facts,
+            tariffCoversCommodity: nirmsNeedsTariff(facts)
+                ? await this.tariffService.isNirmsSupported(input.commodityCode, input.countryOfOrigin)
+                : undefined,
         });
     }
 

@@ -1,4 +1,7 @@
 import { GoodsData } from './goods-data';
+import { documentReference } from './document-reference-data';
+import { DOCUMENT_CODE } from '../constant/document-code-constant';
+import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 
 /**
  * The goods item an SFD standalone consignment declares.
@@ -15,12 +18,10 @@ import { GoodsData } from './goods-data';
  * here: the shared `goods()` defaults already answer it, and the EIDR route never asks
  * the question at all, so a value here would describe only half the journeys it serves.
  *
- * The document set is still missing: the SFD standalone documents have not been
- * confirmed against the app, and inventing customs document codes/references would be
- * worse than leaving them out. To fill them in, follow
- * immi-standalone-goods-item-data.ts and add the document references, previous
- * documents and additionalProcedureCode the journey requires, keeping `...overrides`
- * last so a spec can still vary one field.
+ * Previous documents and additionalProcedureCode are still unstated: they have not been
+ * confirmed against the app, and inventing customs codes would be worse than leaving
+ * them out. Add them here rather than in a spec when they are known, keeping
+ * `...overrides` last so a spec can still vary one field.
  */
 export const sfdStandaloneGoodsItem = (
     overrides?: Partial<GoodsData>
@@ -33,6 +34,17 @@ export const sfdStandaloneGoodsItem = (
     // shared placeholder, so the packaging screen is exercised with what a trader
     // would really type.
     shippingMarks: 'Production date 25/08/2025; Lot code LOT GBM-250825-01; Approval no. UK 4312 EC (cutting plant)',
+
+    // The excise document the controlled route is refused without. Only this one: the
+    // ENS-SFD set also carries C512, which is there to get past a CDS regression on that
+    // journey rather than because the goods need it.
+    documentReferences: [
+        documentReference({
+            documentCode: DOCUMENT_CODE.C672,
+            documentStatus: DOCUMENT_STATUS.AC,
+            documentReference: '0054037-0054047',
+        }),
+    ],
 
     ...overrides,
 });

@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { randomUUID } from 'node:crypto';
 
 const ALLURE_RESULTS_DIR = path.resolve(process.cwd(), 'allure-results');
 
@@ -118,4 +119,44 @@ export function initAllureResults(): void {
 
 export function getAllureResultsDir(): string {
     return ALLURE_RESULTS_DIR;
+}
+
+export interface SetupFailure {
+    name: string;
+    suite: string;
+    message: string;
+    stack: string;
+}
+
+export function writeSetupFailures(failures: SetupFailure[]): void {
+    try {
+        fs.mkdirSync(ALLURE_RESULTS_DIR, { recursive: true });
+
+        for (const failure of failures) {
+            const uuid = randomUUID();
+            const now = Date.now();
+
+            writeJson(`${uuid}-result.json`, {
+                uuid,
+                historyId: `global-setup:${failure.name}`,
+                name: failure.name,
+                fullName: `globalSetup > ${failure.name}`,
+                status: 'broken',
+                statusDetails: { message: failure.message, trace: failure.stack },
+                stage: 'finished',
+                start: now,
+                stop: now,
+                labels: [
+                    { name: 'parentSuite', value: 'Global setup' },
+                    { name: 'suite', value: failure.suite },
+                    { name: 'severity', value: 'blocker' },
+                ],
+            });
+        }
+    } catch (writeError) {
+        console.warn(
+            'Allure: could not write the globalSetup failure(s) into the report. ' +
+            `Reason: ${writeError instanceof Error ? writeError.message : String(writeError)}`
+        );
+    }
 }
