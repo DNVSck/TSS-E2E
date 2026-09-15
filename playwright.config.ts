@@ -15,17 +15,18 @@ const NAVIGATION_TIMEOUT = 60_000; // Maximum wait for page navigation
 const HEADLESS = process.env.HEADLESS === 'true';
 
 /**
- * One geometry for the recorded frame and for the page inside it, so the two
- * cannot drift apart.
+ * The page geometry when headless.
  *
  * A headed run keeps `viewport: null`, which means "match the real browser
  * window" — and `--start-maximized` makes that the whole screen. Headless has no
  * window manager, so `--start-maximized` is a no-op and `viewport: null` leaves
  * Chromium at its small default: the page renders in GOV.UK's narrow layout, the
  * screenshot comes out mobile-shaped, and the video letterboxes that postage
- * stamp into a 1920x1080 frame. Hence an explicit viewport when headless.
+ * stamp into its frame. Hence an explicit viewport when headless.
  */
 const RECORDING_SIZE = { width: 1920, height: 1080 };
+
+const VIDEO_SIZE = { width: 1280, height: 720 };
 
 /**
  * Worker count: an explicit WORKERS wins everywhere; otherwise CI runs serial
@@ -74,7 +75,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: {
       mode: 'retain-on-failure',
-      size: RECORDING_SIZE,
+      size: VIDEO_SIZE,
     },
     trace: {
       mode: 'retain-on-failure',

@@ -45,22 +45,6 @@ steps:
 
   - script: |
       set -euo pipefail
-      node "$(Build.SourcesDirectory)/node_modules/allure/cli.js" generate "$(Agent.TempDirectory)/reports/allure-results" -o "$(Agent.TempDirectory)/reports/allure-report"
-    displayName: 'Generate Allure Report'
-    condition: always()
-    continueOnError: true
-
-  - task: PublishBuildArtifacts@1
-    displayName: 'Publish Allure Report - ${{ parameters.environment }}'
-    condition: always()
-    continueOnError: true
-    inputs:
-      PathtoPublish: '$(Agent.TempDirectory)/reports/allure-report'
-      ArtifactName: 'allure-report-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
-      publishLocation: Container
-
-  - script: |
-      set -euo pipefail
       RESULTS="$(Agent.TempDirectory)/reports/allure-results"
       TRIMMED="$(Agent.TempDirectory)/reports/allure-results-single"
       [ -d "$RESULTS" ] || exit 0
@@ -73,8 +57,8 @@ steps:
       #
       # Neither is a loss here. Allure cannot open a trace, it only offers a download.
       # What survives is what this report is for: which tests failed, the steps they
-      # took, and the screenshot of the failure. Video and traces stay complete in the
-      # allure-report artifact above, which `allure open` serves in full.
+      # took, and the screenshot of the failure. Video and traces are published as their
+      # own artifacts instead, one file per failed test, named after the test.
       rm -rf "$TRIMMED"
       mkdir -p "$TRIMMED"
       for f in "$RESULTS"/*; do
@@ -94,5 +78,91 @@ steps:
     inputs:
       PathtoPublish: '$(Agent.TempDirectory)/reports/allure-report-single'
       ArtifactName: 'allure-report-single-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
+      publishLocation: Container
+
+  - script: |
+      set -euo pipefail
+      RESULTS="$(Agent.TempDirectory)/reports/test-results"
+      VIDEOS="$(Agent.TempDirectory)/reports/failure-videos"
+      TRACES="$(Agent.TempDirectory)/reports/failure-traces"
+      rm -rf "$VIDEOS" "$TRACES"
+      mkdir -p "$VIDEOS" "$TRACES"
+      : > "$VIDEOS/index.txt"
+      : > "$TRACES/index.txt"
+
+      collect() {
+        local src="$1" dir="$2" ext="$3" base="$4" full="$5"
+        [ -f "$src" ] || return 1
+        local target="$dir/$base.$ext"
+        local n=1
+        while [ -e "$target" ]; do
+          target="$dir/$base ($n).$ext"
+          n=$((n + 1))
+        done
+        cp "$src" "$target"
+        echo "${target##*/}  <=  $full" >> "$dir/index.txt"
+      }
+
+      videos=0
+      traces=0
+      for dir in "$RESULTS"/*/; do
+        [ -d "$dir" ] || continue
+        [ -f "$dir/video.webm" ] || [ -f "$dir/trace.zip" ] || continue
+
+        label=""
+        if [ -f "$dir/error-context.md" ]; then
+          label=$(sed -n 's/^- Name: //p' "$dir/error-context.md" | head -1)
+        fi
+        if [ -z "$label" ]; then
+          label="${dir%/}"
+          label="${label##*/}"
+        fi
+
+        spec="${label%% >> *}"
+        spec="${spec//[^A-Za-z0-9 ().,_-]/ }"
+        spec=$(echo "$spec" | tr -s ' ')
+        spec="${spec##* }"
+        spec="${spec%.spec.ts}"
+
+        title="${label##* >> }"
+
+        name="$spec - $title"
+        name="${name//[^A-Za-z0-9 ().,_-]/ }"
+        name=$(echo "$name" | tr -s ' ')
+        name="${name# }"
+        if [ ${#name} -gt 150 ]; then
+          name="${name:0:100}...${name: -47}"
+        fi
+
+        if collect "$dir/video.webm" "$VIDEOS" webm "$name" "$label"; then videos=$((videos + 1)); fi
+        if collect "$dir/trace.zip"  "$TRACES" zip  "$name" "$label"; then traces=$((traces + 1)); fi
+      done
+
+      echo "Failure videos collected: $videos"
+      echo "Failure traces collected: $traces"
+
+      [ "$videos" -gt 0 ] || echo 'No failed tests in this run.' > "$VIDEOS/index.txt"
+      [ "$traces" -gt 0 ] || echo 'No failed tests in this run.' > "$TRACES/index.txt"
+
+    displayName: 'Collect failure videos and traces - ${{ parameters.environment }}'
+    condition: always()
+    continueOnError: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish failure videos - ${{ parameters.environment }}'
+    condition: always()
+    continueOnError: true
+    inputs:
+      PathtoPublish: '$(Agent.TempDirectory)/reports/failure-videos'
+      ArtifactName: 'failure-videos-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
+      publishLocation: Container
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish failure traces - ${{ parameters.environment }}'
+    condition: always()
+    continueOnError: true
+    inputs:
+      PathtoPublish: '$(Agent.TempDirectory)/reports/failure-traces'
+      ArtifactName: 'failure-traces-${{ parameters.testType }}-${{ parameters.environment }}-$(Build.BuildId)'
       publishLocation: Container
 
