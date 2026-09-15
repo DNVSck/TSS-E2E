@@ -50,6 +50,11 @@ parameters:
     type: boolean
     default: false
 
+  - name: notifyTeams
+    displayName: 'Send Teams notification'
+    type: boolean
+    default: true
+
 variables:
   - ${{ if eq(parameters.environment, 'dev') }}:
       - group: TSS-E2E-DEV
@@ -84,3 +89,4 @@ jobs:
           runAccessibilityTests: ${{ parameters.runAccessibilityTests }}
           runFunctionalTests: ${{ parameters.runFunctionalTests }}
           runAll: ${{ parameters.runAll }}
+          notifyTeams: ${{ parameters.notifyTeams }}

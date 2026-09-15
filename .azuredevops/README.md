@@ -39,6 +39,7 @@ agent; the Chromium system dependencies must be baked into the agent image (run
 | `runAccessibilityTests` | `true` / `false` | `false` |
 | `runFunctionalTests` | `true` / `false` | `true` |
 | `runAll` | `true` / `false` | `false` |
+| `notifyTeams` | `true` / `false` | `true` |
 
 **Behavior:**
 - A single `Test` job runs the selected test type(s). `runAccessibilityTests` / `runFunctionalTests`
@@ -101,6 +102,8 @@ ens-integrated, supplementary) rather than the whole functional suite.
 ## Teams Notifications
 
 All pipelines include an optional Teams notification step. If `TEAMS_WEBHOOK_URL` is empty or not set in the variable group, the step skips gracefully with no error.
+
+`run-tests.yml` also exposes a `notifyTeams` toggle (default `true`). Set it to `false` for manual runs while developing new tests to avoid posting a card to Teams for every run.
 
 ## Pool
 

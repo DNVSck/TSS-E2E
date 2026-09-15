@@ -7,6 +7,9 @@ parameters:
   - name: workers
     type: string
     default: ''
+  - name: notifyTeams
+    type: boolean
+    default: true
 
 steps:
   - script: |
@@ -72,4 +75,4 @@ steps:
       }
       EOF
     displayName: 'Notify Teams'
-    condition: succeededOrFailed()
+    condition: and(succeededOrFailed(), eq('${{ parameters.notifyTeams }}', 'true'))

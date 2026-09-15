@@ -41,6 +41,10 @@ parameters:
     type: boolean
     default: false
 
+  - name: notifyTeams
+    type: boolean
+    default: true
+
 steps:
   - template: test-env-prepare.yml
     parameters:
@@ -224,3 +228,4 @@ steps:
       title: 'TSS-E2E Tests - ${{ parameters.environment }}'
       testScope: ${{ parameters.testScope }}
       workers: ${{ parameters.workers }}
+      notifyTeams: ${{ parameters.notifyTeams }}
