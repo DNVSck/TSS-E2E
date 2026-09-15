@@ -5,7 +5,8 @@ import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { REPRESENTATION_TYPE } from '../constant/representation-type-constant';
 import { PreviousDocumentData, previousDocument } from './previous-document-data';
 import { generateValidArrivalDate, generatePastArrivalDate } from '../helper/data-generate-helper';
-import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
+import { HolderOfAuthorisationData, holderOfAuthorisation } from './holder-of-authorisation-data';
+import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
 
 /**
  * The IMMI standalone consignment ("Internal Market Movement Information").
@@ -70,6 +71,9 @@ export interface ImmiStandaloneConsignmentData {
      * the matching wizard once per element. headerPreviousDocuments carries the ENS
      * declaration this consignment moves under, which every IMMI standalone journey
      * needs, so it has a default; a spec that wants none passes an empty array.
+     *
+     * holdersOfAuthorisation lists only the EXTRA authorisations a journey needs: the
+     * factory always adds UKIMS, so overriding this cannot drop it.
      */
     headerPreviousDocuments: PreviousDocumentData[];
     holdersOfAuthorisation: HolderOfAuthorisationData[];
@@ -118,5 +122,12 @@ export const immiStandaloneConsignment = (
         // is exactly the mistake this branch exists to avoid.
         arrivalDateTime: data.arrivalDateTime
             ?? (data.isPreLodged ? generateValidArrivalDate() : generatePastArrivalDate()),
+
+        holdersOfAuthorisation: [
+            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM }),
+            ...data.holdersOfAuthorisation.filter(
+                holder => holder.typeCode !== AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM
+            ),
+        ],
     };
 };
