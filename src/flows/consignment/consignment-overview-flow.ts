@@ -197,34 +197,13 @@ export class ConsignmentOverviewFlow {
             return;
         }
         await ReportLog.step('Declare holders of authorisation', async () => {
-            const prefilled = await this.prefilledAuthorisationTypes(items);
-
             for (const [index, item] of items.entries()) {
-                if (prefilled.delete(item.typeCode)) {
-                    await this.correctHolderOfAuthorisation(item);
-                    continue;
-                }
-
                 await ReportLog.step(`Add holder of authorisation ${index + 1} of ${items.length}`, async () => {
                     await this.consignmentOverviewPage.openNewHolderOfAuthorisation();
                     await this.holderOfAuthorisationDeclarePage.declareHolderOfAuthorisation(item);
                 });
             }
         });
-    }
-
-    private async prefilledAuthorisationTypes(
-        items: HolderOfAuthorisationData[]
-    ): Promise<Set<string>> {
-        await this.consignmentOverviewPage.openHolderOfAuthorisationTab();
-
-        const prefilled = new Set<string>();
-        for (const typeCode of new Set(items.map(item => item.typeCode))) {
-            if (await this.consignmentOverviewPage.hasHolderOfAuthorisationRecord(typeCode)) {
-                prefilled.add(typeCode);
-            }
-        }
-        return prefilled;
     }
 
     /**

@@ -14,7 +14,7 @@ import { CompanyProfile, accountFor, assertProfileAuthenticated } from './creden
  * These files hold live session cookies: treat them as credentials. The
  * directory is already covered by .gitignore (`/playwright/.auth/`).
  */
-const AUTH_STATE_DIR = path.join('playwright', '.auth');
+export const AUTH_STATE_DIR = path.join('playwright', '.auth');
 
 /**
  * How long a cached session is trusted, when reuse is opted into via

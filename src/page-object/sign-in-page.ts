@@ -1,6 +1,6 @@
 import { BasePage } from './base-page';
 import { Page, Locator } from '@playwright/test';
-import { freshTotpCode } from '../core/util/totp-auth';
+import { freshTotpCode } from '../auth/totp-state';
 import { UserCredentials } from '../auth/credentials';
 import { TFunction } from '../fixtures/locale-fixture';
 
@@ -172,7 +172,8 @@ export class SignInPage extends BasePage {
         await this.selectAuthenticatorApp();
 
         for (let attempt = 1; attempt <= MAX_TOTP_ATTEMPTS; attempt++) {
-            // freshTotpCode waits out a window this process has already spent, so the
+            // freshTotpCode waits out a window ANY process has already spent - the
+            // browser sign-in and the API token mint draw on one account - so the
             // FIRST attempt never burns a failed login discovering that.
             await this.submitCode(await freshTotpCode(secret));
 

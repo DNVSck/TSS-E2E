@@ -40,7 +40,7 @@ export interface TgpRecordData {
 export const TGP_RECORD = {
     /** Looked up by commodity code — this record's trader reference is not unique enough. */
     TEXTILES_TGP123: {
-        recordId: 'a03b409c-c22a-461e-acd1-4a9e346e743b',
+        recordId: '8e0e3101-be72-4562-83bc-28e0bfa8061c',
         traderRef: 'TGP123',
         lookup: '6306290000',
         commodityCode: '6306290000',
@@ -49,7 +49,7 @@ export const TGP_RECORD = {
         countryOfOrigin: COUNTRY_CODE.UNITED_KINGDOM,
     },
     MACHINERY_TGP456: {
-        recordId: 'aab0b5bd-6557-4831-ae57-930611e6a302',
+        recordId: 'afe8ebb8-f1be-425a-be7b-ca6269ffb5db',
         traderRef: 'TGP456',
         lookup: 'TGP456',
         commodityCode: '8485100000',

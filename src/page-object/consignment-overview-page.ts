@@ -11,7 +11,7 @@ import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
 import { StringUtil } from '../core/util/string-util';
 import {
-    OPEN_TAB_PANEL, OPEN_TAB_RECORD, RECORD_LINK, RECORD_DELETE_BUTTON,
+    OPEN_TAB_RECORD, RECORD_LINK, RECORD_DELETE_BUTTON,
 } from './components/record-tabs';
 
 
@@ -217,12 +217,6 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     /** Open the "Holder of authorisation" tab, without adding a record to it. */
     async openHolderOfAuthorisationTab(): Promise<void> {
         await clickLinkAndWaitForRoute(this.page, this.holderOfAuthorisationTab);
-    }
-
-    async hasHolderOfAuthorisationRecord(typeCode: string): Promise<boolean> {
-        await this.page.locator(OPEN_TAB_PANEL).waitFor({ state: 'visible' });
-
-        return await this.openTabRecords.filter({ hasText: `[${typeCode}]` }).count() > 0;
     }
 
     /**

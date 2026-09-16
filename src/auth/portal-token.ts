@@ -1,5 +1,5 @@
 import { request } from '@playwright/test';
-import { freshTotpCode } from '../core/util/totp-auth';
+import { freshTotpCode } from './totp-state';
 import { UserCredentials, accountEnvKey } from './credentials';
 import {
     TRADER_API_TOKEN_URL, TRADER_API_CLIENT_ID, TRADER_API_CLIENT_SECRET,
@@ -9,14 +9,26 @@ import {
 const TOKEN_TIMEOUT_MS = 30_000;
 
 const TOKEN_SCOPE = 'openid roles';
+/**
+ * A minted token and the moment it stops being usable.
+ *
+ * The expiry is reported rather than assumed: it is the server that decides how long
+ * a token lives, and a caller reusing one has to know when to stop.
+ */
+export interface PortalToken {
+    accessToken: string;
+    /** Epoch milliseconds. Already past when the server did not say. */
+    expiresAt: number;
+}
 
 interface TokenResponse {
     access_token?: string;
+    expires_in?: number;
     error?: string;
     error_description?: string;
 }
 
-export async function portalToken(account: UserCredentials): Promise<string> {
+export async function portalToken(account: UserCredentials): Promise<PortalToken> {
     assertClientConfigured();
     assertTotpSecretPresent(account);
 
@@ -48,7 +60,10 @@ export async function portalToken(account: UserCredentials): Promise<string> {
             );
         }
 
-        return body.access_token;
+        return {
+            accessToken: body.access_token,
+            expiresAt: Date.now() + (body.expires_in ?? 0) * 1_000,
+        };
     } finally {
         await context.dispose();
     }

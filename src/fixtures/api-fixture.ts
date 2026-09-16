@@ -15,7 +15,7 @@ import {
 import {
   SimplifiedFrontierDeclarationService,
 } from '../api-service/trader-api/simplified-frontier-declaration-service';
-import { portalToken } from '../auth/portal-token';
+import { portalToken, PortalToken } from '../auth/portal-token';
 import { PortalApiClient } from '../api-client/portal-api-client';
 import {
   CompanyPermissionService,
@@ -76,7 +76,8 @@ export type APIFixtureType = {
   caseManagementApiRequest: APIRequestContext;
   caseManagementApiClient: CaseManagementApiClient;
   /**
-   * One token per test, shared by every API that speaks as the signed-in trader.
+   * One token per ACCOUNT per worker, shared by every API that speaks as the signed-in
+   * trader.
    *
    * Minted once and handed to both families on purpose. A code from the authenticator
    * is spendable exactly once, so two contexts minting their own inside the same
@@ -173,8 +174,22 @@ export const apiFixture: ExtendParams[0] = {
     await use(new CaseManagementApiClient(caseManagementApiRequest));
   },
 
-  portalAccessToken: async ({ authAccount }, use) => {
-    await use(await portalToken(portalAccount(authAccount)));
+  portalAccessToken: async ({ authAccount }, use, testInfo) => {
+    const account = portalAccount(authAccount);
+    const key = `${account.profile}:${account.accountNumber ?? 0}`;
+    const cached = mintedTokens.get(key);
+
+    // The token has to outlast the test that is about to use it, so this test's own
+    // timeout is the margin - no number to keep in step with a server setting.
+    if (cached && testInfo.timeout > 0 && cached.expiresAt - Date.now() > testInfo.timeout) {
+      await use(cached.accessToken);
+      return;
+    }
+
+    const minted = await portalToken(account);
+    mintedTokens.set(key, minted);
+
+    await use(minted.accessToken);
   },
 
   traderApiRequest: async ({ portalAccessToken }, use) => {
@@ -247,6 +262,16 @@ export const apiFixture: ExtendParams[0] = {
     await use(new InternalMarketMovementService(traderApiClient));
   },
 };
+
+/**
+ * Tokens already minted in THIS worker, by account.
+ *
+ * Module level, which in Playwright means one per worker process - the same reason
+ * the TOTP spent-code guard lives at module level. A token is process-wide auth state,
+ * and minting one costs a code from the authenticator, which is spendable once every
+ * thirty seconds.
+ */
+const mintedTokens = new Map<string, PortalToken>();
 
 /**
  * These APIs act as whoever the token was minted for, so it must be the same account

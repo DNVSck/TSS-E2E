@@ -1,4 +1,4 @@
-import { chromium } from '@playwright/test';
+import { chromium, expect } from '@playwright/test';
 import { OTP_ENABLED, ENV, BASE_URL } from '../../config/environment';
 import { PortalPage } from '../page-object/portal-page';
 import { SignInPage } from '../page-object/sign-in-page';
@@ -26,6 +26,8 @@ const SIGN_IN_TIMEOUT_MS = 60_000;
  * the other three came back.
  */
 const PORTAL_OPEN_TIMEOUT_MS = 90_000;
+
+const PORTAL_OPEN_RETRY_TIMEOUT_MS = PORTAL_OPEN_TIMEOUT_MS * 2 + 5_000;
 
 export interface SignInFailure {
     account: string;
@@ -148,9 +150,11 @@ async function signInAndSaveState(
         // project gets its own translator from the fixture.
         const signInPage = new SignInPage(page, createTranslator(LOCALES_CONSTANT.EN_GB));
 
-        await page.goto(BASE_URL, {
-            waitUntil: 'domcontentloaded', timeout: PORTAL_OPEN_TIMEOUT_MS,
-        });
+        await expect(async () => {
+            await page.goto(BASE_URL, {
+                waitUntil: 'domcontentloaded', timeout: PORTAL_OPEN_TIMEOUT_MS,
+            });
+        }).toPass({ timeout: PORTAL_OPEN_RETRY_TIMEOUT_MS, intervals: [0] });
         await portalPage.clickSignIn();
         await signInPage.signIn(credentials);
 
