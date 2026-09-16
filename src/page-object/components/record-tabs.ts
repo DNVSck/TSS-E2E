@@ -13,7 +13,7 @@ import { hrefsOf } from '../../helper/element-helper';
  */
 
 /** The panel of the tab that is OPEN - the only one in the DOM at all. */
-const OPEN_TAB_PANEL = '.govuk-tabs__panel';
+export const OPEN_TAB_PANEL = '.govuk-tabs__panel';
 
 /** One rendered record, wherever it appears. */
 export const TAB_RECORD = '.govuk-task-list__item';

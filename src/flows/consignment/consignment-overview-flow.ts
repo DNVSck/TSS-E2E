@@ -198,6 +198,13 @@ export class ConsignmentOverviewFlow {
         }
         await ReportLog.step('Declare holders of authorisation', async () => {
             for (const [index, item] of items.entries()) {
+                await this.consignmentOverviewPage.openHolderOfAuthorisationTab();
+
+                if (await this.consignmentOverviewPage.hasHolderOfAuthorisationRecord(item.typeCode)) {
+                    await this.correctHolderOfAuthorisation(item);
+                    continue;
+                }
+
                 await ReportLog.step(`Add holder of authorisation ${index + 1} of ${items.length}`, async () => {
                     await this.consignmentOverviewPage.openNewHolderOfAuthorisation();
                     await this.holderOfAuthorisationDeclarePage.declareHolderOfAuthorisation(item);
