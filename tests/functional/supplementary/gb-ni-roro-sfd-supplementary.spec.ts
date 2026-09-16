@@ -4,6 +4,12 @@ import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import {
     traderDefermentSupplementaryDeclaration, tssDefermentSupplementaryDeclaration,
 } from '../../../src/test-data/supplementary-declaration-data';
+import {
+    scdpRoRoAccompaniedSupplementaryDeclarationMovement,
+} from '../../../src/test-data/supplementary-declaration-movement-data';
+import { reportTestCaseLink } from '../../../src/helper/report-helper';
+
+const SCDP_SUPP_CASE_ID = '4699';
 
 /**
  * The supplementary declaration that follows an ENS-SFD movement, once by each of the
@@ -106,6 +112,36 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
                     movementLrn,
                     frontierLrn,
                     overrides: traderDefermentSupplementaryDeclaration(),
+                })
+            );
+        }
+    );
+
+    test(
+        'Verify the supplementary declaration raised by an ENS-SFD movement with At Risk and SCDP authorization is completed and submitted successfully - TSS DDA - Payment through TSS',
+        { tag: ['@supplementary'] },
+        async ({
+                   generateSdDraftFromEnsSfdFlow,
+                   completeAndSubmitSupplementaryDeclarationFlow,
+               }, testInfo) => {
+            await ReportLog.setStory('Supplementary Declaration - from ENS-SFD - RoRo (Accompanied) - At Risk - SCDP - TSS DDA');
+            reportTestCaseLink(SCDP_SUPP_CASE_ID);
+
+            const { movementLrn, frontierLrn } = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement with At Risk and SCDP authorization', () =>
+                generateSdDraftFromEnsSfdFlow.generateSdDraft({
+                    testInfo,
+                    url: getBaseUrl(),
+                    overrides: scdpRoRoAccompaniedSupplementaryDeclarationMovement()
+                })
+            );
+
+            await ReportLog.step('Complete and submit the supplementary declaration', () =>
+                completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
+                    testInfo,
+                    url: getBaseUrl(),
+                    movementLrn,
+                    frontierLrn,
+                    overrides: tssDefermentSupplementaryDeclaration(),
                 })
             );
         }

@@ -2,7 +2,8 @@ export const COUNTRY_CODE = {
     UNITED_KINGDOM: 'GB',
     VIET_NAM: 'VN',
     UNITED_STATE_AMERICA: 'US',
-    NORTHERN_IRELAND: 'XI'
+    NORTHERN_IRELAND: 'XI',
+    GREECE: 'GR',
 } as const;
 
 /**
@@ -15,6 +16,7 @@ export const COUNTRY_NAME: Record<string, string> = {
     [COUNTRY_CODE.VIET_NAM]: 'Vietnam',
     [COUNTRY_CODE.UNITED_STATE_AMERICA]: 'United States',
     [COUNTRY_CODE.NORTHERN_IRELAND]: 'Northern Ireland',
+    [COUNTRY_CODE.GREECE]: 'Greece'
 };
 
 export type CountryCodeKey = keyof typeof COUNTRY_CODE;

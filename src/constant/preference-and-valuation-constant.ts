@@ -18,6 +18,7 @@ export const PREFERENCE_CODE = {
 export const VALUATION_METHOD = {
     /** "Valuation Method 1 - Transaction value": the price actually paid. */
     TRANSACTION_VALUE: '1',
+    THE_FALLBACK_METHOD: '6',
 } as const;
 
 export type PreferenceCode = (typeof PREFERENCE_CODE)[keyof typeof PREFERENCE_CODE];

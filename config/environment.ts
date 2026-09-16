@@ -128,6 +128,8 @@ export const IMPORTER_SDE = required('IMPORTER_SDE');
 export const IMPORTER_CWP = required('IMPORTER_CWP');
 /** Excise Warehouse authorisation. */
 export const IMPORTER_EXW = required('IMPORTER_EXW');
+export const IMPORTER_CGU = required('IMPORTER_CGU');
+export const IMPORTER_TEA = required('IMPORTER_TEA');
 /**
  * Deferment of Payment authorisation — cited on the C506 document.
  *

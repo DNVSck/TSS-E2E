@@ -298,3 +298,75 @@ export const tssDefermentSupplementaryDeclaration = (
     documentReferences: [],
     ...overrides,
 });
+
+/**
+ * A supplementary declaration for goods entered to Temporary Admission (TA).
+ *
+ * Temporary Admission goods are duty-suspended and do not require payment, so this
+ * route does not use a deferment account. The goods inherit the TA procedure code
+ * (5300) and At Risk classification (NIREM) from the ENS-SFD movement they are
+ * raised from. The TA status removes deferment-related authorisations and documents
+ * that only apply to duty-paying routes.
+ *
+ * Unlike the trader DDA route (which adds a deferment account number), and the TSS
+ * DDA route (which removes deferment authorisations), the TA route removes the same
+ * deferment authorisations because TA goods do not use either trader or TSS payment.
+ */
+export const tempAdmissionSupplementaryDeclaration = (
+    overrides?: Partial<SupplementaryDeclarationData>
+): SupplementaryDeclarationData => supplementaryDeclaration({
+    valuationMethod: VALUATION_METHOD.THE_FALLBACK_METHOD,
+    methodOfPayment: METHOD_OF_PAYMENT.CARD_PAYMENT_THROUGH_TSS,
+    holdersOfAuthorisationToRemove: [
+        AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU,
+        AUTHORISATION_TYPE_CODE.DEFERMENT_OF_PAYMENT_DPO,
+    ],
+    documentReferencesToRemove: [DOCUMENT_CODE.C506, DOCUMENT_CODE.C505],
+    documentReferences: [
+        documentReference({
+            documentCode: DOCUMENT_CODE['9WKS'],
+            documentStatus: DOCUMENT_STATUS.AC,
+            documentReference: '9WKS-TAVAL0001',
+        }),
+    ],
+    ...overrides,
+});
+
+/**
+ * A supplementary declaration for goods entered to Inward Processing (IP).
+ *
+ * IP goods pay duty through TSS's own deferment account - the same shape as
+ * tssDefermentSupplementaryDeclaration. The IP-specific detail (procedure code, the
+ * IPO/CGU authorisations, and the C601/Y922/Y824/C512 documents) already lives on the
+ * ENS-SFD movement this SD is raised from - see
+ * inwardProcessingSfdSupplementaryDeclarationMovement. Delegating rather than
+ * repeating the same overrides keeps the two routes from silently drifting apart.
+ */
+export const inwardProcessingSfdSupplementaryDeclaration = (
+    overrides?: Partial<SupplementaryDeclarationData>
+): SupplementaryDeclarationData => tssDefermentSupplementaryDeclaration(overrides);
+
+/**
+ * A supplementary declaration for excisable goods (e.g., tobacco).
+ *
+ * Excise goods are subject to excise duty and require standard tariff application.
+ * This route uses TSS DDA for duty payment and removes trader deferment authorisations
+ * that do not apply to the excise payment route. The goods carry a standard free
+ * circulation procedure code (4000) and an excise goods grouping additional procedure
+ * code (1EB) to indicate excise duty is applicable.
+ *
+ * The At Risk classification (NIREM) indicates enhanced inspection may be required.
+ */
+export const exciseGoodsSupplementaryDeclaration = (
+    overrides?: Partial<SupplementaryDeclarationData>
+): SupplementaryDeclarationData => supplementaryDeclaration({
+    countryOfOrigin: COUNTRY_CODE.UNITED_KINGDOM,
+    methodOfPayment: METHOD_OF_PAYMENT.CARD_PAYMENT_THROUGH_TSS,
+    holdersOfAuthorisationToRemove: [
+        AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU,
+        AUTHORISATION_TYPE_CODE.DEFERMENT_OF_PAYMENT_DPO,
+    ],
+    documentReferencesToRemove: [DOCUMENT_CODE.C506, DOCUMENT_CODE.C505],
+    documentReferences: [],
+    ...overrides,
+});
