@@ -49,7 +49,8 @@
     "trailerRegistrationNumber": "Trailer registration number",
     "isTrailerUnaccompanied": "Is trailer unaccompanied?",
     "inspectionRequired": "Inspection required",
-    "reportToLocations": "Report to locations"
+    "reportToLocations": "Report to locations",
+    "hmrcGvmsLastUpdate": "HMRC GVMS last update"
   },
   "status": {
     "draft": "Draft",

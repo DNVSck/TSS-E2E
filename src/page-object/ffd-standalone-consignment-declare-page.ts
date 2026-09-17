@@ -28,6 +28,8 @@ export class FfdStandaloneConsignmentDeclarePage extends BasePage {
     private readonly warehouseTypeDropdown: Locator;
     private readonly warehouseIdentifierInput: Locator;
     private readonly natureOfGoodsDropdown: Locator;
+    private readonly declarationProcedureRadios: Locator;
+    private readonly sameNatureOfGoodsRadios: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -36,6 +38,8 @@ export class FfdStandaloneConsignmentDeclarePage extends BasePage {
         this.warehouseTypeDropdown = page.locator('select#warehouseType');
         this.warehouseIdentifierInput = page.locator('input#warehouseIdentifier');
         this.natureOfGoodsDropdown = page.locator('select#natureOfGoods');
+        this.declarationProcedureRadios = page.locator('input[name="declarationProcedure"]');
+        this.sameNatureOfGoodsRadios = page.locator('input[name="isSameNatureOfGoods"]');
     }
 
     /** "What is the inland mode of transport?" */
@@ -49,7 +53,7 @@ export class FfdStandaloneConsignmentDeclarePage extends BasePage {
      * of the wizard: customs warehousing adds the two warehouse screens below.
      */
     async selectDeclarationProcedure(declarationProcedure: string): Promise<void> {
-        await checkRadioByValue(this.page, 'declarationProcedure', declarationProcedure);
+        await checkRadioByValue(this.declarationProcedureRadios, declarationProcedure);
         await this.clickContinueButton();
     }
 
@@ -72,7 +76,7 @@ export class FfdStandaloneConsignmentDeclarePage extends BasePage {
      */
     async selectSameNatureOfGoods(isSameNatureOfGoods: boolean): Promise<void> {
         await checkRadioByValue(
-            this.page, 'isSameNatureOfGoods', isSameNatureOfGoods ? 'yes' : 'no'
+            this.sameNatureOfGoodsRadios, isSameNatureOfGoods ? 'yes' : 'no'
         );
         await this.clickContinueButton();
     }

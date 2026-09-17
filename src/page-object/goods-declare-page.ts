@@ -30,8 +30,6 @@ const SCREEN_PAINT_TIMEOUT = 90_000;
 const NIRMS_SCREEN_TIMEOUT = 30_000;
 
 /** The radio group on the NIRMS screen, addressed by the name its inputs post. */
-const USE_NIRMS_RADIO_NAME = 'useNirms';
-
 export class GoodsDeclarePage extends BasePage {
 
     private readonly useTgpYesOption: Locator;
@@ -80,6 +78,8 @@ export class GoodsDeclarePage extends BasePage {
     private readonly invoiceNumberInput: Locator;
     private readonly itemCurrencyDropdown: Locator;
     private readonly itemPriceAmountInput: Locator;
+    private readonly containerPackedStatusRadios: Locator;
+    private readonly containerSupplierTypeRadios: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -153,6 +153,8 @@ export class GoodsDeclarePage extends BasePage {
         this.invoiceNumberInput = page.locator("input#invoiceNumber");
         this.itemCurrencyDropdown = page.locator("select#itemCurrency");
         this.itemPriceAmountInput = page.locator("input#itemPrice");
+        this.containerPackedStatusRadios = page.locator('input[name="containerPackedStatus"]');
+        this.containerSupplierTypeRadios = page.locator('input[name="containerSupplierType"]');
 
         
     }
@@ -265,7 +267,7 @@ export class GoodsDeclarePage extends BasePage {
             return false;
         }
 
-        await checkRadioByValue(this.page, USE_NIRMS_RADIO_NAME, useNirms ? 'yes' : 'no');
+        await checkRadioByValue(this.useNirmsRadios, useNirms ? 'yes' : 'no');
         await this.clickContinueButton();
         return true;
     }
@@ -330,6 +332,7 @@ export class GoodsDeclarePage extends BasePage {
      * one screen: the warehouse type, then its identifier.
      */
     async enterWarehouseIdentifier(warehouseType: string, warehouseIdentifier: string): Promise<void> {
+        await this.waitForScreenField(this.warehouseTypeDropdown, 'warehouse identifier', SCREEN_PAINT_TIMEOUT);
         await selectDropdownValue(this.warehouseTypeDropdown, warehouseType);
         await this.warehouseIdentifierInput.fill(warehouseIdentifier);
         await this.clickContinueButton();
@@ -409,8 +412,8 @@ export class GoodsDeclarePage extends BasePage {
     ): Promise<void> {
         await this.page.locator('#containerIdentifierNumber').fill(containerIdentifierNumber);
         await selectDropdownValue(this.page.locator('#containerSize'), containerSize);
-        await checkRadioByValue(this.page, 'containerPackedStatus', containerStatusCode);
-        await checkRadioByValue(this.page, 'containerSupplierType', containerSupplierTypeCode);
+        await checkRadioByValue(this.containerPackedStatusRadios, containerStatusCode);
+        await checkRadioByValue(this.containerSupplierTypeRadios, containerSupplierTypeCode);
         await this.clickContinueButton();
     }
 

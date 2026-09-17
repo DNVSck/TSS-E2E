@@ -403,16 +403,11 @@ export async function switchToTabAndClickNew(
     }
 }
 
-// Utility function to tick a radio button identified by its `name` and `value`.
-// Centralizes the `input[name="…"][value="…"]` selector that would otherwise be
-// hand-built at each call site, and asserts the option ends up checked.
-export async function checkRadioByValue(
-    page: Page,
-    name: string,
-    value: string
-): Promise<void> {
-    const radio = page.locator(`input[name="${name}"][value="${value}"]`);
-    await radio.check();
+// Utility function to tick one option of a radio GROUP by its `value`. The caller
+// owns the group locator, the way a page object owns every other locator on its
+// screen; this adds the value match and asserts the option ends up checked.
+export async function checkRadioByValue(group: Locator, value: string): Promise<void> {
+    await group.and(group.page().locator(`[value="${value}"]`)).check();
 }
 
 

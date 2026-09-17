@@ -1,5 +1,6 @@
 import { ReportLog } from '../../../src/core/report/report-log';
 import { getBaseUrl, test } from '../../test-hooks';
+import { IMPORTER_COMPANY_NAME } from '../../../config/environment';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import {
     traderDefermentSupplementaryDeclaration, tssDefermentSupplementaryDeclaration,
@@ -97,12 +98,19 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
         { tag: ['@smoke', '@regression', '@happyPath'] },
         async ({
             generateSdDraftThroughApiFlow,
+            representTraderFlow,
             completeAndSubmitSupplementaryDeclarationFlow,
         }, testInfo) => {
             await ReportLog.setStory('Supplementary Declaration - from ENS-SFD declared through the Trader API - Trader DDA');
 
+            // ENS-SFD wizard skipped here - covered by
+            // tests/functional/ens-integrated/gb-ni-roro-ens-sfd.spec.ts
             const { movementLrn, frontierLrn } = await ReportLog.step('Raise the supplementary declaration from a movement declared through the Trader API', () =>
-                generateSdDraftThroughApiFlow.generateSdDraft({ testInfo, url: getBaseUrl() })
+                generateSdDraftThroughApiFlow.generateSdDraft()
+            );
+
+            await representTraderFlow.openPortalAndRepresent(
+                getBaseUrl(), testInfo, IMPORTER_COMPANY_NAME
             );
 
             await ReportLog.step('Complete and submit the supplementary declaration', () =>

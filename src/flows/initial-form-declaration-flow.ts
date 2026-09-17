@@ -52,6 +52,8 @@ export class InitialFormDeclarationFlow {
         }
 
         if (typeOfSubmission === TYPE_OF_SUBMISSION.STANDALONE) {
+            await this.declareImporter(declaringForEori);
+
             await ReportLog.step('Select the standalone declaration type', async () => {
                 if (!standaloneDeclarationType) {
                     throw new Error('Test data for a standalone submission must set "standaloneDeclarationType".');
@@ -63,6 +65,12 @@ export class InitialFormDeclarationFlow {
         }
 
         throw new Error(`Unsupported typeOfSubmission: "${typeOfSubmission}".`);
+    }
+
+    private async declareImporter(declaringForEori: string): Promise<void> {
+        await ReportLog.step(`Name ${declaringForEori} as the importer`, () =>
+            this.initialFormDeclaraPage.selectImporter(declaringForEori)
+        );
     }
 
     private async verifyImmiOfferedToDeclarer(

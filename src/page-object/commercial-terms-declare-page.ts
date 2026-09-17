@@ -24,6 +24,7 @@ export class CommercialTermsDeclarePage extends BasePage {
     private readonly unlocodeCountryDropdown: Locator;
     private readonly unlocodePlaceDropdown: Locator;
     private readonly methodOfPaymentDropdown: Locator;
+    private readonly knownUnlocodeRadios: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -33,6 +34,7 @@ export class CommercialTermsDeclarePage extends BasePage {
         this.unlocodeCountryDropdown = page.locator('select#unlocodeCountry');
         this.unlocodePlaceDropdown = page.locator('select#unlocodePlace');
         this.methodOfPaymentDropdown = page.locator('select#methodOfPayment');
+        this.knownUnlocodeRadios = page.locator('input[name="isKnownUnlocode"]');
     }
 
     /**
@@ -41,7 +43,7 @@ export class CommercialTermsDeclarePage extends BasePage {
      */
     async enterDeliveryTerms(incoterm: string, isKnownUnlocode: boolean): Promise<void> {
         await selectDropdownValue(this.incotermDropdown, incoterm);
-        await checkRadioByValue(this.page, 'isKnownUnlocode', isKnownUnlocode ? 'yes' : 'no');
+        await checkRadioByValue(this.knownUnlocodeRadios, isKnownUnlocode ? 'yes' : 'no');
         await this.clickContinueButton();
     }
 

@@ -1,4 +1,4 @@
-﻿import { expect } from '@playwright/test';
+﻿import { expect, TestInfo } from '@playwright/test';
 import { ReportLog } from '../core/report/report-log';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { MovementOverviewPage } from '../page-object/movement-overview-page';
@@ -426,6 +426,18 @@ export class DeclarationAccessFlow {
      * landed, so a caller can come back to the same record later - by URL, and as
      * somebody else.
      */
+    async openDeclarationInPortal(
+        url: string,
+        testInfo: TestInfo,
+        reference: string
+    ): Promise<string> {
+        return ReportLog.step(`Open ${reference} in the portal`, async () => {
+            await this.portalPage.navigateToPortal(url, testInfo);
+
+            return this.openDeclarationFromSearch(reference);
+        });
+    }
+
     async openDeclarationFromSearch(reference: string): Promise<string> {
         return ReportLog.step(`Open declaration "${reference}" from the search results`, async () => {
             await this.portalPage.openDraftDeclarations();

@@ -24,11 +24,17 @@ export class StandaloneConsignmentDeclarePage extends BasePage {
     // the route (and the H1 wording) differs, so it is located by id.
     private readonly preLodgedOption: Locator;
     private readonly arrivedOption: Locator;
+    private readonly representationTypeRadios: Locator;
+    private readonly goodsDomesticStatusRadios: Locator;
+    private readonly transportingInContainersRadios: Locator;
 
     constructor(page: Page) {
         super(page);
         this.preLodgedOption = page.locator('input#preLodgeOrArrived-preLodgeOrArrivedOptions-pre-lodged');
         this.arrivedOption = page.locator('input#preLodgeOrArrived-preLodgeOrArrivedOptions-arrived');
+        this.representationTypeRadios = page.locator('input[name="representationType"]');
+        this.goodsDomesticStatusRadios = page.locator('input[name="goodsDomesticStatus"]');
+        this.transportingInContainersRadios = page.locator('input[name="isTransportingInContainers"]');
     }
 
     async selectPreLodged(): Promise<void> {
@@ -47,7 +53,7 @@ export class StandaloneConsignmentDeclarePage extends BasePage {
      * opaque code, see REPRESENTATION_TYPE), never the "Direct"/"Indirect" label.
      */
     async selectRepresentationType(representationType: string): Promise<void> {
-        await checkRadioByValue(this.page, 'representationType', representationType);
+        await checkRadioByValue(this.representationTypeRadios, representationType);
         await this.clickContinueButton();
     }
 
@@ -62,7 +68,7 @@ export class StandaloneConsignmentDeclarePage extends BasePage {
      * screen the EIDR standalone journey still shows.
      */
     async selectGoodsDomesticStatus(goodsDomesticStatusCode: string): Promise<void> {
-        await checkRadioByValue(this.page, 'goodsDomesticStatus', goodsDomesticStatusCode);
+        await checkRadioByValue(this.goodsDomesticStatusRadios, goodsDomesticStatusCode);
         await this.clickContinueButton();
     }
 
@@ -76,7 +82,7 @@ export class StandaloneConsignmentDeclarePage extends BasePage {
      */
     async selectTransportingInContainers(isTransportingInContainers: boolean): Promise<void> {
         await checkRadioByValue(
-            this.page, 'isTransportingInContainers', isTransportingInContainers ? 'yes' : 'no'
+            this.transportingInContainersRadios, isTransportingInContainers ? 'yes' : 'no'
         );
         await this.clickContinueButton();
     }

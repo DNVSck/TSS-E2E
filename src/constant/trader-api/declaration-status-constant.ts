@@ -14,5 +14,6 @@ export const DECLARATION_STATUS = {
     PROCESSING: 'Processing',
     AWAITING_ARRIVAL: 'Awaiting Arrival',
     ARRIVED: 'Arrived',
+    AUTHORISED: 'Authorised',
     TRADER_INPUT_REQUIRED: 'Trader Input Required',
 } as const;

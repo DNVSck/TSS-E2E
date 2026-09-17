@@ -68,6 +68,52 @@ export class GmrOverviewFlow {
         });
     }
 
+    async waitForGvmsLastUpdate(because: string): Promise<string> {
+        return ReportLog.step(`Wait for HMRC GVMS last update (${because})`, async () => {
+            if (!await this.openRecord(`GMR detail opened to read HMRC GVMS last update (${because})`)) {
+                return '';
+            }
+
+            const shown = await this.gmrDetailsPage.waitForHmrcGvmsLastUpdate();
+            ReportLog.setParameter(`HMRC GVMS last update (${because})`, shown || 'not shown');
+
+            expect(shown,
+                `HMRC GVMS last update must already stand ${because} - GVMS never answered `
+                + `the submitted GMR, so there is no baseline to measure the automatic `
+                + `resubmission against`)
+                .not.toBe('');
+
+            return shown;
+        });
+    }
+
+    async verifyGvmsLastUpdateMovedOn(baseline: string): Promise<string> {
+        return ReportLog.step('Validate HMRC GVMS last update moved on', async () => {
+            if (!await this.openRecord('GMR detail opened to check HMRC GVMS last update')) {
+                return '';
+            }
+
+            const { shown, movedOn } =
+                await this.gmrDetailsPage.waitForHmrcGvmsLastUpdateAfter(baseline);
+
+            ReportLog.setParameter('HMRC GVMS last update (before)', baseline || 'not shown');
+            ReportLog.setParameter('HMRC GVMS last update (after)', shown || 'not shown');
+
+            expect(movedOn,
+                `HMRC GVMS last update should stand later than "${baseline || 'not shown'}" once `
+                + `a second eligible consignment joins the movement - it reads `
+                + `"${shown || 'not shown'}"`)
+                .toBe(true);
+
+            return shown;
+        });
+    }
+
+    async verifyGmrResubmitted(baseline: string): Promise<void> {
+        await this.verifyGvmsLastUpdateMovedOn(baseline);
+        await this.verifyGmrOpen('resubmission');
+    }
+
     /** The same read for any status the record can reach - see GVMS. */
     async verifyGmrStatus(expectedStatusKey: TranslationKey, because: string): Promise<string> {
         await this.openRecord(`the GMR record opened so its status can be read (${because})`);

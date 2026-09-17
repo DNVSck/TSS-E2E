@@ -10,7 +10,7 @@ export class MovementService {
     async createHeader(header: HeaderPayload): Promise<string> {
         const call = 'Create a movement header';
         const result = await this.api.send(
-            buildPath(TRADER_API_PATH.CreateMovementHeader),
+            buildPath(TRADER_API_PATH.Headers),
             { op_type: OP_TYPE.CREATE, ...header },
             call
         );

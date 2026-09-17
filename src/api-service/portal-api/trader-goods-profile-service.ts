@@ -29,7 +29,7 @@ export class TraderGoodsProfileService {
     async readTgpPermission(eori: string): Promise<TraderGoodsProfilePermission> {
         const call = `Read the trader goods profile permission of ${eori}`;
         const result = await this.api.read<TraderGoodsProfilePermissionResponse>(
-            buildPath(PORTAL_API_PATH.ReadTraderGoodsProfilePermission, { eori })
+            buildPath(PORTAL_API_PATH.CompanyTraderGoodsProfilePermission, { eori })
         );
 
         return {

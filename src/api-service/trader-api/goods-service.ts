@@ -10,7 +10,7 @@ export class GoodsService {
     async createGoodsItem(goodsItem: GoodsPayload): Promise<string> {
         const call = 'Create a goods item';
         const result = await this.api.send(
-            buildPath(TRADER_API_PATH.CreateGoodsItem),
+            buildPath(TRADER_API_PATH.Goods),
             { op_type: OP_TYPE.CREATE, ...goodsItem },
             call
         );

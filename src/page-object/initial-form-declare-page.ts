@@ -1,82 +1,64 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { INITIAL_FORM_DECLARATION } from '../constant/initial-form-declaration-constants';
+import { selectAutocompleteValue, checkRadioByValue } from '../helper/element-helper';
 
 
 export class InitialFormDeclaraPage extends BasePage {
 
-    private readonly gbToNIRoRoOption: Locator;
-    private readonly niToGBRoRoOption: Locator;
-    private readonly gbToNIIrelandOption: Locator;
-    private readonly niToGBIrelandOption: Locator;
-    private readonly restOfWorldToNIOption: Locator;
+    private readonly directionOfDeclarationRadios: Locator;
 
-    private readonly ensDeclarationOption: Locator;
-    private readonly standaloneOption: Locator;
+    private readonly typeOfSubmissionRadios: Locator;
 
-    private readonly ensCustomsOrEnsOnlyOption: Locator;
+    private readonly typeOfEnsSubmissionRadios: Locator;
 
-    private readonly internalMarketMovementInformationOption: Locator;
-    private readonly simplifiedDeclarationOption: Locator;
-    private readonly standardDeclarationOption: Locator;
+    private readonly importerEoriInput: Locator;
+    private readonly importerEoriFirstOption: Locator;
+
+    private readonly standaloneDeclarationTypeRadios: Locator;
+    private readonly internalMarketMovementOption: Locator;
 
     constructor(page: Page) {
         super(page);
 
         // "Which route are the goods taking? - Direction of declaration" screen
-        this.gbToNIRoRoOption = page.locator("input#directionOfDeclaration-directionOptions__directionOfDeclaration-gb-ni-process");
-        this.niToGBRoRoOption = page.locator("input#directionOfDeclaration-directionOptions-ni-gb-process");
-        this.gbToNIIrelandOption = page.locator("input#directionOfDeclaration-directionOptions-import-transit-declaration");
-        this.niToGBIrelandOption = page.locator("input#directionOfDeclaration-directionOptions-export-transit-declaration");
-        this.restOfWorldToNIOption = page.locator("input#directionOfDeclaration-directionOptions-ni-arrival-mode");
+        this.directionOfDeclarationRadios = page.locator('input[name="directionOfDeclaration"]');
 
         //"What information do you want to submit? - Type of submission" screen
-        this.ensDeclarationOption = page.locator("input#process-gbNiProcessOptions-ens-with-or-without-customs");
-        this.standaloneOption = page.locator("input#process-gbNiProcessOptions-standalone-customs");
+        this.typeOfSubmissionRadios = page.locator('input[name="process"]');
 
         // "Which ENS process do you want to follow? - Type of ENS submission" screen
-        this.ensCustomsOrEnsOnlyOption = page.locator("input#ensSubmissionType-gbNiEnsSubmissionTypeOptions__ensSubmissionType-ens-and-customs-now-or-ens-only");
+        this.typeOfEnsSubmissionRadios = page.locator('input[name="ensSubmissionType"]');
+
+        // "Who is the importer?" screen
+        this.importerEoriInput = page.locator("input#importerEORI");
+        this.importerEoriFirstOption = page.locator("#importerEORI__option--0");
 
         // "Which standalone customs declaration are you submitting? - Declaration type" screen
-        this.internalMarketMovementInformationOption = page.locator("input#standaloneCustomsType-gbNiStandaloneCustomsTypeWithImmiOptions-immi");
-        this.simplifiedDeclarationOption = page.locator("input#standaloneCustomsType-gbNiStandaloneCustomsTypeWithImmiOptions-simplified");
-        this.standardDeclarationOption = page.locator("input#standaloneCustomsType-gbNiStandaloneCustomsTypeWithImmiOptions-standard");
-
-    }   
+        const standaloneDeclarationType = 'input[name="standaloneCustomsType"]';
+        this.standaloneDeclarationTypeRadios = page.locator(standaloneDeclarationType);
+        this.internalMarketMovementOption = page.locator(
+            `${standaloneDeclarationType}[value="${INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.INTERNAL_MARKET_MOVEMENT_INFORMATION}"]`
+        );
+    }
 
     async selectDirectionOfDeclaration(route: string): Promise<void> {
-        if (route.includes(INITIAL_FORM_DECLARATION.DIRECTION_OF_DECLARATION.GB_TO_NI)) 
-        {
-            await this.gbToNIRoRoOption.click();
-        } 
+        await checkRadioByValue(this.directionOfDeclarationRadios, route);
         await this.clickContinueButton();
     }
 
     async selectTypeOfSubmission(submissionType: string): Promise<void> {
-        if (
-            submissionType.includes(
-                INITIAL_FORM_DECLARATION.TYPE_OF_SUBMISSION.ENS
-            )
-        ) {
-            await this.ensDeclarationOption.click();
-        } else if (
-            submissionType.includes(
-                INITIAL_FORM_DECLARATION.TYPE_OF_SUBMISSION.STANDALONE
-            )
-        ) {
-            await this.standaloneOption.click();
-        }
+        await checkRadioByValue(this.typeOfSubmissionRadios, submissionType);
         await this.clickContinueButton();
     }
 
     async selectTypeOfEnsSubmission(ensSubmissionType: string): Promise<void> {
-         if (
-            ensSubmissionType.includes(
-                INITIAL_FORM_DECLARATION.TYPE_OF_ENS_SUBMISSION.ENS_CUSTOM_OR_ENS_ONLY
-            )
-        ) {
-            await this.ensCustomsOrEnsOnlyOption.click();
-        }
+        await checkRadioByValue(this.typeOfEnsSubmissionRadios, ensSubmissionType);
+        await this.clickContinueButton();
+    }
+
+    async selectImporter(eori: string): Promise<void> {
+        await selectAutocompleteValue(this.importerEoriInput, this.importerEoriFirstOption, eori);
         await this.clickContinueButton();
     }
 
@@ -88,40 +70,13 @@ export class InitialFormDeclaraPage extends BasePage {
      * painted yet", without spending a timeout on the answer.
      */
     async isInternalMarketMovementOffered(): Promise<boolean> {
-        await this.internalMarketMovementInformationOption
-            .or(this.simplifiedDeclarationOption)
-            .or(this.standardDeclarationOption)
-            .first()
-            .waitFor();
+        await this.standaloneDeclarationTypeRadios.first().waitFor();
 
-        return this.internalMarketMovementInformationOption.isVisible();
+        return this.internalMarketMovementOption.isVisible();
     }
 
     async selectStandaloneDeclarationType(standaloneDeclarationType: string): Promise<void> {
-        if (
-            standaloneDeclarationType.includes(
-                INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.INTERNAL_MARKET_MOVEMENT_INFORMATION
-            )
-        ) {
-            await this.internalMarketMovementInformationOption.click();
-        }
-        else if (
-            standaloneDeclarationType.includes(
-                INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.SIMPLIFIED_DECLARATION
-            )
-        ) {
-            await this.simplifiedDeclarationOption.click();
-        }
-        else if (
-            standaloneDeclarationType.includes(
-                INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.STANDARD_DECLARATION
-            )
-        ) {
-            await this.standardDeclarationOption.click();
-        }
-
+        await checkRadioByValue(this.standaloneDeclarationTypeRadios, standaloneDeclarationType);
         await this.clickContinueButton();
     }
-
-
 }

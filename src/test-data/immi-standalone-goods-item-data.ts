@@ -21,6 +21,11 @@ export const immiStandaloneTransportDocument = () => documentReference({
     documentReference: '0054047',
 });
 
+export const IMMI_STANDALONE_COMMODITY_CODE = {
+    SIX_DIGIT: '630629',
+    EIGHT_DIGIT: '63062900',
+} as const;
+
 export const immiStandaloneGoodsItem = (
     overrides?: Partial<GoodsData>
 ): Partial<GoodsData> => ({
@@ -31,7 +36,7 @@ export const immiStandaloneGoodsItem = (
     // journey it is a screen the test really answers, not an unused flag. A TGP test
     // overrides it to true and names a record from TGP_RECORD.
     useTGP: false,
-    commodityCode: '6306290000',
+    commodityCode: IMMI_STANDALONE_COMMODITY_CODE.SIX_DIGIT,
     documentReferences: [
         documentReference({
             documentCode: DOCUMENT_CODE.N730,

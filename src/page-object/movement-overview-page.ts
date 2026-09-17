@@ -306,6 +306,10 @@ export class MovementOverviewPage extends BasePage {
      * from a tab makes it navigate straight back down to that tab, and that second
      * navigation cancels this one (seen on sit 2026-09-14).
      *
+     * The guard reads the URL once, so the app can still start that navigation in
+     * the gap before goto commits. An interrupted goto is therefore only an error
+     * when the browser did not end up under the overview anyway.
+     *
      * The exception to this page object's rule of following the user's own path, and it
      * earns it: a GMR record page has NO route back up to the movement. Checked on
      * 2026-08-20 - no breadcrumb to /<movement>/overview anywhere on it, and its own
@@ -324,7 +328,7 @@ export class MovementOverviewPage extends BasePage {
         const mountPoint = url.pathname.slice(0, url.pathname.indexOf(`/${MOVEMENT_ROUTE.GOODS_MOVEMENT_SEGMENT}/`));
         const overviewPath = `${mountPoint}${this.movementOverviewPath(movement)}`;
 
-        if (url.pathname === overviewPath || url.pathname.startsWith(`${overviewPath}/`)) {
+        if (this.isUnderMovementOverview(overviewPath)) {
             return;
         }
 
@@ -332,7 +336,19 @@ export class MovementOverviewPage extends BasePage {
         url.search = '';
         url.hash = '';
 
-        await this.page.goto(url.toString(), { waitUntil: 'commit' });
+        try {
+            await this.page.goto(url.toString(), { waitUntil: 'commit' });
+        } catch (error_) {
+            if (!this.isUnderMovementOverview(overviewPath)) {
+                throw error_;
+            }
+        }
+    }
+
+    private isUnderMovementOverview(overviewPath: string): boolean {
+        const { pathname } = new URL(this.page.url());
+
+        return pathname === overviewPath || pathname.startsWith(`${overviewPath}/`);
     }
 
     /**

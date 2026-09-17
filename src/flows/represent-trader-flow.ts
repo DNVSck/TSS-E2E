@@ -1,3 +1,4 @@
+import { TestInfo } from '@playwright/test';
 import { RepresentationBanner } from '../page-object/components/representation-banner';
 import { RepresentTraderPage } from '../page-object/represent-trader-page';
 import { PortalPage } from '../page-object/portal-page';
@@ -23,6 +24,15 @@ export class RepresentTraderFlow {
         private readonly portalPage: PortalPage,
         private readonly companyProfilePage: CompanyProfilePage,
     ) { }
+
+    async openPortalAndRepresent(
+        url: string,
+        testInfo: TestInfo,
+        companyName: string
+    ): Promise<void> {
+        await this.portalPage.navigateToPortal(url, testInfo);
+        await this.representTrader(companyName);
+    }
 
     async representTrader(companyName: string): Promise<void> {
         await ReportLog.step(`Start representing "${companyName}"`, async () => {

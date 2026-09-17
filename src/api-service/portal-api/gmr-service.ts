@@ -47,7 +47,7 @@ export class GmrService {
     async readGmr(localReferenceNumber: string): Promise<GmrSummary> {
         const call = `Read GMR ${localReferenceNumber}`;
         const result = await this.api.read<GmrResponse>(
-            buildPath(PORTAL_API_PATH.ReadGmr, { localReferenceNumber })
+            buildPath(PORTAL_API_PATH.GmrByLocalReference, { localReferenceNumber })
         );
 
         const gvms = result.hmrc_gvms_response;

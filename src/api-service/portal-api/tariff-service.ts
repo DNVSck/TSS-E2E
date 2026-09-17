@@ -20,7 +20,7 @@ export class TariffService {
      */
     async isNirmsSupported(commodityCode: string, countryOfOrigin: string): Promise<boolean> {
         const groups = await this.api.read<NirmsDocumentGroup[]>(
-            buildPath(PORTAL_API_PATH.ReadNirmsDocuments, { commodityCode, countryOfOrigin })
+            buildPath(PORTAL_API_PATH.NirmsDocuments, { commodityCode, countryOfOrigin })
         );
 
         if (!Array.isArray(groups)) {

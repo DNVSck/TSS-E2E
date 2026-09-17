@@ -12,6 +12,7 @@ import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
 import { additionalInformation } from './additional-information-data';
+import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
 import { IMPORTER_CGU, IMPORTER_IPO, IMPORTER_SDE, IMPORTER_TEA } from '../../config/environment';
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
@@ -109,9 +110,9 @@ export const tempAdmissionSupplementaryDeclarationMovement = (
             }),
         ],
         additionalInformations: [
-            additionalInformation({ code: 'GEN28', description: 'Duration of intended usage followed by intended date of re-export'}),
-            additionalInformation({ code: 'GEN30', description: 'The use to which the Temporary Admission goods will be put'}),
-            additionalInformation({ code: 'GEN31', description: 'Name and address of the non-Union owner, plus the type of ownership evidence held'})
+            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN28, description: 'Duration of intended usage followed by intended date of re-export'}),
+            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN30, description: 'The use to which the Temporary Admission goods will be put'}),
+            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN31, description: 'Name and address of the non-Union owner, plus the type of ownership evidence held'})
         ],
         ...overrides?.goodsItemOverrides,
     },

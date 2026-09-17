@@ -1,3 +1,4 @@
+import { ADDITIONAL_INFORMATION_CODE } from '../../../src/constant/additional-information-constant';
 ﻿import { ReportLog } from '../../../src/core/report/report-log';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { getBaseUrl, test } from '../../test-hooks';
@@ -94,7 +95,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
             documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined, documentReference: IMPORTER_EXW }),
           ],
           additionalInformations: [
-            additionalInformation({ code: 'ECONR', description: 'Reg No. 1234567890' }),
+            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.ECONR, description: 'Reg No. 1234567890' }),
           ],
         },
       })

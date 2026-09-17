@@ -49,7 +49,8 @@
     "trailerRegistrationNumber": "Rhif cofrestru'r trelar",
     "isTrailerUnaccompanied": "A yw'r trelar heb oruchwyliaeth?",
     "inspectionRequired": "Angen archwiliad",
-    "reportToLocations": "Adrodd i'r lleoliadau"
+    "reportToLocations": "Adrodd i'r lleoliadau",
+    "hmrcGvmsLastUpdate": "Diweddariad diwethaf HMRC GVMS"
   },
   "status": {
     "draft": "Drafft",

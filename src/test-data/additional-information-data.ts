@@ -1,3 +1,4 @@
+import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
 /**
  * One "additional information" record — the shape behind the goods item's
  * "Additional information" tab. A tab holds a list of these, so callers pass an
@@ -11,7 +12,7 @@ export interface AdditionalInformationData {
 }
 
 const defaults: AdditionalInformationData = {
-    code: 'NIREM',
+    code: ADDITIONAL_INFORMATION_CODE.NIREM,
     description: 'Additional information note',
 };
 

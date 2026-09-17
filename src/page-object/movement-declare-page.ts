@@ -54,6 +54,8 @@ export class MovementDeclarePage extends BasePage {
     private readonly isDeliverySameNoOption: Locator;
 
     private readonly placeOfDeliveryInput: Locator;
+    private readonly typeOfMovementRadios: Locator;
+    private readonly transportChargesRadios: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -114,10 +116,12 @@ export class MovementDeclarePage extends BasePage {
         this.isDeliverySameNoOption = page.locator("input#isDeliverySame-yesNoOptions-no");
 
         this.placeOfDeliveryInput = page.locator("input#placeOfDelivery");
+        this.typeOfMovementRadios = page.locator('input[name="typeOfMovement"]');
+        this.transportChargesRadios = page.locator('input[name="transportCharges"]');
     }
 
     async chooseTypeOfMovement(typeOfMovement: string): Promise<void> {
-        await checkRadioByValue(this.page, 'typeOfMovement', typeOfMovement);
+        await checkRadioByValue(this.typeOfMovementRadios, typeOfMovement);
         await this.clickContinueButton();
     }
 
@@ -258,7 +262,7 @@ export class MovementDeclarePage extends BasePage {
     }
 
     async selectTransportCharges(transportChargesKey: string): Promise<void> {
-        await checkRadioByValue(this.page, 'transportCharges', transportChargesKey);
+        await checkRadioByValue(this.transportChargesRadios, transportChargesKey);
     }
 
     async inputCarrierEori(carrierEori: string): Promise<void> {

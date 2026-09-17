@@ -1,3 +1,4 @@
+import { ADDITIONAL_INFORMATION_CODE } from '../../../src/constant/additional-information-constant';
 ﻿import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
 import { getBaseUrl, test } from '../../test-hooks';
@@ -84,7 +85,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
           useTGP: false,
           procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EL,
-          commodityCode: '6306290000',
+          commodityCode: '63062900',
           // "1UKI" is inputted by user, checking the code list and input manually step.
           documentReferences: [
             documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
@@ -92,7 +93,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
           ],
           supplementaryUnits: '1',
           additionalInformations: [
-            additionalInformation({ code: 'ECONR', description: 'Reg No. 1234567890' }),
+            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.ECONR, description: 'Reg No. 1234567890' }),
           ],
           additionalProcedureCodes: [
             ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
@@ -129,7 +130,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
           useTGP: false,
           procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
-          commodityCode: '6306290000',
+          commodityCode: '630629',
           // Without TGP the trader quotes their own UKIMS authorisation - the TGP tests
           // never declare it because the service copies it into the generated IMMI.
           documentReferences: [

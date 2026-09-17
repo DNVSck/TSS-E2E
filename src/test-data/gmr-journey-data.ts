@@ -20,8 +20,10 @@ export interface GmrMovement {
     isTrailerUnaccompanied: boolean;
 }
 
+export type GmrDeclarationType = 'SFD' | 'IMMI' | 'EIDR';
+
 export interface GmrJourney {
-    declarationType: string;
+    declarationType: GmrDeclarationType;
     movement: string;
     authorisesThroughIcs2: boolean;
     declaration(): GmrDeclarationOverrides;

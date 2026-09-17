@@ -17,6 +17,7 @@ export class PreviousDocumentDeclarePage extends BasePage {
     private readonly documentTypeDropdown: Locator;
     private readonly documentReferenceInput: Locator;
     private readonly goodsItemIdentifierInput: Locator;
+    private readonly documentCategoryRadios: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -27,11 +28,12 @@ export class PreviousDocumentDeclarePage extends BasePage {
         // "Previous document details"
         this.documentReferenceInput = page.locator("input#documentReference");
         this.goodsItemIdentifierInput = page.locator("input#goodsItemIdentifier");
+        this.documentCategoryRadios = page.locator('input[name="documentCategory"]');
     }
 
     /** "Document category and type" — pick the category code, then the type. */
     async selectDocumentCategoryAndType(categoryCode: string, documentType: string): Promise<void> {
-        await checkRadioByValue(this.page, 'documentCategory', categoryCode);
+        await checkRadioByValue(this.documentCategoryRadios, categoryCode);
         await selectDropdownValue(this.documentTypeDropdown, documentType);
         await this.clickContinueButton();
     }

@@ -35,7 +35,7 @@ export class CompanyPermissionService {
     async readPermissionGrant(eori: string): Promise<CompanyPermissionGrant> {
         const call = `Read the permission grant of ${eori}`;
         const result = await this.api.read<PermissionGrantResponse>(
-            buildPath(PORTAL_API_PATH.ReadCompanyPermissionGrant, { eori })
+            buildPath(PORTAL_API_PATH.CompanyPermissionGrant, { eori })
         );
 
         return {

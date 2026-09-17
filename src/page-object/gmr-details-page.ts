@@ -13,6 +13,14 @@ import { MOVEMENT_ROUTE } from '../constant/endpoints-constant';
 /** After submit, the GMR ID and Open status are populated asynchronously. */
 const GMR_OPEN_POLL_TIMEOUT = 60_000;
 
+const GVMS_UPDATE_POLL_TIMEOUT = 60_000;
+
+const GVMS_FIRST_UPDATE_TIMEOUT = 180_000;
+
+function gvmsUpdateInstant(shown: string): number {
+    return Date.parse(shown.trim());
+}
+
 /**
  * The GMR details page — the "Check your answers" screen shown after a GMR is
  * created, and the detail page reached via "View" from the movement overview's
@@ -38,6 +46,7 @@ export class GmrDetailsPage extends BasePage {
     private readonly isTrailerUnaccompanied: Locator;
     private readonly inspectionRequired: Locator;
     private readonly reportToLocations: Locator;
+    private readonly hmrcGvmsLastUpdate: Locator;
 
     constructor(page: Page, t: TFunction) {
         super(page, t);
@@ -66,6 +75,8 @@ export class GmrDetailsPage extends BasePage {
             summaryListValue(page, t('gmrDetail.inspectionRequired'));
         this.reportToLocations =
             summaryListValue(page, t('gmrDetail.reportToLocations'));
+        this.hmrcGvmsLastUpdate =
+            summaryListValue(page, t('gmrDetail.hmrcGvmsLastUpdate'));
     }
 
     /**
@@ -193,6 +204,59 @@ export class GmrDetailsPage extends BasePage {
             .catch(() => { /* soft: return whatever was last read for the caller to report */ });
 
         return { gmrId, status };
+    }
+
+    async waitForHmrcGvmsLastUpdate(): Promise<string> {
+        this.refuseUnlessOnGmrRecord();
+
+        let shown = '';
+
+        await expect(async () => {
+            shown = await readFieldIfPresent(this.hmrcGvmsLastUpdate);
+
+            if (!shown) {
+                await this.page.reload();
+            }
+
+            expect(shown, 'HMRC GVMS last update has been written').not.toBe('');
+        })
+            .toPass({ timeout: GVMS_FIRST_UPDATE_TIMEOUT, intervals: [2_000, 3_000, 5_000] })
+            .catch(() => { /* soft: the flow reports an absent update */ });
+
+        return shown;
+    }
+
+    async waitForHmrcGvmsLastUpdateAfter(
+        baseline: string
+    ): Promise<{ shown: string; movedOn: boolean }> {
+        this.refuseUnlessOnGmrRecord();
+
+        const startedAt = gvmsUpdateInstant(baseline);
+
+        if (Number.isNaN(startedAt)) {
+            throw new TypeError(
+                `A later HMRC GVMS update can only be recognised against a baseline that `
+                + `reads as a time, and the baseline given is "${baseline}".`
+            );
+        }
+
+        let shown = '';
+        let movedOn = false;
+
+        await expect(async () => {
+            shown = await readFieldIfPresent(this.hmrcGvmsLastUpdate);
+            movedOn = gvmsUpdateInstant(shown) > startedAt;
+
+            if (!movedOn) {
+                await this.page.reload();
+            }
+
+            expect(movedOn, `HMRC GVMS last update moved on from "${baseline}"`).toBe(true);
+        })
+            .toPass({ timeout: GVMS_UPDATE_POLL_TIMEOUT, intervals: [2_000, 3_000, 5_000] })
+            .catch(() => { /* soft: return whatever was last read for the caller to report */ });
+
+        return { shown, movedOn };
     }
 
     private refuseUnlessOnGmrRecord(): void {

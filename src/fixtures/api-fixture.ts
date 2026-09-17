@@ -20,6 +20,9 @@ import { PortalApiClient } from '../api-client/portal-api-client';
 import {
   CompanyPermissionService,
 } from '../api-service/portal-api/company-permission-service';
+import {
+  CompanyProfileService,
+} from '../api-service/portal-api/company-profile-service';
 import { TariffService } from '../api-service/portal-api/tariff-service';
 import { GmrService } from '../api-service/portal-api/gmr-service';
 import {
@@ -90,6 +93,7 @@ export type APIFixtureType = {
   portalApiRequest: APIRequestContext;
   portalApiClient: PortalApiClient;
   companyPermissionService: CompanyPermissionService;
+  companyProfileService: CompanyProfileService;
   traderGoodsProfileService: TraderGoodsProfileService;
   tariffService: TariffService;
   gmrService: GmrService;
@@ -232,6 +236,10 @@ export const apiFixture: ExtendParams[0] = {
 
   companyPermissionService: async ({ portalApiClient }, use) => {
     await use(new CompanyPermissionService(portalApiClient));
+  },
+
+  companyProfileService: async ({ portalApiClient }, use) => {
+    await use(new CompanyProfileService(portalApiClient));
   },
 
   traderGoodsProfileService: async ({ portalApiClient }, use) => {

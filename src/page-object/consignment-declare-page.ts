@@ -49,6 +49,11 @@ export class ConsignmentDeclarePage extends BasePage {
     private readonly allGoodsInSameContainersNoOption: Locator;
     private readonly containerIdentificationNumberInput: Locator;
     private readonly containerSizeDropdown: Locator;
+    private readonly ensOnlyReasonRadios: Locator;
+    private readonly representationTypeRadios: Locator;
+    private readonly goodsDomesticStatusRadios: Locator;
+    private readonly containerPackedStatusRadios: Locator;
+    private readonly containerSupplierTypeRadios: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -86,6 +91,11 @@ export class ConsignmentDeclarePage extends BasePage {
         this.allGoodsInSameContainersNoOption = page.locator("input#isTheSameContainer-yesNoOptions-no");
         this.containerIdentificationNumberInput = page.locator("input#containerIdentifierNumber");
         this.containerSizeDropdown = page.locator("select#containerSize");
+        this.ensOnlyReasonRadios = page.locator('input[name="ensOnlyReason"]');
+        this.representationTypeRadios = page.locator('input[name="representationType"]');
+        this.goodsDomesticStatusRadios = page.locator('input[name="goodsDomesticStatus"]');
+        this.containerPackedStatusRadios = page.locator('input[name="containerPackedStatus"]');
+        this.containerSupplierTypeRadios = page.locator('input[name="containerSupplierType"]');
     }
 
     // ===================== "Do you wish to complete ENS only?" =====================
@@ -106,7 +116,7 @@ export class ConsignmentDeclarePage extends BasePage {
      * which is translated.
      */
     async selectEnsOnlyReason(reasonCode: string): Promise<void> {
-        await checkRadioByValue(this.page, 'ensOnlyReason', reasonCode);
+        await checkRadioByValue(this.ensOnlyReasonRadios, reasonCode);
         await this.clickContinueButton();
     }
 
@@ -119,7 +129,7 @@ export class ConsignmentDeclarePage extends BasePage {
      */
 
     async selectRepresentationType(representationType: string): Promise<void> {
-        await checkRadioByValue(this.page, 'representationType', representationType);
+        await checkRadioByValue(this.representationTypeRadios, representationType);
         await this.clickContinueButton();
     }
 
@@ -221,7 +231,7 @@ export class ConsignmentDeclarePage extends BasePage {
     /** `sfd-transport-and-destination-details` — reached when IMMI is declined. */
     async fillSfdTransportAndDestinationDetails(transportDocumentNumber: string, goodsDomesticStatusCode: string): Promise<void> {
         await this.inputTransportDocumentNumber(transportDocumentNumber);
-        await checkRadioByValue(this.page, 'goodsDomesticStatus', goodsDomesticStatusCode);
+        await checkRadioByValue(this.goodsDomesticStatusRadios, goodsDomesticStatusCode);
         await this.clickContinueButton();
     }
 
@@ -325,8 +335,8 @@ export class ConsignmentDeclarePage extends BasePage {
     ): Promise<void> {
         await this.containerIdentificationNumberInput.fill(containerIdentifierNumber);
         await selectDropdownValue(this.containerSizeDropdown, containerSize);
-        await checkRadioByValue(this.page, 'containerPackedStatus', packedStatusCode);
-        await checkRadioByValue(this.page, 'containerSupplierType', supplierTypeCode);
+        await checkRadioByValue(this.containerPackedStatusRadios, packedStatusCode);
+        await checkRadioByValue(this.containerSupplierTypeRadios, supplierTypeCode);
         await this.clickContinueButton();
     }
 

@@ -149,7 +149,7 @@ export const ensImmiDeclaration = (
         useTGP: false,
         procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
-        commodityCode: '6306290000',
+        commodityCode: '630629',
         documentReferences: [
             documentReference({
                 documentCode: DOCUMENT_CODE['1UKI'],

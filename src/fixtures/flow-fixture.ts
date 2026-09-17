@@ -325,10 +325,10 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     raiseMovementForGmrThroughApiFlow: async ({
-        declareEnsThroughApiFlow, declarationAccessFlow, basePage
+        declareEnsThroughApiFlow, ics2NotificationFlow, companyProfileService
     }, use) => {
         await use(new RaiseMovementForGmrThroughApiFlow(
-            declareEnsThroughApiFlow, declarationAccessFlow, basePage
+            declareEnsThroughApiFlow, ics2NotificationFlow, companyProfileService
         ));
     },
 
@@ -395,10 +395,10 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     generateSdDraftThroughApiFlow: async ({
-        declareEnsThroughApiFlow, cdsNotificationFlow, representTraderFlow, basePage
+        declareEnsThroughApiFlow, cdsNotificationFlow
     }, use) => {
         await use(new GenerateSdDraftThroughApiFlow(
-            declareEnsThroughApiFlow, cdsNotificationFlow, representTraderFlow, basePage
+            declareEnsThroughApiFlow, cdsNotificationFlow
         ));
     },
 
