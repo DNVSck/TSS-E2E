@@ -212,8 +212,8 @@ export const flowFixture: ExtendParams[0] = {
         ));
     },
 
-    movementSteps: async ({ goodsMovementTaskListPage, movementDeclarePage }, use) => {
-        await use(new MovementSteps(goodsMovementTaskListPage, movementDeclarePage));
+    movementSteps: async ({ movementDeclarePage }, use) => {
+        await use(new MovementSteps(movementDeclarePage));
     },
 
     consignmentSteps: async ({ movementOverviewPage, consignmentDeclarePage }, use) => {

@@ -1,6 +1,8 @@
 export const ROLE_IN_MOVEMENT = {
-    CARRIER: 'I am the carrier responsible for this movement',
-    ON_BEHALF_OF_CARRIER: 'I am declaring on behalf of the carrier',
+    CARRIER: 'carrier',
+    HAULIER: 'haulier',
+    CARRIER_AND_HAULIER: 'carrier-and-haulier',
+    NEITHER: 'neither',
 } as const;
 
 export type RoleInMovementKey = keyof typeof ROLE_IN_MOVEMENT;

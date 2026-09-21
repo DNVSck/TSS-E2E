@@ -1,7 +1,6 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { ROLE_IN_MOVEMENT } from "../constant/role-in-movement-constant";
-import { SEPARATE_HAULIER } from "../constant/separate-haulier-constant";
+
 import { generateValidArrivalDate } from '../helper/data-generate-helper';
 import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
 
@@ -23,10 +22,7 @@ export class MovementDeclarePage extends BasePage {
 
     private readonly sealNumberInput: Locator;
 
-    private readonly carrierResponsibleOption: Locator;
-    private readonly onBehalfOfCarrierOption: Locator;
-    private readonly theSameAsHaulierOption: Locator;
-    private readonly differentFromHaulierOption: Locator;
+    private readonly declarantRoleRadios: Locator;
 
     private readonly carrierEoriInput: Locator;
     private readonly haulierEoriInput: Locator;
@@ -39,19 +35,18 @@ export class MovementDeclarePage extends BasePage {
     private readonly arrivalTimeMinuteInput: Locator;
 
     private readonly portOfArrivalInput: Locator;
+    private readonly arrivalLocationRadios: Locator;
     private readonly portOfArrivalOthersInput: Locator;
 
     private readonly placeOfLoadingInput: Locator;
 
-    private readonly isAcceptanceSameYesOption: Locator;
-    private readonly isAcceptanceSameNoOption: Locator;
+    private readonly isAcceptanceSameRadios: Locator;
 
     private readonly placeOfAcceptanceInput: Locator;
 
     private readonly placeOfUnloadingInput: Locator;
 
-    private readonly isDeliverySameYesOption: Locator;
-    private readonly isDeliverySameNoOption: Locator;
+    private readonly isDeliverySameRadios: Locator;
 
     private readonly placeOfDeliveryInput: Locator;
     private readonly typeOfMovementRadios: Locator;
@@ -73,13 +68,8 @@ export class MovementDeclarePage extends BasePage {
 
         this.sealNumberInput = page.locator("input#sealNumber");
 
-        // "Who is responsible for this movement?" screen
-        // "What is your role in this movement?" screen
-        // NOTE: Need to check is it a dynamic locator or not since it's ID contains a number
-        this.carrierResponsibleOption = page.locator("input#declarantRole-10002-carrier");
-        this.onBehalfOfCarrierOption = page.locator("input#declarantRole-10002-declarant");
-        this.theSameAsHaulierOption = page.locator("input#haulierInvolvement-10001-same");
-        this.differentFromHaulierOption = page.locator("input#haulierInvolvement-10001-different");
+        // "What role does your business have in this movement?" screen
+        this.declarantRoleRadios = page.locator("input[name='declarantRole']");
 
         //"Enter carrier EORI details"
         this.carrierEoriInput = page.locator("input#carrierEori");
@@ -96,6 +86,9 @@ export class MovementDeclarePage extends BasePage {
 
         //"Select port of arrival"
         this.portOfArrivalInput = page.locator('select#portOfArrival');
+        // "Where will the goods arrive?" - the RoRo movement wizard's own version of
+        // the screen above, which offers the three GVMS ports as radios instead.
+        this.arrivalLocationRadios = page.locator("input[name='portOfArrival']");
         // "Location of Goods (if not in list above)" - the free-text fallback beside
         // the dropdown above. Rendered only on the IMMI arrived branch's arrival screen.
         this.portOfArrivalOthersInput = page.locator('input#portOfArrivalOthers');
@@ -104,16 +97,14 @@ export class MovementDeclarePage extends BasePage {
         this.placeOfLoadingInput = page.locator("input#placeOfLoading");
 
         // "Place of acceptance - Are the goods being accepted at the same place as they're loaded?" screen
-        this.isAcceptanceSameYesOption = page.locator("input#isAcceptanceSame-yesNoOptions-yes");
-        this.isAcceptanceSameNoOption = page.locator("input#isAcceptanceSame-yesNoOptions-no");
+        this.isAcceptanceSameRadios = page.locator("input[name='isAcceptanceSame']");
         this.placeOfAcceptanceInput = page.locator("input#placeOfAcceptance");
         
         //"Enter place of unloading place details" screen
         this.placeOfUnloadingInput = page.locator("input#placeOfUnloading");
 
         // "Place of acceptance and delivery" screen
-        this.isDeliverySameYesOption = page.locator("input#isDeliverySame-yesNoOptions-yes");
-        this.isDeliverySameNoOption = page.locator("input#isDeliverySame-yesNoOptions-no");
+        this.isDeliverySameRadios = page.locator("input[name='isDeliverySame']");
 
         this.placeOfDeliveryInput = page.locator("input#placeOfDelivery");
         this.typeOfMovementRadios = page.locator('input[name="typeOfMovement"]');
@@ -174,20 +165,8 @@ export class MovementDeclarePage extends BasePage {
         await this.sealNumberInput.fill(sealNumber ?? '');
     }
 
-    async chooseYourRoleInThisMovement(role: string): Promise<void> {
-        if (role.includes(ROLE_IN_MOVEMENT.CARRIER)) {
-            await this.carrierResponsibleOption.check();
-        } else if (role.includes(ROLE_IN_MOVEMENT.ON_BEHALF_OF_CARRIER)) {
-            await this.onBehalfOfCarrierOption.check();
-        }
-    }
-
-    async chooseHaulierInvolvement(haulierInvolvement: string): Promise<void> {
-        if (haulierInvolvement.includes(SEPARATE_HAULIER.CARRIER_IS_HAULIER)) {
-            await this.theSameAsHaulierOption.check();
-        } else if (haulierInvolvement.includes(SEPARATE_HAULIER.SEPARATE_HAULIER)) {
-            await this.differentFromHaulierOption.check();
-        }
+    async chooseBusinessRole(role: string): Promise<void> {
+        await checkRadioByValue(this.declarantRoleRadios, role);
     }
 
     async inputPlaceOfLoading(placeOfLoading: string): Promise<void> {
@@ -200,6 +179,10 @@ export class MovementDeclarePage extends BasePage {
 
     async selectPortOfArrival(portCode: string): Promise<void> {
         await selectDropdownValue(this.portOfArrivalInput, portCode);
+    }
+
+    async chooseArrivalLocation(portCode: string): Promise<void> {
+        await checkRadioByValue(this.arrivalLocationRadios, portCode);
     }
 
     /** Blank leaves the field as the app renders it, which is the usual case. */
@@ -242,22 +225,22 @@ export class MovementDeclarePage extends BasePage {
     }
 
     async selectDeliverySameAsUnloading(): Promise<void> {
-        await this.isDeliverySameYesOption.check();
+        await checkRadioByValue(this.isDeliverySameRadios, 'yes');
         await this.clickContinueButton();
     }
 
     async selectDeliveryNotSameAsUnloading(): Promise<void> {
-        await this.isDeliverySameNoOption.check();
+        await checkRadioByValue(this.isDeliverySameRadios, 'no');
         await this.clickContinueButton();
     }
 
     async selectAcceptanceSameAsloading(): Promise<void> {
-        await this.isAcceptanceSameYesOption.check();
+        await checkRadioByValue(this.isAcceptanceSameRadios, 'yes');
         await this.clickContinueButton();
     }
 
     async selectAcceptanceNotSameAsloading(): Promise<void> {
-        await this.isAcceptanceSameNoOption.check();
+        await checkRadioByValue(this.isAcceptanceSameRadios, 'no');
         await this.clickContinueButton();
     }
 

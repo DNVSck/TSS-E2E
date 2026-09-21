@@ -26,7 +26,6 @@ export class AddNewSfdStandaloneConsignmentFlow {
 
     async addNewSfdStandaloneConsignment(input: SfdStandaloneConsignmentData): Promise<void> {
         await ReportLog.step('Add new SFD standalone consignment', async () => {
-            await this.movementSteps.openTransportDetails();
             await this.standaloneSteps.declarePreLodgedOrArrived(input.isPreLodged);
 
             if (input.representationType) {
@@ -46,7 +45,7 @@ export class AddNewSfdStandaloneConsignmentFlow {
                 input.arrivalDateTime,
                 { collectsYear: !input.isPreLodged, collectsTime: input.isPreLodged }
             );
-            await this.movementSteps.selectPortOfArrival(input.portOfArrival);
+            await this.enterArrivalLocation(input);
 
             await this.consignmentSteps.declareControlledGoods(input.isControlledGoods);
 
@@ -113,5 +112,14 @@ export class AddNewSfdStandaloneConsignmentFlow {
             input.containerPackedStatus,
             input.containerSupplierType
         );
+    }
+
+    private async enterArrivalLocation(input: SfdStandaloneConsignmentData): Promise<void> {
+        if (input.isPreLodged) {
+            await this.movementSteps.chooseArrivalLocation(input.portOfArrival);
+            return;
+        }
+
+        await this.movementSteps.selectPortOfArrival(input.portOfArrival);
     }
 }

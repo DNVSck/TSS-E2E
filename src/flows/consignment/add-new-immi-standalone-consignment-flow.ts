@@ -26,7 +26,6 @@ export class AddNewImmiStandaloneConsignmentFlow {
 
     async addNewImmiStandaloneConsignment(input: ImmiStandaloneConsignmentData): Promise<void> {
         await ReportLog.step('Add new IMMI standalone consignment', async () => {
-            await this.movementSteps.openTransportDetails();
             await this.standaloneSteps.declarePreLodgedOrArrived(input.isPreLodged);
 
             // Asked only when the agent represents a trader; an importer signing in as
@@ -55,13 +54,14 @@ export class AddNewImmiStandaloneConsignmentFlow {
 
     /**
      * The port screen, which the two branches render differently: goods that have
-     * ALREADY arrived may be somewhere that is not a listed port, so that branch also
-     * offers a free-text alternative. A pre-lodged movement has not arrived anywhere
-     * yet, so it is only asked which port it is heading for.
+     * ALREADY arrived may be somewhere that is not a listed port, so that branch keeps
+     * the full dropdown and a free-text alternative beside it. A pre-lodged movement
+     * has not arrived anywhere yet, so it is only offered the GVMS ports it could be
+     * heading for - three radios rather than a list.
      */
     private async enterArrivalLocation(input: ImmiStandaloneConsignmentData): Promise<void> {
         if (input.isPreLodged) {
-            await this.movementSteps.selectPortOfArrival(input.portOfArrival);
+            await this.movementSteps.chooseArrivalLocation(input.portOfArrival);
             return;
         }
 

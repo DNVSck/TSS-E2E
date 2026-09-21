@@ -40,7 +40,6 @@ export class ConsignmentSteps {
      * The wizard's entry point. The button lives on the movement overview — that page
      * lists a movement's consignments — but what it opens is this wizard, so it lives
      * here with the screens it leads to rather than with the movement steps. Compare
-     * MovementSteps.openTransportDetails (a task-list button) and
      * GoodsItemSteps.openNewGoodsRecord (a consignment-overview button).
      */
     async clickNewEnsConsignment(): Promise<void> {
