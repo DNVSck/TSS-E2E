@@ -1,5 +1,5 @@
 import { BasePage } from "./base-page";
-import { Page, Locator} from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 import { clickLinkAndWaitForRoute } from '../helper/element-helper';
 import { NavigationBanner } from './components/navigation-banner';
 
@@ -10,6 +10,8 @@ export class PortalPage extends BasePage {
 
     // Declare properties - Using stable locators (NOT text-based)
     private readonly signInBtn: Locator;
+    private readonly signInRadio: Locator;
+    private readonly saveButton: Locator;;
     // The service navigation bar, composed rather than injected: it is part of the
     // layout this page renders in, and it holds no state worth sharing.
     private readonly banner: NavigationBanner;
@@ -28,7 +30,9 @@ export class PortalPage extends BasePage {
         // Matched on the END of the href, never the whole path: the "/portal" prefix is
         // not there under a local dev server. Ends-with rather than contains because
         // "/company-profile" would otherwise also match "/company-profile/users".
-        this.signInBtn = page.locator("a[href$='/oauth']");
+        this.signInBtn = page.locator("a[href$='/portal/sign-in-or-register']");
+        this.signInRadio = page.locator("input[type='radio'][value='sign-in']");
+        this.saveButton = page.locator("button[type='submit']");
         this.banner = new NavigationBanner(page);
         this.startNewDeclarationLink = page.locator("main a[href$='/declaration/form/start']");
 
@@ -55,6 +59,12 @@ export class PortalPage extends BasePage {
     async clickSignIn(): Promise<void> {
         await this.signInBtn.waitFor({ state: 'visible', timeout: PORTAL_RENDER_TIMEOUT });
         await this.signInBtn.click({ timeout: PORTAL_RENDER_TIMEOUT });
+    }
+
+    async selectSignin(): Promise<void> {
+        await this.signInRadio.waitFor({ state: 'visible', timeout: PORTAL_RENDER_TIMEOUT });
+        await this.signInRadio.check({ timeout: PORTAL_RENDER_TIMEOUT });
+        await this.saveButton.click({ timeout: PORTAL_RENDER_TIMEOUT });
     }
 
     /**
