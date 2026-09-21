@@ -21,16 +21,12 @@ export class ConsignmentDeclarePage extends BasePage {
     private readonly ensOnlyNoOption: Locator;
 
     // "Is the buyer the same as the importer?" / "Is the seller the same as the exporter?"
-    private readonly buyerSameAsImporterYesOption: Locator;
-    private readonly buyerSameAsImporterNoOption: Locator;
-    private readonly sellerSameAsExporterYesOption: Locator;
-    private readonly sellerSameAsExporterNoOption: Locator;
+    private readonly buyerSameAsImporterRadios: Locator;
+    private readonly sellerSameAsExporterRadios: Locator;
 
     // "Do you want to use IMMI?" / "Are these controlled goods?"
-    private readonly useIMMIYesOption: Locator;
-    private readonly useIMMINoOption: Locator;
-    private readonly controlledGoodsYesOption: Locator;
-    private readonly controlledGoodsNoOption: Locator;
+    private readonly useIMMIRadios: Locator;
+    private readonly controlledGoodsRadios: Locator;
 
     // Transport and destination details
     private readonly transportDocumentNumberInput: Locator;
@@ -43,10 +39,8 @@ export class ConsignmentDeclarePage extends BasePage {
     private readonly invoiceCurrencyDropdown: Locator;
 
     // Containers when crossing the EU external border
-    private readonly goodsCrossEUBorderYesOption: Locator;
-    private readonly goodsCrossEUBorderNoOption: Locator;
-    private readonly allGoodsInSameContainersYesOption: Locator;
-    private readonly allGoodsInSameContainersNoOption: Locator;
+    private readonly goodsCrossEUBorderRadios: Locator;
+    private readonly allGoodsInSameContainersRadios: Locator;
     private readonly containerIdentificationNumberInput: Locator;
     private readonly containerSizeDropdown: Locator;
     private readonly ensOnlyReasonRadios: Locator;
@@ -68,15 +62,11 @@ export class ConsignmentDeclarePage extends BasePage {
         this.ensOnlyYesOption = page.locator('input[name="isEnsOnly"][value="yes"]');
         this.ensOnlyNoOption = page.locator('input[name="isEnsOnly"][value="no"]');
 
-        this.buyerSameAsImporterYesOption = page.locator("input#isImporterSameBuyer-yesNoOptions-yes");
-        this.buyerSameAsImporterNoOption = page.locator("input#isImporterSameBuyer-yesNoOptions-no");
-        this.sellerSameAsExporterYesOption = page.locator("input#isExporterSameSeller-yesNoOptions-yes");
-        this.sellerSameAsExporterNoOption = page.locator("input#isExporterSameSeller-yesNoOptions-no");
+        this.buyerSameAsImporterRadios = page.locator("input[name='isImporterSameBuyer']");
+        this.sellerSameAsExporterRadios = page.locator("input[name='isExporterSameSeller']");
 
-        this.useIMMIYesOption = page.locator("input#useIMMI-immiOptions-yes");
-        this.useIMMINoOption = page.locator("input#useIMMI-immiOptions-no");
-        this.controlledGoodsYesOption = page.locator("input#containsControlledGoods-controlledGoodsOptions-yes");
-        this.controlledGoodsNoOption = page.locator("input#containsControlledGoods-controlledGoodsOptions-no");
+        this.useIMMIRadios = page.locator("input[name='useIMMI']");
+        this.controlledGoodsRadios = page.locator("input[name='containsControlledGoods']");
 
         this.transportDocumentNumberInput = page.locator("input#transportDocumentNumber");
         this.destinationCountryDropdown = page.locator("select#destinationCountry");
@@ -85,10 +75,8 @@ export class ConsignmentDeclarePage extends BasePage {
 
         this.invoiceCurrencyDropdown = page.locator("select#invoiceCurrency");
 
-        this.goodsCrossEUBorderYesOption = page.locator("input#isTransportingInContainers-yesNoOptions-yes");
-        this.goodsCrossEUBorderNoOption = page.locator("input#isTransportingInContainers-yesNoOptions-no");
-        this.allGoodsInSameContainersYesOption = page.locator("input#isTheSameContainer-yesNoOptions-yes");
-        this.allGoodsInSameContainersNoOption = page.locator("input#isTheSameContainer-yesNoOptions-no");
+        this.goodsCrossEUBorderRadios = page.locator("input[name='isTransportingInContainers']");
+        this.allGoodsInSameContainersRadios = page.locator("input[name='isTheSameContainer']");
         this.containerIdentificationNumberInput = page.locator("input#containerIdentifierNumber");
         this.containerSizeDropdown = page.locator("select#containerSize");
         this.ensOnlyReasonRadios = page.locator('input[name="ensOnlyReason"]');
@@ -155,11 +143,11 @@ export class ConsignmentDeclarePage extends BasePage {
     // ===================== Buyer =====================
 
     async selectBuyerSameAsImporterYes(): Promise<void> {
-        await this.buyerSameAsImporterYesOption.check();
+        await checkRadioByValue(this.buyerSameAsImporterRadios, 'yes');
     }
 
     async selectBuyerSameAsImporterNo(): Promise<void> {
-        await this.buyerSameAsImporterNoOption.check();
+        await checkRadioByValue(this.buyerSameAsImporterRadios, 'no');
     }
 
     /**
@@ -187,27 +175,27 @@ export class ConsignmentDeclarePage extends BasePage {
      * whichever radio arrives first tells the two screens apart without a delay.
      */
     async isUseImmiQuestionShown(): Promise<boolean> {
-        await this.useIMMINoOption.or(this.controlledGoodsNoOption).first().waitFor();
-        return this.useIMMINoOption.isVisible();
+        await this.useIMMIRadios.or(this.controlledGoodsRadios).first().waitFor();
+        return this.useIMMIRadios.first().isVisible();
     }
 
     async selectUseIMMIYes(): Promise<void> {
-        await this.useIMMIYesOption.check();
+        await checkRadioByValue(this.useIMMIRadios, 'yes');
         await this.clickContinueButton();
     }
 
     async selectUseIMMINo(): Promise<void> {
-        await this.useIMMINoOption.check();
+        await checkRadioByValue(this.useIMMIRadios, 'no');
         await this.clickContinueButton();
     }
 
     async selectControlledGoodsYes(): Promise<void> {
-        await this.controlledGoodsYesOption.check();
+        await checkRadioByValue(this.controlledGoodsRadios, 'yes');
         await this.clickContinueButton();
     }
 
     async selectControlledGoodsNo(): Promise<void> {
-        await this.controlledGoodsNoOption.check();
+        await checkRadioByValue(this.controlledGoodsRadios, 'no');
         await this.clickContinueButton();
     }
 
@@ -274,11 +262,11 @@ export class ConsignmentDeclarePage extends BasePage {
     // ===================== Seller (same as exporter?) =====================
 
     async selectSellerSameAsExporterYes(): Promise<void> {
-        await this.sellerSameAsExporterYesOption.check();
+        await checkRadioByValue(this.sellerSameAsExporterRadios, 'yes');
     }
 
     async selectSellerSameAsExporterNo(): Promise<void> {
-        await this.sellerSameAsExporterNoOption.check();
+        await checkRadioByValue(this.sellerSameAsExporterRadios, 'no');
     }
 
     async inputSellerDetails(sellerEORI: string, address: PartyAddress): Promise<void> {
@@ -304,22 +292,22 @@ export class ConsignmentDeclarePage extends BasePage {
     // ===================== Containers =====================
 
     async selectGoodsCrossEUBorderYes(): Promise<void> {
-        await this.goodsCrossEUBorderYesOption.check();
+        await checkRadioByValue(this.goodsCrossEUBorderRadios, 'yes');
         await this.clickContinueButton();
     }
 
     async selectGoodsCrossEUBorderNo(): Promise<void> {
-        await this.goodsCrossEUBorderNoOption.check();
+        await checkRadioByValue(this.goodsCrossEUBorderRadios, 'no');
         await this.clickContinueButton();
     }
 
     async selectAllGoodsInSameContainersYes(): Promise<void> {
-        await this.allGoodsInSameContainersYesOption.check();
+        await checkRadioByValue(this.allGoodsInSameContainersRadios, 'yes');
         await this.clickContinueButton();
     }
 
     async selectAllGoodsInSameContainersNo(): Promise<void> {
-        await this.allGoodsInSameContainersNoOption.check();
+        await checkRadioByValue(this.allGoodsInSameContainersRadios, 'no');
         await this.clickContinueButton();
     }
 

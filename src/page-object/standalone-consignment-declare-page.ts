@@ -5,8 +5,7 @@ import { BasePage } from './base-page';
 /**
  * The standalone consignment declaration wizard (IMMI / SFD / FFD standalone). It
  * models only the screens unique to standalone: "Pre-lodged or arrived" and the
- * representation screen. The task-list entry ("Transport Details") is a separate
- * concern - the flow drives it via a TaskListPage, not this declare page.
+ * representation screen.
  *
  * Everything else the journeys need is the same screen as the ENS wizards and is
  * reused from those page objects by the flow (typeOfMovement / vehicle / arrival on
@@ -22,28 +21,26 @@ import { BasePage } from './base-page';
 export class StandaloneConsignmentDeclarePage extends BasePage {
     // "Pre-lodged or arrived" screen - same field on every standalone journey, only
     // the route (and the H1 wording) differs, so it is located by id.
-    private readonly preLodgedOption: Locator;
-    private readonly arrivedOption: Locator;
+    private readonly preLodgeOrArrivedRadios: Locator;
     private readonly representationTypeRadios: Locator;
     private readonly goodsDomesticStatusRadios: Locator;
     private readonly transportingInContainersRadios: Locator;
 
     constructor(page: Page) {
         super(page);
-        this.preLodgedOption = page.locator('input#preLodgeOrArrived-preLodgeOrArrivedOptions-pre-lodged');
-        this.arrivedOption = page.locator('input#preLodgeOrArrived-preLodgeOrArrivedOptions-arrived');
+        this.preLodgeOrArrivedRadios = page.locator("input[name='preLodgeOrArrived']");
         this.representationTypeRadios = page.locator('input[name="representationType"]');
         this.goodsDomesticStatusRadios = page.locator('input[name="goodsDomesticStatus"]');
         this.transportingInContainersRadios = page.locator('input[name="isTransportingInContainers"]');
     }
 
     async selectPreLodged(): Promise<void> {
-        await this.preLodgedOption.check();
+        await checkRadioByValue(this.preLodgeOrArrivedRadios, 'pre-lodged');
         await this.clickContinueButton();
     }
 
     async selectArrived(): Promise<void> {
-        await this.arrivedOption.check();
+        await checkRadioByValue(this.preLodgeOrArrivedRadios, 'arrived');
         await this.clickContinueButton();
     }
 
