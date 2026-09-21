@@ -12,8 +12,6 @@ import { COUNTRY_NAME } from "../constant/country-code-dropdown-constant";
 export class GoodsOverviewPage extends BasePage {
 
     // Summary-list rows the service populates from the chosen TGP record.
-    private readonly useTraderGoodsProfile: Locator;
-    private readonly chosenTraderGoodsProfile: Locator;
     private readonly commodityCode: Locator;
     private readonly goodsDescription: Locator;
     private readonly supplementaryUnits: Locator;
@@ -40,8 +38,6 @@ export class GoodsOverviewPage extends BasePage {
     constructor(page: Page, t: TFunction) {
         super(page, t);
 
-        this.useTraderGoodsProfile = summaryListValue(page, t('goodsItemOverview.useTraderGoodsProfile'));
-        this.chosenTraderGoodsProfile = summaryListValue(page, t('goodsItemOverview.chosenTraderGoodsProfile'));
         this.commodityCode = summaryListValue(page, t('goodsItemOverview.commodityCode'));
         this.goodsDescription = summaryListValue(page, t('goodsItemOverview.goodsDescription'));
         this.supplementaryUnits = summaryListValue(page, t('goodsItemOverview.supplementaryUnits'));
@@ -66,14 +62,14 @@ export class GoodsOverviewPage extends BasePage {
     /**
      * Assert the goods-item fields the service fills in from the chosen TGP record.
      * The test never types these — that is the point of TGP — so this is the only
-     * check that the record was applied rather than merely selected.
+     * check that the record was applied rather than merely selected. The overview no
+     * longer states WHICH record was chosen, so the record's own values are what
+     * identify it: two records that differ at all differ in these.
      *
      * Soft, and every field is read before any of them is asserted, so one wrong
      * value neither hides the others nor stops the journey completing.
      */
     async assertTgpPopulatedFields(record: TgpRecordData, showsSupplementaryUnits: boolean): Promise<void> {
-        const useTgp = await readFieldWhenVisible(this.useTraderGoodsProfile, RENDER_TIMEOUT.SUMMARY_LIST);
-        const chosenTgp = await readFieldWhenVisible(this.chosenTraderGoodsProfile, RENDER_TIMEOUT.SUMMARY_LIST);
         const commodityCode = await readFieldWhenVisible(this.commodityCode, RENDER_TIMEOUT.SUMMARY_LIST);
         const goodsDescription = await readFieldWhenVisible(this.goodsDescription, RENDER_TIMEOUT.SUMMARY_LIST);
         const countryOfOrigin = await readFieldWhenVisible(this.countryOfOrigin, RENDER_TIMEOUT.SUMMARY_LIST);
@@ -87,8 +83,6 @@ export class GoodsOverviewPage extends BasePage {
             ? undefined
             : await this.supplementaryUnits.count();
 
-        expect.soft(useTgp, 'Use a Trader Goods Profile').toBe(this.t!('common.yes'));
-        expect.soft(chosenTgp, 'Chosen TGP record').toBe(record.recordId);
         expect.soft(commodityCode, 'Commodity code from TGP').toBe(record.commodityCode);
         expect.soft(goodsDescription, 'Goods description from TGP').toBe(record.goodsDescription);
         // The record holds the code; the summary list prints the name.
@@ -102,7 +96,7 @@ export class GoodsOverviewPage extends BasePage {
                 .toBe(record.supplementaryUnits || this.t!('common.notProvided'));
         } else {
             // Some additional procedure codes take the field off the wizard, and the
-            // summary list drops the row with it. Asserted rather than skipped: the five
+            // summary list drops the row with it. Asserted rather than skipped: the three
             // reads above have already established that the screen rendered, so an empty
             // count here means the row is genuinely gone - and this fails loudly if the
             // service ever starts showing it again.
