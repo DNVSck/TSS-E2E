@@ -2,6 +2,7 @@ import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { PartyBlock, PartyAddress } from './components/party-block';
 import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
+import { BOOLEAN } from '../constant/radio-value-constant';
 
 /** How long the app may take to leave the EORI screen after Continue. */
 const EORI_OUTCOME_TIMEOUT_MS = 15_000;
@@ -17,8 +18,7 @@ export class ConsignmentDeclarePage extends BasePage {
     private readonly seller: PartyBlock;
 
     // "Do you wish to complete ENS only?" — the first screen, on both journeys.
-    private readonly ensOnlyYesOption: Locator;
-    private readonly ensOnlyNoOption: Locator;
+    private readonly ensOnlyRadios: Locator;
 
     // "Is the buyer the same as the importer?" / "Is the seller the same as the exporter?"
     private readonly buyerSameAsImporterRadios: Locator;
@@ -59,8 +59,7 @@ export class ConsignmentDeclarePage extends BasePage {
         this.exporter = new PartyBlock(page, 'exporter');
         this.seller = new PartyBlock(page, 'seller');
 
-        this.ensOnlyYesOption = page.locator('input[name="isEnsOnly"][value="yes"]');
-        this.ensOnlyNoOption = page.locator('input[name="isEnsOnly"][value="no"]');
+        this.ensOnlyRadios = page.locator('input[name="isEnsOnly"]');
 
         this.buyerSameAsImporterRadios = page.locator("input[name='isImporterSameBuyer']");
         this.sellerSameAsExporterRadios = page.locator("input[name='isExporterSameSeller']");
@@ -89,12 +88,12 @@ export class ConsignmentDeclarePage extends BasePage {
     // ===================== "Do you wish to complete ENS only?" =====================
 
     async selectEnsOnlyYes(): Promise<void> {
-        await this.ensOnlyYesOption.check();
+        await checkRadioByValue(this.ensOnlyRadios, BOOLEAN.YES);
         await this.clickContinueButton();
     }
 
     async selectEnsOnlyNo(): Promise<void> {
-        await this.ensOnlyNoOption.check();
+        await checkRadioByValue(this.ensOnlyRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
@@ -143,11 +142,11 @@ export class ConsignmentDeclarePage extends BasePage {
     // ===================== Buyer =====================
 
     async selectBuyerSameAsImporterYes(): Promise<void> {
-        await checkRadioByValue(this.buyerSameAsImporterRadios, 'yes');
+        await checkRadioByValue(this.buyerSameAsImporterRadios, BOOLEAN.YES);
     }
 
     async selectBuyerSameAsImporterNo(): Promise<void> {
-        await checkRadioByValue(this.buyerSameAsImporterRadios, 'no');
+        await checkRadioByValue(this.buyerSameAsImporterRadios, BOOLEAN.NO);
     }
 
     /**
@@ -180,22 +179,22 @@ export class ConsignmentDeclarePage extends BasePage {
     }
 
     async selectUseIMMIYes(): Promise<void> {
-        await checkRadioByValue(this.useIMMIRadios, 'yes');
+        await checkRadioByValue(this.useIMMIRadios, BOOLEAN.YES);
         await this.clickContinueButton();
     }
 
     async selectUseIMMINo(): Promise<void> {
-        await checkRadioByValue(this.useIMMIRadios, 'no');
+        await checkRadioByValue(this.useIMMIRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
     async selectControlledGoodsYes(): Promise<void> {
-        await checkRadioByValue(this.controlledGoodsRadios, 'yes');
+        await checkRadioByValue(this.controlledGoodsRadios, BOOLEAN.YES);
         await this.clickContinueButton();
     }
 
     async selectControlledGoodsNo(): Promise<void> {
-        await checkRadioByValue(this.controlledGoodsRadios, 'no');
+        await checkRadioByValue(this.controlledGoodsRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
@@ -262,11 +261,11 @@ export class ConsignmentDeclarePage extends BasePage {
     // ===================== Seller (same as exporter?) =====================
 
     async selectSellerSameAsExporterYes(): Promise<void> {
-        await checkRadioByValue(this.sellerSameAsExporterRadios, 'yes');
+        await checkRadioByValue(this.sellerSameAsExporterRadios, BOOLEAN.YES);
     }
 
     async selectSellerSameAsExporterNo(): Promise<void> {
-        await checkRadioByValue(this.sellerSameAsExporterRadios, 'no');
+        await checkRadioByValue(this.sellerSameAsExporterRadios, BOOLEAN.NO);
     }
 
     async inputSellerDetails(sellerEORI: string, address: PartyAddress): Promise<void> {
@@ -292,22 +291,22 @@ export class ConsignmentDeclarePage extends BasePage {
     // ===================== Containers =====================
 
     async selectGoodsCrossEUBorderYes(): Promise<void> {
-        await checkRadioByValue(this.goodsCrossEUBorderRadios, 'yes');
+        await checkRadioByValue(this.goodsCrossEUBorderRadios, BOOLEAN.YES);
         await this.clickContinueButton();
     }
 
     async selectGoodsCrossEUBorderNo(): Promise<void> {
-        await checkRadioByValue(this.goodsCrossEUBorderRadios, 'no');
+        await checkRadioByValue(this.goodsCrossEUBorderRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
     async selectAllGoodsInSameContainersYes(): Promise<void> {
-        await checkRadioByValue(this.allGoodsInSameContainersRadios, 'yes');
+        await checkRadioByValue(this.allGoodsInSameContainersRadios, BOOLEAN.YES);
         await this.clickContinueButton();
     }
 
     async selectAllGoodsInSameContainersNo(): Promise<void> {
-        await checkRadioByValue(this.allGoodsInSameContainersRadios, 'no');
+        await checkRadioByValue(this.allGoodsInSameContainersRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 

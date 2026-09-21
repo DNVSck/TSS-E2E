@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { checkRadioByValue } from '../helper/element-helper';
 import { BasePage } from './base-page';
+import { PRE_LODGE_OR_ARRIVED, BOOLEAN } from '../constant/radio-value-constant';
 
 /**
  * The standalone consignment declaration wizard (IMMI / SFD / FFD standalone). It
@@ -35,12 +36,12 @@ export class StandaloneConsignmentDeclarePage extends BasePage {
     }
 
     async selectPreLodged(): Promise<void> {
-        await checkRadioByValue(this.preLodgeOrArrivedRadios, 'pre-lodged');
+        await checkRadioByValue(this.preLodgeOrArrivedRadios, PRE_LODGE_OR_ARRIVED.PRE_LODGED);
         await this.clickContinueButton();
     }
 
     async selectArrived(): Promise<void> {
-        await checkRadioByValue(this.preLodgeOrArrivedRadios, 'arrived');
+        await checkRadioByValue(this.preLodgeOrArrivedRadios, PRE_LODGE_OR_ARRIVED.ARRIVED);
         await this.clickContinueButton();
     }
 
@@ -79,7 +80,7 @@ export class StandaloneConsignmentDeclarePage extends BasePage {
      */
     async selectTransportingInContainers(isTransportingInContainers: boolean): Promise<void> {
         await checkRadioByValue(
-            this.transportingInContainersRadios, isTransportingInContainers ? 'yes' : 'no'
+            this.transportingInContainersRadios, isTransportingInContainers ? BOOLEAN.YES : BOOLEAN.NO
         );
         await this.clickContinueButton();
     }

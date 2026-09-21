@@ -1,6 +1,7 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, readErrorSummary } from '../helper/element-helper';
+import { BOOLEAN } from '../constant/radio-value-constant';
 
 
 const COMMODITY_SUBMIT_TIMEOUT = 180_000;
@@ -170,7 +171,7 @@ export class GoodsDeclarePage extends BasePage {
 
     /** Answer the TGP question. Only call once isUseTgpQuestionShown() has said yes. */
     async answerUseTgp(useTGP: boolean): Promise<void> {
-        await checkRadioByValue(this.useTgpRadios, useTGP ? 'yes' : 'no');
+        await checkRadioByValue(this.useTgpRadios, useTGP ? BOOLEAN.YES : BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
@@ -186,22 +187,22 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     async selectGoodsControlledYes(): Promise<void> {
-        await checkRadioByValue(this.controlledGoodsRadios, 'yes');
+        await checkRadioByValue(this.controlledGoodsRadios, BOOLEAN.YES);
         await this.clickContinueButton();
     }
 
     async selectGoodsControlledNo(): Promise<void> {
-        await checkRadioByValue(this.controlledGoodsRadios, 'no');
+        await checkRadioByValue(this.controlledGoodsRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
     async selectDangerousGoodsYes(): Promise<void> {
-        await checkRadioByValue(this.dangerousGoodsRadios, 'yes');
+        await checkRadioByValue(this.dangerousGoodsRadios, BOOLEAN.YES);
         await this.clickContinueButton();
     }
 
     async selectDangerousGoodsNo(): Promise<void> {
-        await checkRadioByValue(this.dangerousGoodsRadios, 'no');
+        await checkRadioByValue(this.dangerousGoodsRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
@@ -261,7 +262,7 @@ export class GoodsDeclarePage extends BasePage {
             return false;
         }
 
-        await checkRadioByValue(this.useNirmsRadios, useNirms ? 'yes' : 'no');
+        await checkRadioByValue(this.useNirmsRadios, useNirms ? BOOLEAN.YES : BOOLEAN.NO);
         await this.clickContinueButton();
         return true;
     }

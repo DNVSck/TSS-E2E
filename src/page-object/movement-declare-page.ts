@@ -3,6 +3,7 @@ import { Page, Locator } from '@playwright/test';
 
 import { generateValidArrivalDate } from '../helper/data-generate-helper';
 import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
+import { BOOLEAN } from '../constant/radio-value-constant';
 
 export interface ArrivalDateTimeOptions {
     collectsYear?: boolean;
@@ -225,22 +226,22 @@ export class MovementDeclarePage extends BasePage {
     }
 
     async selectDeliverySameAsUnloading(): Promise<void> {
-        await checkRadioByValue(this.isDeliverySameRadios, 'yes');
+        await checkRadioByValue(this.isDeliverySameRadios, BOOLEAN.YES);
         await this.clickContinueButton();
     }
 
     async selectDeliveryNotSameAsUnloading(): Promise<void> {
-        await checkRadioByValue(this.isDeliverySameRadios, 'no');
+        await checkRadioByValue(this.isDeliverySameRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
     async selectAcceptanceSameAsloading(): Promise<void> {
-        await checkRadioByValue(this.isAcceptanceSameRadios, 'yes');
+        await checkRadioByValue(this.isAcceptanceSameRadios, BOOLEAN.YES);
         await this.clickContinueButton();
     }
 
     async selectAcceptanceNotSameAsloading(): Promise<void> {
-        await checkRadioByValue(this.isAcceptanceSameRadios, 'no');
+        await checkRadioByValue(this.isAcceptanceSameRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
