@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './base-page';
 import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
+import { BOOLEAN } from '../constant/radio-value-constant';
 
 /**
  * The screens that exist ONLY on the FFD standalone journey (the app's "Standard
@@ -76,7 +77,7 @@ export class FfdStandaloneConsignmentDeclarePage extends BasePage {
      */
     async selectSameNatureOfGoods(isSameNatureOfGoods: boolean): Promise<void> {
         await checkRadioByValue(
-            this.sameNatureOfGoodsRadios, isSameNatureOfGoods ? 'yes' : 'no'
+            this.sameNatureOfGoodsRadios, isSameNatureOfGoods ? BOOLEAN.YES : BOOLEAN.NO
         );
         await this.clickContinueButton();
     }

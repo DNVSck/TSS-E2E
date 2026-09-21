@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './base-page';
 import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
+import { BOOLEAN } from '../constant/radio-value-constant';
 
 /**
  * The consignment-header screens the app groups under "Commercial terms": the delivery
@@ -43,7 +44,7 @@ export class CommercialTermsDeclarePage extends BasePage {
      */
     async enterDeliveryTerms(incoterm: string, isKnownUnlocode: boolean): Promise<void> {
         await selectDropdownValue(this.incotermDropdown, incoterm);
-        await checkRadioByValue(this.knownUnlocodeRadios, isKnownUnlocode ? 'yes' : 'no');
+        await checkRadioByValue(this.knownUnlocodeRadios, isKnownUnlocode ? BOOLEAN.YES : BOOLEAN.NO);
         await this.clickContinueButton();
     }
 

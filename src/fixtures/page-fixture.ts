@@ -35,7 +35,6 @@ import { SupplementaryDeclarationOverviewPage } from '../page-object/supplementa
 import { SupplementaryDeclarationGoodsRecordPage } from '../page-object/supplementary-declaration-goods-record-page';
 import { Wizard } from '../page-object/components/wizard';
 import { SupplementaryDeclarationStep } from '../constant/supplementary-declaration-step-constant';
-import { TaskListPage } from '../page-object/task-list-page';
 
 
 export type PageFixtureType = {
@@ -50,7 +49,6 @@ export type PageFixtureType = {
     consignmentDetailPage: ConsignmentDetailPage;
     initialFormDeclaraPage: InitialFormDeclaraPage;
     movementDeclarePage: MovementDeclarePage;
-    goodsMovementTaskListPage: TaskListPage;
     movementOverviewPage: MovementOverviewPage;
     consignmentDeclarePage: ConsignmentDeclarePage;
     goodsItemDeclarePage: GoodsDeclarePage;
@@ -79,7 +77,6 @@ export type PageFixtureType = {
     supplementaryDeclarationOverviewPage: SupplementaryDeclarationOverviewPage;
     supplementaryDeclarationGoodsRecordPage: SupplementaryDeclarationGoodsRecordPage;
     supplementaryDeclarationWizard: Wizard<SupplementaryDeclarationStep>;
-    consignmentTaskListPage: TaskListPage;
 }
 
 type ExtendParams = Parameters<typeof test.extend<PageFixtureType & LocaleFixtureType>>;
@@ -123,10 +120,6 @@ export const pageFixture: ExtendParams[0] = {
 
     movementDeclarePage: async ({ page }, use) => {
         await use(new MovementDeclarePage(page));
-    },
-
-    goodsMovementTaskListPage: async ({ page }, use) => {
-        await use(new TaskListPage(page));
     },
 
     movementOverviewPage: async ({ page, t }, use) => {
@@ -224,8 +217,4 @@ export const pageFixture: ExtendParams[0] = {
     supplementaryDeclarationWizard: async ({ page }, use) => {
         await use(new Wizard<SupplementaryDeclarationStep>(page));
     },
-
-    consignmentTaskListPage: async ({ page }, use) => {
-        await use(new TaskListPage(page));
-    }
 };

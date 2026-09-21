@@ -1,6 +1,7 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, readErrorSummary } from '../helper/element-helper';
+import { BOOLEAN } from '../constant/radio-value-constant';
 
 
 const COMMODITY_SUBMIT_TIMEOUT = 180_000;
@@ -32,16 +33,13 @@ const NIRMS_SCREEN_TIMEOUT = 30_000;
 /** The radio group on the NIRMS screen, addressed by the name its inputs post. */
 export class GoodsDeclarePage extends BasePage {
 
-    private readonly useTgpYesOption: Locator;
-    private readonly useTgpNoOption: Locator;
+    private readonly useTgpRadios: Locator;
     private readonly tgpNumberInput: Locator;
     private readonly tgpNumberFirstOption: Locator;
 
-    private readonly noControlledGoodsOption: Locator;
-    private readonly yesControlledGoodsOption: Locator;
+    private readonly controlledGoodsRadios: Locator;
 
-    private readonly yesDangerousGoodsOption: Locator;
-    private readonly noDangerousGoodsOption: Locator;
+    private readonly dangerousGoodsRadios: Locator;
     private readonly dangerousGoodsCodesInput: Locator;
 
     private readonly commodityCodeInput: Locator;
@@ -85,8 +83,7 @@ export class GoodsDeclarePage extends BasePage {
         super(page);
 
         // "Do you want to use TGP?" — the first goods screen, IMMI goods only.
-        this.useTgpYesOption = page.locator("input#useTgp-yesNoOptions-yes");
-        this.useTgpNoOption = page.locator("input#useTgp-yesNoOptions-no");
+        this.useTgpRadios = page.locator("input[name='useTgp']");
 
         // "Enter your Trader Goods Profile number" — reached only after answering the
         // TGP question yes. Another accessible-autocomplete, like the commodity code.
@@ -98,12 +95,10 @@ export class GoodsDeclarePage extends BasePage {
 
         // "Are these goods controlled?"
         // "Do these goods require licences, certificates or other forms of control?"
-        this.noControlledGoodsOption = page.locator("input#isControlledGoods-isControlledGoodsOptions-no");
-        this.yesControlledGoodsOption = page.locator("input#isControlledGoods-isControlledGoodsOptions-yes");
+        this.controlledGoodsRadios = page.locator("input[name='isControlledGoods']");
 
         // "Dangerous goods"
-        this.yesDangerousGoodsOption = page.locator("input#isDangerousGoods-yesNoOptions-yes");
-        this.noDangerousGoodsOption = page.locator("input#isDangerousGoods-yesNoOptions-no");
+        this.dangerousGoodsRadios = page.locator("input[name='isDangerousGoods']");
         this.dangerousGoodsCodesInput = page.locator("input#dangerousGoodsCode");
 
         // "Commodity information" — commodity code is an autocomplete combobox and
@@ -170,13 +165,13 @@ export class GoodsDeclarePage extends BasePage {
      * unopened when the screen does not exist - see GoodsItemSteps.declareTgp.
      */
     async isUseTgpQuestionShown(): Promise<boolean> {
-        await this.useTgpYesOption.or(this.goodsProcedureCodeDropdown).first().waitFor({ state: 'visible' });
-        return this.useTgpYesOption.isVisible();
+        await this.useTgpRadios.or(this.goodsProcedureCodeDropdown).first().waitFor({ state: 'visible' });
+        return this.useTgpRadios.first().isVisible();
     }
 
     /** Answer the TGP question. Only call once isUseTgpQuestionShown() has said yes. */
     async answerUseTgp(useTGP: boolean): Promise<void> {
-        await (useTGP ? this.useTgpYesOption : this.useTgpNoOption).check();
+        await checkRadioByValue(this.useTgpRadios, useTGP ? BOOLEAN.YES : BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
@@ -192,22 +187,22 @@ export class GoodsDeclarePage extends BasePage {
     }
 
     async selectGoodsControlledYes(): Promise<void> {
-        await this.yesControlledGoodsOption.check();
+        await checkRadioByValue(this.controlledGoodsRadios, BOOLEAN.YES);
         await this.clickContinueButton();
     }
 
     async selectGoodsControlledNo(): Promise<void> {
-        await this.noControlledGoodsOption.check();
+        await checkRadioByValue(this.controlledGoodsRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
     async selectDangerousGoodsYes(): Promise<void> {
-        await this.yesDangerousGoodsOption.check();
+        await checkRadioByValue(this.dangerousGoodsRadios, BOOLEAN.YES);
         await this.clickContinueButton();
     }
 
     async selectDangerousGoodsNo(): Promise<void> {
-        await this.noDangerousGoodsOption.check();
+        await checkRadioByValue(this.dangerousGoodsRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 
@@ -267,7 +262,7 @@ export class GoodsDeclarePage extends BasePage {
             return false;
         }
 
-        await checkRadioByValue(this.useNirmsRadios, useNirms ? 'yes' : 'no');
+        await checkRadioByValue(this.useNirmsRadios, useNirms ? BOOLEAN.YES : BOOLEAN.NO);
         await this.clickContinueButton();
         return true;
     }

@@ -38,7 +38,6 @@ export class AddNewFfdStandaloneConsignmentFlow {
 
     async addNewFfdStandaloneConsignment(input: FfdStandaloneConsignmentData): Promise<void> {
         await ReportLog.step('Add new FFD standalone consignment', async () => {
-            await this.movementSteps.openTransportDetails();
             await this.standaloneSteps.declarePreLodgedOrArrived(input.isPreLodged);
 
             // Asked only when the agent represents a trader; an importer signing in as

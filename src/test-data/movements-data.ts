@@ -1,5 +1,4 @@
-import { ROLE_IN_MOVEMENT } from '../constant/role-in-movement-constant';
-import { SEPARATE_HAULIER } from '../constant/separate-haulier-constant';
+import { ROLE_IN_MOVEMENT, RoleInMovementValue } from '../constant/role-in-movement-constant';
 import { PASSIVE_TRANSPORT_TYPE } from '../constant/passive-transport-type-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { TRANSPORT_CHARGES_OPTION_CODE } from '../constant/transport-charges-code-constant';
@@ -24,8 +23,7 @@ export const TRAILER_REGISTRATION_NUMBER = 'TR12LER';
 
 export interface MovementData {
     typeOfMovement: string;
-    roleInThisMovement: string;
-    haulierSeparateThisMovement: string;
+    roleInThisMovement: RoleInMovementValue;
     imoNumber: string;
     vehicleRegistrationNumber: string;
     conveyanceReferenceNumber?: string;
@@ -50,8 +48,7 @@ export interface MovementData {
 // not frozen once at module import, or a long run reuses a stale (possibly past) date.
 const defaults: Omit<MovementData, 'arrivalDateTime'> = {
     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-    roleInThisMovement: ROLE_IN_MOVEMENT.ON_BEHALF_OF_CARRIER,
-    haulierSeparateThisMovement: SEPARATE_HAULIER.CARRIER_IS_HAULIER,
+    roleInThisMovement: ROLE_IN_MOVEMENT.HAULIER,
     imoNumber: '9198941',
     vehicleRegistrationNumber: VEHICLE_REGISTRATION_NUMBER,
     conveyanceReferenceNumber: '',

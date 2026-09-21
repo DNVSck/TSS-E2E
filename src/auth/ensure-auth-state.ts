@@ -156,7 +156,6 @@ async function signInAndSaveState(
             });
         }).toPass({ timeout: PORTAL_OPEN_RETRY_TIMEOUT_MS, intervals: [0] });
         await portalPage.clickSignIn();
-        await portalPage.selectSignin();
         await signInPage.signIn(credentials);
 
         if (OTP_ENABLED) {

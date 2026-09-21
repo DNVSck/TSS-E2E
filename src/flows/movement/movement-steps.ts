@@ -1,4 +1,3 @@
-import { TaskListPage } from '../../page-object/task-list-page';
 import { MovementDeclarePage, ArrivalDateTimeOptions } from '../../page-object/movement-declare-page';
 import { ReportLog } from '../../core/report/report-log';
 
@@ -16,21 +15,11 @@ import { ReportLog } from '../../core/report/report-log';
  * than a journey's data object — ENS and standalone carry unrelated data types, so a
  * shared screen cannot depend on either.
  *
- * The class owns one WIZARD, not one page: alongside the screens it also owns the
- * action that opens the wizard, even though that button sits on the task list. That
- * is why two page objects are injected.
  */
 export class MovementSteps {
     constructor(
-        private readonly taskListPage: TaskListPage,
         private readonly movementDeclarePage: MovementDeclarePage,
     ) { }
-
-    async openTransportDetails(): Promise<void> {
-        await ReportLog.step('Open Transport details from the task list', async () => {
-            await this.taskListPage.clickTransportDetails();
-        });
-    }
 
     // ===================== Means of transport =====================
 
@@ -108,11 +97,11 @@ export class MovementSteps {
     // ===================== Responsibility =====================
 
     /** One screen, two radios: the role and whether a separate haulier is involved. */
-    async declareResponsibleForMovement(role: string, haulierInvolvement: string): Promise<void> {
-        await ReportLog.step('Answer "Who is responsible for this movement?"', async () => {
-            await this.movementDeclarePage.chooseYourRoleInThisMovement(role);
-            await this.movementDeclarePage.chooseHaulierInvolvement(haulierInvolvement);
+    async declareBusinessRole(role: string): Promise<void> {
+        await ReportLog.step('Answer "What role does your business have in this movement?"', async () => {
+            await this.movementDeclarePage.chooseBusinessRole(role);
             await this.movementDeclarePage.clickContinueButton();
+            ReportLog.setParameter('Business role in the movement', role);
         });
     }
 
@@ -147,6 +136,13 @@ export class MovementSteps {
     async selectPortOfArrival(portOfArrival: string): Promise<void> {
         await ReportLog.step('Select the port of arrival', async () => {
             await this.movementDeclarePage.selectPortOfArrival(portOfArrival);
+            await this.movementDeclarePage.clickContinueButton();
+        });
+    }
+
+    async chooseArrivalLocation(portOfArrival: string): Promise<void> {
+        await ReportLog.step('Choose where the goods will arrive', async () => {
+            await this.movementDeclarePage.chooseArrivalLocation(portOfArrival);
             await this.movementDeclarePage.clickContinueButton();
         });
     }
