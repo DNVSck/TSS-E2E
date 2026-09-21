@@ -1,5 +1,5 @@
 import { BasePage } from "./base-page";
-import { Page, Locator} from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 import { clickLinkAndWaitForRoute } from '../helper/element-helper';
 import { NavigationBanner } from './components/navigation-banner';
 
@@ -67,6 +67,7 @@ export class PortalPage extends BasePage {
         await this.signInRadio.check({ timeout: PORTAL_RENDER_TIMEOUT });
         await this.signInChoiceContinue.click({ timeout: PORTAL_RENDER_TIMEOUT });
     }
+
 
     /**
      * "Start a new declaration" - the front door of every journey.
