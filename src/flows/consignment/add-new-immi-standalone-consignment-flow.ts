@@ -26,7 +26,6 @@ export class AddNewImmiStandaloneConsignmentFlow {
 
     async addNewImmiStandaloneConsignment(input: ImmiStandaloneConsignmentData): Promise<void> {
         await ReportLog.step('Add new IMMI standalone consignment', async () => {
-            await this.movementSteps.openTransportDetails();
             await this.standaloneSteps.declarePreLodgedOrArrived(input.isPreLodged);
 
             // Asked only when the agent represents a trader; an importer signing in as

@@ -5,8 +5,7 @@ import { BasePage } from './base-page';
 /**
  * The standalone consignment declaration wizard (IMMI / SFD / FFD standalone). It
  * models only the screens unique to standalone: "Pre-lodged or arrived" and the
- * representation screen. The task-list entry ("Transport Details") is a separate
- * concern - the flow drives it via a TaskListPage, not this declare page.
+ * representation screen.
  *
  * Everything else the journeys need is the same screen as the ENS wizards and is
  * reused from those page objects by the flow (typeOfMovement / vehicle / arrival on

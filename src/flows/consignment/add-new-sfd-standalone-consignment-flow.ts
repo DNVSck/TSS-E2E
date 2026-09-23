@@ -26,7 +26,6 @@ export class AddNewSfdStandaloneConsignmentFlow {
 
     async addNewSfdStandaloneConsignment(input: SfdStandaloneConsignmentData): Promise<void> {
         await ReportLog.step('Add new SFD standalone consignment', async () => {
-            await this.movementSteps.openTransportDetails();
             await this.standaloneSteps.declarePreLodgedOrArrived(input.isPreLodged);
 
             if (input.representationType) {

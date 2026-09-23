@@ -18,8 +18,6 @@ export class MovementHeaderDeclarationFlow {
 
     async completeNewGoodsMovementDeclaration(input: MovementData): Promise<void> {
         await ReportLog.step('Complete movement header declaration', async () => {
-            await this.steps.openTransportDetails();
-
             await this.steps.chooseTypeOfMovement(input.typeOfMovement);
             await this.steps.inputMeansOfTransport(input.imoNumber, input.nationalityOfMeanOfTransport);
             await this.identifyMethodOfTransport(input);

@@ -1,4 +1,3 @@
-import { TaskListPage } from '../../page-object/task-list-page';
 import { MovementDeclarePage, ArrivalDateTimeOptions } from '../../page-object/movement-declare-page';
 import { ReportLog } from '../../core/report/report-log';
 
@@ -15,22 +14,11 @@ import { ReportLog } from '../../core/report/report-log';
  * their single consignment wizard. That is why the methods take plain values rather
  * than a journey's data object — ENS and standalone carry unrelated data types, so a
  * shared screen cannot depend on either.
- *
- * The class owns one WIZARD, not one page: alongside the screens it also owns the
- * action that opens the wizard, even though that button sits on the task list. That
- * is why two page objects are injected.
  */
 export class MovementSteps {
     constructor(
-        private readonly taskListPage: TaskListPage,
         private readonly movementDeclarePage: MovementDeclarePage,
     ) { }
-
-    async openTransportDetails(): Promise<void> {
-        await ReportLog.step('Open Transport details from the task list', async () => {
-            await this.taskListPage.clickTransportDetails();
-        });
-    }
 
     // ===================== Means of transport =====================
 
