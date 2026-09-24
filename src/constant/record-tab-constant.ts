@@ -1,4 +1,51 @@
 /**
+ * The panel a tab renders, by the last segment of its panel id - never its label,
+ * which is translated. Named because a page object addresses the same panels to click
+ * their create button, so the sweep and the click cannot drift apart.
+ */
+export const RECORD_TAB = {
+    LINKED_GOODS_RECORDS: 'linked-goods-records',
+    PREVIOUS_DOCUMENTS: 'previous-documents',
+    GUARANTEE_TYPE: 'guarantee-type',
+    HOLDER_OF_AUTHORISATION: 'holder-of-authorisation',
+    DOCUMENTS: 'documents',
+    DOCUMENT_REFERENCES: 'document-references',
+    ADDITIONAL_PROCEDURE_CODES: 'additional-procedure-codes',
+    NATIONAL_ADDITIONAL_CODES: 'national-additional-codes',
+    TARIC_ADDITIONAL_CODES: 'taric-additional-codes',
+    ADDITIONAL_INFORMATION: 'additional-information',
+    ADDITIONAL_FISCAL_REFERENCES_IDENTIFICATION: 'additional-fiscal-references-identification',
+    TAX_BASE: 'tax-base',
+    CONSIGNMENT_LIST: 'consignment-list',
+    SFD_CONSIGNMENTS: 'sfd-consignments',
+    IMMI_CONSIGNMENTS: 'immi-consignments',
+    EXTERNAL_CONTACTS: 'external-contacts',
+    EIDR_CONSIGNMENTS: 'eidr-consignments',
+    GMR_DETAILS: 'gmr-details',
+} as const;
+
+/**
+ * The action a tab's create button posts, by the `value` it carries.
+ *
+ * The same token is also the route the wizard opens on
+ * (".../new-document-reference/document-code"), which is what lets a click be confirmed
+ * by where it landed instead of assumed.
+ */
+export const NEW_RECORD_ACTION = {
+    RECORD: 'new-record',
+    DOCUMENT_REFERENCE: 'new-document-reference',
+    ADDITIONAL_PROCEDURE_CODE: 'new-additional-procedure-code',
+    NATIONAL_ADDITIONAL_CODE: 'new-national-additional-code',
+    TARIC_ADDITIONAL_CODE: 'new-taric-additional-code',
+    GOODS_ITEM_PREVIOUS_DOCUMENT: 'new-goods-item-previous-document',
+    ADDITIONAL_INFORMATION: 'new-additional-information',
+    ADDITIONAL_FISCAL_REFERENCES_IDENTIFICATION: 'new-additional-fiscal-references-identification',
+    TAX_BASE: 'new-tax-base',
+    /** The tab offers no create action to anyone. */
+    NONE: '',
+} as const;
+
+/**
  * The record tabs a declaration overview carries, and the action each one uses to
  * create a record - measured 2026-08-14 on an ENS consignment at Trader Input
  * Required, as a company holding Full.
@@ -39,25 +86,28 @@ export interface RecordTab {
 }
 
 const CONSIGNMENT_TABS: readonly RecordTab[] = [
-    { name: 'linked-goods-records', create: 'new-record', readableRecordLinks: true },
-    { name: 'previous-documents', create: 'new-record' },
-    { name: 'guarantee-type', create: '' },
-    { name: 'holder-of-authorisation', create: 'new-record' },
-    { name: 'documents', create: '' },
+    { name: RECORD_TAB.LINKED_GOODS_RECORDS, create: NEW_RECORD_ACTION.RECORD, readableRecordLinks: true },
+    { name: RECORD_TAB.PREVIOUS_DOCUMENTS, create: NEW_RECORD_ACTION.RECORD },
+    { name: RECORD_TAB.GUARANTEE_TYPE, create: NEW_RECORD_ACTION.NONE },
+    { name: RECORD_TAB.HOLDER_OF_AUTHORISATION, create: NEW_RECORD_ACTION.RECORD },
+    { name: RECORD_TAB.DOCUMENTS, create: NEW_RECORD_ACTION.NONE },
 ];
 
 const GOODS_ITEM_TABS: readonly RecordTab[] = [
-    { name: 'document-references', create: 'new-document-reference' },
-    { name: 'additional-procedure-codes', create: 'new-additional-procedure-code' },
-    { name: 'national-additional-codes', create: 'new-national-additional-code' },
-    { name: 'taric-additional-codes', create: 'new-taric-additional-code' },
-    { name: 'previous-documents', create: 'new-goods-item-previous-document' },
-    { name: 'additional-information', create: 'new-additional-information' },
+    { name: RECORD_TAB.DOCUMENT_REFERENCES, create: NEW_RECORD_ACTION.DOCUMENT_REFERENCE },
     {
-        name: 'additional-fiscal-references-identification',
-        create: 'new-additional-fiscal-references-identification',
+        name: RECORD_TAB.ADDITIONAL_PROCEDURE_CODES,
+        create: NEW_RECORD_ACTION.ADDITIONAL_PROCEDURE_CODE,
     },
-    { name: 'tax-base', create: 'new-tax-base' },
+    { name: RECORD_TAB.NATIONAL_ADDITIONAL_CODES, create: NEW_RECORD_ACTION.NATIONAL_ADDITIONAL_CODE },
+    { name: RECORD_TAB.TARIC_ADDITIONAL_CODES, create: NEW_RECORD_ACTION.TARIC_ADDITIONAL_CODE },
+    { name: RECORD_TAB.PREVIOUS_DOCUMENTS, create: NEW_RECORD_ACTION.GOODS_ITEM_PREVIOUS_DOCUMENT },
+    { name: RECORD_TAB.ADDITIONAL_INFORMATION, create: NEW_RECORD_ACTION.ADDITIONAL_INFORMATION },
+    {
+        name: RECORD_TAB.ADDITIONAL_FISCAL_REFERENCES_IDENTIFICATION,
+        create: NEW_RECORD_ACTION.ADDITIONAL_FISCAL_REFERENCES_IDENTIFICATION,
+    },
+    { name: RECORD_TAB.TAX_BASE, create: NEW_RECORD_ACTION.TAX_BASE },
 ];
 
 /**
@@ -89,7 +139,7 @@ export const DECLARATION_TABS = {
  * Consignment tabs are unchanged on both, which is why only the goods item is named.
  */
 const IMMI_EIDR_GOODS_ITEM_TABS: readonly RecordTab[] = GOODS_ITEM_TABS.filter(tab =>
-    tab.name !== 'additional-fiscal-references-identification' && tab.name !== 'tax-base'
+    tab.name !== RECORD_TAB.ADDITIONAL_FISCAL_REFERENCES_IDENTIFICATION && tab.name !== RECORD_TAB.TAX_BASE
 );
 
 export const IMMI_EIDR_DECLARATION_TABS = {
@@ -111,10 +161,10 @@ export const IMMI_EIDR_DECLARATION_TABS = {
  */
 export const GMR_TABS = {
     consignment: [
-        { name: 'consignment-list', create: '', readableRecordLinks: true },
-        { name: 'sfd-consignments', create: '', readableRecordLinks: true },
-        { name: 'immi-consignments', create: '', readableRecordLinks: true },
-        { name: 'external-contacts', create: 'new-record', recordsEditedByButton: true },
+        { name: RECORD_TAB.CONSIGNMENT_LIST, create: NEW_RECORD_ACTION.NONE, readableRecordLinks: true },
+        { name: RECORD_TAB.SFD_CONSIGNMENTS, create: NEW_RECORD_ACTION.NONE, readableRecordLinks: true },
+        { name: RECORD_TAB.IMMI_CONSIGNMENTS, create: NEW_RECORD_ACTION.NONE, readableRecordLinks: true },
+        { name: RECORD_TAB.EXTERNAL_CONTACTS, create: NEW_RECORD_ACTION.RECORD, recordsEditedByButton: true },
     ] as readonly RecordTab[],
     goodsItem: [] as readonly RecordTab[],
 };
@@ -141,11 +191,11 @@ export const GMR_TABS = {
  */
 export const MOVEMENT_TABS = {
     consignment: [
-        { name: 'consignment-list', create: 'new-record', readableRecordLinks: true },
-        { name: 'sfd-consignments', create: '', readableRecordLinks: true },
-        { name: 'immi-consignments', create: '', readableRecordLinks: true },
-        { name: 'eidr-consignments', create: '', readableRecordLinks: true },
-        { name: 'gmr-details', create: 'new-record', readableRecordLinks: true },
+        { name: RECORD_TAB.CONSIGNMENT_LIST, create: NEW_RECORD_ACTION.RECORD, readableRecordLinks: true },
+        { name: RECORD_TAB.SFD_CONSIGNMENTS, create: NEW_RECORD_ACTION.NONE, readableRecordLinks: true },
+        { name: RECORD_TAB.IMMI_CONSIGNMENTS, create: NEW_RECORD_ACTION.NONE, readableRecordLinks: true },
+        { name: RECORD_TAB.EIDR_CONSIGNMENTS, create: NEW_RECORD_ACTION.NONE, readableRecordLinks: true },
+        { name: RECORD_TAB.GMR_DETAILS, create: NEW_RECORD_ACTION.RECORD, readableRecordLinks: true },
     ] as readonly RecordTab[],
     /** A movement holds consignments, not goods, so there is no level below this. */
     goodsItem: [] as readonly RecordTab[],

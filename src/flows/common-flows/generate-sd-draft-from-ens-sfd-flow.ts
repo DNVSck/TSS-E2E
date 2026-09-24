@@ -12,6 +12,7 @@ export interface GenerateSdDraftOptions {
     testInfo: TestInfo;
     url: string;
     overrides?: Partial<SupplementaryDeclarationMovementData>;
+    companyName?: string;
 }
 
 export interface SupplementaryDeclarationSource {
@@ -31,7 +32,7 @@ export class GenerateSdDraftFromEnsSfdFlow {
     async generateSdDraft(
         options: GenerateSdDraftOptions
     ): Promise<SupplementaryDeclarationSource> {
-        const { testInfo, url } = options;
+        const { testInfo, url, companyName = IMPORTER_COMPANY_NAME } = options;
         const input = supplementaryDeclarationMovement(options.overrides);
 
         const { generatedConsignment: sfd, movementLrn } = await this.createAndSubmitEnsDeclarationFlow
@@ -57,7 +58,7 @@ export class GenerateSdDraftFromEnsSfdFlow {
         }
 
         await this.triggerFinalStatusThroughCdsFlow.arriveSfdConsignment(sfd);
-        await this.representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
+        await this.representTraderFlow.representTrader(companyName);
 
         // Reported as well as returned, so a run that later fails to find the SD says
         // which movement it was looking under and which declaration it expected.

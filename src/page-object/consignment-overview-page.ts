@@ -1,4 +1,5 @@
 import { ConsignmentSummaryPage } from "./consignment-summary-page";
+import { RECORD_TAB } from '../constant/record-tab-constant';
 import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
@@ -70,8 +71,8 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         this.newGoodsRecordBtn = newRecordButton(page, '?index');
         // Scoped to the "Header previous documents" tab panel so it is not confused
         // with the other tabs' own "new-record" buttons.
-        this.newPreviousDocumentBtn = newRecordButton(page, 'previous-documents');
-        this.newHolderOfAuthorisationBtn = newRecordButton(page, 'holder-of-authorisation');
+        this.newPreviousDocumentBtn = newRecordButton(page, RECORD_TAB.PREVIOUS_DOCUMENTS);
+        this.newHolderOfAuthorisationBtn = newRecordButton(page, RECORD_TAB.HOLDER_OF_AUTHORISATION);
         this.openTabRecords = page.locator(OPEN_TAB_RECORD);
         this.documentTab = page.locator(`//a[contains(@href, '/overview${CONSIGNMENT_TAB_ROUTE.DOCUMENTS}#overview-tab')]`);
         this.confirmAndSubmitButton = page.locator(`button[value='${CONSIGNMENT_ACTION.SUBMIT}']`);

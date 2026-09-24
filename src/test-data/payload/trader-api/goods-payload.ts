@@ -29,9 +29,6 @@ export type GoodsPayload = {
     supplementary_units: string | null;
 };
 
-/** Only asked of controlled goods, and only this one value has been exercised. */
-const CONTROLLED_GOODS_TYPE = 'certifications_required';
-
 export function goodsPayload(
     consignmentNumber: string,
     goods: GoodsData,
@@ -51,7 +48,7 @@ export function goodsPayload(
         goods_description: goods.goodsDescription,
         invoice_number: orNull(goods.invoiceNumber),
         controlled_goods: yesNo(goods.areGoodsControlled),
-        controlled_goods_type: goods.areGoodsControlled ? CONTROLLED_GOODS_TYPE : null,
+        controlled_goods_type: null,
         commodity_code: goods.commodityCode,
         country_of_origin: goods.countryOfOrigin,
         item_invoice_amount: Number(goods.itemPriceAmount),

@@ -3,7 +3,7 @@ import { ConsignmentData } from './consignment-data';
 import { GoodsData } from './goods-data';
 import { previousDocument } from './previous-document-data';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
-import { documentReference, ensSfdGoodsDocuments } from './document-reference-data';
+import { documentReference, ensSfdGoodsDocuments, goodsDocumentsWithoutSde } from './document-reference-data';
 import { holderOfAuthorisation } from './holder-of-authorisation-data';
 import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
 import { ADDITIONAL_RISK_STATUS } from '../constant/additional-risk-status-constant';
@@ -13,7 +13,10 @@ import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
 import { additionalInformation } from './additional-information-data';
 import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
-import { IMPORTER_CGU, IMPORTER_IPO, IMPORTER_SDE, IMPORTER_TEA } from '../../config/environment';
+import {
+    IMPORTER_CGU, IMPORTER_IPO, IMPORTER_SDE, IMPORTER_TEA,
+    TSS_DDA_COMPANY_NAME, TSS_DDA_EORI, assertEnvSet,
+} from '../../config/environment';
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
 
@@ -62,6 +65,33 @@ export const supplementaryDeclarationMovement = (
     ...defaults,
     ...overrides,
 });
+
+function assertTssDdaConfigured(): void {
+    assertEnvSet(
+        { TSS_DDA_EORI, TSS_DDA_COMPANY_NAME },
+        'Cannot raise the TSS DDA supplementary declaration',
+        'The consignment names this company as the importer, and the Agent represents it to complete the declaration.'
+    );
+}
+
+export const tssDdaSupplementaryDeclarationMovement = (): SupplementaryDeclarationMovementData => {
+    assertTssDdaConfigured();
+
+    return supplementaryDeclarationMovement({
+        consignmentOverrides: { ...defaults.consignmentOverrides, importerEORI: TSS_DDA_EORI },
+        goodsItemOverrides: { documentReferences: goodsDocumentsWithoutSde() },
+    });
+};
+
+export const tssDdaTraderApiSupplementaryDeclarationMovement = (): SupplementaryDeclarationMovementData => {
+    assertTssDdaConfigured();
+
+    return {
+        movementOverrides: {},
+        consignmentOverrides: { importerEORI: TSS_DDA_EORI, useImporterSde: false },
+        goodsItemOverrides: {},
+    };
+};
 
 /**
  * Build the answers for an ENS-SFD movement that will generate a Supplementary

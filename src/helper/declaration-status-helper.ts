@@ -48,17 +48,20 @@ export function standaloneSubmittedStatusKey(isPreLodged: boolean): TranslationK
 const STATUSES_BY_METHOD_OF_PAYMENT: Partial<Record<MethodOfPaymentCode, TranslationKey[]>> = {
     /**
      * The trader's own deferment account: the duty is worked out and charged to it.
-     * Measured on SIT - Draft, Processing, then one of these two, and on to "Closed"
-     * once the duty is settled.
+     * "Tax calculation" is where it belongs and "Pending payment" no longer occurs on
+     * this route, so one answer is listed rather than two - a second accepted status
+     * would pass a declaration that landed on the wrong one.
      */
-    [METHOD_OF_PAYMENT.TRADERS_OWN_DDA]: ['status.paymentPending', 'status.taxCalculation'],
+    [METHOD_OF_PAYMENT.TRADERS_OWN_DDA]: ['status.taxCalculation'],
 
     /**
      * "Card Payment Through TSS (TSS DDA)": the duty is worked out and then waits to be
-     * paid. Measured on SIT 2026-08-20 - Draft, Processing, then PaymentPending, about
-     * two minutes end to end.
+     * paid. Measured on SIT 2026-08-20 and again 2026-09-18 - Draft, Processing, then
+     * PaymentPending, about two minutes end to end. Nothing has ever measured
+     * "Tax calculation" on this route, and it is where the OTHER route belongs, so
+     * listing it here would let either route pass on the other one's answer.
      */
-    [METHOD_OF_PAYMENT.CARD_PAYMENT_THROUGH_TSS]: ['status.paymentPending', 'status.taxCalculation'],
+    [METHOD_OF_PAYMENT.CARD_PAYMENT_THROUGH_TSS]: ['status.paymentPending'],
 };
 
 export function submittedSupplementaryStatusKeys(methodOfPayment: MethodOfPaymentCode): TranslationKey[] {

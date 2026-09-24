@@ -22,3 +22,7 @@ export const MOVEMENT_ROUTE = {
     NEW_CONSIGNMENT_SEGMENT: 'new-consignment',
     GMR_RECORD_PATH: /\/goods-movement-records\/GMR\d+/,
 } as const;
+
+export const SUPPLEMENTARY_DECLARATION_ROUTE = {
+    UNAUTHORISED_PARTIES_SEGMENT: 'unauthorised-parties',
+} as const;

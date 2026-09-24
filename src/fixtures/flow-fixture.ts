@@ -413,12 +413,14 @@ export const flowFixture: ExtendParams[0] = {
     completeAndSubmitSupplementaryDeclarationFlow: async ({
         basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
         supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
-        additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, authAccount, t
+        additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, authAccount, t,
+        supplementaryDeclarationService
     }, use) => {
         await use(new CompleteAndSubmitSupplementaryDeclarationFlow(
             basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
             supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
-            additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, t, authAccount
+            additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, t, authAccount,
+            supplementaryDeclarationService
         ));
     },
 

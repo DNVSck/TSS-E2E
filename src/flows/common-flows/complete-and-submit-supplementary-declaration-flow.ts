@@ -16,6 +16,14 @@ import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount } from '../../helper/report-helper';
 import { ReportLog } from '../../core/report/report-log';
+import {
+    SupplementaryDeclarationService,
+} from '../../api-service/trader-api/supplementary-declaration-service';
+
+const SERVICE_SETTLES_TIMEOUT = 300_000;
+const STATUS_POLL_INTERVAL = 2_000;
+const SETTLED_FOR = 45_000;
+const SETTLED_READS = Math.ceil(SETTLED_FOR / STATUS_POLL_INTERVAL);
 
 export interface CompleteSupplementaryDeclarationOptions {
     testInfo: TestInfo;
@@ -62,6 +70,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
         // The account this worker was assigned by the auth fixture - the same source
         // that picked the replayed session, so the report never names another account.
         private readonly authAccount: UserCredentials | null,
+        private readonly supplementaryDeclarationService: SupplementaryDeclarationService,
     ) { }
 
     /**
@@ -80,7 +89,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
         await this.chooseMethodOfPayment(input);
         await this.removeHoldersOfAuthorisation(input);
         await this.completeGoodsRecord(input);
-        await this.submitAndSettle(input, options.expectedStatusKeys);
+        await this.submitAndSettle(input, reference, options.expectedStatusKeys);
 
         return reference;
     }
@@ -351,24 +360,76 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
      * reporting that is the difference between "the status never changed" and
      * "CDS12125: the deferment account is not usable".
      */
+    /**
+     * Follow the declaration through the service until its status holds for SETTLED_FOR,
+     * and answer with every status it held on the way and the second each arrived on.
+     *
+     * The path is answered whatever happens - it is the only record of what the
+     * declaration went THROUGH, and the screen shows one status at a time.
+     */
+    private async waitForServiceToSettle(reference: string): Promise<string[]> {
+        const seen: { status: string; at: number }[] = [];
+        const startedAt = Date.now();
+        let unchanged = 0;
+
+        await expect.poll(async () => {
+            const status = await this.supplementaryDeclarationService.readStatus(reference);
+
+            if (status === seen.at(-1)?.status) {
+                unchanged += 1;
+            } else {
+                seen.push({ status, at: Date.now() - startedAt });
+                unchanged = 0;
+            }
+
+            return unchanged;
+        }, {
+            timeout: SERVICE_SETTLES_TIMEOUT,
+            intervals: [STATUS_POLL_INTERVAL],
+            message: `Supplementary declaration ${reference} was still changing status after `
+                + `${SERVICE_SETTLES_TIMEOUT / 1_000}s - it went `
+                + `${seen.map(step => step.status).join(' -> ')}`,
+        }).toBeGreaterThanOrEqual(SETTLED_READS);
+
+        return seen.map(step => `${step.status} (${Math.round(step.at / 1_000)}s)`);
+    }
+
     private async submitAndSettle(
         input: SupplementaryDeclarationData,
+        reference: string,
         expectedStatusKeys?: TranslationKey[]
     ): Promise<void> {
         const expected = expectedStatusKeys ?? submittedSupplementaryStatusKeys(input.methodOfPayment);
 
         await ReportLog.step('Submit the supplementary declaration', async () => {
-            await this.overviewPage.submit();
+            const outcome = await this.overviewPage.submitAndConfirmPartiesIfAsked();
+
+            if (outcome === 'parties-confirmed') {
+                ReportLog.setParameter('Unauthorised related parties', 'confirmed at submission');
+            }
         });
 
         await ReportLog.step(
             'Wait for the service and CDS to settle the declaration, and check where it landed',
             async () => {
                 try {
-                    const status = await this.overviewPage.waitForAnyStatus(expected);
-                    ReportLog.setParameter('Supplementary declaration status', status);
+                    const path = await this.waitForServiceToSettle(reference);
+                    const settled = path.at(-1) ?? '';
+
+                    ReportLog.setParameter('Supplementary declaration statuses', path.join(' -> '));
+
+                    const shown = await this.overviewPage.readStatus();
+                    ReportLog.setParameter('Supplementary declaration status', shown || 'not shown');
+
+                    expect(shown,
+                        `Supplementary declaration status on screen - an empty one means the `
+                        + `row never rendered, and the service says the declaration is in `
+                        + `"${settled}"`)
+                        .not.toBe('');
+
                     expect(expected.map(key => this.t(key)),
-                        'Supplementary declaration status').toContain(status);
+                        `Supplementary declaration status on screen (the service went `
+                        + `${path.join(' -> ')})`).toContain(shown);
                 } catch (error) {
                     const problem = await this.overviewPage.readSubmissionProblem();
                     if (problem) {

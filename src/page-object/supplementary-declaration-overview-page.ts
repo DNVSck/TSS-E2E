@@ -1,26 +1,20 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './base-page';
-import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
-import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
+import { TFunction } from '../fixtures/locale-fixture';
 import {
     summaryListValue, readFieldWhenVisible, readFieldIfPresent,
     clickLinkAndWaitForRoute, clickLinkAndEnterWizard, removeTaskListRecord,
 } from '../helper/element-helper';
+import { SUPPLEMENTARY_DECLARATION_ROUTE } from '../constant/endpoints-constant';
 
 /** This overview paints its summary card a beat after load. */
 const OVERVIEW_READ_TIMEOUT = 15_000;
 
 const TOGGLE_SETTLE_TIMEOUT = 2_000;
 
-/**
- * How long a submitted supplementary declaration gets to reach its final status.
- *
- * Longer than the frontier declarations' poll: an SD goes through CDS twice over -
- * accepted, then assessed for duty - and was measured at roughly two minutes from
- * Submit to "PaymentPending" on SIT (2026-08-20). Nothing here sleeps, so a faster
- * environment pays only for the round trips it needs.
- */
-const SUPPLEMENTARY_STATUS_POLL_TIMEOUT = 240_000;
+const UNAUTHORISED_PARTIES_TIMEOUT = 10_000;
+
+const SUBMISSION_LANDING_TIMEOUT = 30_000;
 
 /**
  * A supplementary declaration's overview - the screen reached from the SD list, and
@@ -147,8 +141,28 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
         return removeTaskListRecord(this.page, typeCode);
     }
 
-    async submit(): Promise<void> {
+    async submitAndConfirmPartiesIfAsked(): Promise<'submitted' | 'parties-confirmed'> {
         await this.submitButton.click();
+
+        const asked = await this.page
+            .waitForURL(
+                `**/${SUPPLEMENTARY_DECLARATION_ROUTE.UNAUTHORISED_PARTIES_SEGMENT}`,
+                { timeout: UNAUTHORISED_PARTIES_TIMEOUT }
+            )
+            .then(() => true)
+            .catch(() => false);
+
+        if (!asked) {
+            return 'submitted';
+        }
+
+        await this.submitButton.click();
+        await this.page.waitForURL(
+            url => !url.pathname.endsWith(SUPPLEMENTARY_DECLARATION_ROUTE.UNAUTHORISED_PARTIES_SEGMENT),
+            { timeout: SUBMISSION_LANDING_TIMEOUT }
+        );
+
+        return 'parties-confirmed';
     }
 
     /**
@@ -174,32 +188,12 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
      * CompleteAndSubmitSupplementaryDeclarationFlow) - and deciding it here threw the
      * status away before the report could name it.
      */
-    async waitForAnyStatus(
-        expectedStatusKeys: TranslationKey[],
-        timeout = SUPPLEMENTARY_STATUS_POLL_TIMEOUT
-    ): Promise<string> {
-        const expected = expectedStatusKeys.map(key => this.t!(key));
-        let status = '';
+    async readStatus(): Promise<string> {
+        await this.page.reload();
 
-        await expect(async () => {
-            status = await readFieldIfPresent(this.status);
-            if (expected.includes(status) || isTraderInputRequiredStatus(status, this.t!)) {
-                return;
-            }
-
-            // Reload, then fail on what THIS attempt read - not on a fresh read of the
-            // page it just reloaded. Asserting on a re-read ends the poll on a value
-            // `status` never held, so the caller is handed the reading from one attempt
-            // earlier: a declaration that settled on "PaymentPending" was reported as
-            // "Processing", and nothing noticed until the check below was added.
-            await this.page.reload();
-            expect(expected, 'Supplementary declaration status').toContain(status);
-        })
-            .toPass({ timeout, intervals: [3_000, 5_000, 10_000] })
-            .catch(() => { /* the caller judges what it settled on - see above */ });
-
-        return status;
+        return readFieldIfPresent(this.status);
     }
+
 
     /**
      * Whatever the service is complaining about, or '' when it is content.

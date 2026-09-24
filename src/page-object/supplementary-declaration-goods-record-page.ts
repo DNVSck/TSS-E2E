@@ -3,6 +3,10 @@ import { BasePage } from './base-page';
 import {
     clickLinkAndWaitForRoute, clickLinkAndEnterWizard, removeTaskListRecord,
 } from '../helper/element-helper';
+import { NEW_RECORD_ACTION } from '../constant/record-tab-constant';
+
+const WIZARD_OPENS_TIMEOUT = 15_000;
+const WIZARD_CLICK_ATTEMPTS = 3;
 
 /**
  * One goods record of a supplementary declaration - "Complete your goods item N".
@@ -28,10 +32,10 @@ export class SupplementaryDeclarationGoodsRecordPage extends BasePage {
         // would match eleven buttons. Only the button's own value tells them apart.
         //
         this.newDocumentReferenceButton = page.locator(
-            "main button[name='action'][value='new-document-reference']"
+            `main button[name='action'][value='${NEW_RECORD_ACTION.DOCUMENT_REFERENCE}']`
         );
         this.newAdditionalProcedureCodeButton = page.locator(
-            "main button[name='action'][value='new-additional-procedure-code']"
+            `main button[name='action'][value='${NEW_RECORD_ACTION.ADDITIONAL_PROCEDURE_CODE}']`
         );
         // One per code already on the record. Counted rather than reading the section,
         // whose empty state is a translated sentence ("No additional procedure codes
@@ -75,12 +79,45 @@ export class SupplementaryDeclarationGoodsRecordPage extends BasePage {
 
     /** "New additional procedure code" - adds a code to this goods item. */
     async declareNewAdditionalProcedureCode(): Promise<void> {
-        await this.newAdditionalProcedureCodeButton.click();
+        await this.enterWizard(
+            this.newAdditionalProcedureCodeButton, NEW_RECORD_ACTION.ADDITIONAL_PROCEDURE_CODE
+        );
     }
 
     /** "New document reference" - adds a document to this goods item. */
     async declareNewDocumentReference(): Promise<void> {
-        await this.newDocumentReferenceButton.click();
+        await this.enterWizard(
+            this.newDocumentReferenceButton, NEW_RECORD_ACTION.DOCUMENT_REFERENCE
+        );
+    }
+
+    private async enterWizard(button: Locator, action: string): Promise<void> {
+        const wizard = `/${action}/`;
+
+        for (let attempt = 1; attempt <= WIZARD_CLICK_ATTEMPTS; attempt++) {
+            if (this.page.url().includes(wizard)) {
+                return;
+            }
+
+            await button.click();
+
+            try {
+                await this.page.waitForURL(
+                    url => new URL(url).pathname.includes(wizard),
+                    { timeout: WIZARD_OPENS_TIMEOUT, waitUntil: 'commit' }
+                );
+                return;
+            } catch (error_) {
+                if (attempt === WIZARD_CLICK_ATTEMPTS) {
+                    throw new Error(
+                        `"${action}" did not open after ${WIZARD_CLICK_ATTEMPTS} clicks - the `
+                        + `page ended on "${this.page.url()}". A click made while the goods `
+                        + `item wizard was still navigating is carried away with it.`,
+                        { cause: error_ }
+                    );
+                }
+            }
+        }
     }
 
     /**

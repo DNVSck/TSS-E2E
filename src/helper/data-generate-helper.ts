@@ -12,7 +12,7 @@ import { WarehouseTypeCode } from '../constant/warehouse-type-constant';
 // factories use one, a page object uses the other as a default.
 
 
-const ARRIVAL_LEAD_MS = 30 * 60 * 1000;
+const ARRIVAL_LEAD_MS = 3 * 60 * 1000;
 const ARRIVAL_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function generateValidArrivalDate(): string {

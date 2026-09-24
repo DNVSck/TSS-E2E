@@ -41,12 +41,16 @@ export const documentReference = (overrides?: Partial<DocumentReferenceData>): D
     ...overrides,
 });
 
+const c672Document = (): DocumentReferenceData => documentReference({
+    documentCode: DOCUMENT_CODE.C672,
+    documentStatus: DOCUMENT_STATUS.AC,
+    documentReference: '0054037-0054047',
+});
+
+export const goodsDocumentsWithoutSde = (): DocumentReferenceData[] => [c672Document()];
+
 export const ensSfdGoodsDocuments = (): DocumentReferenceData[] => [
-    documentReference({
-        documentCode: DOCUMENT_CODE.C672,
-        documentStatus: DOCUMENT_STATUS.AC,
-        documentReference: '0054037-0054047',
-    }),
+    ...goodsDocumentsWithoutSde(),
     documentReference({
         documentCode: DOCUMENT_CODE.C512,
         documentStatus: undefined,

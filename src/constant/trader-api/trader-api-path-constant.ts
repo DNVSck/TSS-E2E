@@ -28,6 +28,8 @@ export const TRADER_API_PATH = {
     SupplementaryDeclarationBySfdNumber:
         `${SUPPLEMENTARY_DECLARATIONS}?sfd_number={sfdNumber}`,
     SupplementaryDeclarationByReference: `${SUPPLEMENTARY_DECLARATIONS}?reference={reference}`,
+    SupplementaryDeclarationStatusByReference:
+        `${SUPPLEMENTARY_DECLARATIONS}?reference={reference}&fields=status`,
 
     InternalMarketMovementByConsignmentNumber:
         `${INTERNAL_MARKET_MOVEMENT}?consignment_number={consignmentNumber}`,

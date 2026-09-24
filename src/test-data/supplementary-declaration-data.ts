@@ -5,7 +5,7 @@ import { NATURE_OF_GOODS } from '../constant/nature-of-goods-constant';
 import { METHOD_OF_PAYMENT, MethodOfPaymentCode } from '../constant/method-of-payment-constant';
 import { PREFERENCE_CODE, VALUATION_METHOD } from '../constant/preference-and-valuation-constant';
 import { UNLOCODE, UnlocodeCode } from '../constant/unlocode-constant';
-import { DocumentReferenceData, documentReference } from './document-reference-data';
+import { DocumentReferenceData, documentReference, goodsDocumentsWithoutSde } from './document-reference-data';
 import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
@@ -297,6 +297,13 @@ export const tssDefermentSupplementaryDeclaration = (
     documentReferencesToRemove: [DOCUMENT_CODE.C506, DOCUMENT_CODE.C505],
     documentReferences: [],
     ...overrides,
+});
+
+export const declaredThroughTraderApi = (
+    declaration: SupplementaryDeclarationData
+): SupplementaryDeclarationData => ({
+    ...declaration,
+    documentReferences: [...declaration.documentReferences, ...goodsDocumentsWithoutSde()],
 });
 
 /**

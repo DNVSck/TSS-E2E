@@ -105,6 +105,8 @@ export const BASE_URL = process.env.BASE_URL!;
  */
 export const HAULIER_COMPANY_NAME = process.env.HAULIER_COMPANY_NAME ?? '';
 export const IMPORTER_COMPANY_NAME = process.env.IMPORTER_COMPANY_NAME ?? '';
+export const TSS_DDA_COMPANY_NAME = process.env.TSS_DDA_COMPANY_NAME?.trim() ?? '';
+export const TSS_DDA_EORI = process.env.TSS_DDA_EORI?.trim() ?? '';
 
 /**
  * The importer's EORI and the authorisations it holds.

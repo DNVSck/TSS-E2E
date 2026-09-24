@@ -58,6 +58,7 @@ export interface ConsignmentData {
      * journey that sets this needs an importer that has it.
      */
     useIMMI: boolean;
+    useImporterSde?: boolean;
     /** Asked when IMMI is declined, and when the importer was never offered it. */
     isControlledGoods: boolean;
 

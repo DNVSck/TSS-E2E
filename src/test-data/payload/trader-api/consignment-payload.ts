@@ -78,7 +78,7 @@ export type ConsignmentPayload = {
     consignee_city: string | null;
     consignee_postcode: string | null;
     consignee_country: string | null;
-    align_ukims: string;
+    align_ukims: string | null;
     internal_market?: string;
     importer_eori: string;
     importer_name: string | null;
@@ -94,7 +94,7 @@ export type ConsignmentPayload = {
     exporter_country: string;
     importer_parent_organisation_eori: string | null;
     use_importer_sde: string;
-    declaration_choice: string;
+    declaration_choice: string | null;
     generate_SD: string;
     container_indicator: string;
     buyer_same_as_importer: string;
@@ -120,7 +120,6 @@ export type ConsignmentPayload = {
  * a journey that declares under another choice overrides them.
  */
 const DEFAULTS = {
-    declaration_choice: 'H1',
     container_indicator: '0',
     generate_SD: TRADER_API_YES,
 };
@@ -159,7 +158,7 @@ export function consignmentPayload(
         consignee_city: consignment.consigneeCity,
         consignee_postcode: consignment.consigneePostCode,
         consignee_country: consignment.consigneeCountryCode,
-        align_ukims: yesNo(consignment.useIMMI),
+        align_ukims: consignment.useIMMI ? yesNo(consignment.useIMMI) : null,
         ...(consignment.useIMMI ? { internal_market: INTERNAL_MARKET.CONFIRMED } : {}),
         importer_eori: consignment.importerEORI,
         importer_name: null,
@@ -176,8 +175,8 @@ export function consignmentPayload(
         exporter_postcode: consignment.exporterPostCode,
         exporter_country: consignment.exporterCountryCode,
         importer_parent_organisation_eori: null,
-        use_importer_sde: yesNo(!consignment.useIMMI),
-        declaration_choice: DEFAULTS.declaration_choice,
+        use_importer_sde: yesNo(consignment.useImporterSde ?? !consignment.useIMMI),
+        declaration_choice: null,
         generate_SD: DEFAULTS.generate_SD,
         container_indicator: DEFAULTS.container_indicator,
         buyer_same_as_importer: yesNo(buyerIsImporter),

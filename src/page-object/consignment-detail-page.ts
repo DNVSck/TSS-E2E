@@ -9,7 +9,7 @@ import {
 import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
 
 /** The MRN is populated asynchronously after the consignment is authorised. */
-const MRN_POLL_TIMEOUT = 60_000;
+const MRN_POLL_TIMEOUT = 120_000;
 
 /**
  * How long a RESUBMISSION is given to change the status.

@@ -1,12 +1,15 @@
 import { ReportLog } from '../../../src/core/report/report-log';
 import { getBaseUrl, test } from '../../test-hooks';
-import { IMPORTER_COMPANY_NAME } from '../../../config/environment';
+import { IMPORTER_COMPANY_NAME, TSS_DDA_COMPANY_NAME } from '../../../config/environment';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import {
+    declaredThroughTraderApi,
     traderDefermentSupplementaryDeclaration, tssDefermentSupplementaryDeclaration,
 } from '../../../src/test-data/supplementary-declaration-data';
 import {
     scdpRoRoAccompaniedSupplementaryDeclarationMovement,
+    tssDdaSupplementaryDeclarationMovement,
+    tssDdaTraderApiSupplementaryDeclarationMovement,
 } from '../../../src/test-data/supplementary-declaration-movement-data';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 
@@ -18,7 +21,7 @@ const SD_AGENT_REPRESENTS_TRADER_DDA = '4704';
  * The supplementary declaration that follows an ENS-SFD movement, once by each of the
  * two routes it can be paid through.
  *
- * Both tests begin by raising a declaration of their own rather than picking one off
+ * Every test begins by raising a declaration of its own rather than picking one off
  * the list. That is the only way to know WHICH declaration is being completed: the
  * service raises an SD for every frontier declaration that clears, the importer account
  * on SIT holds hundreds of them, and the suite adds more on every run - so a test that
@@ -26,7 +29,7 @@ const SD_AGENT_REPRESENTS_TRADER_DDA = '4704';
  * racing every other worker for it. How that is done, and why the journey changes hands
  * halfway through, is in GenerateSdDraftFromEnsSfdFlow.
  *
- * What separates the two tests is a single answer - how the duty is paid - and
+ * What separates the routes is a single answer - how the duty is paid - and
  * everything that answer makes true or untrue about the rest of the declaration. See
  * traderDefermentSupplementaryDeclaration and tssDefermentSupplementaryDeclaration.
  */
@@ -79,7 +82,12 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
             await ReportLog.setStory('Supplementary Declaration - from ENS-SFD - RoRo (Accompanied) - TSS DDA');
 
             const { movementLrn, frontierLrn } = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement', () =>
-                generateSdDraftFromEnsSfdFlow.generateSdDraft({ testInfo, url: getBaseUrl() })
+                generateSdDraftFromEnsSfdFlow.generateSdDraft({
+                    testInfo,
+                    url: getBaseUrl(),
+                    overrides: tssDdaSupplementaryDeclarationMovement(),
+                    companyName: TSS_DDA_COMPANY_NAME,
+                })
             );
 
             // Paying through TSS makes the trader's own deferment arrangement untrue, so
@@ -126,7 +134,39 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
                     url: getBaseUrl(),
                     movementLrn,
                     frontierLrn,
-                    overrides: traderDefermentSupplementaryDeclaration(),
+                    overrides: declaredThroughTraderApi(traderDefermentSupplementaryDeclaration()),
+                })
+            );
+        }
+    );
+
+    test(
+        'Verify the supplementary declaration raised by an ENS-SFD movement declared through the Trader API is completed and submitted successfully (4000-1SG) - TSS DDA - Payment through TSS',
+        { tag: ['@regression', '@happyPath'] },
+        async ({
+            generateSdDraftThroughApiFlow,
+            representTraderFlow,
+            completeAndSubmitSupplementaryDeclarationFlow,
+        }, testInfo) => {
+            await ReportLog.setStory('Supplementary Declaration - from ENS-SFD declared through the Trader API - TSS DDA');
+
+            // ENS-SFD wizard skipped here - covered by
+            // tests/functional/ens-integrated/gb-ni-roro-ens-sfd.spec.ts
+            const { movementLrn, frontierLrn } = await ReportLog.step('Raise the supplementary declaration from a movement declared through the Trader API', () =>
+                generateSdDraftThroughApiFlow.generateSdDraft(tssDdaTraderApiSupplementaryDeclarationMovement())
+            );
+
+            await representTraderFlow.openPortalAndRepresent(
+                getBaseUrl(), testInfo, TSS_DDA_COMPANY_NAME
+            );
+
+            await ReportLog.step('Complete and submit the supplementary declaration', () =>
+                completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
+                    testInfo,
+                    url: getBaseUrl(),
+                    movementLrn,
+                    frontierLrn,
+                    overrides: declaredThroughTraderApi(tssDefermentSupplementaryDeclaration()),
                 })
             );
         }

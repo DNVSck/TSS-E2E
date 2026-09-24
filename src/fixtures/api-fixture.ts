@@ -13,6 +13,9 @@ import {
   InternalMarketMovementService,
 } from '../api-service/trader-api/internal-market-movement-service';
 import {
+  SupplementaryDeclarationService,
+} from '../api-service/trader-api/supplementary-declaration-service';
+import {
   SimplifiedFrontierDeclarationService,
 } from '../api-service/trader-api/simplified-frontier-declaration-service';
 import { portalToken, PortalToken } from '../auth/portal-token';
@@ -102,6 +105,7 @@ export type APIFixtureType = {
   goodsService: GoodsService;
   simplifiedFrontierDeclarationService: SimplifiedFrontierDeclarationService;
   internalMarketMovementService: InternalMarketMovementService;
+  supplementaryDeclarationService: SupplementaryDeclarationService;
 }
 
 type ExtendParams = Parameters<typeof test.extend<APIFixtureType & WorkerAuthFixtureType>>;
@@ -268,6 +272,10 @@ export const apiFixture: ExtendParams[0] = {
 
   internalMarketMovementService: async ({ traderApiClient }, use) => {
     await use(new InternalMarketMovementService(traderApiClient));
+  },
+
+  supplementaryDeclarationService: async ({ traderApiClient }, use) => {
+    await use(new SupplementaryDeclarationService(traderApiClient));
   },
 };
 
