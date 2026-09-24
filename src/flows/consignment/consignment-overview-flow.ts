@@ -192,6 +192,25 @@ export class ConsignmentOverviewFlow {
         });
     }
 
+    async verifyHoldersOfAuthorisation(expected: string[]): Promise<void> {
+        await ReportLog.step('Validate the holders of authorisation', async () => {
+            const records = await this.consignmentOverviewPage.listHolderOfAuthorisationRecords();
+            const listed = records.join(' | ');
+            ReportLog.setParameter('Holders of authorisation', listed);
+
+            for (const holder of expected) {
+                expect.soft(listed,
+                    `authorisations held on the consignment (must include ${holder})`)
+                    .toContain(holder);
+            }
+        });
+    }
+
+    async openGoodsItem(index = 0): Promise<void> {
+        const opened = await this.consignmentOverviewPage.openGoodsItem(index);
+        expect(opened, `goods item ${index + 1} listed on the consignment`).toBe(true);
+    }
+
     async declareHoldersOfAuthorisation(items: HolderOfAuthorisationData[]): Promise<void> {
         if (items.length === 0) {
             return;

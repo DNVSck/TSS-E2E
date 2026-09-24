@@ -299,6 +299,18 @@ export class GoodsItemSteps {
         });
     }
 
+    async selectNirmsDocuments(input: GoodsData): Promise<string[]> {
+        return ReportLog.step('Select the NIRMS document references', async () => {
+            const offered = await this.goodsDeclarePage.selectNirmsDocuments(input.nirmsDocumentCodes);
+
+            ReportLog.setParameter('NIRMS documents offered',
+                offered.length === 0 ? 'screen not shown' : offered.join(', '));
+            ReportLog.setParameter('NIRMS documents selected',
+                input.nirmsDocumentCodes.join(', ') || 'none');
+            return offered;
+        });
+    }
+
     async enterWeightInformation(input: GoodsData): Promise<void> {
         await ReportLog.step('Fill Weight Information', async () => {
             await this.goodsDeclarePage.enterWeightInformation(input.grossMass, input.netMass);

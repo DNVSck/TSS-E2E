@@ -6,9 +6,12 @@ import { sfdStandaloneGoodsItem } from '../../../src/test-data/sfd-standalone-go
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { IMPORTER_COMPANY_NAME } from '../../../config/environment';
 import { PORT_OF_ARRIVAL } from '../../../src/constant/port-of-arrival-constant';
+import { NIRMS_COMMODITY, nirmsGoodsItem } from '../../../src/test-data/nirms-data';
+import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 
 const SFD_STANDALONE = '4440';
 const SFD_EIDR_STANDALONE = '4614';
+const SFD_NIRMS_N853 = '4929';
 
 test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represents Trader', () => {
   // The Agent signs in and then represents the importer, so the declaration is made on
@@ -102,6 +105,33 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
       })
     );
   });
+
+  test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) using NIRMS is created and submitted successfully (4000-1CG)', { tag: ['@regression', '@happyPath', '@nirms'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+    await ReportLog.setStory('SFD Standalone - Prelodged - RoRo (Accompanied) - NIRMS');
+    reportTestCaseLink(SFD_NIRMS_N853);
+    const sfd = await ReportLog.step('Create and submit the SFD standalone declaration', () =>
+      createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
+        testInfo,
+        url: getBaseUrl(),
+        consignmentOverrides: {
+          representationType: REPRESENTATION_TYPE.DIRECT,
+          isControlledGoods: true,
+        },
+        goodsItemOverrides: sfdStandaloneGoodsItem({
+          ...nirmsGoodsItem(NIRMS_COMMODITY.LIVE_CARP),
+          additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.CONTROLLED_GOODS_SIMPLIFIED_1CG,
+          documentReferences: [
+          ...NIRMS_COMMODITY.LIVE_CARP.supportingDocuments,
+          ],
+        }),
+      })
+    );
+
+    await ReportLog.step('Arrive the standalone SFD through CDS', () =>
+      triggerFinalStatusThroughCdsFlow.arriveStandaloneSfd(sfd)
+    );
+  });
+
 });
 
 test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Declare by themself', { lock: COMPANY_PROFILE.IMPORTER }, () => {

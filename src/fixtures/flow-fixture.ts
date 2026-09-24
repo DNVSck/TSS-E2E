@@ -22,6 +22,7 @@ import { AddNewSfdStandaloneConsignmentFlow } from '../flows/consignment/add-new
 import { AddNewFfdStandaloneConsignmentFlow } from '../flows/consignment/add-new-ffd-standalone-consignment-flow';
 import { AddNewImmiStandaloneGoodsItemFlow } from '../flows/goods-item/add-new-immi-standalone-goods-item-flow';
 import { AddNewSfdStandaloneGoodsItemFlow } from '../flows/goods-item/add-new-sfd-standalone-goods-item-flow';
+import { DeclareNirmsFlow } from '../flows/goods-item/declare-nirms-flow';
 import { AddNewFfdStandaloneGoodsItemFlow } from '../flows/goods-item/add-new-ffd-standalone-goods-item-flow';
 import { GoodsItemSteps } from '../flows/goods-item/goods-item-steps';
 import { AddNewEnsConsignmentFlow } from '../flows/consignment/add-new-ens-consignment-flow';
@@ -192,12 +193,16 @@ export const flowFixture: ExtendParams[0] = {
     createDraftSfdStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
         standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
-        consignmentOverviewFlow, goodsOverviewFlow, authAccount
+        consignmentOverviewFlow, goodsOverviewFlow, authAccount,
+        companyPermissionService, tariffService
     }, use) => {
         const addConsignment = new AddNewSfdStandaloneConsignmentFlow(
             standaloneConsignmentSteps, movementSteps, consignmentSteps
         );
-        const addGoodsItem = new AddNewSfdStandaloneGoodsItemFlow(goodsItemSteps);
+        const addGoodsItem = new AddNewSfdStandaloneGoodsItemFlow(
+            goodsItemSteps,
+            new DeclareNirmsFlow(goodsItemSteps, companyPermissionService, tariffService)
+        );
         await use(new CreateDraftSfdStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,
             addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
@@ -255,7 +260,8 @@ export const flowFixture: ExtendParams[0] = {
         authAccount
     }, use) => {
         await use(new AddNewEnsGoodsItemFlow(
-            goodsItemSteps, companyPermissionService, traderGoodsProfileService, tariffService,
+            goodsItemSteps, traderGoodsProfileService,
+            new DeclareNirmsFlow(goodsItemSteps, companyPermissionService, tariffService),
             authAccount
         ));
     },
@@ -309,10 +315,10 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     createAndSubmitEnsDeclarationFlow: async ({
-        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow
+        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow, goodsOverviewFlow
     }, use) => {
         await use(new CreateAndSubmitEnsDeclarationFlow(
-            createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow
+            createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow, goodsOverviewFlow
         ));
     },
 
@@ -336,13 +342,15 @@ export const flowFixture: ExtendParams[0] = {
         portalAccessFlow, initialFormDeclarationFlow,
         standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
         consignmentOverviewFlow, goodsOverviewFlow, authAccount, traderGoodsProfileService,
-        companyPermissionService
+        companyPermissionService, tariffService
     }, use) => {
         const addConsignment = new AddNewImmiStandaloneConsignmentFlow(
             standaloneConsignmentSteps, movementSteps, consignmentSteps
         );
         const addGoodsItem = new AddNewImmiStandaloneGoodsItemFlow(
-            goodsItemSteps, companyPermissionService, traderGoodsProfileService, authAccount
+            goodsItemSteps,
+            new DeclareNirmsFlow(goodsItemSteps, companyPermissionService, tariffService),
+            traderGoodsProfileService, authAccount
         );
         await use(new CreateDraftImmiStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,

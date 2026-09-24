@@ -36,6 +36,7 @@ export interface GoodsData {
      * rather than being left to whatever the environment happens to hold.
      */
     useNirms: boolean;
+    nirmsDocumentCodes: string[];
     /**
      * The TGP record to declare against — see TGP_RECORD for the ones that exist.
      * Optional and NOT defaulted: which records exist depends on the environment and
@@ -107,6 +108,7 @@ const defaults: Omit<GoodsData, 'containerIdentifierNumber' | 'warehouseIdentifi
     useTGP: false,
     // Bypasses the NIRMS screen while the feature is unfinished - see GoodsData.useNirms.
     useNirms: false,
+    nirmsDocumentCodes: [],
     // Deliberately no default record: which records exist depends on the environment and
     // the trader, so a default would let a test that forgot to name one run silently
     // against whichever record happened to sit here.

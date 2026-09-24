@@ -2,10 +2,7 @@ import { ReportLog } from '../../core/report/report-log';
 import { GoodsData } from '../../test-data/goods-data';
 import { GoodsItemSteps } from './goods-item-steps';
 import { hidesSupplementaryUnit } from '../../helper/procedure-code-helper';
-import { nirmsExpectation } from '../../helper/nirms-helper';
-import {
-    CompanyPermissionService,
-} from '../../api-service/portal-api/company-permission-service';
+import { DeclareNirmsFlow } from './declare-nirms-flow';
 import {
     TraderGoodsProfileService, describeTgpGap,
 } from '../../api-service/portal-api/trader-goods-profile-service';
@@ -22,7 +19,7 @@ import { ENV } from '../../../config/environment';
 export class AddNewImmiStandaloneGoodsItemFlow {
     constructor(
         private readonly steps: GoodsItemSteps,
-        private readonly companyPermissionService: CompanyPermissionService,
+        private readonly declareNirmsFlow: DeclareNirmsFlow,
         private readonly traderGoodsProfileService: TraderGoodsProfileService,
         private readonly authAccount: UserCredentials | null,
     ) { }
@@ -65,13 +62,13 @@ export class AddNewImmiStandaloneGoodsItemFlow {
             }
 
             if (!usesTgp) {
-                await this.answerNirms(input, declaringForEori);
+                await this.declareNirmsFlow.answerNirms(input, { isEnsOnly: false, useIMMI: true, importerEORI: declaringForEori });
             }
 
             await this.steps.enterStandalonePackagingDetails(input);
 
             if (usesTgp) {
-                await this.answerNirms(input, declaringForEori);
+                await this.declareNirmsFlow.answerNirms(input, { isEnsOnly: false, useIMMI: true, importerEORI: declaringForEori });
             }
 
             await this.steps.enterWeightInformation(input);
@@ -84,46 +81,6 @@ export class AddNewImmiStandaloneGoodsItemFlow {
             await this.steps.finishGoodsItemDeclaration();
             return usesTgp;
         });
-    }
-
-    /**
-     * "Do you want to use NIRMS for these goods?" - decided by the same rule as the ENS
-     * wizard (see nirms-helper), because it is one rule of the service rather than one
-     * per journey. Only where it sits in the wizard differs.
-     */
-    private async answerNirms(input: GoodsData, importerEORI: string): Promise<void> {
-        const grant = await this.companyPermissionService.readPermissionGrant(importerEORI);
-
-        const { expected, because } = nirmsExpectation({
-            isEnsOnly: false,
-            useIMMI: true,
-            importerEORI,
-            hasNirmsAuthorisation: grant.hasNirmsAuthorisation,
-            additionalProcedureCode: input.additionalProcedureCode,
-            commodityCode: input.commodityCode,
-            countryOfOrigin: input.countryOfOrigin,
-        });
-
-        if (input.useNirms && !expected) {
-            throw new Error(
-                `Test data sets "useNirms" but the NIRMS screen is never put for this item on `
-                + `"${ENV}": ${because}.`
-            );
-        }
-
-        const asked = await this.steps.answerNirmsIfAsked(input);
-
-        if (asked === expected) {
-            return;
-        }
-
-        throw new Error(
-            expected
-                ? `The NIRMS screen was never shown, but it was owed: ${because}. Nothing in `
-                + `the test data explains this - the screen was not offered.`
-                : `The NIRMS screen was shown, but it should not have been: ${because}. `
-                + `The service and what it permits disagree.`
-        );
     }
 
     /**

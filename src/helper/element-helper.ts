@@ -177,6 +177,25 @@ export async function hrefsOf(links: Locator): Promise<string[]> {
     return hrefs.filter(href => href !== '');
 }
 
+export async function valuesOf(inputs: Locator): Promise<string[]> {
+    const values = await inputs.evaluateAll(elements =>
+        elements.map(element => element.getAttribute('value') ?? '')
+    );
+    return values.filter(value => value !== '');
+}
+
+export async function textsOf(elements: Locator): Promise<string[]> {
+    const texts = await elements.allInnerTexts();
+    return texts.map(text => text.replaceAll(/\s+/g, ' ').trim()).filter(text => text !== '');
+}
+
+export async function switchToTab(page: Page, tab: Locator): Promise<void> {
+    if (await tab.count() === 0) {
+        return;
+    }
+    await clickLinkAndWaitForRoute(page, tab);
+}
+
 export function summaryListValue(page: Page, label: string): Locator {
     return page.locator(
         `.govuk-summary-list__row:has(dt:text-is("${label}")) .govuk-summary-list__value`

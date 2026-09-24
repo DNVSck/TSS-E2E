@@ -1,6 +1,6 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, readErrorSummary } from '../helper/element-helper';
+import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, readErrorSummary, valuesOf } from '../helper/element-helper';
 import { BOOLEAN } from '../constant/radio-value-constant';
 
 
@@ -29,6 +29,7 @@ const SCREEN_PAINT_TIMEOUT = 90_000;
  * for, and every declaration that does not qualify for NIRMS pays this once.
  */
 const NIRMS_SCREEN_TIMEOUT = 30_000;
+
 
 /** The radio group on the NIRMS screen, addressed by the name its inputs post. */
 export class GoodsDeclarePage extends BasePage {
@@ -60,6 +61,7 @@ export class GoodsDeclarePage extends BasePage {
     private readonly grossMassInput: Locator;
     private readonly netMassInput: Locator;
     private readonly useNirmsRadios: Locator;
+    private readonly nirmsDocumentCheckboxes: Locator;
 
     private readonly goodsProcedureCodeDropdown: Locator;
 
@@ -125,6 +127,7 @@ export class GoodsDeclarePage extends BasePage {
         this.grossMassInput = page.locator("input#grossMass");
         this.netMassInput = page.locator("input#netMass");
         this.useNirmsRadios = page.locator("input[name='useNirms']");
+        this.nirmsDocumentCheckboxes = page.locator('input[name="nirmsDocumentReference"]');
     
         // "Goods procedure codes"
         this.goodsProcedureCodeDropdown = page.locator("select#procedureCode");
@@ -265,6 +268,32 @@ export class GoodsDeclarePage extends BasePage {
         await checkRadioByValue(this.useNirmsRadios, useNirms ? BOOLEAN.YES : BOOLEAN.NO);
         await this.clickContinueButton();
         return true;
+    }
+
+    async selectNirmsDocuments(codes: string[]): Promise<string[]> {
+        const shown = await this.nirmsDocumentCheckboxes.first()
+            .waitFor({ state: 'visible', timeout: NIRMS_SCREEN_TIMEOUT })
+            .then(() => true, () => false);
+
+        if (!shown) {
+            return [];
+        }
+
+        const offered = await valuesOf(this.nirmsDocumentCheckboxes);
+
+        for (const code of codes) {
+            if (!offered.includes(code)) {
+                throw new Error(
+                    `The NIRMS documents screen offers no "${code}" to select - `
+                    + `it offers ${offered.join(', ')}.`
+                );
+            }
+
+            await checkRadioByValue(this.nirmsDocumentCheckboxes, code);
+        }
+
+        await this.clickContinueButton();
+        return offered;
     }
 
     /**

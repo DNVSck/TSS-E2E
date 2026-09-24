@@ -4,14 +4,15 @@ import { Page, Locator, expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
     clickLinkAndWaitForRoute, clickLinkAndWaitForNavigation, switchToTabAndClickNew, summaryListValue,
-    readFieldWhenVisible, readFieldIfPresent, newRecordButton,
+    readFieldWhenVisible, readFieldIfPresent, newRecordButton, textsOf,
 } from '../helper/element-helper';
 import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
 import { StringUtil } from '../core/util/string-util';
+import { CONSIGNMENT_TAB_ROUTE } from '../constant/overview-tab-route-constant';
 import {
-    OPEN_TAB_RECORD, RECORD_LINK, RECORD_DELETE_BUTTON,
+    waitForOpenTabPanel, OPEN_TAB_RECORD, RECORD_LINK, RECORD_DELETE_BUTTON,
 } from './components/record-tabs';
 
 
@@ -58,10 +59,10 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         // ENS consignments reference starts "DEC"; standalone consignments use a
         // "GLR" reference - match either so the breadcrumb works for both.
         this.consignmentBreadcrumbLink = page.locator("//nav[contains(@class,'breadcrumb')]//a[starts-with(normalize-space(.),'DEC') or starts-with(normalize-space(.),'GLR')]");
-        this.goodsRecordTab = page.locator("//a[contains(@href, '/overview/#overview-tab')]");
-        this.headerPreviousDocumentTab = page.locator("//a[contains(@href, '/overview/previous-documents#overview-tab')]");
-        this.guaranteeTypeTab = page.locator("//a[contains(@href, '/guarantee-type#overview-tab')]");
-        this.holderOfAuthorisationTab = page.locator("//a[contains(@href, '/overview/holder-of-authorisation#overview-tab')]");
+        this.goodsRecordTab = page.locator(`//a[contains(@href, '/overview${CONSIGNMENT_TAB_ROUTE.GOODS_RECORDS}#overview-tab')]`);
+        this.headerPreviousDocumentTab = page.locator(`//a[contains(@href, '/overview${CONSIGNMENT_TAB_ROUTE.HEADER_PREVIOUS_DOCUMENTS}#overview-tab')]`);
+        this.guaranteeTypeTab = page.locator(`//a[contains(@href, '/overview${CONSIGNMENT_TAB_ROUTE.GUARANTEE_TYPE}#overview-tab')]`);
+        this.holderOfAuthorisationTab = page.locator(`//a[contains(@href, '/overview${CONSIGNMENT_TAB_ROUTE.HOLDER_OF_AUTHORISATION}#overview-tab')]`);
 
         // The goods-records list is the overview root, whose form action carries the
         // "?index" marker (named tabs post to "/<tab-name>"). Scoped by form action (a
@@ -72,7 +73,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         this.newPreviousDocumentBtn = newRecordButton(page, 'previous-documents');
         this.newHolderOfAuthorisationBtn = newRecordButton(page, 'holder-of-authorisation');
         this.openTabRecords = page.locator(OPEN_TAB_RECORD);
-        this.documentTab = page.locator("//a[contains(@href, '/documents#overview-tab')]");
+        this.documentTab = page.locator(`//a[contains(@href, '/overview${CONSIGNMENT_TAB_ROUTE.DOCUMENTS}#overview-tab')]`);
         this.confirmAndSubmitButton = page.locator(`button[value='${CONSIGNMENT_ACTION.SUBMIT}']`);
     }
 
@@ -204,6 +205,9 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
      * expects rather than treats as a broken run.
      */
     async openGoodsItem(index = 0): Promise<boolean> {
+        await this.openTab(this.goodsRecordTab, CONSIGNMENT_TAB_ROUTE.GOODS_RECORDS);
+        await waitForOpenTabPanel(this.page, RENDER_TIMEOUT.TAB_PANEL);
+
         const goodsItem = (await this.listGoodsItemRoutes())[index];
 
         if (!goodsItem) {
@@ -217,6 +221,31 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     /** Open the "Holder of authorisation" tab, without adding a record to it. */
     async openHolderOfAuthorisationTab(): Promise<void> {
         await clickLinkAndWaitForRoute(this.page, this.holderOfAuthorisationTab);
+    }
+
+    async listHolderOfAuthorisationRecords(): Promise<string[]> {
+        await this.openTab(this.holderOfAuthorisationTab, CONSIGNMENT_TAB_ROUTE.HOLDER_OF_AUTHORISATION);
+        await waitForOpenTabPanel(this.page, RENDER_TIMEOUT.TAB_PANEL);
+
+        return textsOf(this.openTabRecords);
+    }
+
+    private async openTab(tab: Locator, routeSuffix: string): Promise<void> {
+        const route = this.tabRoute(routeSuffix);
+
+        if (StringUtil.stripTrailingSlashes(new URL(this.page.url()).pathname) === route) {
+            return;
+        }
+
+        await clickLinkAndWaitForRoute(this.page, tab);
+    }
+
+    /** Where a tab of THIS consignment is served, built from the route the page is on. */
+    private tabRoute(routeSuffix: string): string {
+        const pathname = StringUtil.stripTrailingSlashes(new URL(this.page.url()).pathname);
+        const overview = pathname.slice(0, pathname.indexOf('/overview')) + '/overview';
+
+        return StringUtil.stripTrailingSlashes(overview + routeSuffix);
     }
 
     /**

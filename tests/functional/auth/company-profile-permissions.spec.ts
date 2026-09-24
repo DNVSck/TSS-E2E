@@ -1,7 +1,11 @@
 import { COMPANY_PROFILE, getCredentials, isProfileConfigured } from '../../../src/auth/credentials';
 import { ALL_COMPANY_PROFILE_ACTIONS } from '../../../src/constant/company-profile-action-constant';
 import { ReportLog } from '../../../src/core/report/report-log';
+import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { test, expect, getBaseUrl } from '../../test-hooks';
+
+const ACCOUNT_HOLDER_TEST_ID = '2406';
+const NON_ACCOUNT_HOLDER_TEST_ID = '2437';
 
 test.describe('TSS Portal company profile - edit permissions', () => {
 
@@ -14,6 +18,8 @@ test.describe('TSS Portal company profile - edit permissions', () => {
 
 
     test('An account holder can edit the company profile and its users', { tag: ['@auth', '@authorisation', '@regression'], lock: COMPANY_PROFILE.PRIMARY_HOLDER }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
+        reportTestCaseLink(ACCOUNT_HOLDER_TEST_ID);
+
         const account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
 
         await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });
@@ -44,6 +50,8 @@ test.describe('TSS Portal company profile - edit permissions', () => {
 
 
     test('A user who is not the account holder gets view-only', { tag: ['@auth', '@authorisation', '@regression'], lock: COMPANY_PROFILE.NON_PRIMARY_HOLDER }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
+        reportTestCaseLink(NON_ACCOUNT_HOLDER_TEST_ID);
+
         const account = getCredentials(COMPANY_PROFILE.NON_PRIMARY_HOLDER);
 
         await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });

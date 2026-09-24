@@ -13,6 +13,7 @@ import { AdditionalInformationData } from "../../test-data/additional-informatio
 import { PreviousDocumentData } from "../../test-data/previous-document-data";
 import { TgpRecordData } from "../../test-data/tgp-record-data";
 import { hidesSupplementaryUnit } from "../../helper/procedure-code-helper";
+import { nirmsDocumentCitations } from '../../test-data/nirms-data';
 
 const DESCRIPTION_ATTEMPTS = 3;
 
@@ -22,6 +23,7 @@ const DESCRIPTION_ATTEMPTS = 3;
  * Every method is a no-op on an empty list, so a goods item that declares none
  * of these is unaffected.
  */
+export const citedAs = (code: string, value: string): string => `[${code}] ${value}`;
 export class GoodsOverviewFlow {
     constructor(
         private readonly goodsOverviewPage: GoodsOverviewPage,
@@ -59,6 +61,45 @@ export class GoodsOverviewFlow {
                 record,
                 !hidesSupplementaryUnit(additionalProcedureCode)
             );
+        });
+    }
+
+    async verifyDocumentReferences(expected: string[]): Promise<void> {
+        await ReportLog.step('Validate the goods item document references', async () => {
+            const records = await this.goodsOverviewPage.listDocumentReferenceRecords();
+            const listed = records.join(' | ');
+            ReportLog.setParameter('Document references', listed);
+
+            for (const document of expected) {
+                expect.soft(listed,
+                    `documents cited by the goods item (must include ${document})`)
+                    .toContain(document);
+            }
+        });
+    }
+
+    async verifyNirmsDocumentReferences(nirmsDocumentCodes: string[]): Promise<void> {
+        if (nirmsDocumentCodes.length === 0) {
+            return;
+        }
+
+        const citations = nirmsDocumentCitations(nirmsDocumentCodes, new Date().getFullYear());
+
+        await this.verifyDocumentReferences(
+            citations.map(citation => citedAs(citation.code, citation.reference))
+        );
+    }
+
+    async verifyAdditionalProcedureCodes(expected: string[]): Promise<void> {
+        await ReportLog.step('Validate the goods item additional procedure codes', async () => {
+            const codes = await this.goodsOverviewPage.listAdditionalProcedureCodes();
+            ReportLog.setParameter('Additional procedure codes', codes.join(', '));
+
+            for (const code of expected) {
+                expect.soft(codes,
+                    `additional procedure codes on the goods item (must include ${code})`)
+                    .toContain(code);
+            }
         });
     }
 

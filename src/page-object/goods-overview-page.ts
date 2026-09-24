@@ -2,8 +2,8 @@ import { BasePage } from "./base-page";
 import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
-import { switchToTabAndClickNew, summaryListValue, readFieldWhenVisible, newRecordButton, clickLinkAndWaitForNavigation } from '../helper/element-helper';
-import { OPEN_TAB_RECORD, RECORD_LINK } from './components/record-tabs';
+import { switchToTabAndClickNew, summaryListValue, readFieldWhenVisible, newRecordButton, clickLinkAndWaitForNavigation, switchToTab, textsOf } from '../helper/element-helper';
+import { waitForOpenTabPanel, OPEN_TAB_RECORD, RECORD_LINK } from './components/record-tabs';
 import { TgpRecordData } from "../test-data/tgp-record-data";
 import { COUNTRY_NAME } from "../constant/country-code-dropdown-constant";
 
@@ -19,6 +19,7 @@ export class GoodsOverviewPage extends BasePage {
 
     private readonly documentTab: Locator;
     private readonly newDocumentRefButton: Locator;
+    private readonly openTabRecords: Locator;
 
     private readonly additionalProcedureCodesTab: Locator;
     private readonly newAdditionalProcedureCodeButton: Locator;
@@ -57,6 +58,7 @@ export class GoodsOverviewPage extends BasePage {
         this.newAdditionalInformationButton = newRecordButton(page, '/additional-information');
         this.newTaricAdditionalCodeButton = newRecordButton(page, '/taric-additional-codes');
         this.newNationalAdditionalCodeButton = newRecordButton(page, '/national-additional-codes');
+        this.openTabRecords = page.locator(OPEN_TAB_RECORD);
     }
 
     /**
@@ -129,6 +131,19 @@ export class GoodsOverviewPage extends BasePage {
         await switchToTabAndClickNew(this.page,this.nationalAdditionalCodesTab, this.newNationalAdditionalCodeButton);
     }
 
+
+    async listDocumentReferenceRecords(): Promise<string[]> {
+        await switchToTab(this.page, this.documentTab);
+        await waitForOpenTabPanel(this.page, RENDER_TIMEOUT.TAB_PANEL);
+        return textsOf(this.openTabRecords);
+    }
+
+    async listAdditionalProcedureCodes(): Promise<string[]> {
+        await switchToTab(this.page, this.additionalProcedureCodesTab);
+        await waitForOpenTabPanel(this.page, RENDER_TIMEOUT.TAB_PANEL);
+        const records = await textsOf(this.openTabRecords);
+        return records.map(record => record.split(':')[0].trim());
+    }
 
     /**
      * Open one document-reference record for editing, found by its DOCUMENT CODE.

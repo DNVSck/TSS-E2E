@@ -2,8 +2,15 @@
 import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import { GoodsJourneyContext } from '../goods-item/add-new-ens-goods-item-flow';
 import { CreateDraftEnsDeclarationFlow, EnsDeclarationOptions } from './create-draft-ens-declaration-flow';
+import { GoodsOverviewFlow, citedAs } from '../goods-item/goods-overview-flow';
 import { requiresWarehouseIdentifier } from '../../helper/procedure-code-helper';
 import { SUPERVISING_CUSTOMS_OFFICE } from '../../constant/supervising-customs-office-constant';
+import { AUTHORISATION_TYPE_CODE } from '../../constant/authorisation-type-code-constant';
+import { DOCUMENT_CODE } from '../../constant/document-code-constant';
+import { ADDITIONAL_PROCEDURE_CODES } from '../../constant/additional-procedure-codes-constant';
+import { IMPORTER_NIRMS } from '../../../config/environment';
+import { nirmsDocumentCitations } from '../../test-data/nirms-data';
+
 
 export interface EnsDeclarationResult {
     transportDocumentNumber: string;
@@ -17,6 +24,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
         private readonly createDraftEnsDeclarationFlow: CreateDraftEnsDeclarationFlow,
         private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
         private readonly movementOverviewFlow: MovementOverviewFlow,
+        private readonly goodsOverviewFlow: GoodsOverviewFlow,
     ) { }
 
     async completeEnsDeclarationFlow(options: EnsDeclarationOptions): Promise<EnsDeclarationResult> {
@@ -28,12 +36,50 @@ export class CreateAndSubmitEnsDeclarationFlow {
         const { ensMrn, generatedConsignment } =
             await this.verifyPostSubmit(draft.goodsJourney, draft.procedureCode);
 
+        if (draft.useNirms) {
+            if (draft.goodsJourney.useIMMI) {
+                await this.verifyNirmsOnGeneratedImmi(draft.goodsJourney.importerEORI);
+            } else if (draft.goodsJourney.isControlledGoods) {
+                await this.verifyNirmsOnGeneratedSfd(draft.nirmsDocumentCodes);
+            }
+        }
+
         return {
             transportDocumentNumber: draft.transportDocumentNumber,
             movementLrn: draft.movementLrn,
             ensMrn,
             generatedConsignment,
         };
+    }
+
+    private async verifyNirmsOnGeneratedSfd(nirmsDocumentCodes: string[]): Promise<void> {
+        const citations = nirmsDocumentCitations(nirmsDocumentCodes, new Date().getFullYear());
+
+        if (citations.length === 0) {
+            return;
+        }
+
+        await this.movementOverviewFlow.openGeneratedSfdConsignment();
+        await this.consignmentOverviewFlow.openGoodsItem();
+        await this.goodsOverviewFlow.verifyDocumentReferences(
+            citations.map(citation => citedAs(citation.code, citation.reference))
+        );
+    }
+
+    private async verifyNirmsOnGeneratedImmi(importerEORI: string): Promise<void> {
+        await this.movementOverviewFlow.openGeneratedImmiConsignment();
+
+        await this.consignmentOverviewFlow.verifyHoldersOfAuthorisation([
+            citedAs(AUTHORISATION_TYPE_CODE.NIRMS_AUTHORISATION_HOLDER_NIRM, importerEORI),
+        ]);
+
+        await this.consignmentOverviewFlow.openGoodsItem();
+        await this.goodsOverviewFlow.verifyDocumentReferences([
+            citedAs(DOCUMENT_CODE['1RMS'], IMPORTER_NIRMS),
+        ]);
+        await this.goodsOverviewFlow.verifyAdditionalProcedureCodes([
+            ADDITIONAL_PROCEDURE_CODES.SPIMM_NIRMS_1RM,
+        ]);
     }
 
     /**

@@ -38,7 +38,7 @@ export function reportTestAccount(authAccount: UserCredentials | null, flowName:
 }
 
 /**
- * Surface the procedure codes a goods item declares, so a report can be read without
+ * Surface the commodity and procedure codes a goods item declares, so a report can be read without
  * opening the spec that produced it.
  *
  * Parameters rather than log lines: they sit in a table at the head of the test, which
@@ -54,6 +54,7 @@ export function reportTestAccount(authAccount: UserCredentials | null, flowName:
  * Shared by all four common flows, which is what earns it a place here.
  */
 export function reportDeclarationCodes(goods: GoodsData): void {
+    ReportLog.setParameter('Commodity code', goods.commodityCode);
     ReportLog.setParameter('Procedure code', goods.procedureCode);
     ReportLog.setParameter('Additional procedure code', goods.additionalProcedureCode);
 

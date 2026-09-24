@@ -1,6 +1,7 @@
 import { ReportLog } from '../../core/report/report-log';
 import { GoodsData } from '../../test-data/goods-data';
 import { GoodsItemSteps } from './goods-item-steps';
+import { DeclareNirmsFlow } from './declare-nirms-flow';
 
 /** What the consignment already answered, and the goods item now depends on. */
 export interface SfdStandaloneGoodsJourney {
@@ -10,6 +11,8 @@ export interface SfdStandaloneGoodsJourney {
      * rather than from the goods data - the service branches on the consignment's.
      */
     readonly isControlledConsignment: boolean;
+
+    readonly declaringForEori: string;
 }
 
 /**
@@ -29,7 +32,10 @@ export interface SfdStandaloneGoodsJourney {
  * units, verified on sit 2026-08-11.
  */
 export class AddNewSfdStandaloneGoodsItemFlow {
-    constructor(private readonly steps: GoodsItemSteps) { }
+    constructor(
+        private readonly steps: GoodsItemSteps,
+        private readonly declareNirmsFlow: DeclareNirmsFlow,
+    ) { }
 
     async addNewSfdStandaloneGoodsItem(
         input: GoodsData,
@@ -52,6 +58,10 @@ export class AddNewSfdStandaloneGoodsItemFlow {
                 // split the ENS journeys already make for ENS-only and EIDR.
                 await this.steps.enterCommodityInformationWithoutSupplementaryUnits(input);
             }
+
+            await this.declareNirmsFlow.answerNirms(input, {
+                isEnsOnly: false, useIMMI: false, importerEORI: journey.declaringForEori,
+            });
 
             await this.steps.enterStandalonePackagingDetails(input);
 

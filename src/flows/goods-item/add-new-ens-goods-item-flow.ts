@@ -3,15 +3,9 @@ import { GoodsData } from '../../test-data/goods-data';
 import { GoodsItemSteps } from './goods-item-steps';
 import { hidesSupplementaryUnit } from '../../helper/procedure-code-helper';
 import {
-    nirmsExpectation, nirmsNeedsTariff, NirmsExpectation,
-} from '../../helper/nirms-helper';
-import {
-    CompanyPermissionService,
-} from '../../api-service/portal-api/company-permission-service';
-import {
     TraderGoodsProfileService, describeTgpGap,
 } from '../../api-service/portal-api/trader-goods-profile-service';
-import { TariffService } from '../../api-service/portal-api/tariff-service';
+import { DeclareNirmsFlow } from './declare-nirms-flow';
 import { COMPANY_PROFILE, UserCredentials } from '../../auth/credentials';
 import { ENV } from '../../../config/environment';
 
@@ -54,9 +48,8 @@ function asksDangerousGoods(input: GoodsData, journey: GoodsJourneyContext): boo
 export class AddNewEnsGoodsItemFlow {
     constructor(
         private readonly steps: GoodsItemSteps,
-        private readonly companyPermissionService: CompanyPermissionService,
         private readonly traderGoodsProfileService: TraderGoodsProfileService,
-        private readonly tariffService: TariffService,
+        private readonly declareNirmsFlow: DeclareNirmsFlow,
         private readonly authAccount: UserCredentials | null,
     ) { }
 
@@ -116,7 +109,7 @@ export class AddNewEnsGoodsItemFlow {
             // commodity-information). With TGP there IS no commodity screen and the
             // service asks at the end instead - see after the invoice screen below.
             if (!usesTgp) {
-                await this.answerNirms(input, journey);
+                await this.declareNirmsFlow.answerNirms(input, journey);
             }
 
             await this.steps.enterPackagingDetails(input);
@@ -132,7 +125,7 @@ export class AddNewEnsGoodsItemFlow {
             }
 
             if (usesTgp) {
-                await this.answerNirms(input, journey);
+                await this.declareNirmsFlow.answerNirms(input, journey);
             }
 
             await this.steps.finishGoodsItemDeclaration();
@@ -176,63 +169,6 @@ export class AddNewEnsGoodsItemFlow {
         }
 
         return usesTgp;
-    }
-
-    /**
-     * "Do you want to use NIRMS for these goods?"
-     *
-     * Always needs the importer's NIRMS authorisation, and then a second condition that
-     * is NOT the same on every journey - see nirmsExpectation.
-     */
-    private async answerNirms(input: GoodsData, journey: GoodsJourneyContext): Promise<void> {
-        const { expected, because } = await this.expectedNirmsScreen(input, journey);
-
-        if (input.useNirms && !expected) {
-            throw new Error(
-                `Test data sets "useNirms" but the NIRMS screen is never put for this item on `
-                + `"${ENV}": ${because}.`
-            );
-        }
-
-        const asked = await this.steps.answerNirmsIfAsked(input);
-
-        if (asked === expected) {
-            return;
-        }
-
-        throw new Error(
-            expected
-                ? `The NIRMS screen was never shown, but it was owed: ${because}. Nothing in `
-                + `the test data explains this - the screen was not offered.`
-                : `The NIRMS screen was shown, but it should not have been: ${because}. `
-                + `The service and what it permits disagree.`
-        );
-    }
-
-    private async expectedNirmsScreen(
-        input: GoodsData,
-        journey: GoodsJourneyContext
-    ): Promise<NirmsExpectation> {
-        const grant = journey.isEnsOnly
-            ? undefined
-            : await this.companyPermissionService.readPermissionGrant(journey.importerEORI);
-
-        const facts = {
-            isEnsOnly: journey.isEnsOnly,
-            useIMMI: journey.useIMMI,
-            importerEORI: journey.importerEORI,
-            hasNirmsAuthorisation: grant?.hasNirmsAuthorisation ?? false,
-            additionalProcedureCode: input.additionalProcedureCode,
-            commodityCode: input.commodityCode,
-            countryOfOrigin: input.countryOfOrigin,
-        };
-
-        return nirmsExpectation({
-            ...facts,
-            tariffCoversCommodity: nirmsNeedsTariff(facts)
-                ? await this.tariffService.isNirmsSupported(input.commodityCode, input.countryOfOrigin)
-                : undefined,
-        });
     }
 
     /**

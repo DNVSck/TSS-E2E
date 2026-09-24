@@ -33,6 +33,8 @@ export interface DraftEnsDeclaration {
     /** Which conditional screens this journey reached; a post-submit check needs it. */
     goodsJourney: GoodsJourneyContext;
     procedureCode: string;
+    useNirms: boolean;
+    nirmsDocumentCodes: string[];
 }
 
 /**
@@ -100,6 +102,9 @@ export class CreateDraftEnsDeclarationFlow {
             usedTgp ? goodsData.tgpRecord : undefined,
             goodsData.additionalProcedureCode
         );
+        if (goodsData.useNirms) {
+            await this.goodsOverviewFlow.verifyNirmsDocumentReferences(goodsData.nirmsDocumentCodes);
+        }
         // Goods-item overview tabs (e.g. document references). No-op unless the goods
         // data supplies entries, so existing journeys are unaffected.
         await this.goodsOverviewFlow.declareDocumentReferences(goodsData.documentReferences);
@@ -115,8 +120,11 @@ export class CreateDraftEnsDeclarationFlow {
             transportDocumentNumber: consignmentData.transportDocumentNumber,
             goodsJourney,
             procedureCode: goodsData.procedureCode,
+            useNirms: goodsData.useNirms,
+            nirmsDocumentCodes: goodsData.nirmsDocumentCodes,
         };
     }
+
 
     /**
      * Derive which conditional goods-item screens this journey reaches. The goods

@@ -8,7 +8,12 @@ import {
   GMR_MOVEMENT, sfdGmrJourney, immiGmrJourney, eidrGmrJourney,
 } from '../../../src/test-data/gmr-journey-data';
 
-const GMR_ENS_SFD_SMOKE = '6342';
+const GMR_ENS_SFD = '6665';
+const GMR_ENS_IMMI = '6666';
+const GMR_ENS_EIDR = '6667';
+const GMR_ENS_SFD_GMR_AUTOMATION = '6668';
+const GMR_ENS_IMMI_GMR_AUTOMATION = '6669';
+const GMR_ENS_EIDR_GMR_AUTOMATION = '6670';
 
 test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
@@ -19,7 +24,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
   test('Verify a GMR on an ENS-SFD RoRo (Accompanied) movement is carried through to completed', { tag: ['@e2e', '@happyPath'] }, async ({ raiseMovementForGmrFlow, createAndSubmitGmrFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
     await ReportLog.setStory('GMR - GB to NI RoRo Accompanied - raised on an ENS-SFD movement');
-    reportTestCaseLink(GMR_ENS_SFD_SMOKE);
+    reportTestCaseLink(GMR_ENS_SFD);
 
     await raiseMovementForGmrFlow.raiseMovement({
       testInfo,
@@ -44,6 +49,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
   test('Verify a GMR on an ENS-IMMI RoRo (Unaccompanied) movement is held for inspection', { tag: ['@e2e', '@happyPath'] }, async ({ raiseMovementForGmrFlow, createAndSubmitGmrFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
     await ReportLog.setStory('GMR - GB to NI RoRo Unaccompanied - raised on an ENS-IMMI movement');
+    reportTestCaseLink(GMR_ENS_IMMI);
 
     await raiseMovementForGmrFlow.raiseMovement({
       testInfo,
@@ -67,6 +73,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
   test('Verify a GMR on an ENS-EIDR RoRo (Accompanied) movement is carried through to completed', { tag: ['@e2e', '@happyPath'] }, async ({ raiseMovementForGmrFlow, createAndSubmitGmrFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
     await ReportLog.setStory('GMR - GB to NI RoRo Accompanied - raised on an ENS-EIDR movement');
+    reportTestCaseLink(GMR_ENS_EIDR);
 
     await raiseMovementForGmrFlow.raiseMovement({
       testInfo,
@@ -91,7 +98,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
   test('Verify a GMR on an ENS-IMMI RoRo (Accompanied) movement declared through the Trader API is carried through to completed', { tag: ['@regression', '@happyPath', '@smoke'] }, async ({ raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
     await ReportLog.setStory('GMR - GB to NI RoRo Accompanied - raised on an ENS-IMMI movement declared through the Trader API');
-
+    reportTestCaseLink(GMR_ENS_IMMI);
     // ENS-IMMI wizard skipped here - covered by
     // tests/functional/ens-integrated/gb-ni-roro-ens-immi.spec.ts
     const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
@@ -112,7 +119,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
   test('Verify a GMR on an ENS-EIDR RoRo (Unaccompanied) movement declared through the Trader API is carried through to completed', { tag: ['@regression', '@happyPath'] }, async ({ raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
     await ReportLog.setStory('GMR - GB to NI RoRo Unaccompanied - raised on an ENS-EIDR movement declared through the Trader API');
-
+    reportTestCaseLink(GMR_ENS_EIDR);
     // ENS-EIDR wizard skipped here - covered by
     // tests/functional/ens-integrated/gb-ni-roro-ens-eidr.spec.ts
     const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
@@ -133,7 +140,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
   test('Verify a GMR on an ENS-SFD RoRo (Unaccompanied) movement declared through the Trader API is carried through to completed', { tag: ['@regression', '@happyPath'] }, async ({ raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
     await ReportLog.setStory('GMR - GB to NI RoRo Unaccompanied - raised on an ENS-SFD movement declared through the Trader API');
-
+    reportTestCaseLink(GMR_ENS_SFD);
     // ENS-SFD wizard skipped here - covered by
     // tests/functional/ens-integrated/gb-ni-roro-ens-sfd.spec.ts
     const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
@@ -156,6 +163,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
     raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, gmrOverviewFlow,
   }, testInfo) => {
     await ReportLog.setStory('GMR auto update - a second eligible ENS-SFD consignment resubmits the GMR');
+    reportTestCaseLink(GMR_ENS_SFD_GMR_AUTOMATION);
 
     const autoUpdates = await raiseMovementForGmrThroughApiFlow.isGmrAutoUpdateAllowed();
     test.skip(!autoUpdates,
@@ -190,7 +198,8 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
     raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, gmrOverviewFlow,
   }, testInfo) => {
     await ReportLog.setStory('GMR auto update - a second eligible ENS-IMMI consignment resubmits the GMR');
-
+    reportTestCaseLink(GMR_ENS_IMMI_GMR_AUTOMATION);
+    
     const autoUpdates = await raiseMovementForGmrThroughApiFlow.isGmrAutoUpdateAllowed();
     test.skip(!autoUpdates,
       'gmr_auto_update is off for this company, so no consignment ever resubmits its GMR'
@@ -224,7 +233,8 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
     raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, gmrOverviewFlow,
   }, testInfo) => {
     await ReportLog.setStory('GMR auto update - a second eligible ENS-EIDR consignment resubmits the GMR');
-
+    reportTestCaseLink(GMR_ENS_EIDR_GMR_AUTOMATION);
+    
     const autoUpdates = await raiseMovementForGmrThroughApiFlow.isGmrAutoUpdateAllowed();
     test.skip(!autoUpdates,
       'gmr_auto_update is off for this company, so no consignment ever resubmits its GMR'

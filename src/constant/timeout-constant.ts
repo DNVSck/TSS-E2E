@@ -16,4 +16,6 @@ export const RENDER_TIMEOUT = {
     SUMMARY_LIST: 20_000,
     /** A record's own detail fields arrive with the record, not with the route. */
     RECORD_DETAIL: 15_000,
+    /** A tab panel paints a beat after the tab's route settles. */
+    TAB_PANEL: 30_000,
 } as const;

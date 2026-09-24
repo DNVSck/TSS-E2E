@@ -122,6 +122,7 @@ export const IMPORTER_EORI = required('IMPORTER_EORI');
 export const IMPORTER_IPO = required('IMPORTER_IPO');
 /** UK Internal Market Scheme authorisation — cited on the 1UKI document. */
 export const IMPORTER_UKIMS = required('IMPORTER_UKIMS');
+export const IMPORTER_NIRMS = required('IMPORTER_NIRMS');
 /** Simplified Declaration Procedure authorisation — cited on the C512 document. */
 export const IMPORTER_SDE = required('IMPORTER_SDE');
 /** Private Customs Warehouse authorisation — cited on the C517 document. */

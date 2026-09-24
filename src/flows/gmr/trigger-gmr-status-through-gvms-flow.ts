@@ -99,17 +99,36 @@ export class TriggerGmrStatusThroughGvmsFlow {
             `Wait for GVMS to answer for GMR ${localReferenceNumber}`,
             async () => {
                 let identity: GmrIdentity = { gmrId: '', boxId: '' };
+                let refusal = '';
 
-                await expect.poll(async () => {
-                    const summary = await this.gmrService.readGmr(localReferenceNumber);
-                    identity = { gmrId: summary.gmrId, boxId: summary.gvms.boxId };
+                try {
+                    await expect.poll(async () => {
+                        try {
+                            const summary = await this.gmrService.readGmr(localReferenceNumber);
+                            identity = { gmrId: summary.gmrId, boxId: summary.gvms.boxId };
+                            refusal = '';
+                        } catch (error) {
+                            identity = { gmrId: '', boxId: '' };
+                            refusal = (error as Error).message;
+                        }
 
-                    return identity.gmrId !== '' && identity.boxId !== '';
-                }, {
-                    timeout: GVMS_ANSWERS_TIMEOUT,
-                    intervals: [2_000, 5_000],
-                    message: `GVMS never answered for GMR ${localReferenceNumber}`,
-                }).toBe(true);
+                        return identity.gmrId !== '' && identity.boxId !== '';
+                    }, {
+                        timeout: GVMS_ANSWERS_TIMEOUT,
+                        intervals: [2_000, 5_000],
+                        message: `GVMS never answered for GMR ${localReferenceNumber}`,
+                    }).toBe(true);
+                } catch (error_) {
+                    if (!refusal) {
+                        throw error_;
+                    }
+
+                    throw new Error(
+                        `${(error_ as Error).message}
+
+The last read was refused with: ${refusal}`
+                    );
+                }
 
                 ReportLog.setParameter('GVMS box id', identity.boxId);
                 return identity;

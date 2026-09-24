@@ -31,6 +31,7 @@ const IMMI_PRELODGED_4000_1SG ='4916'
 const IMMI_PRELODGED_TGP_4000_1SG ='4917'
 const IMMI_ARRIVED_0771_1EL ='4918'
 const IMMI_ARRIVED_TGP_4000_1SG ='4919'
+const IMMI_NIRMS = '4912'
 
 test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represents Trader', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
@@ -427,6 +428,30 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
           commodityCode: IMMI_STANDALONE_COMMODITY_CODE.EIGHT_DIGIT,
           // The answer under test, not incidental data.
           supplementaryUnits: '12',
+        }),
+      })
+    );
+
+    await ReportLog.step('Close the standalone IMMI through CDS', () =>
+      triggerFinalStatusThroughCdsFlow.closeStandaloneImmi(immi)
+    );
+  });
+  test('Verify IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct using NIRMS is created and submitted successfully (4000-1SG)', { tag: ['@regression', '@happyPath', '@nirms'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+    await ReportLog.setStory('IMMI Standalone - Prelodged - RoRo (Accompanied) - Direct - NIRMS');
+    reportTestCaseLink(IMMI_NIRMS);
+    const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
+      createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
+        testInfo,
+        url: getBaseUrl(),
+        consignmentOverrides: {
+          typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+          representationType: REPRESENTATION_TYPE.DIRECT,
+        },
+
+        goodsItemOverrides: immiStandaloneGoodsItem({
+          useNirms: true,
+          procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
+          additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
         }),
       })
     );

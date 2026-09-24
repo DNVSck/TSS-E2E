@@ -13,7 +13,11 @@ import { hrefsOf } from '../../helper/element-helper';
  */
 
 /** The panel of the tab that is OPEN - the only one in the DOM at all. */
-const OPEN_TAB_PANEL = '.govuk-tabs__panel';
+export const OPEN_TAB_PANEL = '.govuk-tabs__panel';
+
+export async function waitForOpenTabPanel(page: Page, timeout: number): Promise<void> {
+    await page.locator(OPEN_TAB_PANEL).filter({ visible: true }).waitFor({ state: 'visible', timeout });
+}
 
 /** One rendered record, wherever it appears. */
 export const TAB_RECORD = '.govuk-task-list__item';
@@ -76,17 +80,6 @@ export class RecordTabs extends BasePage {
         return hrefsOf(this.tabLinks);
     }
 
-    /**
-     * Which tab is open, as its panel id's last segment ("holder-of-authorisation").
-     *
-     * The id, never the tab's label: labels are translated and these specs run in Welsh,
-     * where every name in the expectation table would stop matching.
-     *
-     * The declaration type is trimmed off the end. The same tab is keyed
-     * `overview.linked-goods-records` on an ENS consignment and
-     * `overview.linked-goods-records/sfd` on the SFD generated from it (measured
-     * 2026-08-14) - one screen, one name, so the expectation table is one table.
-     */
     async readOpenTabName(): Promise<string> {
         const id = await this.openPanel.first().getAttribute('id').catch(() => null);
         const panelKey = id?.split('.').pop() ?? '';

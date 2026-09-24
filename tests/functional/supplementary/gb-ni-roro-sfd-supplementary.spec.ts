@@ -11,6 +11,8 @@ import {
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 
 const SCDP_SUPP_CASE_ID = '4699';
+const SD_AGENT_REPRESENTS_TSS_DDA = '4703';
+const SD_AGENT_REPRESENTS_TRADER_DDA = '4704';
 
 /**
  * The supplementary declaration that follows an ENS-SFD movement, once by each of the
@@ -45,6 +47,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
             completeAndSubmitSupplementaryDeclarationFlow,
         }, testInfo) => {
             await ReportLog.setStory('Supplementary Declaration - from ENS-SFD - RoRo (Accompanied) - Trader DDA');
+            reportTestCaseLink(SD_AGENT_REPRESENTS_TRADER_DDA);
 
             const { movementLrn, frontierLrn } = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement', () =>
                 generateSdDraftFromEnsSfdFlow.generateSdDraft({ testInfo, url: getBaseUrl() })
@@ -71,6 +74,8 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
             generateSdDraftFromEnsSfdFlow,
             completeAndSubmitSupplementaryDeclarationFlow,
         }, testInfo) => {
+            reportTestCaseLink(SD_AGENT_REPRESENTS_TSS_DDA);
+            
             await ReportLog.setStory('Supplementary Declaration - from ENS-SFD - RoRo (Accompanied) - TSS DDA');
 
             const { movementLrn, frontierLrn } = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement', () =>
@@ -101,6 +106,8 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
             representTraderFlow,
             completeAndSubmitSupplementaryDeclarationFlow,
         }, testInfo) => {
+            reportTestCaseLink(SD_AGENT_REPRESENTS_TRADER_DDA);
+
             await ReportLog.setStory('Supplementary Declaration - from ENS-SFD declared through the Trader API - Trader DDA');
 
             // ENS-SFD wizard skipped here - covered by
