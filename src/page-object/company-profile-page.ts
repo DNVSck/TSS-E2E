@@ -1,7 +1,11 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './base-page';
-import { clickLinkAndWaitForRoute } from '../helper/element-helper';
-import { COMPANY_PROFILE_ACTION } from '../constant/company-profile-action-constant';
+import {
+    clickLinkAndWaitForRoute, clickLinkAndWaitForNavigation, textsOf,
+} from '../helper/element-helper';
+import { COMPANY_PROFILE_ACTION, CompanyProfileActionKey } from '../constant/company-profile-action-constant';
+import { RENDER_TIMEOUT } from '../constant/timeout-constant';
+import { ROUTES } from '../constant/endpoints-constant';
 
 /**
  * The company profile screen, reached from the header menu.
@@ -13,6 +17,8 @@ import { COMPANY_PROFILE_ACTION } from '../constant/company-profile-action-const
 export class CompanyProfilePage extends BasePage {
     private readonly viewUsersLink: Locator;
     private readonly viewTradersLink: Locator;
+    private readonly eoriChangeLinks: Locator;
+    private readonly eoriChangeRowKeys: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -25,6 +31,34 @@ export class CompanyProfilePage extends BasePage {
         // carries a "Switch business" link to the very same href, and an unscoped
         // selector would match both.
         this.viewTradersLink = page.locator("main a[href$='/company-profile/traders']");
+
+        this.eoriChangeLinks = this.actionLinks.and(
+            page.locator(`a[href$='${ROUTES.PORTAL.REQUEST_EORI_CHANGE}']`)
+        );
+
+        this.eoriChangeRowKeys = this.summaryList.keysOfRowsWith(this.eoriChangeLinks);
+    }
+
+    async listEoriChangeRows(): Promise<string[]> {
+        return textsOf(this.eoriChangeRowKeys);
+    }
+
+    async openEoriChange(index: number): Promise<void> {
+        await clickLinkAndWaitForRoute(this.page, this.eoriChangeLinks.nth(index));
+    }
+
+    async openFieldChange(field: CompanyProfileActionKey): Promise<void> {
+        await clickLinkAndWaitForNavigation(
+            this.page, this.summaryList.changeLinkFor(COMPANY_PROFILE_ACTION[field])
+        );
+    }
+
+    async readFieldLines(field: CompanyProfileActionKey): Promise<string[]> {
+        const value = this.summaryList.valueOfRowWith(
+            this.summaryList.changeLinkFor(COMPANY_PROFILE_ACTION[field])
+        );
+        await value.waitFor({ state: 'visible', timeout: RENDER_TIMEOUT.SUMMARY_LIST });
+        return textsOf(value.locator('p'));
     }
 
     /**

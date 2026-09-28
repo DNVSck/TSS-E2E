@@ -3,6 +3,7 @@ import { Page, Locator } from '@playwright/test';
 import { freshTotpCode } from '../auth/totp-state';
 import { UserCredentials } from '../auth/credentials';
 import { TFunction } from '../fixtures/locale-fixture';
+import { GOVUK } from './components/govuk-selectors';
 
 // Sized for code REUSE, not for a mistyped code. A TOTP code can be spent once: sign
 // the same account in twice inside one 30-second window and the second attempt
@@ -36,8 +37,8 @@ export class SignInPage extends BasePage {
         this.passwordInput = page.locator("input#password");
         this.signInButton = page.locator("input#kc-login");
         this.totpCodeInput = page.locator("input#totp");
-        this.errorSummaryMessage = page.locator('.govuk-error-summary__list li');
-        this.passwordShowHideButton = page.locator('.govuk-js-password-input-toggle');
+        this.errorSummaryMessage = page.locator(`${GOVUK.ERROR_SUMMARY.LIST} li`);
+        this.passwordShowHideButton = page.locator(GOVUK.PASSWORD_INPUT.TOGGLE);
 
         this.authenticatorAppOption = page.getByRole('radio', {
             name: t('signIn.verifyIdentity.authenticatorApp'), exact: true,

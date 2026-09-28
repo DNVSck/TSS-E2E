@@ -3,7 +3,7 @@ import {
     CompanyProfile, UserCredentials, accountFor, profilesToAuthenticate,
 } from '../auth/credentials';
 import { authStatePath } from '../auth/auth-state';
-import { signInOnDemand } from '../auth/ensure-auth-state';
+import { signInOnDemand, SignInScreenshotError, SIGN_IN_FAILURE_ATTACHMENT } from '../auth/ensure-auth-state';
 
 export type WorkerAuthFixtureType = {
     /**
@@ -105,7 +105,15 @@ export const workerAuthFixture: ExtendParams[0] = {
         // second is rejected. What prevents it is the lock a single-login profile's
         // spec declares - the runner will not start two such tests concurrently - so
         // the safety of this line lives in the spec, not here.
-        const signInMs = await signInOnDemand(authAccount.profile, testInfo.parallelIndex);
+        let signInMs: number;
+        try {
+            signInMs = await signInOnDemand(authAccount.profile, testInfo.parallelIndex);
+        } catch (error) {
+            if (error instanceof SignInScreenshotError && error.screenshot) {
+                await testInfo.attach(SIGN_IN_FAILURE_ATTACHMENT, { body: error.screenshot, contentType: 'image/png' });
+            }
+            throw error;
+        }
 
         // Signing in must not come out of the test's own budget, for the same reason
         // queueing must not - see the note above. Nothing is added when the session

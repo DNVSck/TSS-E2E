@@ -7,6 +7,7 @@ import { InspectionLocation } from '../../test-data/payload/gvms-notification-pa
 import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { ReportLog } from '../../core/report/report-log';
+import { verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
 
 export class GmrOverviewFlow {
     constructor(
@@ -34,7 +35,7 @@ export class GmrOverviewFlow {
             for (const [index, contactEmail] of contacts.entries()) {
                 await ReportLog.step(`Add external contact ${index + 1} of ${contacts.length}`, async () => {
                     await this.gmrDetailsPage.declareNewExternalContact();
-                    await this.externalContactDeclarePage.addNewExternalContact(contactEmail);
+                    verifySubmittedWithoutErrors(await this.externalContactDeclarePage.addNewExternalContact(contactEmail), 'the external contact');
                 });
             }
         });

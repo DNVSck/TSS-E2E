@@ -12,6 +12,9 @@ export const ROUTES = {
         /** The Agent banner "Stop representing" action — matched as an href suffix
          *  (its full parent path is not asserted). */
         STOP_REPRESENTING: '/stop-representing',
+        COMPANY_PROFILE: '/company-profile',
+        REQUEST_EORI_CHANGE: '/company-profile/company-information/request-eori-change',
+        COMPANY_INFORMATION_CHECK_ANSWERS: '/company-profile/company-information/edit/check-your-answer!',
     }
 } as const;
 

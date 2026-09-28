@@ -55,6 +55,13 @@ export abstract class BaseApiClient {
         return response;
     }
 
+    protected async put(path: string, body: unknown): Promise<APIResponse> {
+        const route = relativeToBase(path);
+        const response = await this.request.put(route, { data: body });
+        await this.assertSucceeded('PUT', route, response);
+        return response;
+    }
+
     protected async get(path: string): Promise<APIResponse> {
         const route = relativeToBase(path);
         const response = await this.request.get(route);

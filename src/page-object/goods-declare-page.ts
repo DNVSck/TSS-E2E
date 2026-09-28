@@ -78,6 +78,8 @@ export class GoodsDeclarePage extends BasePage {
     private readonly invoiceNumberInput: Locator;
     private readonly itemCurrencyDropdown: Locator;
     private readonly itemPriceAmountInput: Locator;
+    private readonly containerIdentifierNumberInput: Locator;
+    private readonly containerSizeDropdown: Locator;
     private readonly containerPackedStatusRadios: Locator;
     private readonly containerSupplierTypeRadios: Locator;
 
@@ -151,6 +153,8 @@ export class GoodsDeclarePage extends BasePage {
         this.invoiceNumberInput = page.locator("input#invoiceNumber");
         this.itemCurrencyDropdown = page.locator("select#itemCurrency");
         this.itemPriceAmountInput = page.locator("input#itemPrice");
+        this.containerIdentifierNumberInput = page.locator('#containerIdentifierNumber');
+        this.containerSizeDropdown = page.locator('#containerSize');
         this.containerPackedStatusRadios = page.locator('input[name="containerPackedStatus"]');
         this.containerSupplierTypeRadios = page.locator('input[name="containerSupplierType"]');
 
@@ -434,8 +438,8 @@ export class GoodsDeclarePage extends BasePage {
         containerStatusCode: string,
         containerSupplierTypeCode: string
     ): Promise<void> {
-        await this.page.locator('#containerIdentifierNumber').fill(containerIdentifierNumber);
-        await selectDropdownValue(this.page.locator('#containerSize'), containerSize);
+        await this.containerIdentifierNumberInput.fill(containerIdentifierNumber);
+        await selectDropdownValue(this.containerSizeDropdown, containerSize);
         await checkRadioByValue(this.containerPackedStatusRadios, containerStatusCode);
         await checkRadioByValue(this.containerSupplierTypeRadios, containerSupplierTypeCode);
         await this.clickContinueButton();

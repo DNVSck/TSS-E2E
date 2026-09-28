@@ -69,5 +69,8 @@
   },
   "accessDenied": {
     "heading": "Nid oes gennych awdurdod i gael mynediad at hyn"
+  },
+  "requestEoriChange": {
+    "heading": "Contact support to update your EORI number"
   }
 }

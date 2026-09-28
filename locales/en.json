@@ -69,5 +69,8 @@
   },
   "accessDenied": {
     "heading": "You are not authorised to access this"
+  },
+  "requestEoriChange": {
+    "heading": "Contact support to update your EORI number"
   }
 }

@@ -1,5 +1,6 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './base-page';
+import { GOVUK } from './components/govuk-selectors';
 import {
     clickLinkAndWaitForRoute, clickLinkAndEnterWizard, removeTaskListRecord,
 } from '../helper/element-helper';
@@ -7,6 +8,7 @@ import { NEW_RECORD_ACTION } from '../constant/record-tab-constant';
 
 const WIZARD_OPENS_TIMEOUT = 15_000;
 const WIZARD_CLICK_ATTEMPTS = 3;
+const WIZARD_CLOSES_TIMEOUT = 30_000;
 
 /**
  * One goods record of a supplementary declaration - "Complete your goods item N".
@@ -26,7 +28,7 @@ export class SupplementaryDeclarationGoodsRecordPage extends BasePage {
     constructor(page: Page) {
         super(page);
 
-        this.startNowButton = page.locator('main a.govuk-button--start');
+        this.startNowButton = page.locator(`main a${GOVUK.BUTTON.START}`);
         // NOT newRecordButton(): that helper picks a button out of a form identified by
         // its action, and every section of this screen posts to the SAME action - so it
         // would match eleven buttons. Only the button's own value tells them apart.
@@ -93,9 +95,12 @@ export class SupplementaryDeclarationGoodsRecordPage extends BasePage {
 
     private async enterWizard(button: Locator, action: string): Promise<void> {
         const wizard = `/${action}/`;
+        const inWizard = (url: URL): boolean => url.pathname.includes(wizard);
+
+        await this.waitForPreviousWizardToClose(inWizard, action);
 
         for (let attempt = 1; attempt <= WIZARD_CLICK_ATTEMPTS; attempt++) {
-            if (this.page.url().includes(wizard)) {
+            if (attempt > 1 && inWizard(new URL(this.page.url()))) {
                 return;
             }
 
@@ -103,7 +108,7 @@ export class SupplementaryDeclarationGoodsRecordPage extends BasePage {
 
             try {
                 await this.page.waitForURL(
-                    url => new URL(url).pathname.includes(wizard),
+                    url => inWizard(new URL(url)),
                     { timeout: WIZARD_OPENS_TIMEOUT, waitUntil: 'commit' }
                 );
                 return;
@@ -117,6 +122,25 @@ export class SupplementaryDeclarationGoodsRecordPage extends BasePage {
                     );
                 }
             }
+        }
+    }
+
+    private async waitForPreviousWizardToClose(inWizard: (url: URL) => boolean, action: string): Promise<void> {
+        if (!inWizard(new URL(this.page.url()))) {
+            return;
+        }
+
+        try {
+            await this.page.waitForURL(
+                url => !inWizard(new URL(url)),
+                { timeout: WIZARD_CLOSES_TIMEOUT, waitUntil: 'domcontentloaded' }
+            );
+        } catch (error_) {
+            throw new Error(
+                `The previous "${action}" record never finished closing - the page is still on `
+                + `"${this.page.url()}", so a new one cannot be started.`,
+                { cause: error_ }
+            );
         }
     }
 

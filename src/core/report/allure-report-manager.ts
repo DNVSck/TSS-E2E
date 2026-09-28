@@ -126,6 +126,21 @@ export interface SetupFailure {
     suite: string;
     message: string;
     stack: string;
+    screenshot?: SetupScreenshot;
+}
+
+export interface SetupScreenshot {
+    name: string;
+    body: Buffer;
+}
+
+function writeScreenshotAttachment(uuid: string, screenshot?: SetupScreenshot): { name: string; source: string; type: string }[] {
+    if (!screenshot) {
+        return [];
+    }
+    const source = `${uuid}-attachment.png`;
+    fs.writeFileSync(path.join(ALLURE_RESULTS_DIR, source), screenshot.body);
+    return [{ name: screenshot.name, source, type: 'image/png' }];
 }
 
 export function writeSetupFailures(failures: SetupFailure[]): void {
@@ -146,6 +161,7 @@ export function writeSetupFailures(failures: SetupFailure[]): void {
                 stage: 'finished',
                 start: now,
                 stop: now,
+                attachments: writeScreenshotAttachment(uuid, failure.screenshot),
                 labels: [
                     { name: 'parentSuite', value: 'Global setup' },
                     { name: 'suite', value: failure.suite },

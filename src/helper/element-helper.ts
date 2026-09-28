@@ -1,6 +1,7 @@
 import { expect, Locator, Page } from '@playwright/test';
 import { StringUtil } from '../core/util/string-util';
 import { ReportLog } from '../core/report/report-log';
+import { GOVUK } from '../page-object/components/govuk-selectors';
 
 // This class provides utility functions for interacting with web elements in a consistent way across the test suite. 
 // It can be imported and used in any page object or test file to perform common actions on web elements, such as clicking, filling forms, 
@@ -156,11 +157,6 @@ async function isStillClickable(button: Locator): Promise<boolean> {
     return await button.isVisible() && await button.isEnabled();
 }
 
-// Locate a GOV.UK summary-list row's value by its label. The label is exact-matched
-// (:text-is) so e.g. "Status" is not also satisfied by a "Goods domestic status" row
-// on the same list. Callers pass the label already resolved through t(), keeping the
-// lookup locale-safe. Centralises the govuk-summary-list DOM shape that the movement-,
-// consignment- and goods-overview/detail pages would otherwise each hand-build.
 /**
  * The hrefs of a set of links, with the ones that carry none dropped.
  *
@@ -196,11 +192,6 @@ export async function switchToTab(page: Page, tab: Locator): Promise<void> {
     await clickLinkAndWaitForRoute(page, tab);
 }
 
-export function summaryListValue(page: Page, label: string): Locator {
-    return page.locator(
-        `.govuk-summary-list__row:has(dt:text-is("${label}")) .govuk-summary-list__value`
-    );
-}
 
 // Read a summary-list field's text once it has painted. The overview and detail
 // pages are heavy and paint their summary list a beat after load, so a bare
@@ -231,11 +222,37 @@ export async function readFieldWhenVisible(field: Locator, timeout: number): Pro
  */
 export async function readErrorSummary(page: Page): Promise<string[]> {
     try {
-        const messages = await page.locator('.govuk-error-summary__list li').allTextContents();
+        const messages = await page.locator(`${GOVUK.ERROR_SUMMARY.LIST} li`).allTextContents();
         return messages.map(message => message.trim()).filter(Boolean);
     } catch {
         return [];
     }
+}
+
+const SUBMIT_SETTLE_TIMEOUT = 5_000;
+
+export async function submitAndReadErrors(page: Page, button: Locator): Promise<string[]> {
+    const from = page.url();
+    const origin = new URL(from).origin;
+    const answered = page.waitForResponse(response =>
+        response.request().method() === 'POST' && new URL(response.url()).origin === origin
+    );
+
+    await button.click();
+    await answered;
+
+    await Promise.race([
+        page.locator(GOVUK.ERROR_SUMMARY.LIST).first()
+            .waitFor({ state: 'visible', timeout: SUBMIT_SETTLE_TIMEOUT }).catch(() => undefined),
+        page.waitForURL(url => url.href !== from, { waitUntil: 'domcontentloaded', timeout: SUBMIT_SETTLE_TIMEOUT })
+            .catch(() => undefined),
+    ]);
+
+    const errors = await readErrorSummary(page);
+    if (errors.length > 0) {
+        await page.locator(GOVUK.ERROR_SUMMARY.LIST).first().scrollIntoViewIfNeeded().catch(() => undefined);
+    }
+    return errors;
 }
 
 export async function readFieldIfPresent(field: Locator): Promise<string> {
@@ -577,13 +594,11 @@ export async function clickLinkAndEnterWizard(
  * position is the whole point: the delete button a record carries is keyed by INDEX
  * ("delete-document-reference:1"), and every removal renumbers the ones after it.
  *
- * The same markup is modelled as `TAB_RECORD` in record-tabs.ts on the authority
- * branch. Unify the two when that merges; they must not drift, because a DOM change
- * would then fix one screen and break the other.
- *
+ * The same markup is `TAB_RECORD` in record-tabs.ts; both take it from
+ * GOVUK.TASK_LIST.ITEM, so a DOM change is made once.
  */
 function taskListRecord(page: Page, code: string): Locator {
-    return page.locator('li.govuk-task-list__item').filter({ hasText: `[${code}]` });
+    return page.locator(`li${GOVUK.TASK_LIST.ITEM}`).filter({ hasText: `[${code}]` });
 }
 
 /** How long a record gets to disappear after its own Delete is pressed. */

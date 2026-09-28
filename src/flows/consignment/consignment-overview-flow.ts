@@ -7,7 +7,7 @@ import { ConsignmentDetailPage } from '../../page-object/consignment-detail-page
 import { PreviousDocumentData } from "../../test-data/previous-document-data";
 import { HolderOfAuthorisationData } from "../../test-data/holder-of-authorisation-data";
 import { TranslationKey, TFunction } from '../../fixtures/locale-fixture';
-import { isTraderInputRequiredStatus, traderInputRequiredError } from '../../helper/declaration-status-helper';
+import { isTraderInputRequiredStatus, traderInputRequiredError, verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
 import { MrnCountryCode, mrnPrefix, mrnOpening } from '../../constant/local-reference-constants';
 import { ConsignmentSteps } from './consignment-steps';
 
@@ -174,7 +174,7 @@ export class ConsignmentOverviewFlow {
     async submitConsignment(): Promise<void> {
         await ReportLog.step('Submit consignment', async () => {
             await this.consignmentOverviewPage.goToConsignmentOverview();
-            await this.consignmentOverviewPage.clickConfirmAndSubmit();
+            verifySubmittedWithoutErrors(await this.consignmentOverviewPage.confirmAndSubmit(), 'the consignment');
         });
     }
 
@@ -186,7 +186,7 @@ export class ConsignmentOverviewFlow {
             for (const [index, item] of items.entries()) {
                 await ReportLog.step(`Add previous document ${index + 1} of ${items.length}`, async () => {
                     await this.consignmentOverviewPage.openNewHeaderPreviousDocument();
-                    await this.previousDocumentDeclarePage.declarePreviousDocument(item);
+                    verifySubmittedWithoutErrors(await this.previousDocumentDeclarePage.declarePreviousDocument(item), 'the previous document');
                 });
             }
         });
@@ -219,7 +219,7 @@ export class ConsignmentOverviewFlow {
             for (const [index, item] of items.entries()) {
                 await ReportLog.step(`Add holder of authorisation ${index + 1} of ${items.length}`, async () => {
                     await this.consignmentOverviewPage.openNewHolderOfAuthorisation();
-                    await this.holderOfAuthorisationDeclarePage.declareHolderOfAuthorisation(item);
+                    verifySubmittedWithoutErrors(await this.holderOfAuthorisationDeclarePage.declareHolderOfAuthorisation(item), 'the holder of authorisation');
                 });
             }
         });
@@ -267,7 +267,7 @@ export class ConsignmentOverviewFlow {
         await ReportLog.step(`Correct the "${typeCode}" holder of authorisation`, async () => {
             await this.consignmentOverviewPage.openHolderOfAuthorisationTab();
             await this.consignmentOverviewPage.openHolderOfAuthorisationRecord(typeCode);
-            await this.holderOfAuthorisationDeclarePage.declareHolderOfAuthorisation(item);
+            verifySubmittedWithoutErrors(await this.holderOfAuthorisationDeclarePage.declareHolderOfAuthorisation(item), 'the holder of authorisation');
         });
     }
 

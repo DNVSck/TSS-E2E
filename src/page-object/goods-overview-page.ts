@@ -2,7 +2,7 @@ import { BasePage } from "./base-page";
 import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
-import { switchToTabAndClickNew, summaryListValue, readFieldWhenVisible, newRecordButton, clickLinkAndWaitForNavigation, switchToTab, textsOf } from '../helper/element-helper';
+import { switchToTabAndClickNew, readFieldWhenVisible, newRecordButton, clickLinkAndWaitForNavigation, switchToTab, textsOf } from '../helper/element-helper';
 import { waitForOpenTabPanel, OPEN_TAB_RECORD, RECORD_LINK } from './components/record-tabs';
 import { TgpRecordData } from "../test-data/tgp-record-data";
 import { COUNTRY_NAME } from "../constant/country-code-dropdown-constant";
@@ -39,10 +39,10 @@ export class GoodsOverviewPage extends BasePage {
     constructor(page: Page, t: TFunction) {
         super(page, t);
 
-        this.commodityCode = summaryListValue(page, t('goodsItemOverview.commodityCode'));
-        this.goodsDescription = summaryListValue(page, t('goodsItemOverview.goodsDescription'));
-        this.supplementaryUnits = summaryListValue(page, t('goodsItemOverview.supplementaryUnits'));
-        this.countryOfOrigin = summaryListValue(page, t('goodsItemOverview.countryOfOrigin'));
+        this.commodityCode = this.summaryList.valueOf(t('goodsItemOverview.commodityCode'));
+        this.goodsDescription = this.summaryList.valueOf(t('goodsItemOverview.goodsDescription'));
+        this.supplementaryUnits = this.summaryList.valueOf(t('goodsItemOverview.supplementaryUnits'));
+        this.countryOfOrigin = this.summaryList.valueOf(t('goodsItemOverview.countryOfOrigin'));
 
         //Tab list
         this.documentTab = page.locator("//a[contains(@href, '/overview/#overview-tab')]");

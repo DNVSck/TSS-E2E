@@ -1,7 +1,10 @@
+import { expect } from '@playwright/test';
 import { PortalPage } from '../page-object/portal-page';
 import { BasePage } from '../page-object/base-page';
 import { CompanyProfilePage } from '../page-object/company-profile-page';
 import { CompanyProfileUsersPage } from '../page-object/company-profile-users-page';
+import { RequestEoriChangePage } from '../page-object/request-eori-change-page';
+import { TFunction } from '../fixtures/locale-fixture';
 import { ReportLog } from '../core/report/report-log';
 
 /** What a screen offered the signed-in user. */
@@ -33,6 +36,8 @@ export class CompanyProfileFlow {
         private readonly portalPage: PortalPage,
         private readonly companyProfilePage: CompanyProfilePage,
         private readonly companyProfileUsersPage: CompanyProfileUsersPage,
+        private readonly requestEoriChangePage: RequestEoriChangePage,
+        private readonly t: TFunction,
     ) { }
 
     /**
@@ -82,6 +87,29 @@ export class CompanyProfileFlow {
         });
     }
 
+
+    async verifyEoriChangeLeadsToContactSupport(): Promise<void> {
+        const rows = await ReportLog.step('Find the EORI rows offering a change', async () => {
+            const eoriRows = await this.companyProfilePage.listEoriChangeRows();
+            expect(eoriRows, 'account holder should have Full on the company profile - EORI rows offering a change (expects at least one)')
+                .not.toEqual([]);
+            return eoriRows;
+        });
+
+        for (const [index, row] of rows.entries()) {
+            await ReportLog.step(`Follow the "${row}" change to the contact-support screen`, async () => {
+                await this.companyProfilePage.openEoriChange(index);
+                await this.requestEoriChangePage.waitForScreen();
+
+                const heading = await this.requestEoriChangePage.readPageHeading();
+                expect.soft(heading, `account holder should reach contact support from the company profile - heading shown after changing "${row}"`)
+                    .toBe(this.t('requestEoriChange.heading'));
+
+                await this.requestEoriChangePage.returnToCompanyProfile();
+                await this.companyProfilePage.waitForContent();
+            });
+        }
+    }
 
     private async readPermissions(page: BasePage, screen: string): Promise<ScreenPermissions> {
         // Waited for, not merely counted: any check that something is ABSENT passes

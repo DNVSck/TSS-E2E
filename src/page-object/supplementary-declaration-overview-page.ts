@@ -1,8 +1,9 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './base-page';
+import { GOVUK } from './components/govuk-selectors';
 import { TFunction } from '../fixtures/locale-fixture';
 import {
-    summaryListValue, readFieldWhenVisible, readFieldIfPresent,
+    readFieldWhenVisible, readFieldIfPresent,
     clickLinkAndWaitForRoute, clickLinkAndEnterWizard, removeTaskListRecord,
 } from '../helper/element-helper';
 import { SUPPLEMENTARY_DECLARATION_ROUTE } from '../constant/endpoints-constant';
@@ -40,26 +41,26 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
     constructor(page: Page, t: TFunction) {
         super(page, t);
 
-        this.declarationReference = page.locator('.govuk-summary-card__title strong');
+        this.declarationReference = page.locator(`${GOVUK.SUMMARY_CARD.TITLE} strong`);
         // The plain GOV.UK tag, scoped to <main>. It no longer carries a class naming the
         // status - only a colour that changes with it - and govuk-tag is reused by the
         // phase banner above for "Beta" and "Representing: <company>". Inside main it is
         // the only one, measured on two declarations 2026-09-03.
-        this.status = page.locator('main strong.govuk-tag');
+        this.status = page.locator(`main strong${GOVUK.TAG}`);
         // One button for both directions - it flips aria-expanded and its own label
         // ("Show"/"Hide full consignment details"), so there is one element here, not two.
         // Matched on what it CONTROLS rather than on that label, which is translated.
         this.fullDetailsToggle = page.locator("button[aria-controls='declaration-full-details']");
         this.fullDetails = page.locator('#declaration-full-details');
-        this.startNowButton = page.locator('main a.govuk-button--start');
+        this.startNowButton = page.locator(`main a${GOVUK.BUTTON.START}`);
         // A goods record is the only link on this screen whose href ENDS in /overview.
         // Everything else this screen offers ends in its own segment - amend-details,
         // transport-details, previous-documents/<n>, holder-of-authorisation/<n>/edit.
         this.goodsRecordLinks = page.locator("main a[href$='/overview']");
         this.methodOfPaymentChangeLink = page.locator("main a[href*='field=methodOfPayment']");
         this.submitButton = page.locator("button[name='action'][value='submit-consignment']");
-        this.simplifiedDeclarationReference = summaryListValue(
-            page, this.t!('supplementaryDeclaration.simplifiedDeclarationReference')
+        this.simplifiedDeclarationReference = this.summaryList.valueOf(
+            this.t!('supplementaryDeclaration.simplifiedDeclarationReference')
         );
     }
 

@@ -46,14 +46,14 @@ export class PreviousDocumentDeclarePage extends BasePage {
     }
 
     /** "Check your answers" — the "Complete and submit" button commits the record. */
-    async confirmAndSubmit(): Promise<void> {
-        await this.clickFinishButton();
+    async confirmAndSubmit(): Promise<string[]> {
+        return this.finishAndReadErrors();
     }
 
     /** The whole wizard for a single previous-document record. */
-    async declarePreviousDocument(input: PreviousDocumentData): Promise<void> {
+    async declarePreviousDocument(input: PreviousDocumentData): Promise<string[]> {
         await this.selectDocumentCategoryAndType(input.documentCategory, input.documentType);
         await this.enterPreviousDocumentDetails(input.documentReference, input.goodsItemIdentifier);
-        await this.confirmAndSubmit();
+        return this.confirmAndSubmit();
     }
 }

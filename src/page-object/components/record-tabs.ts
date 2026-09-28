@@ -2,6 +2,7 @@ import { Page, Locator } from '@playwright/test';
 import { BasePage } from '../base-page';
 import { CONSIGNMENT_ACTION } from '../../constant/consignment-action-constant';
 import { hrefsOf } from '../../helper/element-helper';
+import { GOVUK } from './govuk-selectors';
 
 /**
  * How the tabbed record lists are built, in one place.
@@ -13,14 +14,14 @@ import { hrefsOf } from '../../helper/element-helper';
  */
 
 /** The panel of the tab that is OPEN - the only one in the DOM at all. */
-export const OPEN_TAB_PANEL = '.govuk-tabs__panel';
+export const OPEN_TAB_PANEL = GOVUK.TABS.PANEL;
 
 export async function waitForOpenTabPanel(page: Page, timeout: number): Promise<void> {
     await page.locator(OPEN_TAB_PANEL).filter({ visible: true }).waitFor({ state: 'visible', timeout });
 }
 
 /** One rendered record, wherever it appears. */
-export const TAB_RECORD = '.govuk-task-list__item';
+export const TAB_RECORD = GOVUK.TASK_LIST.ITEM;
 
 /** One record inside the open panel - what a page addresses when it acts on a record. */
 export const OPEN_TAB_RECORD = `${OPEN_TAB_PANEL} ${TAB_RECORD}`;
@@ -29,7 +30,7 @@ export const OPEN_TAB_RECORD = `${OPEN_TAB_PANEL} ${TAB_RECORD}`;
  * A record's own link, which is its edit route. Whether a record is rendered as a link
  * or as plain text is the same permission question the buttons answer.
  */
-export const RECORD_LINK = 'a.govuk-task-list__link';
+export const RECORD_LINK = `a${GOVUK.TASK_LIST.LINK}`;
 
 /** The warning button a record carries to remove itself. */
 export const RECORD_DELETE_BUTTON =
@@ -63,7 +64,7 @@ export class RecordTabs extends BasePage {
     constructor(page: Page) {
         super(page);
 
-        this.tabLinks = page.locator('.govuk-tabs__list-item a');
+        this.tabLinks = page.locator(`${GOVUK.TABS.LIST_ITEM} a`);
         this.openPanel = page.locator(OPEN_TAB_PANEL);
         this.records = this.openPanel.locator(TAB_RECORD);
         this.recordLinks = this.openPanel.locator(RECORD_LINK);

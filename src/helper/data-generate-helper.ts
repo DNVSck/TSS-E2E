@@ -1,5 +1,8 @@
 import { faker } from '@faker-js/faker';
 import { DateTimeUtil } from '../core/util/date-time-util';
+import { StringUtil } from '../core/util/string-util';
+import { COUNTRY_CODE, CountryCode } from '../constant/country-code-dropdown-constant';
+import { AUTHORISATION_TYPE_CODE, AuthorisationTypeCode } from '../constant/authorisation-type-code-constant';
 import { TRANSPORT_DOCUMENT_FORMAT, TypeOfMovementKey } from '../constant/type-of-movement-code-constant';
 import { WarehouseTypeCode } from '../constant/warehouse-type-constant';
 
@@ -160,4 +163,125 @@ const INVOICE_NUMBER_DIGITS = 8;
  */
 export function generateRandomInvoiceNumber(): string {
     return `INV${faker.string.numeric({ length: INVOICE_NUMBER_DIGITS })}`;
+}
+
+const UK_VAT_WEIGHTS = [8, 7, 6, 5, 4, 3, 2];
+const UK_VAT_MODULUS = 97;
+
+export function generateRandomUkVatNumber(): string {
+    const body = StringUtil.randomNumeric(UK_VAT_WEIGHTS.length, UK_VAT_WEIGHTS.length);
+    const weighted = [...body].reduce(
+        (sum, digit, position) => sum + Number(digit) * UK_VAT_WEIGHTS[position], 0
+    );
+    const checkDigits = (UK_VAT_MODULUS - (weighted % UK_VAT_MODULUS)) % UK_VAT_MODULUS;
+    return `${body}${String(checkDigits).padStart(2, '0')}`;
+}
+
+function plainText(value: string): string {
+    return StringUtil.removeSpecialChars(value).replaceAll(/\s+/g, ' ').trim();
+}
+
+const BUSINESS_NAME_SUFFIX_DIGITS = 4;
+
+export function generateRandomBusinessName(): string {
+    const suffix = StringUtil.randomNumeric(BUSINESS_NAME_SUFFIX_DIGITS, BUSINESS_NAME_SUFFIX_DIGITS);
+    return `${plainText(StringUtil.randomCompany())} ${suffix}`;
+}
+
+const TEST_EMAIL_DOMAIN = 'example.com';
+const EMAIL_SUFFIX_DIGITS = 6;
+
+export function generateRandomBusinessEmail(): string {
+    const user = plainText(StringUtil.randomUsername()).replaceAll(' ', '').toLowerCase();
+    const suffix = StringUtil.randomNumeric(EMAIL_SUFFIX_DIGITS, EMAIL_SUFFIX_DIGITS);
+    return `${user}.${suffix}@${TEST_EMAIL_DOMAIN}`;
+}
+
+const UK_MOBILE_PREFIX = '447';
+const UK_MOBILE_SUBSCRIBER_DIGITS = 9;
+
+export function generateRandomUkPhoneNumber(): string {
+    return `${UK_MOBILE_PREFIX}${StringUtil.randomNumeric(UK_MOBILE_SUBSCRIBER_DIGITS, UK_MOBILE_SUBSCRIBER_DIGITS)}`;
+}
+
+export function generateRandomAddressLine(): string {
+    return plainText(StringUtil.randomAddress());
+}
+
+export function generateRandomCity(): string {
+    return plainText(StringUtil.randomCity());
+}
+
+const AUTHORISATION_EORI_DIGITS = 12;
+const AUTHORISATION_TIMESTAMP_LENGTH = 14;
+const AUTHORISATION_SEPARATOR = {
+    GB_ISSUED: 'E',
+    XI_ISSUED: 'I',
+    NONE: '',
+} as const;
+
+function authorisationNumber(
+    country: CountryCode,
+    typeCode: AuthorisationTypeCode,
+    separator: string
+): string {
+    const eoriDigits = StringUtil.randomNumeric(AUTHORISATION_EORI_DIGITS, AUTHORISATION_EORI_DIGITS);
+    const timestamp = new Date().toISOString().replaceAll(/\D/g, '').slice(0, AUTHORISATION_TIMESTAMP_LENGTH);
+    return `${country}${typeCode}${eoriDigits}${separator}${timestamp}`;
+}
+
+export function generateRandomCseAuthorisationNumber(): string {
+    return authorisationNumber(
+        COUNTRY_CODE.UNITED_KINGDOM,
+        AUTHORISATION_TYPE_CODE.CUSTOMS_SUPERVISED_EXPORTS_CSE,
+        AUTHORISATION_SEPARATOR.GB_ISSUED
+    );
+}
+
+export function generateRandomSdpAuthorisationNumber(): string {
+    return authorisationNumber(
+        COUNTRY_CODE.NORTHERN_IRELAND,
+        AUTHORISATION_TYPE_CODE.SIMPLIFIED_DECLARATION_PROCEDURE_SDE,
+        AUTHORISATION_SEPARATOR.XI_ISSUED
+    );
+}
+
+export function generateRandomEidrAuthorisationNumber(): string {
+    return authorisationNumber(
+        COUNTRY_CODE.NORTHERN_IRELAND,
+        AUTHORISATION_TYPE_CODE.ENTRY_IN_DECLARANTS_RECORDS_EIR,
+        AUTHORISATION_SEPARATOR.XI_ISSUED
+    );
+}
+
+export function generateRandomXiGuaranteeReferenceNumber(): string {
+    return authorisationNumber(
+        COUNTRY_CODE.NORTHERN_IRELAND,
+        AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU,
+        AUTHORISATION_SEPARATOR.NONE
+    );
+}
+
+const DEFERMENT_ACCOUNT_DIGITS = 7;
+
+export function generateRandomDefermentAccountNumber(): string {
+    return StringUtil.randomNumeric(DEFERMENT_ACCOUNT_DIGITS, DEFERMENT_ACCOUNT_DIGITS);
+}
+
+export function pickRandomExcept<T>(candidates: readonly T[], ...excluded: (T | undefined)[]): T {
+    return faker.helpers.arrayElement(candidates.filter(candidate => !excluded.includes(candidate)));
+}
+
+export function generateRandomCountryCode(...excluded: CountryCode[]): CountryCode {
+    return pickRandomExcept(Object.values(COUNTRY_CODE), ...excluded);
+}
+
+const UK_POSTCODE_INWARD_LETTERS = [...'ABDEFGHJLNPQRSTUWXYZ'];
+
+export function generateRandomUkPostcode(): string {
+    const area = faker.string.alpha({ length: 2, casing: 'upper' });
+    const district = faker.string.numeric({ length: { min: 1, max: 2 }, allowLeadingZeros: false });
+    const sector = faker.string.numeric({ length: 1 });
+    const unit = faker.helpers.arrayElements(UK_POSTCODE_INWARD_LETTERS, 2).join('');
+    return `${area}${district} ${sector}${unit}`;
 }

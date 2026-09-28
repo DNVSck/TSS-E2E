@@ -25,13 +25,13 @@ export class TaricAdditionalCodeDeclarePage extends BasePage {
     }
 
     /** "Check your answers" — the "Complete and submit" button commits the record. */
-    async confirmAndSubmit(): Promise<void> {
-        await this.clickFinishButton();
+    async confirmAndSubmit(): Promise<string[]> {
+        return this.finishAndReadErrors();
     }
 
     /** The whole wizard for a single taric-additional-code record. */
-    async declareTaricAdditionalCode(code: string): Promise<void> {
+    async declareTaricAdditionalCode(code: string): Promise<string[]> {
         await this.enterTaricAdditionalCode(code);
-        await this.confirmAndSubmit();
+        return this.confirmAndSubmit();
     }
 }

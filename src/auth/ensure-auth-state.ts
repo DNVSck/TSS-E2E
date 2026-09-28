@@ -33,6 +33,16 @@ export interface SignInFailure {
     account: string;
     message: string;
     stack: string;
+    screenshot?: Buffer;
+}
+
+export const SIGN_IN_FAILURE_ATTACHMENT = 'sign-in failure';
+
+export class SignInScreenshotError extends Error {
+    constructor(message: string, readonly screenshot?: Buffer, cause?: unknown) {
+        super(message, { cause });
+        this.name = 'SignInScreenshotError';
+    }
 }
 
 export class SignInFailedError extends Error {
@@ -119,6 +129,8 @@ function assertNoSignInFailures(
                 message: result.reason instanceof Error
                     ? result.reason.message : String(result.reason),
                 stack: result.reason instanceof Error ? result.reason.stack ?? '' : '',
+                screenshot: result.reason instanceof SignInScreenshotError
+                    ? result.reason.screenshot : undefined,
             }]
             : []
     );
@@ -142,6 +154,7 @@ async function signInAndSaveState(
 
     const context = await browser.newContext();
     const page = await context.newPage();
+    let reachedSignInForm = false;
 
     try {
         const portalPage = new PortalPage(page);
@@ -156,6 +169,7 @@ async function signInAndSaveState(
             });
         }).toPass({ timeout: PORTAL_OPEN_RETRY_TIMEOUT_MS, intervals: [0] });
         await portalPage.clickSignIn();
+        reachedSignInForm = true;
         await signInPage.signIn(credentials);
 
         if (OTP_ENABLED) {
@@ -168,7 +182,12 @@ async function signInAndSaveState(
 
         console.log(`Auth: signed in as ${credentials.username} (${label}) on "${ENV}".`);
     } catch (error) {
-        throw buildSignInError(credentials, label, page.url(), error);
+        const screenshot = await page.screenshot().catch(() => undefined);
+        throw new SignInScreenshotError(
+            signInErrorMessage({ credentials, label, url: page.url(), error, reachedSignInForm }),
+            screenshot,
+            error
+        );
     } finally {
         await context.close();
     }
@@ -184,21 +203,37 @@ function assertTotpSecretPresent(credentials: UserCredentials, label: string): v
     }
 }
 
-/** The diagnostic error for a failed sign-in — points at the exact env vars to check. */
-function buildSignInError(credentials: UserCredentials, label: string, url: string, error: unknown): Error {
+interface SignInAttempt {
+    credentials: UserCredentials;
+    label: string;
+    url: string;
+    error: unknown;
+    reachedSignInForm: boolean;
+}
+
+/** The diagnostic message for a failed sign-in — points at the exact env vars to check. */
+function signInErrorMessage(failure: SignInAttempt): string {
+    const { credentials, label, url, error, reachedSignInForm } = failure;
     const reason = error instanceof Error ? error.message : String(error);
+
+    if (!reachedSignInForm) {
+        return `Auth: failed to sign in as ${label} on "${ENV}" (${url}).\n` +
+            'The portal never offered Sign in, so no credential was tried - this is not a ' +
+            `credential problem. Check that the portal on "${ENV}" is up and renders its ` +
+            'landing page, not the values in the .env file.\n' +
+            `Underlying error: ${reason}`;
+    }
+
     const stuckOnAuthServer = url.includes('/realms/');
     const totpHint = OTP_ENABLED ? ` / ${accountEnvKey(credentials, 'TOTP_SECRET')}` : '';
 
-    return new Error(
-        `Auth: failed to sign in as ${label} on "${ENV}" (${url}).\n` +
+    return `Auth: failed to sign in as ${label} on "${ENV}" (${url}).\n` +
         (stuckOnAuthServer
             ? 'The browser never left the identity provider, so a credential was rejected. '
             : '') +
         `Check ${accountEnvKey(credentials, 'USER_NAME')} / ${accountEnvKey(credentials, 'PASSWORD')}` +
         `${totpHint} in .env.${ENV}.\n` +
-        `Underlying error: ${reason}`
-    );
+        `Underlying error: ${reason}`;
 }
 
 /**

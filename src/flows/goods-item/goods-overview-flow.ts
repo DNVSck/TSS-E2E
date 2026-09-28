@@ -14,6 +14,7 @@ import { PreviousDocumentData } from "../../test-data/previous-document-data";
 import { TgpRecordData } from "../../test-data/tgp-record-data";
 import { hidesSupplementaryUnit } from "../../helper/procedure-code-helper";
 import { nirmsDocumentCitations } from '../../test-data/nirms-data';
+import { verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
 
 const DESCRIPTION_ATTEMPTS = 3;
 
@@ -112,7 +113,7 @@ export class GoodsOverviewFlow {
             for (const [index, item] of items.entries()) {
                 await ReportLog.step(`Add document reference ${index + 1} of ${items.length}`, async () => {
                     await this.goodsOverviewPage.declareNewDocumentReference();
-                    await this.documentReferenceDeclarePage.declareDocumentReference(item);
+                    verifySubmittedWithoutErrors(await this.documentReferenceDeclarePage.declareDocumentReference(item), 'the document reference');
                 });
             }
         });
@@ -130,7 +131,7 @@ export class GoodsOverviewFlow {
                     await this.additionalInformationDeclarePage.selectAdditionalInformationCode(item.code);
                     await this.additionalInformationDeclarePage.enterDescription(item.description);
                     await this.ensureDescriptionReachedTheRecord(item);
-                    await this.additionalInformationDeclarePage.confirmAndSubmit();
+                    verifySubmittedWithoutErrors(await this.additionalInformationDeclarePage.confirmAndSubmit(), 'the additional information');
                 });
             }
         });
@@ -183,7 +184,7 @@ export class GoodsOverviewFlow {
             for (const [index, item] of items.entries()) {
                 await ReportLog.step(`Add previous document ${index + 1} of ${items.length}`, async () => {
                     await this.goodsOverviewPage.declareNewPreviousDocument();
-                    await this.previousDocumentDeclarePage.declarePreviousDocument(item);
+                    verifySubmittedWithoutErrors(await this.previousDocumentDeclarePage.declarePreviousDocument(item), 'the previous document');
                 });
             }
         });
@@ -198,7 +199,7 @@ export class GoodsOverviewFlow {
             for (const [index, code] of codes.entries()) {
                 await ReportLog.step(`Add additional procedure code ${index + 1} of ${codes.length}`, async () => {
                     await this.goodsOverviewPage.declareNewAdditionalProcedureCode();
-                    await this.additionalProcedureCodeDeclarePage.declareAdditionalProcedureCode(code);
+                    verifySubmittedWithoutErrors(await this.additionalProcedureCodeDeclarePage.declareAdditionalProcedureCode(code), 'the additional procedure code');
                 });
             }
         });
@@ -213,7 +214,7 @@ export class GoodsOverviewFlow {
             for (const [index, code] of codes.entries()) {
                 await ReportLog.step(`Add taric additional code ${index + 1} of ${codes.length}`, async () => {
                     await this.goodsOverviewPage.declareNewTaricAdditionalCode();
-                    await this.taricAdditionalCodeDeclarePage.declareTaricAdditionalCode(code);
+                    verifySubmittedWithoutErrors(await this.taricAdditionalCodeDeclarePage.declareTaricAdditionalCode(code), 'the TARIC additional code');
                 });
             }
         });
@@ -228,7 +229,7 @@ export class GoodsOverviewFlow {
             for (const [index, code] of codes.entries()) {
                 await ReportLog.step(`Add national additional code ${index + 1} of ${codes.length}`, async () => {
                     await this.goodsOverviewPage.declareNewNationalAdditionalCode();
-                    await this.nationalAdditionalCodeDeclarePage.declareNationalAdditionalCode(code);
+                    verifySubmittedWithoutErrors(await this.nationalAdditionalCodeDeclarePage.declareNationalAdditionalCode(code), 'the national additional code');
                 });
             }
         });
@@ -248,7 +249,7 @@ export class GoodsOverviewFlow {
     ): Promise<void> {
         await ReportLog.step(`Correct the "${documentCode}" document reference`, async () => {
             await this.goodsOverviewPage.openDocumentReferenceRecord(documentCode);
-            await this.documentReferenceDeclarePage.declareDocumentReference(item);
+            verifySubmittedWithoutErrors(await this.documentReferenceDeclarePage.declareDocumentReference(item), 'the document reference');
         });
     }
 }

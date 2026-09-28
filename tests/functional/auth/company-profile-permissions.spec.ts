@@ -3,9 +3,11 @@ import { ALL_COMPANY_PROFILE_ACTIONS } from '../../../src/constant/company-profi
 import { ReportLog } from '../../../src/core/report/report-log';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { test, expect, getBaseUrl } from '../../test-hooks';
+import { COMPANY_PROFILE_SECTIONS } from '../../../src/test-data/company-profile-edit-data';
 
 const ACCOUNT_HOLDER_TEST_ID = '2406';
-const NON_ACCOUNT_HOLDER_TEST_ID = '2437';
+const NON_ACCOUNT_HOLDER_TEST_ID = '2407';
+const EORI_CHANGE_TEST_ID = '2437';
 
 test.describe('TSS Portal company profile - edit permissions', () => {
 
@@ -49,7 +51,21 @@ test.describe('TSS Portal company profile - edit permissions', () => {
     });
 
 
-    test('A user who is not the account holder gets view-only', { tag: ['@auth', '@authorisation', '@regression'], lock: COMPANY_PROFILE.NON_PRIMARY_HOLDER }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
+    test('Verify PAH Cannot Edit EORI Numbers and Must Use Contact Center Request', { tag: ['@auth', '@authorisation', '@regression'], lock: COMPANY_PROFILE.PRIMARY_HOLDER }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
+        reportTestCaseLink(EORI_CHANGE_TEST_ID);
+
+        const account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
+
+        await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });
+
+        await ReportLog.step('Check each EORI change sends the holder to contact support', async () => {
+            await companyProfileFlow.openCompanyProfile();
+            await companyProfileFlow.verifyEoriChangeLeadsToContactSupport();
+        });
+    });
+
+
+    test('Verify Non-PAH User Has Read-Only Access to Company Profile', { tag: ['@auth', '@authorisation', '@regression'], lock: COMPANY_PROFILE.NON_PRIMARY_HOLDER }, async ({ signInFlow, companyProfileFlow }, testInfo) => {
         reportTestCaseLink(NON_ACCOUNT_HOLDER_TEST_ID);
 
         const account = getCredentials(COMPANY_PROFILE.NON_PRIMARY_HOLDER);
@@ -71,4 +87,31 @@ test.describe('TSS Portal company profile - edit permissions', () => {
                 .toEqual([]);
         });
     });
-});
+
+
+    test.describe('Edit company profile section', () => {
+        test.use({ authProfile: COMPANY_PROFILE.PRIMARY_HOLDER });
+
+        for (const section of COMPANY_PROFILE_SECTIONS) {
+            test(`Verify PAH Can Edit the "${section.name}" on the Company Profile`, { tag: ['@regression'], lock: COMPANY_PROFILE.PRIMARY_HOLDER }, async ({ companyProfileEditFlow }, testInfo) => {
+                reportTestCaseLink(ACCOUNT_HOLDER_TEST_ID);
+
+                await companyProfileEditFlow.openCompanyProfile(getBaseUrl(), testInfo);
+
+                await ReportLog.step(`Change the ${section.name.toLowerCase()} and check the profile shows them`, () =>
+                    companyProfileEditFlow.verifyFieldEdits(section.edits())
+                );
+            });
+        }
+
+        test('Verify PAH Can Edit the "Preferred Method of Payment" on the Company Profile', { tag: ['@regression'], lock: COMPANY_PROFILE.PRIMARY_HOLDER }, async ({ companyProfileEditFlow }, testInfo) => {
+            reportTestCaseLink(ACCOUNT_HOLDER_TEST_ID);
+
+            await companyProfileEditFlow.openCompanyProfile(getBaseUrl(), testInfo);
+
+            await ReportLog.step('Change the preferred method of payment and check the profile and the Portal API show it', () =>
+                companyProfileEditFlow.verifyPreferredPaymentMethodEdit()
+            );
+        });
+    });
+}); 

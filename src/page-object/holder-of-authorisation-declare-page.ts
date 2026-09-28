@@ -38,14 +38,14 @@ export class HolderOfAuthorisationDeclarePage extends BasePage {
     }
 
     /** "Check your answers" — the "Complete and submit" button commits the record. */
-    async confirmAndSubmit(): Promise<void> {
-        await this.clickFinishButton();
+    async confirmAndSubmit(): Promise<string[]> {
+        return this.finishAndReadErrors();
     }
 
     /** The whole wizard for a single holder-of-authorisation record. */
-    async declareHolderOfAuthorisation(input: HolderOfAuthorisationData): Promise<void> {
+    async declareHolderOfAuthorisation(input: HolderOfAuthorisationData): Promise<string[]> {
         await this.selectTypeCode(input.typeCode);
         await this.enterRoleId(input.roleId);
-        await this.confirmAndSubmit();
+        return this.confirmAndSubmit();
     }
 }

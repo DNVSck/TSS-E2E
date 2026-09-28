@@ -3,7 +3,7 @@ import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
-    summaryListValue, readFieldWhenVisible, readFieldIfPresent, switchToTabAndClickNew, newRecordButton,
+    readFieldWhenVisible, readFieldIfPresent, switchToTabAndClickNew, newRecordButton,
     clickLinkAndEnterWizard,
 } from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
@@ -61,22 +61,22 @@ export class GmrDetailsPage extends BasePage {
 
         this.newExternalContactButton = newRecordButton(page, '/external-contacts');
 
-        this.localReferenceNumber = summaryListValue(page, t('common.localReferenceNumber'));
-        this.gmrId = summaryListValue(page, t('gmrDetail.gmrId'));
-        this.status = summaryListValue(page, t('common.status'));
+        this.localReferenceNumber = this.summaryList.valueOf(t('common.localReferenceNumber'));
+        this.gmrId = this.summaryList.valueOf(t('gmrDetail.gmrId'));
+        this.status = this.summaryList.valueOf(t('common.status'));
 
         this.vehicleRegistrationNumber =
-            summaryListValue(page, t('gmrDetail.vehicleRegistrationNumber'));
+            this.summaryList.valueOf(t('gmrDetail.vehicleRegistrationNumber'));
         this.trailerRegistrationNumber =
-            summaryListValue(page, t('gmrDetail.trailerRegistrationNumber'));
+            this.summaryList.valueOf(t('gmrDetail.trailerRegistrationNumber'));
         this.isTrailerUnaccompanied =
-            summaryListValue(page, t('gmrDetail.isTrailerUnaccompanied'));
+            this.summaryList.valueOf(t('gmrDetail.isTrailerUnaccompanied'));
         this.inspectionRequired =
-            summaryListValue(page, t('gmrDetail.inspectionRequired'));
+            this.summaryList.valueOf(t('gmrDetail.inspectionRequired'));
         this.reportToLocations =
-            summaryListValue(page, t('gmrDetail.reportToLocations'));
+            this.summaryList.valueOf(t('gmrDetail.reportToLocations'));
         this.hmrcGvmsLastUpdate =
-            summaryListValue(page, t('gmrDetail.hmrcGvmsLastUpdate'));
+            this.summaryList.valueOf(t('gmrDetail.hmrcGvmsLastUpdate'));
     }
 
     /**

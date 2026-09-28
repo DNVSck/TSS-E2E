@@ -2,7 +2,7 @@ import { Page, Locator, expect } from '@playwright/test';
 import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { BasePage } from './base-page';
 import { TFunction } from '../fixtures/locale-fixture';
-import { summaryListValue, readFieldWhenVisible, clickLinkAndWaitForNavigation } from '../helper/element-helper';
+import { readFieldWhenVisible, clickLinkAndWaitForNavigation } from '../helper/element-helper';
 
 /** The summary list paints a beat after these pages load. */
 
@@ -28,7 +28,7 @@ export class ConsignmentSummaryPage extends BasePage {
 
     constructor(page: Page, t: TFunction) {
         super(page, t);
-        this.supervisingCustomsOffice = summaryListValue(page, this.t!('common.supervisingCustomsOffice'));
+        this.supervisingCustomsOffice = this.summaryList.valueOf(this.t!('common.supervisingCustomsOffice'));
     }
 
     /**
@@ -62,9 +62,6 @@ export class ConsignmentSummaryPage extends BasePage {
      * which is why this waits for a navigation rather than for a known route.
      */
     async changeField(field: string): Promise<void> {
-        await clickLinkAndWaitForNavigation(
-            this.page,
-            this.page.locator(`.govuk-summary-list__actions a[href$='field=${field}']`)
-        );
+        await clickLinkAndWaitForNavigation(this.page, this.summaryList.changeLinkFor(field));
     }
 }

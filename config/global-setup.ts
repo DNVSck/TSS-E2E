@@ -5,7 +5,7 @@ import * as path from 'node:path';
 import {
   initAllureResults, getAllureResultsDir, writeSetupFailures, SetupFailure,
 } from '../src/core/report/allure-report-manager';
-import { ensureAuthState, SignInFailedError } from '../src/auth/ensure-auth-state';
+import { ensureAuthState, SignInFailedError, SIGN_IN_FAILURE_ATTACHMENT } from '../src/auth/ensure-auth-state';
 import { LOCALE } from './environment';
 
 async function globalSetup(config: FullConfig) {
@@ -45,6 +45,9 @@ function asSetupFailures(error: unknown): SetupFailure[] {
       suite: 'Authentication',
       message: failure.message,
       stack: failure.stack,
+      screenshot: failure.screenshot
+        ? { name: SIGN_IN_FAILURE_ATTACHMENT, body: failure.screenshot }
+        : undefined,
     }));
   }
 

@@ -1,3 +1,6 @@
+import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
+import { CountryCode } from '../constant/country-code-dropdown-constant';
+
 /**
  * The type prefix an authorisation number opens with: two letters of country, then
  * three of authorisation type - "XIDPO", "GBDPO".
@@ -27,6 +30,10 @@ const DEFERMENT_AUTHORISATION_PREFIX = /^[A-Z]{2}DPO/;
  */
 export function defermentAccountNumber(defermentAuthorisation: string): string {
     return defermentAuthorisation.replace(DEFERMENT_AUTHORISATION_PREFIX, '');
+}
+
+export function defermentAuthorisation(country: CountryCode, defermentAccount: string): string {
+    return `${country}${AUTHORISATION_TYPE_CODE.DEFERMENT_OF_PAYMENT_DPO}${defermentAccount}`;
 }
 
 /** The country an authorisation opens with - "XI", "GB". */

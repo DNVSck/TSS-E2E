@@ -1,10 +1,12 @@
 import { Page, Locator, TestInfo } from '@playwright/test';
 import {
-    readFieldIfPresent, hrefsOf, clickLinkAndWaitForRoute,
+    readFieldIfPresent, hrefsOf, clickLinkAndWaitForRoute, submitAndReadErrors,
 } from '../helper/element-helper';
 import { TFunction, localeForProject } from '../fixtures/locale-fixture';
 import { LOCALES_CONSTANT } from '../constant/locales-constant';
 import { NavigationBanner } from './components/navigation-banner';
+import { SummaryList } from './components/summary-list';
+import { GOVUK } from './components/govuk-selectors';
 
 /** Overview screens paint their list a beat after the route settles. */
 const CONTENT_TIMEOUT = 20_000;
@@ -22,6 +24,7 @@ export class BasePage {
     protected readonly commonFinishButton: Locator;
     protected readonly commonBackLink: Locator;
     protected readonly commonSummaryValues: Locator;
+    protected readonly summaryList: SummaryList;
     protected readonly t?: TFunction;
 
     /**
@@ -36,13 +39,13 @@ export class BasePage {
      * translated, and the links carry a visually-hidden field name after it.
      */
     protected get contentRows(): Locator {
-        return this.page.locator('.govuk-summary-list__row');
+        return this.summaryList.rows;
     }
 
     private readonly navigationBanner: NavigationBanner;
 
     protected get actionLinks(): Locator {
-        return this.page.locator('.govuk-summary-list__actions a');
+        return this.summaryList.actionLinks;
     }
 
     constructor(protected readonly page: Page, t?: TFunction) {
@@ -53,16 +56,18 @@ export class BasePage {
         this.navigationBanner = new NavigationBanner(page);
 
         this.commonContinueButton = page.locator(
-            "button.govuk-button[value='next']"
+            `button${GOVUK.BUTTON.ROOT}[value='next']`
         );
 
         this.commonFinishButton = page.locator(
-            "button.govuk-button[value='finish']"
+            `button${GOVUK.BUTTON.ROOT}[value='finish']`
         )
 
-        this.commonBackLink = page.locator("a[data-module='govuk-back-link']");
+        this.commonBackLink = page.locator(GOVUK.BACK_LINK);
 
-        this.commonSummaryValues = page.locator('.govuk-summary-list__value');
+        this.summaryList = new SummaryList(page);
+
+        this.commonSummaryValues = this.summaryList.values;
     }
 
     /** The pixels, not the Page - so a caller can name its own screenshot and no more. */
@@ -143,6 +148,10 @@ export class BasePage {
      */
     async clickFinishButton(): Promise<void> {
         await this.commonFinishButton.click();
+    }
+
+    protected async finishAndReadErrors(): Promise<string[]> {
+        return submitAndReadErrors(this.page, this.commonFinishButton);
     }
 
     async clickBackLink(): Promise<void> {

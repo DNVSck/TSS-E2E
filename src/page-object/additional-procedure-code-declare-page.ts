@@ -26,13 +26,13 @@ export class AdditionalProcedureCodeDeclarePage extends BasePage {
     }
 
     /** "Check your answers" — the "Complete and submit" button commits the record. */
-    async confirmAndSubmit(): Promise<void> {
-        await this.clickFinishButton();
+    async confirmAndSubmit(): Promise<string[]> {
+        return this.finishAndReadErrors();
     }
 
     /** The whole wizard for a single additional-procedure-code record. */
-    async declareAdditionalProcedureCode(code: string): Promise<void> {
+    async declareAdditionalProcedureCode(code: string): Promise<string[]> {
         await this.selectAdditionalProcedureCode(code);
-        await this.confirmAndSubmit();
+        return this.confirmAndSubmit();
     }
 }

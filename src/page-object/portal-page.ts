@@ -1,4 +1,5 @@
 import { BasePage } from "./base-page";
+import { GOVUK } from './components/govuk-selectors';
 import { Page, Locator } from '@playwright/test';
 import { clickLinkAndWaitForRoute } from '../helper/element-helper';
 import { NavigationBanner } from './components/navigation-banner';
@@ -37,7 +38,7 @@ export class PortalPage extends BasePage {
         this.startNewDeclarationLink = page.locator("main a[href$='/declaration/form/start']");
 
         this.draftDeclarationsLink = page.locator(
-            "main a[href$='/overview']:not(.govuk-button)"
+            `main a[href$='/overview']:not(${GOVUK.BUTTON.ROOT})`
         );
         // Contains, not ends-with: this one carries filter state after the path.
         this.supplementaryDeclarationsLink = page.locator(

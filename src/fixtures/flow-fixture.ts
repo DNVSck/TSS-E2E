@@ -2,6 +2,7 @@
 import { PortalAccessFlow } from '../flows/portal-access-flow';
 import { SignInFlow } from '../flows/sign-in-flow';
 import { CompanyProfileFlow } from '../flows/company-profile-flow';
+import { CompanyProfileEditFlow } from '../flows/company-profile-edit-flow';
 import { InitialFormDeclarationFlow } from '../flows/initial-form-declaration-flow';
 import { MovementHeaderDeclarationFlow } from '../flows/movement/movement-header-declaration-flow';
 import { MovementSteps } from '../flows/movement/movement-steps';
@@ -63,6 +64,7 @@ export type FlowFixtureType = {
     // every other flow arrives already signed in via storageState.
     signInFlow: SignInFlow;
     companyProfileFlow: CompanyProfileFlow;
+    companyProfileEditFlow: CompanyProfileEditFlow;
     representTraderFlow: RepresentTraderFlow;
 
     // Reads what a declaration lets the signed-in company do with it. Used by the
@@ -142,8 +144,23 @@ export const flowFixture: ExtendParams[0] = {
         await use(new SignInFlow(basePage, portalPage, signInPage, navigationBanner));
     },
 
-    companyProfileFlow: async ({ portalPage, companyProfilePage, companyProfileUsersPage }, use) => {
-        await use(new CompanyProfileFlow(portalPage, companyProfilePage, companyProfileUsersPage));
+    companyProfileFlow: async ({
+        portalPage, companyProfilePage, companyProfileUsersPage, requestEoriChangePage, t
+    }, use) => {
+        await use(new CompanyProfileFlow(
+            portalPage, companyProfilePage, companyProfileUsersPage, requestEoriChangePage, t
+        ));
+    },
+
+    companyProfileEditFlow: async ({
+        portalPage, companyProfilePage, companyProfileEditPage, companyProfileService
+    }, use) => {
+        const flow = new CompanyProfileEditFlow(
+            portalPage, companyProfilePage, companyProfileEditPage, companyProfileService
+        );
+        const snapshot = await flow.snapshotCompany();
+        await use(flow);
+        await flow.restoreCompany(snapshot);
     },
 
     representTraderFlow: async ({

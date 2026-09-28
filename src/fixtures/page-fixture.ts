@@ -3,6 +3,8 @@ import { PortalPage } from '../page-object/portal-page'
 import { SignInPage } from '../page-object/sign-in-page';
 import { CompanyProfilePage } from '../page-object/company-profile-page';
 import { CompanyProfileUsersPage } from '../page-object/company-profile-users-page';
+import { RequestEoriChangePage } from '../page-object/request-eori-change-page';
+import { CompanyProfileEditPage } from '../page-object/company-profile-edit-page';
 import { NavigationBanner } from '../page-object/components/navigation-banner';
 import { BasePage } from '../page-object/base-page';
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
@@ -43,6 +45,8 @@ export type PageFixtureType = {
     signInPage: SignInPage;
     companyProfilePage: CompanyProfilePage;
     companyProfileUsersPage: CompanyProfileUsersPage;
+    requestEoriChangePage: RequestEoriChangePage;
+    companyProfileEditPage: CompanyProfileEditPage;
     navigationBanner: NavigationBanner;
     representTraderPage: RepresentTraderPage;
     representationBanner: RepresentationBanner;
@@ -100,6 +104,14 @@ export const pageFixture: ExtendParams[0] = {
 
     companyProfileUsersPage: async ({ page }, use) => {
         await use(new CompanyProfileUsersPage(page));
+    },
+
+    requestEoriChangePage: async ({ page }, use) => {
+        await use(new RequestEoriChangePage(page));
+    },
+
+    companyProfileEditPage: async ({ page }, use) => {
+        await use(new CompanyProfileEditPage(page));
     },
 
     navigationBanner: async ({ page }, use) => {

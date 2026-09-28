@@ -69,6 +69,19 @@ export function reportDeclarationCodes(goods: GoodsData): void {
 }
 
 /**
+ * The body a request went out with, kept on the step that sent it. A refusal names the
+ * field it disliked but not the value, and the payload is assembled from several data
+ * factories - so without this, reconstructing what was actually sent means re-running.
+ */
+export function attachRequest(name: string, body: unknown): void {
+    ReportLog.addAttachment(`${name} - request`, JSON.stringify(body, null, 2), 'application/json');
+}
+
+export function attachResponse(name: string, body: unknown): void {
+    ReportLog.addAttachment(`${name} - response`, JSON.stringify(body, null, 2), 'application/json');
+}
+
+/**
  * Link a spec to its case in THIS service's test management system. The tracker URL
  * lives here rather than in ReportLog so the report facade stays generic - a spec
  * still passes only the case id, which is all it should have to know.

@@ -83,17 +83,17 @@ export class DocumentReferenceDeclarePage extends BasePage {
     }
 
     /** "Check your answers" — the "Complete and submit" button commits the record. */
-    async confirmAndSubmit(): Promise<void> {
-        await this.clickFinishButton();
+    async confirmAndSubmit(): Promise<string[]> {
+        return this.finishAndReadErrors();
     }
 
     /** The whole wizard for a single document-reference record. */
-    async declareDocumentReference(input: DocumentReferenceData): Promise<void> {
+    async declareDocumentReference(input: DocumentReferenceData): Promise<string[]> {
         await this.selectDocumentCode(input.documentCode);
         await this.selectDocumentStatusIfPresent(input.documentStatus);
         await this.enterDocumentReference(input.documentReference, input.documentPartReference);
         await this.enterDocumentReason(input.documentReason);
         await this.uploadDocumentFile(input.documentFilePath);
-        await this.confirmAndSubmit();
+        return this.confirmAndSubmit();
     }
 }

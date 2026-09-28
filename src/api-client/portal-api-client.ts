@@ -23,6 +23,10 @@ export class PortalApiClient extends BaseApiClient {
         const response = await this.get(path);
         return await response.json() as T;
     }
+
+    async update(path: string, body: unknown): Promise<void> {
+        await this.put(path, body);
+    }
 }
 
 /**

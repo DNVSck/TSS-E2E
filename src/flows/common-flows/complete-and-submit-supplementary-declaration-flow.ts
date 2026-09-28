@@ -10,7 +10,7 @@ import { SupplementaryDeclarationSteps } from '../supplementary-declaration/supp
 import {
     SupplementaryDeclarationData, supplementaryDeclaration,
 } from '../../test-data/supplementary-declaration-data';
-import { submittedSupplementaryStatusKeys } from '../../helper/declaration-status-helper';
+import { submittedSupplementaryStatusKeys, verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 import { UserCredentials } from '../../auth/credentials';
@@ -310,7 +310,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
                     `Add additional procedure code ${index + 1} of ${input.additionalProcedureCodes.length}: ${code}`,
                     async () => {
                         await this.goodsRecordPage.declareNewAdditionalProcedureCode();
-                        await this.additionalProcedureCodePage.declareAdditionalProcedureCode(code);
+                        verifySubmittedWithoutErrors(await this.additionalProcedureCodePage.declareAdditionalProcedureCode(code), 'the additional procedure code');
                     }
                 );
             }
@@ -337,7 +337,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
                     + `[${documentReference.documentCode}] ${documentReference.documentReference ?? ''}`,
                     async () => {
                         await this.goodsRecordPage.declareNewDocumentReference();
-                        await this.documentReferencePage.declareDocumentReference(documentReference);
+                        verifySubmittedWithoutErrors(await this.documentReferencePage.declareDocumentReference(documentReference), 'the document reference');
                     }
                 );
             }

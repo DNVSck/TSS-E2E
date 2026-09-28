@@ -4,7 +4,7 @@ import { ConsignmentSummaryPage } from './consignment-summary-page';
 import { RecordTabs } from './components/record-tabs';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
-    summaryListValue, readFieldWhenVisible, readFieldIfPresent, readErrorSummary,
+    readFieldWhenVisible, readFieldIfPresent, readErrorSummary,
 } from '../helper/element-helper';
 import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
 
@@ -53,9 +53,9 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
 
         this.tabs = new RecordTabs(page);
 
-        this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'));
-        this.movementReferenceNumber = summaryListValue(page, this.t!('consignmentDetail.movementReferenceNumber'));
-        this.status = summaryListValue(page, this.t!('common.status'));
+        this.localReferenceNumber = this.summaryList.valueOf(this.t!('common.localReferenceNumber'));
+        this.movementReferenceNumber = this.summaryList.valueOf(this.t!('consignmentDetail.movementReferenceNumber'));
+        this.status = this.summaryList.valueOf(this.t!('common.status'));
     }
 
     async getConsignmentLocalReferenceNumber(): Promise<string> {

@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { clickLinkAndWaitForRoute } from '../../helper/element-helper';
 import { BASE_URL } from '../../../config/environment';
+import { GOVUK } from './govuk-selectors';
 
 /** The switch is a client-side route, so the document reports it a beat after the click. */
 const LANGUAGE_SWITCH_TIMEOUT = 15_000;
@@ -24,7 +25,7 @@ export class NavigationBanner {
     private readonly signOutLink: Locator;
 
     constructor(private readonly page: Page) {
-        const banner = page.locator('nav.govuk-service-navigation__wrapper');
+        const banner = page.locator(`nav${GOVUK.SERVICE_NAVIGATION.WRAPPER}`);
         this.banner = banner;
 
         // The only link in the bar pointing at the service root. Matched on a trailing

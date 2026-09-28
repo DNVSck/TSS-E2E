@@ -20,6 +20,7 @@ import { consignmentPayload } from '../../../test-data/payload/trader-api/consig
 import { goodsPayload } from '../../../test-data/payload/trader-api/goods-payload';
 import { DeclarationIdentity } from '../../../test-data/payload/cds-notification-payload';
 import { ReportLog } from '../../../core/report/report-log';
+import { attachRequest } from '../../../helper/report-helper';
 
 /** How many times a submit that neither answered nor raised an SFD is sent again. */
 const SUBMIT_ATTEMPTS = 3;
@@ -51,15 +52,6 @@ const EIDR_AUTHORISES_TIMEOUT = 180_000;
  * messages this flow exists to address can never be sent.
  */
 const NEVER_REACHES_ARRIVAL: string[] = [DECLARATION_STATUS.TRADER_INPUT_REQUIRED];
-
-/**
- * The body a request went out with, kept on the step that sent it. A refusal names the
- * field it disliked but not the value, and the payload is assembled from several data
- * factories - so without this, reconstructing what was actually sent means re-running.
- */
-function attachRequest(name: string, body: unknown): void {
-    ReportLog.addAttachment(`${name} - request`, JSON.stringify(body, null, 2), 'application/json');
-}
 
 export interface DeclareEnsOptions {
     movementOverrides?: Partial<MovementData>;

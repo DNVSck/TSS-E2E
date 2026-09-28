@@ -1,7 +1,7 @@
 import { BasePage } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import {
-    fillInputValue, selectAutocompleteValue, clickToLeaveScreen,
+    fillInputValue, selectAutocompleteValue, clickToLeaveScreen, readErrorSummary,
 } from '../helper/element-helper';
 
 const DESCRIPTION_TIMEOUT = 150_000;
@@ -46,7 +46,16 @@ export class AdditionalInformationDeclarePage extends BasePage {
     }
 
     /** "Check your answers" — the "Complete and submit" button commits the record. */
-    async confirmAndSubmit(): Promise<void> {
-        await clickToLeaveScreen(this.page, this.commonFinishButton);
+    async confirmAndSubmit(): Promise<string[]> {
+        try {
+            await clickToLeaveScreen(this.page, this.commonFinishButton);
+            return [];
+        } catch (error) {
+            const errors = await readErrorSummary(this.page);
+            if (errors.length > 0) {
+                return errors;
+            }
+            throw error;
+        }
     }
 }

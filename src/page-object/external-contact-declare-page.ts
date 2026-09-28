@@ -27,13 +27,13 @@ export class ExternalContactDeclarePage extends BasePage {
     }
 
     /** "Check your answers" — the "Complete and submit" button commits the record. */
-    async confirmAndSubmit(): Promise<void> {
-        await this.clickFinishButton();
+    async confirmAndSubmit(): Promise<string[]> {
+        return this.finishAndReadErrors();
     }
 
     /** The whole wizard for a single external-contact record. */
-    async addNewExternalContact(contactEmail: string): Promise<void> {
+    async addNewExternalContact(contactEmail: string): Promise<string[]> {
         await this.inputContactEmail(contactEmail);
-        await this.confirmAndSubmit();
+        return this.confirmAndSubmit();
     }
 }

@@ -58,6 +58,13 @@ export const COMPANY_PROFILE_ACTION = {
 
 export type CompanyProfileActionKey = keyof typeof COMPANY_PROFILE_ACTION;
 
+export const COMPANY_ADDRESS_FIELD = {
+    LINE_1: COMPANY_PROFILE_ACTION.ADDRESS,
+    CITY: 'city',
+    POST_CODE: 'postCode',
+    COUNTRY: 'countryCode',
+} as const;
+
 /**
  * Every row above, for the permission spec, which requires the lot.
  *

@@ -4,8 +4,8 @@ import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
-    clickLinkAndWaitForRoute, clickLinkAndWaitForNavigation, switchToTabAndClickNew, summaryListValue,
-    readFieldWhenVisible, readFieldIfPresent, newRecordButton, textsOf,
+    clickLinkAndWaitForRoute, clickLinkAndWaitForNavigation, switchToTabAndClickNew,
+    readFieldWhenVisible, readFieldIfPresent, newRecordButton, textsOf, submitAndReadErrors,
 } from '../helper/element-helper';
 import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
@@ -48,14 +48,14 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     constructor(page: Page, t: TFunction) {
         super(page, t);
 
-        this.declarationType = summaryListValue(page, this.t!('common.declarationType'));
+        this.declarationType = this.summaryList.valueOf(this.t!('common.declarationType'));
 
         // The FFD standalone overview spells the row out as "... (LRN)" where every
         // other overview stops at "Local reference number", so match either rather
         // than making the caller say which journey it is on.
-        this.localReferenceNumber = summaryListValue(page, this.t!('common.localReferenceNumber'))
-            .or(summaryListValue(page, this.t!('common.localReferenceNumberWithLrn')));
-        this.status = summaryListValue(page, this.t!('common.status'));
+        this.localReferenceNumber = this.summaryList.valueOf(this.t!('common.localReferenceNumber'))
+            .or(this.summaryList.valueOf(this.t!('common.localReferenceNumberWithLrn')));
+        this.status = this.summaryList.valueOf(this.t!('common.status'));
 
         // ENS consignments reference starts "DEC"; standalone consignments use a
         // "GLR" reference - match either so the breadcrumb works for both.
@@ -141,8 +141,8 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         return { consignmentReference, declarationStatus };
     }
 
-    async clickConfirmAndSubmit(): Promise<void> {
-        await this.confirmAndSubmitButton.click();
+    async confirmAndSubmit(): Promise<string[]> {
+        return submitAndReadErrors(this.page, this.confirmAndSubmitButton);
     }
 
     /**

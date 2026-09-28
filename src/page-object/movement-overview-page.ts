@@ -4,8 +4,9 @@ import { MOVEMENT_ROUTE } from '../constant/endpoints-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
-import { summaryListValue, readFieldWhenVisible, newRecordButton } from '../helper/element-helper';
+import { readFieldWhenVisible, newRecordButton } from '../helper/element-helper';
 import { StringUtil } from '../core/util/string-util';
+import { GOVUK } from './components/govuk-selectors';
 
 
 
@@ -75,8 +76,8 @@ export class MovementOverviewPage extends BasePage {
         this.createGMRButton = newRecordButton(page, 'gmr-details');
 
         // Summary list fields
-        this.localReferenceNumber = summaryListValue(page, localReferenceLabel);
-        this.declarationStatus = summaryListValue(page, declarationStatusLabel);
+        this.localReferenceNumber = this.summaryList.valueOf(localReferenceLabel);
+        this.declarationStatus = this.summaryList.valueOf(declarationStatusLabel);
 
         // The ENS consignment is the only View link whose href carries the movement
         // number ("ENS…") directly after "/goods-movement/"; the SFD/IMMI/EIDR ones
@@ -85,20 +86,20 @@ export class MovementOverviewPage extends BasePage {
         // keeps this correct when a new consignment type is added. The "/DEC" keeps it
         // off the movement-overview link, which carries no consignment reference.
         this.ensConsignmentViewLink = page.locator(
-            "a.govuk-button[href*='/goods-movement/ENS'][href*='/DEC'][href$='/overview']"
+            `a${GOVUK.BUTTON.ROOT}[href*='/goods-movement/ENS'][href*='/DEC'][href$='/overview']`
         );
         this.sfdConsignmentViewLink = page.locator(
-            "a.govuk-button[href*='/goods-movement/sfd/'][href$='/overview']"
+            `a${GOVUK.BUTTON.ROOT}[href*='/goods-movement/sfd/'][href$='/overview']`
         );
         // The IMMI View-link href shape mirrors SFD ("/goods-movement/immi/…"),
         // by analogy — no IMMI consignment was available to inspect, since the IMMI
         // specs are skipped and stop at known bugs before submit.
         this.immiConsignmentViewLink = page.locator(
-            "a.govuk-button[href*='/goods-movement/immi/'][href$='/overview']"
+            `a${GOVUK.BUTTON.ROOT}[href*='/goods-movement/immi/'][href$='/overview']`
         );
         // The EIDR View-link href mirrors SFD/IMMI ("/goods-movement/eidr/…/DEC…/overview").
         this.eidrConsignmentViewLink = page.locator(
-            "a.govuk-button[href*='/goods-movement/eidr/'][href$='/overview']"
+            `a${GOVUK.BUTTON.ROOT}[href*='/goods-movement/eidr/'][href$='/overview']`
         );
         // The GMR card's "View" button on the GMR details tab. Its href nests under a
         // "/goods-movement-records/" segment that no consignment View link carries, so
@@ -108,7 +109,7 @@ export class MovementOverviewPage extends BasePage {
         // matched it. The exact detail URL is still read from the link's own href at
         // click time (see openGmrDetailFromTab).
         this.gmrViewLink = page.locator(
-            "a.govuk-button[href*='/goods-movement-records/'][href$='/overview']"
+            `a${GOVUK.BUTTON.ROOT}[href*='/goods-movement-records/'][href$='/overview']`
         );
     }
 
@@ -378,7 +379,7 @@ export class MovementOverviewPage extends BasePage {
         }
 
         await this.page
-            .locator(`a.govuk-breadcrumbs__link[href$="${this.movementOverviewPath(movement)}"]`)
+            .locator(`a${GOVUK.BREADCRUMBS.LINK}[href$="${this.movementOverviewPath(movement)}"]`)
             .click();
         await this.page.waitForURL(this.movementOverviewPattern(movement));
     }

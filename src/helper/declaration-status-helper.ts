@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { METHOD_OF_PAYMENT, MethodOfPaymentCode } from '../constant/method-of-payment-constant';
 
@@ -116,6 +117,11 @@ export function traderInputRequiredError(label: string, status: string): Error {
     );
 }
 
+
+export function verifySubmittedWithoutErrors(errors: string[], what: string): void {
+    expect(errors, `${what} should submit without errors - errors the page showed after submitting (expects none)`)
+        .toEqual([]);
+}
 
 export function isDeclarationStatus(actual: string, expected: string): boolean {
     return actual.trim().toLowerCase() === expected.trim().toLowerCase();
