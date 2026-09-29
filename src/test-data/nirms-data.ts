@@ -2,6 +2,7 @@ import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { DocumentReferenceData, documentReference } from './document-reference-data';
 import { GoodsData } from './goods-data';
+import { IMPORTER_NIRMS } from '../../config/environment';
 
 /**
  * A commodity that moves under NIRMS, and the document its tariff requires.
@@ -77,20 +78,29 @@ export const nirmsGoodsItem = (commodity: NirmsCommodity): Partial<GoodsData> =>
     nirmsDocumentCodes: [commodity.documentCode],
 });
 
-export interface NirmsDocumentCitation {
-    code: string;
-    reference: string;
-}
-
 const chedNirmsReference = (year: number): string => `GBCHD${year}.NIRMS`;
 
-const NIRMS_DOCUMENT_REFERENCE: Record<string, (year: number) => string> = {
-    [DOCUMENT_CODE.N853]: chedNirmsReference,
-    [DOCUMENT_CODE.C085]: chedNirmsReference,
-    [DOCUMENT_CODE.C673]: () => 'GBIUUNIRMS',
+
+const chedNirmsDocument = (code: string, year: number): DocumentReferenceData =>
+    documentReference({
+        documentCode: code,
+        documentReference: chedNirmsReference(year),
+        documentStatus: DOCUMENT_STATUS.XW,
+        documentReason: IMPORTER_NIRMS,
+    });
+
+const NIRMS_DOCUMENT_REFERENCE: Record<string, (year: number) => DocumentReferenceData> = {
+    [DOCUMENT_CODE.N853]: year => chedNirmsDocument(DOCUMENT_CODE.N853, year),
+    [DOCUMENT_CODE.C085]: year => chedNirmsDocument(DOCUMENT_CODE.C085, year),
+    [DOCUMENT_CODE.C673]: () => documentReference({
+        documentCode: DOCUMENT_CODE.C673,
+        documentReference: 'GBIUUNIRMS',
+        documentStatus: undefined,
+        documentReason: undefined,
+    }),
 };
 
-export function nirmsDocumentCitations(codes: string[], year: number): NirmsDocumentCitation[] {
+export function nirmsDocumentCitations(codes: string[], year: number): DocumentReferenceData[] {
     return codes.map(code => {
         const build = NIRMS_DOCUMENT_REFERENCE[code];
 
@@ -104,6 +114,6 @@ export function nirmsDocumentCitations(codes: string[], year: number): NirmsDocu
             );
         }
 
-        return { code, reference: build(year) };
+        return build(year);
     });
 }

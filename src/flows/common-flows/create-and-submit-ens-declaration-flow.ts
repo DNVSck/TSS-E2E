@@ -1,8 +1,8 @@
 ﻿import { MovementOverviewFlow, GeneratedConsignment } from '../movement/movement-overview-flow';
-import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
+import { ConsignmentOverviewFlow, citedAs } from '../consignment/consignment-overview-flow';
 import { GoodsJourneyContext } from '../goods-item/add-new-ens-goods-item-flow';
 import { CreateDraftEnsDeclarationFlow, EnsDeclarationOptions } from './create-draft-ens-declaration-flow';
-import { GoodsOverviewFlow, citedAs } from '../goods-item/goods-overview-flow';
+import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import { requiresWarehouseIdentifier } from '../../helper/procedure-code-helper';
 import { SUPERVISING_CUSTOMS_OFFICE } from '../../constant/supervising-customs-office-constant';
 import { AUTHORISATION_TYPE_CODE } from '../../constant/authorisation-type-code-constant';
@@ -10,6 +10,7 @@ import { DOCUMENT_CODE } from '../../constant/document-code-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../constant/additional-procedure-codes-constant';
 import { IMPORTER_NIRMS } from '../../../config/environment';
 import { nirmsDocumentCitations } from '../../test-data/nirms-data';
+import { documentReference } from '../../test-data/document-reference-data';
 
 
 export interface EnsDeclarationResult {
@@ -61,9 +62,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
 
         await this.movementOverviewFlow.openGeneratedSfdConsignment();
         await this.consignmentOverviewFlow.openGoodsItem();
-        await this.goodsOverviewFlow.verifyDocumentReferences(
-            citations.map(citation => citedAs(citation.code, citation.reference))
-        );
+        await this.goodsOverviewFlow.verifyDocumentReferences(citations);
     }
 
     private async verifyNirmsOnGeneratedImmi(importerEORI: string): Promise<void> {
@@ -75,7 +74,12 @@ export class CreateAndSubmitEnsDeclarationFlow {
 
         await this.consignmentOverviewFlow.openGoodsItem();
         await this.goodsOverviewFlow.verifyDocumentReferences([
-            citedAs(DOCUMENT_CODE['1RMS'], IMPORTER_NIRMS),
+            documentReference({
+                documentCode: DOCUMENT_CODE['1RMS'],
+                documentReference: IMPORTER_NIRMS,
+                documentStatus: undefined,
+                documentReason: undefined,
+            }),
         ]);
         await this.goodsOverviewFlow.verifyAdditionalProcedureCodes([
             ADDITIONAL_PROCEDURE_CODES.SPIMM_NIRMS_1RM,

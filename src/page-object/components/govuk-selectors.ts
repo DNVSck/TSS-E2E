@@ -10,6 +10,7 @@ export const GOVUK = {
     ERROR_SUMMARY: {
         LIST: '.govuk-error-summary__list',
     },
+    LINK: '.govuk-link',
     PASSWORD_INPUT: {
         TOGGLE: '.govuk-js-password-input-toggle',
     },
@@ -24,6 +25,11 @@ export const GOVUK = {
         KEY: '.govuk-summary-list__key',
         VALUE: '.govuk-summary-list__value',
         ACTIONS: '.govuk-summary-list__actions',
+    },
+    TABLE: {
+        BODY: '.govuk-table__body',
+        ROW: '.govuk-table__row',
+        CELL: '.govuk-table__cell',
     },
     TABS: {
         LIST_ITEM: '.govuk-tabs__list-item',

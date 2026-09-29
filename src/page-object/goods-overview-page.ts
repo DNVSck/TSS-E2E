@@ -3,11 +3,20 @@ import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import { switchToTabAndClickNew, readFieldWhenVisible, newRecordButton, clickLinkAndWaitForNavigation, switchToTab, textsOf } from '../helper/element-helper';
-import { waitForOpenTabPanel, OPEN_TAB_RECORD, RECORD_LINK } from './components/record-tabs';
+import { waitForOpenTabPanel, OPEN_TAB_PANEL, OPEN_TAB_RECORD } from './components/record-tabs';
+import { GOVUK } from './components/govuk-selectors';
 import { TgpRecordData } from "../test-data/tgp-record-data";
 import { COUNTRY_NAME } from "../constant/country-code-dropdown-constant";
 
 /** The goods-item overview summary list paints a beat after the item is created. */
+
+/** One row of the "Document references" table, as the tab renders it. */
+export interface DocumentReferenceRow {
+    code: string;
+    reference: string;
+    status: string;
+    reason: string;
+}
 
 export class GoodsOverviewPage extends BasePage {
 
@@ -20,6 +29,7 @@ export class GoodsOverviewPage extends BasePage {
     private readonly documentTab: Locator;
     private readonly newDocumentRefButton: Locator;
     private readonly openTabRecords: Locator;
+    private readonly documentReferenceRows: Locator;
 
     private readonly additionalProcedureCodesTab: Locator;
     private readonly newAdditionalProcedureCodeButton: Locator;
@@ -59,6 +69,9 @@ export class GoodsOverviewPage extends BasePage {
         this.newTaricAdditionalCodeButton = newRecordButton(page, '/taric-additional-codes');
         this.newNationalAdditionalCodeButton = newRecordButton(page, '/national-additional-codes');
         this.openTabRecords = page.locator(OPEN_TAB_RECORD);
+        this.documentReferenceRows = page.locator(
+            `${OPEN_TAB_PANEL} ${GOVUK.TABLE.BODY} ${GOVUK.TABLE.ROW}`
+        );
     }
 
     /**
@@ -132,10 +145,23 @@ export class GoodsOverviewPage extends BasePage {
     }
 
 
-    async listDocumentReferenceRecords(): Promise<string[]> {
+    async listDocumentReferenceRecords(): Promise<DocumentReferenceRow[]> {
         await switchToTab(this.page, this.documentTab);
         await waitForOpenTabPanel(this.page, RENDER_TIMEOUT.TAB_PANEL);
-        return textsOf(this.openTabRecords);
+
+        const rows = await this.documentReferenceRows.all();
+
+        return Promise.all(rows.map(async row => {
+            const [code, reference, status, reason] =
+                await row.locator(GOVUK.TABLE.CELL).allTextContents();
+
+            return {
+                code: code?.trim() ?? '',
+                reference: reference?.trim() ?? '',
+                status: status?.trim() ?? '',
+                reason: reason?.trim() ?? '',
+            };
+        }));
     }
 
     async listAdditionalProcedureCodes(): Promise<string[]> {
@@ -153,15 +179,17 @@ export class GoodsOverviewPage extends BasePage {
      * item declaring two documents would hand the wrong one to a correction without
      * anything noticing.
      *
-     * A bare substring here, unlike the bracketed match authorisation type codes need:
-     * customs document codes are four characters and none is a prefix of another, so
-     * "N730" cannot pick up a neighbour the way "EXW" would pick up "EXWH".
+     * The table gives the code its own link, carrying it in `title`, so the record is
+     * addressed by that rather than by matching text across the row. A row's other
+     * cells can hold anything, and a reference that happened to contain a document
+     * code would otherwise match it.
      *
      * Scoped to the open tab panel, so a record on another tab cannot be matched.
      */
     async openDocumentReferenceRecord(documentCode: string): Promise<void> {
-        const record = this.page.locator(OPEN_TAB_RECORD).filter({ hasText: documentCode });
+        const link = this.page.locator(OPEN_TAB_PANEL)
+            .locator(`a[title="${documentCode}"]`);
 
-        await clickLinkAndWaitForNavigation(this.page, record.locator(RECORD_LINK));
+        await clickLinkAndWaitForNavigation(this.page, link);
     }
 }

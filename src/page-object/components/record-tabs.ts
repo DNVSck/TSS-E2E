@@ -20,17 +20,23 @@ export async function waitForOpenTabPanel(page: Page, timeout: number): Promise<
     await page.locator(OPEN_TAB_PANEL).filter({ visible: true }).waitFor({ state: 'visible', timeout });
 }
 
-/** One rendered record, wherever it appears. */
-export const TAB_RECORD = GOVUK.TASK_LIST.ITEM;
+const RECORD_SHAPES = [
+    GOVUK.TASK_LIST.ITEM,
+    `${GOVUK.TABLE.BODY} ${GOVUK.TABLE.ROW}`,
+];
 
-/** One record inside the open panel - what a page addresses when it acts on a record. */
-export const OPEN_TAB_RECORD = `${OPEN_TAB_PANEL} ${TAB_RECORD}`;
+/** One rendered record, wherever it appears. */
+export const TAB_RECORD = RECORD_SHAPES.join(', ');
+
+export const OPEN_TAB_RECORD = RECORD_SHAPES
+    .map(shape => `${OPEN_TAB_PANEL} ${shape}`)
+    .join(', ');
 
 /**
  * A record's own link, which is its edit route. Whether a record is rendered as a link
  * or as plain text is the same permission question the buttons answer.
  */
-export const RECORD_LINK = `a${GOVUK.TASK_LIST.LINK}`;
+export const RECORD_LINK = `a${GOVUK.TASK_LIST.LINK}, ${GOVUK.TABLE.CELL} a${GOVUK.LINK}`;
 
 /** The warning button a record carries to remove itself. */
 export const RECORD_DELETE_BUTTON =

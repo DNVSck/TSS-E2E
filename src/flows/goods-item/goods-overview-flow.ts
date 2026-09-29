@@ -1,6 +1,6 @@
 ﻿import { expect } from '@playwright/test';
 import { ReportLog } from '../../core/report/report-log';
-import { GoodsOverviewPage } from "../../page-object/goods-overview-page";
+import { GoodsOverviewPage, DocumentReferenceRow } from "../../page-object/goods-overview-page";
 import { TFunction } from '../../fixtures/locale-fixture';
 import { DocumentReferenceDeclarePage } from "../../page-object/document-reference-declare-page";
 import { AdditionalInformationDeclarePage } from "../../page-object/additional-information-declare-page";
@@ -24,7 +24,6 @@ const DESCRIPTION_ATTEMPTS = 3;
  * Every method is a no-op on an empty list, so a goods item that declares none
  * of these is unaffected.
  */
-export const citedAs = (code: string, value: string): string => `[${code}] ${value}`;
 export class GoodsOverviewFlow {
     constructor(
         private readonly goodsOverviewPage: GoodsOverviewPage,
@@ -65,18 +64,55 @@ export class GoodsOverviewFlow {
         });
     }
 
-    async verifyDocumentReferences(expected: string[]): Promise<void> {
+
+    async verifyDocumentReferences(expected: DocumentReferenceData[]): Promise<void> {
         await ReportLog.step('Validate the goods item document references', async () => {
-            const records = await this.goodsOverviewPage.listDocumentReferenceRecords();
-            const listed = records.join(' | ');
-            ReportLog.setParameter('Document references', listed);
+            const rows = await this.goodsOverviewPage.listDocumentReferenceRecords();
+
+            ReportLog.setParameter('Document references', this.describeDocumentRows(rows));
 
             for (const document of expected) {
-                expect.soft(listed,
-                    `documents cited by the goods item (must include ${document})`)
-                    .toContain(document);
+                const row = rows.find(listed => listed.code === document.documentCode);
+
+                expect.soft(row,
+                    `documents cited by the goods item should include ${document.documentCode} `
+                    + `- codes listed (${rows.map(listed => listed.code).join(', ') || 'none'})`)
+                    .toBeDefined();
+
+                if (!row) {
+                    continue;
+                }
+
+                this.verifyDocumentCell(row.reference, document.documentReference, document.documentCode, 'reference');
+                this.verifyDocumentCell(row.status, document.documentStatus, document.documentCode, 'status');
+                this.verifyDocumentCell(row.reason, document.documentReason, document.documentCode, 'reason');
             }
         });
+    }
+
+    /** One entry per row, so a failure names every document that WAS cited. */
+    private describeDocumentRows(rows: DocumentReferenceRow[]): string {
+        return rows
+            .map(row => [row.code, row.reference, row.status, row.reason]
+                .filter(Boolean).join(' / '))
+            .join(' | ') || 'none';
+    }
+
+    private verifyDocumentCell(
+        actual: string,
+        expected: string | undefined,
+        documentCode: string,
+        field: string
+    ): void {
+        if (expected === undefined) {
+            return;
+        }
+
+        const wanted = expected === '' ? 'to be empty' : `"${expected}"`;
+
+        expect.soft(actual,
+            `${documentCode} ${field} on the goods item (expected ${wanted})`)
+            .toBe(expected);
     }
 
     async verifyNirmsDocumentReferences(nirmsDocumentCodes: string[]): Promise<void> {
@@ -86,9 +122,7 @@ export class GoodsOverviewFlow {
 
         const citations = nirmsDocumentCitations(nirmsDocumentCodes, new Date().getFullYear());
 
-        await this.verifyDocumentReferences(
-            citations.map(citation => citedAs(citation.code, citation.reference))
-        );
+        await this.verifyDocumentReferences(citations);
     }
 
     async verifyAdditionalProcedureCodes(expected: string[]): Promise<void> {

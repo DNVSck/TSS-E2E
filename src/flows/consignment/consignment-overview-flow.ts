@@ -22,6 +22,9 @@ const CONTAINER_IDENTIFIER_FIELD = 'containerIdentifierNumber';
  * (Header previous documents, Holder of authorisation, ...). Every method is a
  * no-op on an empty list, so a journey that declares none of these is unaffected.
  */
+
+export const citedAs = (code: string, value: string): string => `[${code}] ${value}`;
+
 export class ConsignmentOverviewFlow {
     constructor(
         private readonly consignmentOverviewPage: ConsignmentOverviewPage,
