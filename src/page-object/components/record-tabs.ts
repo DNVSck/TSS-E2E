@@ -2,6 +2,7 @@ import { Page, Locator } from '@playwright/test';
 import { BasePage } from '../base-page';
 import { CONSIGNMENT_ACTION } from '../../constant/consignment-action-constant';
 import { hrefsOf } from '../../helper/element-helper';
+import { RENDER_TIMEOUT } from '../../constant/timeout-constant';
 import { GOVUK } from './govuk-selectors';
 
 /**
@@ -96,5 +97,20 @@ export class RecordTabs extends BasePage {
     /** The records the open tab lists, and which of them can be opened. */
     async readRecords(): Promise<{ count: number; links: string[] }> {
         return { count: await this.records.count(), links: await hrefsOf(this.recordLinks) };
+    }
+
+    async waitForTabs(timeoutMs = RENDER_TIMEOUT.TAB_PANEL): Promise<boolean> {
+        await this.tabLinks.first()
+            .waitFor({ state: 'attached', timeout: timeoutMs })
+            .catch(() => undefined);
+        return await this.tabLinks.count() > 0;
+    }
+
+    async openTab(route: string): Promise<boolean> {
+        await this.page.goto(route, { waitUntil: 'domcontentloaded' });
+
+        return waitForOpenTabPanel(this.page, RENDER_TIMEOUT.TAB_PANEL)
+            .then(() => true)
+            .catch(() => false);
     }
 }

@@ -1,6 +1,6 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { PartyBlock, PartyAddress } from './components/party-block';
+import { PartyBlock, PartyAddress, PartyType } from './components/party-block';
 import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
 import { BOOLEAN } from '../constant/radio-value-constant';
 
@@ -137,6 +137,33 @@ export class ConsignmentDeclarePage extends BasePage {
      */
     private async enterPartyEoriAndAddress(party: PartyBlock, eori: string, address: PartyAddress): Promise<void> {
         await party.enterEoriThenAddressIfAsked(eori, address, EORI_OUTCOME_TIMEOUT_MS);
+    }
+
+    async submitPartyEori(party: PartyType, eori: string): Promise<'accepted' | 'address'> {
+        return this.blockFor(party).submitEori(eori, EORI_OUTCOME_TIMEOUT_MS);
+    }
+
+    /** Back out of a party's address screen onto the EORI screen it hangs off. */
+    async returnToPartyEoriScreen(party: PartyType, eoriScreen: string): Promise<void> {
+        await this.page.goto(eoriScreen, { waitUntil: 'domcontentloaded' });
+        await this.blockFor(party).waitForEoriField(EORI_OUTCOME_TIMEOUT_MS);
+    }
+
+    private blockFor(party: PartyType): PartyBlock {
+        const blocks: Partial<Record<PartyType, PartyBlock>> = {
+            importer: this.importer,
+            buyer: this.buyer,
+            consignor: this.consignor,
+            consignee: this.consignee,
+            exporter: this.exporter,
+            seller: this.seller,
+        };
+        const block = blocks[party];
+
+        if (!block) {
+            throw new Error(`The consignment wizard has no "${party}" party block.`);
+        }
+        return block;
     }
 
     // ===================== Buyer =====================

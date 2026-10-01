@@ -7,6 +7,7 @@ import {
 } from '../../api-service/portal-api/company-permission-service';
 import { TariffService } from '../../api-service/portal-api/tariff-service';
 import { ENV } from '../../../config/environment';
+import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 
 /**
  * What a journey must state about itself before the NIRMS rule can be applied to it.
@@ -33,7 +34,11 @@ export class DeclareNirmsFlow {
         private readonly tariffService: TariffService,
     ) { }
 
-    async answerNirms(input: GoodsData, journey: NirmsJourney): Promise<void> {
+    async answerNirms(
+        input: GoodsData,
+        journey: NirmsJourney,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
         const { expected, because, tariffDocumentCodes } = await this.expectedScreen(input, journey);
 
         // IMMI writes its own NIRMS document (1RMS) and never offers the choice; every
@@ -58,10 +63,17 @@ export class DeclareNirmsFlow {
             );
         }
 
+        // Behind "expected", not before it: on a journey the service never asks, a
+        // checkpoint here would scan whatever screen came next under the NIRMS name.
+        if (expected) {
+            await checkpoint?.('Goods item - NIRMS', { probeErrors: true });
+        }
+
         const asked = await this.steps.answerNirmsIfAsked(input);
 
         if (asked === expected) {
             if (asked && input.useNirms && picksDocuments) {
+                await checkpoint?.('Goods item - NIRMS documents', { probeErrors: true });
                 await this.verifyNirmsDocuments(input, tariffDocumentCodes);
             }
             return;

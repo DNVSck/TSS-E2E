@@ -7,6 +7,7 @@ import { ReportLog } from '../core/report/report-log';
 import { UserCredentials } from '../auth/credentials';
 import { generateInvalidTotpCode } from '../core/util/totp-auth';
 import { OTP_ENABLED } from '../../config/environment';
+import { AccessibilityCheckpoint } from './accessibility-audit-flow';
 
 /** The identity provider redirects twice before the portal renders signed-in. */
 const SIGN_IN_TIMEOUT_MS = 60_000;
@@ -14,6 +15,11 @@ const SIGN_IN_TIMEOUT_MS = 60_000;
 export interface OpenSignInInput {
     baseUrl: string;
     testInfo: TestInfo;
+}
+
+export interface SignInAudit {
+    checkpoint: AccessibilityCheckpoint;
+    probeErrors?: boolean;
 }
 
 export interface AuthPageUrls {
@@ -95,10 +101,15 @@ export class SignInFlow {
     }
 
 
-    async signIn(credentials: UserCredentials, input: OpenSignInInput): Promise<void> {
+    async signIn(
+        credentials: UserCredentials,
+        input: OpenSignInInput,
+        audit?: SignInAudit
+    ): Promise<void> {
         await ReportLog.step(`Sign in as ${credentials.username}`, async () => {
             await this.basePage.navigateToPortal(input.baseUrl, input.testInfo);
-            await this.signInFromPortal(credentials);
+            await audit?.checkpoint('Portal landing page (signed out)');
+            await this.signInFromPortal(credentials, audit);
         });
     }
 
@@ -119,10 +130,49 @@ export class SignInFlow {
     }
 
     /** Portal landing page -> signed in. Assumes the portal is already open. */
-    private async signInFromPortal(credentials: UserCredentials): Promise<void> {
-        await this.portalPage.clickSignIn();
+    private async signInFromPortal(
+        credentials: UserCredentials,
+        audit?: SignInAudit
+    ): Promise<void> {
+        if (audit) {
+            await this.portalPage.openSignInChoice();
+            // Not error-probed: this screen accepts an empty submit and goes on to the
+            // identity provider, so a probe would advance the journey rather than
+            // reach an error state.
+            await audit.checkpoint('Portal - sign-in choice');
+            await this.portalPage.confirmSignInChoice();
+        } else {
+            await this.portalPage.clickSignIn();
+        }
+
+        if (audit) {
+            // The identity provider arrives on its own page load, so a scan fired
+            // before it lands would audit the page being navigated away from. On this
+            // path only: signIn below waits for the same field itself.
+            await this.signInPage.waitForPasswordScreen();
+            await audit.checkpoint('Sign-in form (identity provider)');
+        }
+
+        if (audit?.probeErrors) {
+            await this.auditRefusedCredentials('', '', 'submitted empty', audit);
+            await this.auditRefusedCredentials(
+                credentials.username, 'not-the-password', 'wrong password', audit
+            );
+        }
+
         await this.signInPage.signIn(credentials);
-        await this.completeAuthenticatorStep(credentials);
+        await this.completeAuthenticatorStep(credentials, audit);
+    }
+
+    private async auditRefusedCredentials(
+        username: string,
+        password: string,
+        description: string,
+        audit: SignInAudit
+    ): Promise<void> {
+        await this.signInPage.submitCredentials(username, password);
+        await this.signInPage.getSignInErrorMessage();
+        await audit.checkpoint(`Sign-in form - ${description} (error shown)`);
     }
 
 
@@ -132,11 +182,20 @@ export class SignInFlow {
         });
     }
 
-    private async completeAuthenticatorStep(credentials: UserCredentials): Promise<void> {
+    private async completeAuthenticatorStep(
+        credentials: UserCredentials,
+        audit?: SignInAudit
+    ): Promise<void> {
 
         if (!OTP_ENABLED) {
             await this.portalPage.waitUntilSignedIn(SIGN_IN_TIMEOUT_MS);
+            await audit?.checkpoint('Portal home (signed in)');
             return;
+        }
+
+        // Only accounts with more than one credential type are asked to choose.
+        if (audit && await this.signInPage.waitForVerificationStep() === 'choice') {
+            await audit.checkpoint('Sign-in - choose how to verify your identity');
         }
 
         // The authenticator screen arrives on its own page load, so it is given a budget
@@ -148,8 +207,19 @@ export class SignInFlow {
 
         // inputTotp owns the retry across TOTP windows: a code refused because its
         // window has just rolled is resubmitted on the next one.
+        await audit?.checkpoint('Sign-in - authenticator code');
+
+        if (audit?.probeErrors) {
+            await this.signInPage.submitAuthenticatorCode(
+                generateInvalidTotpCode(credentials.totpSecret!)
+            );
+            await this.signInPage.getAuthenticatorCodeErrorMessage();
+            await audit.checkpoint('Sign-in - authenticator code - wrong code (error shown)');
+        }
+
         await this.signInPage.inputTotp(credentials.totpSecret!);
         await this.portalPage.waitUntilSignedIn(SIGN_IN_TIMEOUT_MS);
+        await audit?.checkpoint('Portal home (signed in)');
     }
 
     async getPasswordFieldAutocomplete(): Promise<string | null> {

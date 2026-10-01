@@ -9,6 +9,7 @@ import {
     SUPPLEMENTARY_DECLARATION_STEP as STEP, SupplementaryDeclarationStep,
 } from '../../constant/supplementary-declaration-step-constant';
 import { SupplementaryDeclarationData } from '../../test-data/supplementary-declaration-data';
+import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 
 /**
  * The screens of a supplementary declaration's two wizards, one method per screen.
@@ -50,11 +51,14 @@ export class SupplementaryDeclarationSteps {
     private async answerIfAsked(
         step: SupplementaryDeclarationStep,
         report: string,
-        answer: () => Promise<void>
+        answer: () => Promise<void>,
+        checkpoint?: AccessibilityCheckpoint
     ): Promise<boolean> {
         if (!this.wizard.isOnStep(step)) {
             return false;
         }
+
+        await checkpoint?.(`Supplementary declaration - ${step}`, { probeErrors: true });
 
         await ReportLog.step(report, async () => {
             await answer();
@@ -74,11 +78,15 @@ export class SupplementaryDeclarationSteps {
      * screen through the overview's "Change" link. Either way the screen is the same one
      * and this answers it.
      */
-    async selectMethodOfPaymentIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async selectMethodOfPaymentIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.METHOD_OF_PAYMENT,
             `Choose how the duty will be paid: "${input.methodOfPayment}"`,
-            () => this.commercialTermsPage.selectMethodOfPayment(input.methodOfPayment)
+            () => this.commercialTermsPage.selectMethodOfPayment(input.methodOfPayment),
+            checkpoint
         );
     }
 
@@ -93,13 +101,17 @@ export class SupplementaryDeclarationSteps {
      * the "#", so the screen renders with that error already showing. Seen on both
      * branches - `IMO9198941#TR12LER` and `IMO9198941#BT70ZAR`, SIT 2026-08-20.
      */
-    async enterMeansOfTransportDetailsIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async enterMeansOfTransportDetailsIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         const asVehicle = await this.answerIfAsked(
             STEP.VEHICLE_DETAILS,
             `Replace the pre-populated vehicle registration with "${input.meansOfTransportRegistration}"`,
             () => this.movementPage.enterVehicleDetails(
                 input.meansOfTransportRegistration, input.nationalityMeansOfTransport
-            )
+            ),
+            checkpoint
         );
 
         return asVehicle || this.answerIfAsked(
@@ -107,7 +119,8 @@ export class SupplementaryDeclarationSteps {
             `Replace the pre-populated trailer registration with "${input.meansOfTransportRegistration}"`,
             () => this.movementPage.enterTrailerDetails(
                 input.meansOfTransportRegistration, input.nationalityMeansOfTransport
-            )
+            ),
+            checkpoint
         );
     }
 
@@ -115,68 +128,96 @@ export class SupplementaryDeclarationSteps {
      * "Enter exporter profile" - name and address, with no EORI screen before it. Asked
      * only when the frontier declaration named no exporter.
      */
-    async enterExporterProfileIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async enterExporterProfileIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.EXPORTER_PROFILE,
             `Name the exporter as "${input.exporterName}"`,
-            () => this.consignmentPage.enterExporterProfile(toPartyAddress('exporter', input))
+            () => this.consignmentPage.enterExporterProfile(toPartyAddress('exporter', input)),
+            checkpoint
         );
     }
 
     /** "Delivery terms" - the INCOTERM, and whether the UN/LOCODE is known. */
-    async enterDeliveryTermsIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async enterDeliveryTermsIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.DELIVERY_TERMS,
             `Declare delivery on ${input.incoterm} terms, `
             + `${input.isKnownUnlocode ? 'quoting' : 'without'} a UN/LOCODE`,
-            () => this.commercialTermsPage.enterDeliveryTerms(input.incoterm, input.isKnownUnlocode)
+            () => this.commercialTermsPage.enterDeliveryTerms(input.incoterm, input.isKnownUnlocode),
+            checkpoint
         );
     }
 
     /** "UN/LOCODE" - the screen behind answering yes above. */
-    async selectUnlocodeIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async selectUnlocodeIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.DELIVERY_UNLOCODE,
             `Quote ${input.unlocode} as the delivery location`,
-            () => this.commercialTermsPage.selectUnlocode(input.unlocode)
+            () => this.commercialTermsPage.selectUnlocode(input.unlocode),
+            checkpoint
         );
     }
 
     /** "Delivery country" - the first of the two screens behind answering no. */
-    async selectDeliveryCountryIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async selectDeliveryCountryIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.DELIVERY_COUNTRY,
             `Select ${input.deliveryCountryCode} as the delivery country`,
-            () => this.commercialTermsPage.selectDeliveryCountry(input.deliveryCountryCode)
+            () => this.commercialTermsPage.selectDeliveryCountry(input.deliveryCountryCode),
+            checkpoint
         );
     }
 
     /** "Delivery place" - the options are filtered by the country chosen before it. */
-    async selectDeliveryPlaceIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async selectDeliveryPlaceIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.DELIVERY_PLACE,
             `Select ${input.deliveryPlaceUnlocode} as the delivery place`,
-            () => this.commercialTermsPage.selectDeliveryPlace(input.deliveryPlaceUnlocode)
+            () => this.commercialTermsPage.selectDeliveryPlace(input.deliveryPlaceUnlocode),
+            checkpoint
         );
     }
 
     /** "What is the currency of the invoice?" */
-    async selectInvoiceCurrencyIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async selectInvoiceCurrencyIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.INVOICE_CURRENCY,
             `Declare the invoice in ${input.invoiceCurrency}`,
-            () => this.consignmentPage.selectInvoiceCurrency(input.invoiceCurrency)
+            () => this.consignmentPage.selectInvoiceCurrency(input.invoiceCurrency),
+            checkpoint
         );
     }
 
     // ===================== Goods item =====================
 
     /** "Country of origin" */
-    async selectCountryOfOriginIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async selectCountryOfOriginIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.COUNTRY_OF_ORIGIN,
             `Declare ${input.countryOfOrigin} as the country of origin`,
-            () => this.goodsPage.enterCountryOfOrigin(input.countryOfOrigin)
+            () => this.goodsPage.enterCountryOfOrigin(input.countryOfOrigin),
+            checkpoint
         );
     }
 
@@ -184,11 +225,15 @@ export class SupplementaryDeclarationSteps {
      * "Commodity information" - only the supplementary units are typed; the code and
      * the description arrive from the frontier declaration.
      */
-    async enterSupplementaryUnitsIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async enterSupplementaryUnitsIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.COMMODITY_INFORMATION,
             `Add the supplementary units (${input.supplementaryUnits}) the tariff wants for this commodity`,
-            () => this.goodsPage.enterSupplementaryUnits(input.supplementaryUnits)
+            () => this.goodsPage.enterSupplementaryUnits(input.supplementaryUnits),
+            checkpoint
         );
     }
 
@@ -196,34 +241,46 @@ export class SupplementaryDeclarationSteps {
      * "Enter weight information" - the gross mass arrives from the frontier
      * declaration, so only the net mass is new here.
      */
-    async enterNetMassIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async enterNetMassIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.WEIGHT_INFORMATION,
             `Add the net mass (${input.netMass}) the frontier declaration never took`,
             async () => {
                 await this.goodsPage.inputNetMass(input.netMass);
                 await this.goodsPage.clickContinueButton();
-            }
+            },
+            checkpoint
         );
     }
 
     /** "Nature of goods" - the reason the goods are moving, at item level. */
-    async selectNatureOfGoodsIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async selectNatureOfGoodsIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.NATURE_OF_GOODS,
             `Declare the nature of the transaction as ${input.natureOfGoods}`,
-            () => this.goodsPage.selectNatureOfGoods(input.natureOfGoods)
+            () => this.goodsPage.selectNatureOfGoods(input.natureOfGoods),
+            checkpoint
         );
     }
 
     /** "Enter preference and valuation details" - what the duty rate is worked out from. */
-    async enterPreferenceAndValuationIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async enterPreferenceAndValuationIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.PREFERENCE_AND_VALUATION,
             `Claim preference ${input.preference} and value the goods by method ${input.valuationMethod}`,
             () => this.goodsPage.enterPreferenceAndValuation(
                 input.preference, input.valuationMethod, input.countryOfPreferentialOrigin
-            )
+            ),
+            checkpoint
         );
     }
 
@@ -234,22 +291,30 @@ export class SupplementaryDeclarationSteps {
      * [N935] invoice document reference to the goods item by itself, so nothing needs
      * to declare that document separately.
      */
-    async enterInvoiceDetailsIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async enterInvoiceDetailsIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.INVOICE_DETAILS,
             `Price the goods at ${input.itemPrice} ${input.itemCurrency} on invoice ${input.invoiceNumber}`,
             () => this.goodsPage.enterInvoiceDetails(
                 input.itemPrice, input.invoiceNumber, input.itemCurrency
-            )
+            ),
+            checkpoint
         );
     }
 
     /** "Statistical value" - the last answer the goods wizard needs. */
-    async enterStatisticalValueIfAsked(input: SupplementaryDeclarationData): Promise<boolean> {
+    async enterStatisticalValueIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         return this.answerIfAsked(
             STEP.STATISTICAL_VALUE,
             `Declare a statistical value of ${input.statisticalValue}`,
-            () => this.goodsPage.enterStatisticalValue(input.statisticalValue)
+            () => this.goodsPage.enterStatisticalValue(input.statisticalValue),
+            checkpoint
         );
     }
 
@@ -263,7 +328,9 @@ export class SupplementaryDeclarationSteps {
      * a wizard that is not on its last screen has left questions unanswered - which is
      * a failure worth seeing rather than skipping past.
      */
-    async completeWizard(what: string): Promise<void> {
+    async completeWizard(what: string, checkpoint?: AccessibilityCheckpoint): Promise<void> {
+        await checkpoint?.(`Supplementary declaration - ${what} check your answers`);
+
         await ReportLog.step(`Confirm the ${what} answers`, async () => {
             await this.goodsPage.clickFinishButton();
         });
@@ -277,12 +344,15 @@ export class SupplementaryDeclarationSteps {
      * there is nothing to confirm yet. Gated for that reason, unlike completeWizard,
      * where landing anywhere else means questions went unanswered.
      */
-    async completeWizardIfOnCheckYourAnswers(what: string): Promise<boolean> {
+    async completeWizardIfOnCheckYourAnswers(
+        what: string,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         if (!this.wizard.isOnStep(STEP.CHECK_YOUR_ANSWERS)) {
             return false;
         }
 
-        await this.completeWizard(what);
+        await this.completeWizard(what, checkpoint);
         return true;
     }
 }

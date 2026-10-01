@@ -1,4 +1,4 @@
-import { BasePage } from "./base-page";
+import { BasePage, WizardStep } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { selectDropdownValue } from '../helper/element-helper';
 import { DocumentReferenceData } from '../test-data/document-reference-data';
@@ -88,12 +88,23 @@ export class DocumentReferenceDeclarePage extends BasePage {
     }
 
     /** The whole wizard for a single document-reference record. */
+    steps(input: DocumentReferenceData): WizardStep[] {
+        return [
+            { screen: 'document code', answer: () => this.selectDocumentCode(input.documentCode) },
+            { screen: 'document status', answer: () => this.selectDocumentStatusIfPresent(input.documentStatus) },
+            {
+                screen: 'document reference',
+                answer: () => this.enterDocumentReference(input.documentReference, input.documentPartReference),
+            },
+            { screen: 'document reason', answer: () => this.enterDocumentReason(input.documentReason) },
+            { screen: 'document file', answer: () => this.uploadDocumentFile(input.documentFilePath) },
+        ];
+    }
+
     async declareDocumentReference(input: DocumentReferenceData): Promise<string[]> {
-        await this.selectDocumentCode(input.documentCode);
-        await this.selectDocumentStatusIfPresent(input.documentStatus);
-        await this.enterDocumentReference(input.documentReference, input.documentPartReference);
-        await this.enterDocumentReason(input.documentReason);
-        await this.uploadDocumentFile(input.documentFilePath);
+        for (const step of this.steps(input)) {
+            await step.answer();
+        }
         return this.confirmAndSubmit();
     }
 }

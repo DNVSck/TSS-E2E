@@ -9,6 +9,7 @@ import {
     SfdStandaloneConsignmentData, sfdStandaloneConsignment,
 } from '../../test-data/sfd-standalone-consignment-data';
 import { GoodsData, goods } from '../../test-data/goods-data';
+import { AccessibilityAudit, checkpointFor } from '../accessibility-audit-flow';
 import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { UserCredentials } from '../../auth/credentials';
@@ -20,6 +21,7 @@ export interface SfdStandaloneDeclarationOptions {
     url: string;
     consignmentOverrides?: Partial<SfdStandaloneConsignmentData>;
     goodsItemOverrides?: Partial<GoodsData>;
+    audit?: AccessibilityAudit;
 }
 
 /** An SFD standalone declaration built and left in Draft. */
@@ -66,14 +68,18 @@ export class CreateDraftSfdStandaloneFlow {
         reportTestAccount(this.authAccount, 'createDraftSfdStandalone');
         reportDeclarationCodes(goodsData);
 
+        const checkpoint = checkpointFor(options.audit, testInfo);
+        const auditTabs = (record: string) =>
+            options.audit?.verifyEveryTab({ testInfo, record });
+
         await this.accessFlow.openService({ baseUrl: url, testInfo });
         const initialForm = initialFormData({
             typeOfSubmission: INITIAL_FORM_DECLARATION.TYPE_OF_SUBMISSION.STANDALONE,
             standaloneDeclarationType: INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.SIMPLIFIED_DECLARATION,
             typeOfEnsSubmission: undefined,
         });
-        await this.initialFormFlow.completeInitialFormDeclaration(initialForm);
-        await this.addConsignmentFlow.addNewSfdStandaloneConsignment(consignmentData);
+        await this.initialFormFlow.completeInitialFormDeclaration(initialForm, checkpoint);
+        await this.addConsignmentFlow.addNewSfdStandaloneConsignment(consignmentData, checkpoint);
         // Report the LRN as soon as the draft exists, before anything that could fail.
         //
         // PREFIX CHECK OFF - defect 1239. It normally asserts "DEC", which says the SFD
@@ -83,13 +89,15 @@ export class CreateDraftSfdStandaloneFlow {
         // whole journey. Pass LOCAL_REFERENCE.DEC_PREFIX again once 1239 is fixed.
         const consignmentReference =
             await this.consignmentOverviewFlow.verifyStandaloneConsignmentLrn();
+        await auditTabs('Consignment');
+        await this.consignmentOverviewFlow.auditRecordWizards(options.audit, testInfo);
         await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
         await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
 
         await this.addGoodsItemFlow.addNewSfdStandaloneGoodsItem(goodsData, {
             isControlledConsignment: consignmentData.isControlledGoods,
             declaringForEori: initialForm.declaringForEori,
-        });
+        }, checkpoint);
         if (goodsData.useNirms) {
             await this.goodsOverviewFlow.verifyNirmsDocumentReferences(goodsData.nirmsDocumentCodes);
         }
@@ -97,6 +105,8 @@ export class CreateDraftSfdStandaloneFlow {
         // Goods-item-overview tabs, declared while on the goods item's overview.
         await this.goodsOverviewFlow.declareDocumentReferences(goodsData.documentReferences);
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
+        await auditTabs('Goods item');
+        await this.goodsOverviewFlow.auditRecordWizards(options.audit, testInfo);
 
         // The goods-item work above leaves the browser on the GOODS ITEM overview;
         // everything a caller does next lives on the consignment overview.

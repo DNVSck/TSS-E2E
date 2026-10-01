@@ -1,4 +1,4 @@
-import { BasePage } from "./base-page";
+import { BasePage, WizardStep } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { selectDropdownValue } from '../helper/element-helper';
 import { HolderOfAuthorisationData } from '../test-data/holder-of-authorisation-data';
@@ -43,9 +43,17 @@ export class HolderOfAuthorisationDeclarePage extends BasePage {
     }
 
     /** The whole wizard for a single holder-of-authorisation record. */
+    steps(input: HolderOfAuthorisationData): WizardStep[] {
+        return [
+            { screen: 'type code', answer: () => this.selectTypeCode(input.typeCode) },
+            { screen: 'role ID', answer: () => this.enterRoleId(input.roleId) },
+        ];
+    }
+
     async declareHolderOfAuthorisation(input: HolderOfAuthorisationData): Promise<string[]> {
-        await this.selectTypeCode(input.typeCode);
-        await this.enterRoleId(input.roleId);
+        for (const step of this.steps(input)) {
+            await step.answer();
+        }
         return this.confirmAndSubmit();
     }
 }

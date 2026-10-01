@@ -13,6 +13,11 @@ const CONTENT_TIMEOUT = 20_000;
 
 const WRONG_SCREEN_GRACE = 5_000;
 
+export interface WizardStep {
+    screen: string;
+    answer: () => Promise<void>;
+}
+
 /** One action button, and whether the screen will actually let it be used. */
 export interface ActionButton {
     /** The posted value that names the action, e.g. "submit-consignment". */
@@ -152,6 +157,23 @@ export class BasePage {
 
     protected async finishAndReadErrors(): Promise<string[]> {
         return submitAndReadErrors(this.page, this.commonFinishButton);
+    }
+
+    async continueAndReadErrors(): Promise<string[]> {
+        return submitAndReadErrors(this.page, this.commonContinueButton);
+    }
+
+    async readScreenshot(): Promise<Buffer> {
+        return this.page.screenshot();
+    }
+
+    async waitForPageSettled(): Promise<void> {
+        await this.page.waitForLoadState('domcontentloaded');
+    }
+
+    /** Leave wherever this is for a screen whose address was recorded earlier. */
+    async returnTo(url: string): Promise<void> {
+        await this.page.goto(url, { waitUntil: 'domcontentloaded' });
     }
 
     async clickBackLink(): Promise<void> {

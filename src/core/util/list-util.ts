@@ -74,7 +74,9 @@ export class ListUtil {
      * Remove item at specific index
      */
     static removeAt<T>(list: T[], index: number): T[] {
-        if (index < 0 || index >= list.length) return [...list];
+        if (index < 0 || index >= list.length) {
+            return [...list];
+        }
         const result = [...list];
         result.splice(index, 1);
         return result;
@@ -85,7 +87,7 @@ export class ListUtil {
      */
     static removeAtIndices<T>(list: T[], indices: number[]): T[] {
         const sortedIndices = [...indices].sort((a, b) => b - a); // Sort in descending order
-        let result = [...list];
+        const result = [...list];
         for (const index of sortedIndices) {
             if (index >= 0 && index < result.length) {
                 result.splice(index, 1);
@@ -97,7 +99,7 @@ export class ListUtil {
     /**
      * Clear all items from list
      */
-    static clear<T>(list: T[]): T[] {
+    static clear<T>(): T[] {
         return [];
     }
 
@@ -112,7 +114,9 @@ export class ListUtil {
      * Set item at specific index
      */
     static set<T>(list: T[], index: number, item: T): T[] {
-        if (index < 0 || index >= list.length) return [...list];
+        if (index < 0 || index >= list.length) {
+            return [...list];
+        }
         const result = [...list];
         result[index] = item;
         return result;
@@ -224,9 +228,13 @@ export class ListUtil {
         return [...list].sort((a, b) => {
             const aVal = a[property];
             const bVal = b[property];
-            
-            if (aVal < bVal) return direction === 'asc' ? -1 : 1;
-            if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+
+            if (aVal < bVal) {
+                return direction === 'asc' ? -1 : 1;
+            }
+            if (aVal > bVal) {
+                return direction === 'asc' ? 1 : -1;
+            }
             return 0;
         });
     }
@@ -235,19 +243,16 @@ export class ListUtil {
      * Shuffle the list randomly
      */
     static shuffle<T>(list: T[]): T[] {
-        const result = [...list];
-        for (let i = result.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [result[i], result[j]] = [result[j], result[i]];
-        }
-        return result;
+        return faker.helpers.shuffle(list);
     }
 
     /**
      * Rotate list by N positions
      */
     static rotate<T>(list: T[], positions: number): T[] {
-        if (list.length === 0) return [...list];
+        if (list.length === 0) {
+            return [...list];
+        }
         const normalizedPositions = ((positions % list.length) + list.length) % list.length;
         return [...list.slice(normalizedPositions), ...list.slice(0, normalizedPositions)];
     }
@@ -284,7 +289,7 @@ export class ListUtil {
      * Find all items matching predicate
      */
     static findAll<T>(list: T[], predicate: (item: T, index: number) => boolean): T[] {
-        return list.filter(predicate);
+        return this.filter(list, predicate);
     }
 
     /**
@@ -335,14 +340,12 @@ export class ListUtil {
      * Group items by key function
      */
     static groupBy<T, K extends string | number | symbol>(
-        list: T[], 
+        list: T[],
         keySelector: (item: T) => K
     ): Record<K, T[]> {
         return list.reduce((groups, item) => {
             const key = keySelector(item);
-            if (!groups[key]) {
-                groups[key] = [];
-            }
+            groups[key] ??= [];
             groups[key].push(item);
             return groups;
         }, {} as Record<K, T[]>);
@@ -354,7 +357,7 @@ export class ListUtil {
     static partition<T>(list: T[], predicate: (item: T) => boolean): [T[], T[]] {
         const passed: T[] = [];
         const failed: T[] = [];
-        
+
         for (const item of list) {
             if (predicate(item)) {
                 passed.push(item);
@@ -362,7 +365,7 @@ export class ListUtil {
                 failed.push(item);
             }
         }
-        
+
         return [passed, failed];
     }
 
@@ -452,16 +455,20 @@ export class ListUtil {
      * Get random item
      */
     static random<T>(list: T[]): T | undefined {
-        return list.length === 0 ? undefined : list[Math.floor(Math.random() * list.length)];
+        return list.length === 0 ? undefined : faker.helpers.arrayElement(list);
     }
 
     /**
      * Get multiple random items (no duplicates)
      */
     static randomMultiple<T>(list: T[], count: number): T[] {
-        if (list.length === 0 || count <= 0) return [];
-        if (count >= list.length) return this.shuffle(list);
-        
+        if (list.length === 0 || count <= 0) {
+            return [];
+        }
+        if (count >= list.length) {
+            return this.shuffle(list);
+        }
+
         const shuffled = this.shuffle(list);
         return shuffled.slice(0, count);
     }
@@ -494,5 +501,5 @@ export class ListUtil {
         return list.length === 0 ? 0 : this.sum(list) / list.length;
     }
 
-   
+
 }

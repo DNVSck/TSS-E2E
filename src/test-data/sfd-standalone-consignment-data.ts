@@ -6,6 +6,7 @@ import { PreviousDocumentData } from './previous-document-data';
 import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
 import { CONTAINER_SIZE } from '../constant/container-size-constant';
 import { CONTAINER_SUPPLIER_TYPE } from '../constant/container-supplier-type-constant';
+import { REPRESENTATION_TYPE } from '../constant/representation-type-constant';
 import { CONTAINER_PACKED_STATUS } from '../constant/container-packed-status-constant';
 import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
 import {
@@ -146,4 +147,11 @@ export const sfdStandaloneConsignment = (
         arrivalDateTime: data.arrivalDateTime
             ?? (data.isPreLodged ? generateValidArrivalDate() : generatePastArrivalDate()),
     };
+};
+
+export const SFD_STANDALONE_MAX_SCREEN_COVERAGE: Partial<SfdStandaloneConsignmentData> = {
+    representationType: REPRESENTATION_TYPE.DIRECT,
+    isControlledGoods: true,
+    isTransportingInContainers: true,
+    isSameContainer: true,
 };

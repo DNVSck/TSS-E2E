@@ -9,6 +9,7 @@ import {
     ImmiStandaloneConsignmentData, immiStandaloneConsignment,
 } from '../../test-data/immi-standalone-consignment-data';
 import { GoodsData, goods } from '../../test-data/goods-data';
+import { AccessibilityAudit, checkpointFor } from '../accessibility-audit-flow';
 import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
@@ -23,6 +24,7 @@ export interface ImmiStandaloneDeclarationOptions {
     url: string;
     consignmentOverrides?: Partial<ImmiStandaloneConsignmentData>;
     goodsItemOverrides?: Partial<GoodsData>;
+    audit?: AccessibilityAudit;
 }
 
 /** An IMMI standalone declaration built and left in Draft. */
@@ -68,6 +70,10 @@ export class CreateDraftImmiStandaloneFlow {
         reportTestAccount(this.authAccount, 'createDraftImmiStandalone');
         reportDeclarationCodes(goodsData);
 
+        const checkpoint = checkpointFor(options.audit, testInfo);
+        const auditTabs = (record: string) =>
+            options.audit?.verifyEveryTab({ testInfo, record });
+
         // Held rather than passed inline: the company this journey declares for gates
         // two screens at opposite ends of it - the standalone type here and the TGP
         // question on the goods item - and reading both from one value is what stops
@@ -80,19 +86,21 @@ export class CreateDraftImmiStandaloneFlow {
         });
 
         await this.accessFlow.openService({ baseUrl: url, testInfo });
-        await this.initialFormFlow.completeInitialFormDeclaration(initialForm);
-        await this.addConsignmentFlow.addNewImmiStandaloneConsignment(consignmentData);
+        await this.initialFormFlow.completeInitialFormDeclaration(initialForm, checkpoint);
+        await this.addConsignmentFlow.addNewImmiStandaloneConsignment(consignmentData, checkpoint);
         // Report the LRN as soon as the draft exists, before anything that could fail.
         // IMMI stamps a "GLR" reference, so asserting the prefix asserts the journey
         // that actually ran rather than merely that some standalone draft exists.
         const consignmentReference = await this.consignmentOverviewFlow
             .verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.GLR_PREFIX);
+        await auditTabs('Consignment');
+        await this.consignmentOverviewFlow.auditRecordWizards(options.audit, testInfo);
         // Consignment-overview tabs, declared before the goods item (no-op on empty lists).
         await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
         await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
 
         const usedTgp = await this.addGoodsItemFlow
-            .addNewImmiStandaloneGoodsItem(goodsData, initialForm.declaringForEori);
+            .addNewImmiStandaloneGoodsItem(goodsData, initialForm.declaringForEori, checkpoint);
         // A TGP item never typed its commodity code, description or country of origin -
         // the service copied them from the record - so the overview is the only place
         // that proves the record was applied. No-op when the item did not use TGP.
@@ -109,6 +117,8 @@ export class CreateDraftImmiStandaloneFlow {
         await this.goodsOverviewFlow.declareAdditionalProcedureCodes(goodsData.additionalProcedureCodes);
         await this.goodsOverviewFlow.declareTaricAdditionalCodes(goodsData.taricAdditionalCodes);
         await this.goodsOverviewFlow.declareNationalAdditionalCodes(goodsData.nationalAdditionalCodes);
+        await auditTabs('Goods item');
+        await this.goodsOverviewFlow.auditRecordWizards(options.audit, testInfo);
 
         // The goods-item work above leaves the browser on the GOODS ITEM overview (on
         // whichever tab was declared last); everything a caller does next lives on the

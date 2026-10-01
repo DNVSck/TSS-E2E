@@ -60,13 +60,17 @@ export class SignInPage extends BasePage {
      *
      */
     async selectAuthenticatorApp(): Promise<void> {
+        // The OTP screen winning the race means this account was never asked to choose.
+        if (await this.waitForVerificationStep() === 'code') return;
+
+        await this.chooseVerification(this.authenticatorAppOption);
+    }
+
+    async waitForVerificationStep(): Promise<'choice' | 'code'> {
         await this.totpCodeInput.or(this.authenticatorAppOption)
             .first().waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
 
-        // The OTP screen won the race, so this account was never asked to choose.
-        if (!await this.authenticatorAppOption.isVisible()) return;
-
-        await this.chooseVerification(this.authenticatorAppOption);
+        return await this.authenticatorAppOption.isVisible() ? 'choice' : 'code';
     }
 
     /**
@@ -164,6 +168,10 @@ export class SignInPage extends BasePage {
      */
     async submitAuthenticatorCode(code: string): Promise<void> {
         await this.submitCode(code);
+    }
+
+    async waitForPasswordScreen(): Promise<void> {
+        await this.passwordInput.waitFor({ state: 'visible', timeout: AUTH_SCREEN_TIMEOUT });
     }
 
 

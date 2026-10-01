@@ -120,3 +120,8 @@ export const immiStandaloneConsignment = (
             ?? (data.isPreLodged ? generateValidArrivalDate() : generatePastArrivalDate()),
     };
 };
+
+export const IMMI_STANDALONE_MAX_SCREEN_COVERAGE: Partial<ImmiStandaloneConsignmentData> = {
+    representationType: REPRESENTATION_TYPE.DIRECT,
+    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+};

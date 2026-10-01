@@ -399,9 +399,17 @@ export async function switchToTabAndClickNew(
     tab: Locator,
     newButton: Locator
 ): Promise<void> {
+    await openNewRecordWizard(page, newButton, () => clickLinkAndWaitForRoute(page, tab));
+}
+
+export async function openNewRecordWizard(
+    page: Page,
+    newButton: Locator,
+    reachTab: () => Promise<void>
+): Promise<void> {
     for (let attempt = 1; attempt <= TAB_SWITCH_ATTEMPTS; attempt++) {
         try {
-            await clickLinkAndWaitForRoute(page, tab);
+            await reachTab();
             await newButton.waitFor({ state: 'visible', timeout: NEW_RECORD_BUTTON_TIMEOUT });
 
             const tabRoute = StringUtil.stripTrailingSlashes(new URL(page.url()).pathname);

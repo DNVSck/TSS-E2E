@@ -90,6 +90,10 @@ export class PartyBlock extends BasePage {
         this.countryDropdown = page.locator(`select#${party}Country`);
     }
 
+    async waitForEoriField(timeoutMs: number): Promise<void> {
+        await this.eoriInput.waitFor({ state: 'visible', timeout: timeoutMs });
+    }
+
     /** Fill the EORI field only (caller decides when to continue). */
     async fillEori(eori: string): Promise<void> {
         await this.eoriInput.fill(eori);

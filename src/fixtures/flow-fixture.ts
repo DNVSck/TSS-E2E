@@ -11,6 +11,7 @@ import { StandaloneConsignmentSteps } from '../flows/consignment/standalone-cons
 import { MovementOverviewFlow } from '../flows/movement/movement-overview-flow';
 import { PageFixtureType } from './page-fixture';
 import { CreateAndSubmitEnsDeclarationFlow } from '../flows/common-flows/create-and-submit-ens-declaration-flow';
+import { AuditDeclarationFlow } from '../flows/common-flows/audit-declaration-flow';
 import { RaiseMovementForGmrFlow } from '../flows/common-flows/raise-movement-for-gmr-flow';
 import {
     RaiseMovementForGmrThroughApiFlow,
@@ -56,6 +57,8 @@ import { CompanySessionFixtureType } from './company-session-fixture';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
 import { APIFixtureType } from './api-fixture';
 import { SecondDeviceFixtureType } from './second-device-fixture';
+import { AxeFixtureType } from './axe-fixture';
+import { AccessibilityAuditFlow } from '../flows/accessibility-audit-flow';
 
 export type FlowFixtureType = {
     // Business Flows
@@ -66,6 +69,8 @@ export type FlowFixtureType = {
     companyProfileFlow: CompanyProfileFlow;
     companyProfileEditFlow: CompanyProfileEditFlow;
     representTraderFlow: RepresentTraderFlow;
+
+    accessibilityAuditFlow: AccessibilityAuditFlow;
 
     // Reads what a declaration lets the signed-in company do with it. Used by the
     // representation-authority specs, not by the journey specs.
@@ -111,6 +116,7 @@ export type FlowFixtureType = {
 
     // Common Flows
     createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow;
+    auditDeclarationFlow: AuditDeclarationFlow;
     raiseMovementForGmrFlow: RaiseMovementForGmrFlow;
     raiseMovementForGmrThroughApiFlow: RaiseMovementForGmrThroughApiFlow;
     // One flow per standalone journey: each owns its consignment wizard AND its goods
@@ -133,11 +139,15 @@ export type FlowFixtureType = {
 
 // LocaleFixtureType is in the union because two flows take `t` themselves - deciding
 // what a translated status means for a journey is flow-level, not page-level.
-type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType & APIFixtureType & LocaleFixtureType & SecondDeviceFixtureType & CompanySessionFixtureType>>;
+type ExtendParams = Parameters<typeof test.extend<FlowFixtureType & PageFixtureType & WorkerAuthFixtureType & APIFixtureType & LocaleFixtureType & SecondDeviceFixtureType & CompanySessionFixtureType & AxeFixtureType>>;
 
 export const flowFixture: ExtendParams[0] = {
     portalAccessFlow: async ({ basePage, portalPage }, use) => {
         await use(new PortalAccessFlow(basePage, portalPage));
+    },
+
+    accessibilityAuditFlow: async ({ basePage, recordTabs, makeAxeBuilder }, use) => {
+        await use(new AccessibilityAuditFlow(basePage, recordTabs, makeAxeBuilder));
     },
 
     signInFlow: async ({ basePage, portalPage, signInPage, navigationBanner }, use) => {
@@ -336,6 +346,19 @@ export const flowFixture: ExtendParams[0] = {
     }, use) => {
         await use(new CreateAndSubmitEnsDeclarationFlow(
             createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow, goodsOverviewFlow
+        ));
+    },
+
+    auditDeclarationFlow: async ({
+        createDraftEnsDeclarationFlow, createDraftSfdStandaloneFlow, createDraftImmiStandaloneFlow,
+        consignmentOverviewFlow, movementOverviewFlow, completeAndSubmitSupplementaryDeclarationFlow,
+        createAndSubmitGmrFlow, gmrDetailsPage, gmrOverviewFlow
+    }, use) => {
+        await use(new AuditDeclarationFlow(
+            createDraftEnsDeclarationFlow, createDraftSfdStandaloneFlow,
+            createDraftImmiStandaloneFlow, consignmentOverviewFlow, movementOverviewFlow,
+            completeAndSubmitSupplementaryDeclarationFlow, createAndSubmitGmrFlow, gmrDetailsPage,
+            gmrOverviewFlow
         ));
     },
 

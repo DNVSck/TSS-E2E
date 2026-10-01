@@ -14,3 +14,5 @@ export const gmrData = (overrides?: Partial<GmrData>): GmrData => ({
     ...defaults,
     ...overrides,
 });
+
+export const AUDIT_CONTACT_EMAIL = 'accessibility.audit@nifreight.co.uk';

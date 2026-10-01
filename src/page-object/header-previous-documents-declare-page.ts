@@ -1,4 +1,4 @@
-import { BasePage } from "./base-page";
+import { BasePage, WizardStep } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
 import { PreviousDocumentData } from '../test-data/previous-document-data';
@@ -51,9 +51,23 @@ export class PreviousDocumentDeclarePage extends BasePage {
     }
 
     /** The whole wizard for a single previous-document record. */
+    steps(input: PreviousDocumentData): WizardStep[] {
+        return [
+            {
+                screen: 'category and type',
+                answer: () => this.selectDocumentCategoryAndType(input.documentCategory, input.documentType),
+            },
+            {
+                screen: 'details',
+                answer: () => this.enterPreviousDocumentDetails(input.documentReference, input.goodsItemIdentifier),
+            },
+        ];
+    }
+
     async declarePreviousDocument(input: PreviousDocumentData): Promise<string[]> {
-        await this.selectDocumentCategoryAndType(input.documentCategory, input.documentType);
-        await this.enterPreviousDocumentDetails(input.documentReference, input.goodsItemIdentifier);
+        for (const step of this.steps(input)) {
+            await step.answer();
+        }
         return this.confirmAndSubmit();
     }
 }

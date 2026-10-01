@@ -142,28 +142,25 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
         return removeTaskListRecord(this.page, typeCode);
     }
 
-    async submitAndConfirmPartiesIfAsked(): Promise<'submitted' | 'parties-confirmed'> {
+    /** Stops on the unauthorised-parties screen when it is put, so a caller can read it. */
+    async submitAndWaitForPartiesQuestion(): Promise<boolean> {
         await this.submitButton.click();
 
-        const asked = await this.page
+        return this.page
             .waitForURL(
                 `**/${SUPPLEMENTARY_DECLARATION_ROUTE.UNAUTHORISED_PARTIES_SEGMENT}`,
                 { timeout: UNAUTHORISED_PARTIES_TIMEOUT }
             )
             .then(() => true)
             .catch(() => false);
+    }
 
-        if (!asked) {
-            return 'submitted';
-        }
-
+    async confirmUnauthorisedParties(): Promise<void> {
         await this.submitButton.click();
         await this.page.waitForURL(
             url => !url.pathname.endsWith(SUPPLEMENTARY_DECLARATION_ROUTE.UNAUTHORISED_PARTIES_SEGMENT),
             { timeout: SUBMISSION_LANDING_TIMEOUT }
         );
-
-        return 'parties-confirmed';
     }
 
     /**

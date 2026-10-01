@@ -1,4 +1,4 @@
-import { BasePage } from "./base-page";
+import { BasePage, WizardStep } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 
 /**
@@ -32,8 +32,14 @@ export class ExternalContactDeclarePage extends BasePage {
     }
 
     /** The whole wizard for a single external-contact record. */
+    steps(contactEmail: string): WizardStep[] {
+        return [{ screen: 'contact details', answer: () => this.inputContactEmail(contactEmail) }];
+    }
+
     async addNewExternalContact(contactEmail: string): Promise<string[]> {
-        await this.inputContactEmail(contactEmail);
+        for (const step of this.steps(contactEmail)) {
+            await step.answer();
+        }
         return this.confirmAndSubmit();
     }
 }

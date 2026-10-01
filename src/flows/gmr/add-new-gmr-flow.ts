@@ -7,6 +7,7 @@ import { ReportLog } from '../../core/report/report-log';
 import { GmrData } from '../../test-data/gmr-data';
 import { TFunction } from '../../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
+import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 
 export class AddNewGMRFlow {
 
@@ -18,10 +19,15 @@ export class AddNewGMRFlow {
         private readonly t: TFunction,
     ) { }
 
-    async addNewGmrAndSubmit(input: GmrData): Promise<string> {
+    async addNewGmrAndSubmit(
+        input: GmrData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<string> {
         await this.returnToMovementOverview();
         await this.goToCreateNewGMR();
+        await checkpoint?.('GMR - route', { probeErrors: true });
         await this.chooseRouteId(input);
+        await checkpoint?.('GMR - check your answers');
         await this.finishGMRCreation();
         await this.gmrOverviewFlow.declareExternalContacts(input.external_contacts_list);
         const localReferenceNumber = await this.verifyDraftGmr();

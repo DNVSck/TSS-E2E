@@ -4,6 +4,7 @@ import { ReportLog } from '../../core/report/report-log';
 import { MovementSteps } from '../movement/movement-steps';
 import { ConsignmentSteps } from './consignment-steps';
 import { StandaloneConsignmentSteps } from './standalone-consignment-steps';
+import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 
 /**
  * The SFD standalone "Transport Details" task, from the task list through to Finish.
@@ -24,11 +25,16 @@ export class AddNewSfdStandaloneConsignmentFlow {
         private readonly consignmentSteps: ConsignmentSteps,
     ) { }
 
-    async addNewSfdStandaloneConsignment(input: SfdStandaloneConsignmentData): Promise<void> {
+    async addNewSfdStandaloneConsignment(
+        input: SfdStandaloneConsignmentData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
         await ReportLog.step('Add new SFD standalone consignment', async () => {
+            await checkpoint?.('Consignment - pre-lodged or arrived', { probeErrors: true });
             await this.standaloneSteps.declarePreLodgedOrArrived(input.isPreLodged);
 
             if (input.representationType) {
+                await checkpoint?.('Consignment - representation type', { probeErrors: true });
                 await this.standaloneSteps.selectRepresentationType(input.representationType);
             }
 
@@ -41,20 +47,23 @@ export class AddNewSfdStandaloneConsignmentFlow {
             // timing out on a port dropdown that was one screen further on. The
             // pre-lodged/arrived difference is in the VALUE, which the data factory has
             // already resolved.
+            await checkpoint?.('Movement - arrival date and time', { probeErrors: true });
             await this.movementSteps.inputArrivalDateTime(
                 input.arrivalDateTime,
                 { collectsYear: !input.isPreLodged, collectsTime: input.isPreLodged }
             );
-            await this.enterArrivalLocation(input);
+            await this.enterArrivalLocation(input, checkpoint);
 
+            await checkpoint?.('Consignment - controlled goods', { probeErrors: true });
             await this.consignmentSteps.declareControlledGoods(input.isControlledGoods);
 
             if (input.isControlledGoods) {
-                await this.declareSfdRoute(input);
+                await this.declareSfdRoute(input, checkpoint);
             } else {
-                await this.declareEidrRoute(input);
+                await this.declareEidrRoute(input, checkpoint);
             }
 
+            await checkpoint?.('Consignment - check your answers');
             await this.standaloneSteps.finishStandaloneConsignment();
         });
     }
@@ -65,11 +74,19 @@ export class AddNewSfdStandaloneConsignmentFlow {
      * question - unlike every other journey, which asks it as one field of "Transport
      * and destination details".
      */
-    private async declareSfdRoute(input: SfdStandaloneConsignmentData): Promise<void> {
+    private async declareSfdRoute(
+        input: SfdStandaloneConsignmentData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
+        await this.consignmentSteps.auditPartyScreens('exporter', checkpoint);
         await this.consignmentSteps.fillExporterDetails(input.exporterEORI, toPartyAddress('exporter', input));
+        // No probe: the trader reference is the one optional field in the wizard.
+        await checkpoint?.('Consignment - trader reference');
         await this.consignmentSteps.fillTraderReference(input.traderReference);
+        await checkpoint?.('Consignment - goods domestic status', { probeErrors: true });
         await this.standaloneSteps.selectGoodsDomesticStatus(input.goodsDomesticStatus);
-        await this.declareContainerInformation(input);
+        await this.declareContainerInformation(input, checkpoint);
+        await checkpoint?.('Consignment - invoice currency', { probeErrors: true });
         await this.consignmentSteps.selectInvoiceCurrency(input.invoiceCurrency);
     }
 
@@ -80,11 +97,15 @@ export class AddNewSfdStandaloneConsignmentFlow {
      * journey it skips what the controlled-goods route asks for either side of them -
      * the exporter, the trader reference and the invoice currency.
      */
-    private async declareEidrRoute(input: SfdStandaloneConsignmentData): Promise<void> {
+    private async declareEidrRoute(
+        input: SfdStandaloneConsignmentData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
+        await checkpoint?.('Consignment - transport and destination', { probeErrors: true });
         await this.consignmentSteps.fillSfdTransportAndDestination(
             input.transportDocumentNumber, input.goodsDomesticStatus
         );
-        await this.declareContainerInformation(input);
+        await this.declareContainerInformation(input, checkpoint);
     }
 
     /**
@@ -93,19 +114,25 @@ export class AddNewSfdStandaloneConsignmentFlow {
      * the other two are the ENS journey's screens, reached here through a different
      * opening question, so their steps are reused rather than copied.
      */
-    private async declareContainerInformation(input: SfdStandaloneConsignmentData): Promise<void> {
+    private async declareContainerInformation(
+        input: SfdStandaloneConsignmentData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
+        await checkpoint?.('Consignment - transporting in containers', { probeErrors: true });
         await this.standaloneSteps.declareTransportingInContainers(input.isTransportingInContainers);
 
         if (!input.isTransportingInContainers) {
             return;
         }
 
+        await checkpoint?.('Consignment - all goods in same container', { probeErrors: true });
         await this.consignmentSteps.declareAllGoodsInSameContainer(input.isSameContainer);
 
         if (!input.isSameContainer) {
             return;
         }
 
+        await checkpoint?.('Consignment - container identification', { probeErrors: true });
         await this.consignmentSteps.fillContainerIdentification(
             input.containerIdentifierNumber,
             input.containerSize,
@@ -114,7 +141,14 @@ export class AddNewSfdStandaloneConsignmentFlow {
         );
     }
 
-    private async enterArrivalLocation(input: SfdStandaloneConsignmentData): Promise<void> {
+    private async enterArrivalLocation(
+        input: SfdStandaloneConsignmentData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
+        // One checkpoint for both branches: they are the same screen asked in the two
+        // shapes the arrived and pre-lodged routes give it.
+        await checkpoint?.('Movement - arrival location', { probeErrors: true });
+
         if (input.isPreLodged) {
             await this.movementSteps.chooseArrivalLocation(input.portOfArrival);
             return;

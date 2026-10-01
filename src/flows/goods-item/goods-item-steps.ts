@@ -5,6 +5,7 @@ import { ReportLog } from '../../core/report/report-log';
 import {
     requiresSupervisingCustomsOffice, requiresWarehouseIdentifier,
 } from '../../helper/procedure-code-helper';
+import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 
 /**
  * One method per goods-item wizard screen: binds the test data to the page object
@@ -57,7 +58,10 @@ export class GoodsItemSteps {
      * step named "Answer ..." even on an account that was never asked the question,
      * recording an answer that was never given.
      */
-    async declareTgp(input: GoodsData): Promise<{ asked: boolean; usesTgp: boolean }> {
+    async declareTgp(
+        input: GoodsData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<{ asked: boolean; usesTgp: boolean }> {
         const record = input.tgpRecord;
 
         // The answer and the record are separate fields, so they can disagree. Check
@@ -84,6 +88,7 @@ export class GoodsItemSteps {
             return { asked: false, usesTgp: false };
         }
 
+        await checkpoint?.('Goods item - TGP', { probeErrors: true });
         await ReportLog.step('Answer "Do you want to use a Trader Goods Profile?"', async () => {
             await this.goodsDeclarePage.answerUseTgp(input.useTGP);
         });
@@ -93,6 +98,7 @@ export class GoodsItemSteps {
             return { asked: true, usesTgp: false };
         }
 
+        await checkpoint?.('Goods item - TGP number', { probeErrors: true });
         await ReportLog.step('Enter the Trader Goods Profile number', async () => {
             await this.goodsDeclarePage.selectTgpNumber(record.lookup);
         });
@@ -128,11 +134,15 @@ export class GoodsItemSteps {
      * than looking for it, so a journey that reaches here on a listed code and finds
      * nothing fails saying so, instead of walking past a screen in silence.
      */
-    async selectSupervisingCustomsOfficeIfAsked(input: GoodsData): Promise<void> {
+    async selectSupervisingCustomsOfficeIfAsked(
+        input: GoodsData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
         if (!requiresSupervisingCustomsOffice(input.procedureCode)) {
             return;
         }
 
+        await checkpoint?.('Goods item - supervising customs office', { probeErrors: true });
         await ReportLog.step('Select the supervising customs office', async () => {
             await this.goodsDeclarePage.selectSupervisingCustomsOffice(
                 input.supervisingCustomsOffice
@@ -154,11 +164,15 @@ export class GoodsItemSteps {
      * free that way, and a journey cannot forget it: the screen appears because of the
      * procedure code, so that is the only thing worth asking.
      */
-    async enterWarehouseIdentifierIfAsked(input: GoodsData): Promise<void> {
+    async enterWarehouseIdentifierIfAsked(
+        input: GoodsData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
         if (!requiresWarehouseIdentifier(input.procedureCode)) {
             return;
         }
 
+        await checkpoint?.('Goods item - warehouse identifier', { probeErrors: true });
         await ReportLog.step('Enter the warehouse identifier', async () => {
             await this.goodsDeclarePage.enterWarehouseIdentifier(
                 input.warehouseType,
@@ -204,10 +218,15 @@ export class GoodsItemSteps {
      * every journey that reaches this pair reaches both halves under the same rule, and
      * spelling the rule out per flow is how the two copies of it drifted apart.
      */
-    async declareDangerousGoodsWithCodes(input: GoodsData): Promise<void> {
+    async declareDangerousGoodsWithCodes(
+        input: GoodsData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
+        await checkpoint?.('Goods item - dangerous goods', { probeErrors: true });
         await this.declareDangerousGoods(input);
 
         if (input.isDangerousGoods) {
+            await checkpoint?.('Goods item - dangerous goods codes', { probeErrors: true });
             await this.declareDangerousGoodsCodes(input);
         }
     }
@@ -222,14 +241,18 @@ export class GoodsItemSteps {
      * controlled question before it, and on IMMI the controlled question is asked with
      * no dangerous question after it. Those call the halves directly.
      */
-    async declareControlledAndDangerousGoods(input: GoodsData): Promise<void> {
+    async declareControlledAndDangerousGoods(
+        input: GoodsData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
+        await checkpoint?.('Goods item - controlled goods', { probeErrors: true });
         await this.declareControlledGoods(input);
 
         if (!input.areGoodsControlled) {
             return;
         }
 
-        await this.declareDangerousGoodsWithCodes(input);
+        await this.declareDangerousGoodsWithCodes(input, checkpoint);
     }
 
     // ===================== The goods themselves =====================

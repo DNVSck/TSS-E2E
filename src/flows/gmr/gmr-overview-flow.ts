@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, TestInfo } from '@playwright/test';
 import { MovementOverviewPage } from '../../page-object/movement-overview-page';
 import { GmrDeclarePage } from '../../page-object/gmr-declare-page';
 import { GmrDetailsPage } from '../../page-object/gmr-details-page';
@@ -8,6 +8,8 @@ import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { ReportLog } from '../../core/report/report-log';
 import { verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
+import { AccessibilityAudit } from '../accessibility-audit-flow';
+import { AUDIT_CONTACT_EMAIL } from '../../test-data/gmr-data';
 
 export class GmrOverviewFlow {
     constructor(
@@ -17,6 +19,20 @@ export class GmrOverviewFlow {
         private readonly externalContactDeclarePage: ExternalContactDeclarePage,
         private readonly t: TFunction,
     ) { }
+
+
+    async auditExternalContactWizard(
+        audit: AccessibilityAudit | undefined,
+        testInfo: TestInfo
+    ): Promise<void> {
+        await audit?.verifyWizard({
+            testInfo,
+            record: 'GMR',
+            name: 'external contact',
+            open: () => this.gmrDetailsPage.declareNewExternalContact(),
+            steps: () => this.externalContactDeclarePage.steps(AUDIT_CONTACT_EMAIL),
+        });
+    }
 
     /**
      * The GMR overview's "External Contacts" tab, one wizard per address. A no-op on

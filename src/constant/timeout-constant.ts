@@ -19,3 +19,5 @@ export const RENDER_TIMEOUT = {
     /** A tab panel paints a beat after the tab's route settles. */
     TAB_PANEL: 30_000,
 } as const;
+
+export const ACCESSIBILITY_JOURNEY_TIMEOUT = 2_400_000;

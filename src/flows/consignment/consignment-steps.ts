@@ -1,7 +1,8 @@
 import { MovementOverviewPage } from '../../page-object/movement-overview-page';
 import { ConsignmentDeclarePage } from '../../page-object/consignment-declare-page';
-import { PartyAddress } from '../../page-object/components/party-block';
+import { PartyAddress, PartyType } from '../../page-object/components/party-block';
 import { ReportLog } from '../../core/report/report-log';
+import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 
 /**
  * One method per consignment wizard screen: it owns that screen's Allure step name,
@@ -76,10 +77,15 @@ export class ConsignmentSteps {
      *
      * Returns whether the question was put.
      */
-    async declareUseImmiIfAsked(useIMMI: boolean): Promise<boolean> {
+    async declareUseImmiIfAsked(
+        useIMMI: boolean,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         if (!await this.consignmentDeclarePage.isUseImmiQuestionShown()) {
             return false;
         }
+
+        await checkpoint?.('Consignment - use IMMI', { probeErrors: true });
 
         await ReportLog.step('Answer "Do you want to use IMMI?"', async () => {
             if (useIMMI) {
@@ -216,6 +222,36 @@ export class ConsignmentSteps {
     async fillSellerDetails(sellerEORI: string, address: PartyAddress): Promise<void> {
         await ReportLog.step('Fill Seller information', async () => {
             await this.consignmentDeclarePage.inputSellerDetails(sellerEORI, address);
+        });
+    }
+
+
+    async auditPartyScreens(party: PartyType, checkpoint?: AccessibilityCheckpoint): Promise<void> {
+        if (!checkpoint) {
+            return;
+        }
+
+        await checkpoint(`Consignment - ${party} EORI`);
+
+        const eoriScreen = this.consignmentDeclarePage.getCurrentUrl();
+
+        if (!await this.openPartyAddressScreen(party)) {
+            return;
+        }
+
+        await checkpoint(`Consignment - ${party} address`, { probeErrors: true });
+        await this.consignmentDeclarePage.returnToPartyEoriScreen(party, eoriScreen);
+    }
+
+    private async openPartyAddressScreen(party: PartyType): Promise<boolean> {
+        return ReportLog.step(`Open the ${party} address screen with no EORI`, async () => {
+            const outcome = await this.consignmentDeclarePage.submitPartyEori(party, '');
+
+            ReportLog.setParameter(
+                `${party} address screen`,
+                outcome === 'address' ? 'opened by an empty EORI' : 'not offered'
+            );
+            return outcome === 'address';
         });
     }
 

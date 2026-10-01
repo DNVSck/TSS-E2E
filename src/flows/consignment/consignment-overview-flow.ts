@@ -1,15 +1,18 @@
-﻿import { expect } from '@playwright/test';
+﻿import { expect, TestInfo } from '@playwright/test';
 import { ReportLog } from '../../core/report/report-log';
 import { ConsignmentOverviewPage } from "../../page-object/consignment-overview-page";
 import { PreviousDocumentDeclarePage } from "../../page-object/header-previous-documents-declare-page";
 import { HolderOfAuthorisationDeclarePage } from "../../page-object/holder-of-authorisation-declare-page";
 import { ConsignmentDetailPage } from '../../page-object/consignment-detail-page';
-import { PreviousDocumentData } from "../../test-data/previous-document-data";
-import { HolderOfAuthorisationData } from "../../test-data/holder-of-authorisation-data";
+import { PreviousDocumentData, previousDocument } from "../../test-data/previous-document-data";
+import {
+    HolderOfAuthorisationData, holderOfAuthorisation,
+} from "../../test-data/holder-of-authorisation-data";
 import { TranslationKey, TFunction } from '../../fixtures/locale-fixture';
 import { isTraderInputRequiredStatus, traderInputRequiredError, verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
 import { MrnCountryCode, mrnPrefix, mrnOpening } from '../../constant/local-reference-constants';
 import { ConsignmentSteps } from './consignment-steps';
+import { AccessibilityAudit } from '../accessibility-audit-flow';
 
 /**
  * The field name the "Change" link carries for the container identifier. Opaque to
@@ -176,9 +179,17 @@ export class ConsignmentOverviewFlow {
      *  breadcrumb and submit the consignment. */
     async submitConsignment(): Promise<void> {
         await ReportLog.step('Submit consignment', async () => {
-            await this.consignmentOverviewPage.goToConsignmentOverview();
-            verifySubmittedWithoutErrors(await this.consignmentOverviewPage.confirmAndSubmit(), 'the consignment');
+            verifySubmittedWithoutErrors(await this.submitAndReadOutcome(), 'the consignment');
         });
+    }
+
+    async submitConsignmentAndReadOutcome(): Promise<string[]> {
+        return ReportLog.step('Submit consignment', async () => this.submitAndReadOutcome());
+    }
+
+    private async submitAndReadOutcome(): Promise<string[]> {
+        await this.consignmentOverviewPage.goToConsignmentOverview();
+        return this.consignmentOverviewPage.confirmAndSubmit();
     }
 
     async declareHeaderPreviousDocuments(items: PreviousDocumentData[]): Promise<void> {
@@ -192,6 +203,28 @@ export class ConsignmentOverviewFlow {
                     verifySubmittedWithoutErrors(await this.previousDocumentDeclarePage.declarePreviousDocument(item), 'the previous document');
                 });
             }
+        });
+    }
+
+    /** A no-op without an audit, so a functional run never opens these wizards. */
+    async auditRecordWizards(
+        audit: AccessibilityAudit | undefined,
+        testInfo: TestInfo
+    ): Promise<void> {
+        await audit?.verifyWizard({
+            testInfo,
+            record: 'Consignment',
+            name: 'previous document',
+            open: () => this.consignmentOverviewPage.openNewHeaderPreviousDocument(),
+            steps: () => this.previousDocumentDeclarePage.steps(previousDocument()),
+        });
+
+        await audit?.verifyWizard({
+            testInfo,
+            record: 'Consignment',
+            name: 'holder of authorisation',
+            open: () => this.consignmentOverviewPage.openNewHolderOfAuthorisation(),
+            steps: () => this.holderOfAuthorisationDeclarePage.steps(holderOfAuthorisation()),
         });
     }
 

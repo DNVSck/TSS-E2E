@@ -62,18 +62,6 @@ export class StringUtil {
     }
 
     /**
-     * Convert string to slug format
-     */
-    static toSlug(str: string): string {
-        return str
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/[\s_-]+/g, '-')
-            .replace(/^-+|-+$/g, '');
-    }
-
-    /**
      * Strip any trailing slashes from a URL path without a regex. Done as a manual
      * scan (rather than /\/+$/) so the unbounded quantifier can never backtrack — a
      * linear walk from the end is both safe and clearer about intent.

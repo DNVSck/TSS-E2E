@@ -1,4 +1,4 @@
-﻿import { expect } from '@playwright/test';
+﻿import { expect, TestInfo } from '@playwright/test';
 import { ReportLog } from '../../core/report/report-log';
 import { GoodsOverviewPage, DocumentReferenceRow } from "../../page-object/goods-overview-page";
 import { TFunction } from '../../fixtures/locale-fixture';
@@ -8,12 +8,18 @@ import { PreviousDocumentDeclarePage } from "../../page-object/header-previous-d
 import { AdditionalProcedureCodeDeclarePage } from "../../page-object/additional-procedure-code-declare-page";
 import { TaricAdditionalCodeDeclarePage } from "../../page-object/taric-additional-code-declare-page";
 import { NationalAdditionalCodeDeclarePage } from "../../page-object/national-additional-code-declare-page";
-import { DocumentReferenceData } from "../../test-data/document-reference-data";
-import { AdditionalInformationData } from "../../test-data/additional-information-data";
-import { PreviousDocumentData } from "../../test-data/previous-document-data";
+import { DocumentReferenceData, documentReference } from "../../test-data/document-reference-data";
+import {
+    AdditionalInformationData, additionalInformation,
+} from "../../test-data/additional-information-data";
+import { PreviousDocumentData, previousDocument } from "../../test-data/previous-document-data";
 import { TgpRecordData } from "../../test-data/tgp-record-data";
 import { hidesSupplementaryUnit } from "../../helper/procedure-code-helper";
 import { nirmsDocumentCitations } from '../../test-data/nirms-data';
+import { AUDIT_RECORD_SAMPLE } from '../../test-data/goods-data';
+import { ADDITIONAL_PROCEDURE_CODES } from '../../constant/additional-procedure-codes-constant';
+import { NATIONAL_ADDITIONAL_CODE } from '../../constant/national-additional-code-constant';
+import { AccessibilityAudit } from '../accessibility-audit-flow';
 import { verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
 
 const DESCRIPTION_ATTEMPTS = 3;
@@ -87,6 +93,57 @@ export class GoodsOverviewFlow {
                 this.verifyDocumentCell(row.status, document.documentStatus, document.documentCode, 'status');
                 this.verifyDocumentCell(row.reason, document.documentReason, document.documentCode, 'reason');
             }
+        });
+    }
+
+    /** A no-op without an audit, so a functional run never opens these wizards. */
+    async auditRecordWizards(
+        audit: AccessibilityAudit | undefined,
+        testInfo: TestInfo
+    ): Promise<void> {
+        if (!audit) {
+            return;
+        }
+
+        const record = 'Goods item';
+
+        await audit.verifyWizard({
+            testInfo, record, name: 'document reference',
+            open: () => this.goodsOverviewPage.declareNewDocumentReference(),
+            steps: () => this.documentReferenceDeclarePage.steps(documentReference()),
+        });
+
+        await audit.verifyWizard({
+            testInfo, record, name: 'additional information',
+            open: () => this.goodsOverviewPage.declareNewAdditionalInformation(),
+            steps: () => this.additionalInformationDeclarePage.steps(additionalInformation()),
+        });
+
+        await audit.verifyWizard({
+            testInfo, record, name: 'previous document',
+            open: () => this.goodsOverviewPage.declareNewPreviousDocument(),
+            steps: () => this.previousDocumentDeclarePage.steps(previousDocument()),
+        });
+
+        await audit.verifyWizard({
+            testInfo, record, name: 'additional procedure code',
+            open: () => this.goodsOverviewPage.declareNewAdditionalProcedureCode(),
+            steps: () => this.additionalProcedureCodeDeclarePage.steps(
+                ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG),
+        });
+
+        await audit.verifyWizard({
+            testInfo, record, name: 'TARIC additional code',
+            open: () => this.goodsOverviewPage.declareNewTaricAdditionalCode(),
+            steps: () => this.taricAdditionalCodeDeclarePage.steps(
+                AUDIT_RECORD_SAMPLE.taricAdditionalCode),
+        });
+
+        await audit.verifyWizard({
+            testInfo, record, name: 'national additional code',
+            open: () => this.goodsOverviewPage.declareNewNationalAdditionalCode(),
+            steps: () => this.nationalAdditionalCodeDeclarePage.steps(
+                NATIONAL_ADDITIONAL_CODE.VATZ),
         });
     }
 

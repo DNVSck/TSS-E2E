@@ -3,6 +3,7 @@ import { GoodsData } from '../../test-data/goods-data';
 import { GoodsItemSteps } from './goods-item-steps';
 import { hidesSupplementaryUnit } from '../../helper/procedure-code-helper';
 import { DeclareNirmsFlow } from './declare-nirms-flow';
+import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 import {
     TraderGoodsProfileService, describeTgpGap,
 } from '../../api-service/portal-api/trader-goods-profile-service';
@@ -30,21 +31,24 @@ export class AddNewImmiStandaloneGoodsItemFlow {
      */
     async addNewImmiStandaloneGoodsItem(
         input: GoodsData,
-        declaringForEori: string
+        declaringForEori: string,
+        checkpoint?: AccessibilityCheckpoint
     ): Promise<boolean> {
         return ReportLog.step('Add new IMMI standalone goods item', async () => {
             await this.steps.openNewGoodsRecord();
 
-            const usesTgp = await this.declareTgp(input, declaringForEori);
+            const usesTgp = await this.declareTgp(input, declaringForEori, checkpoint);
 
+            await checkpoint?.('Goods item - procedure code', { probeErrors: true });
             await this.steps.selectGoodsProcedureCode(input);
+            await checkpoint?.('Goods item - additional procedure code', { probeErrors: true });
             await this.steps.selectAdditionalProcedureCode(input);
 
             // No supervising office step, unlike the standard and simplified wizards
             // beside this one: IMMI is not a route that asks for it, and the service
             // supplies the office itself. What it chose is checked on the consignment
             // overview - see CreateDraftImmiStandaloneFlow.
-            await this.steps.enterWarehouseIdentifierIfAsked(input);
+            await this.steps.enterWarehouseIdentifierIfAsked(input, checkpoint);
 
             if (!usesTgp) {
                 // Unlike the ENS journeys, standalone IMMI always collects supplementary
@@ -62,19 +66,21 @@ export class AddNewImmiStandaloneGoodsItemFlow {
             }
 
             if (!usesTgp) {
-                await this.declareNirmsFlow.answerNirms(input, { isEnsOnly: false, useIMMI: true, importerEORI: declaringForEori });
+                await this.declareNirmsFlow.answerNirms(input, { isEnsOnly: false, useIMMI: true, importerEORI: declaringForEori }, checkpoint);
             }
 
+            await checkpoint?.('Goods item - packaging', { probeErrors: true });
             await this.steps.enterStandalonePackagingDetails(input);
 
             if (usesTgp) {
-                await this.declareNirmsFlow.answerNirms(input, { isEnsOnly: false, useIMMI: true, importerEORI: declaringForEori });
+                await this.declareNirmsFlow.answerNirms(input, { isEnsOnly: false, useIMMI: true, importerEORI: declaringForEori }, checkpoint);
             }
 
             await this.steps.enterWeightInformation(input);
             await this.steps.enterItemPrice(input);
 
             if (!usesTgp) {
+                await checkpoint?.('Goods item - country of origin', { probeErrors: true });
                 await this.steps.enterCountryOfOrigin(input);
             }
 
@@ -93,7 +99,11 @@ export class AddNewImmiStandaloneGoodsItemFlow {
      * follows the declarer - an agent reaches it as a third party and needs both
      * permissions, the importer needs only its own TSS access.
      */
-    private async declareTgp(input: GoodsData, declaringForEori: string): Promise<boolean> {
+    private async declareTgp(
+        input: GoodsData,
+        declaringForEori: string,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
         const permission = await this.traderGoodsProfileService
             .readTgpPermission(declaringForEori);
 
@@ -110,7 +120,7 @@ export class AddNewImmiStandaloneGoodsItemFlow {
             );
         }
 
-        const { asked, usesTgp } = await this.steps.declareTgp(input);
+        const { asked, usesTgp } = await this.steps.declareTgp(input, checkpoint);
 
         ReportLog.setParameter('TGP question', asked ? 'asked' : 'not asked');
 

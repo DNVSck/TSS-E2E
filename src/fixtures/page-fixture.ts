@@ -6,6 +6,7 @@ import { CompanyProfileUsersPage } from '../page-object/company-profile-users-pa
 import { RequestEoriChangePage } from '../page-object/request-eori-change-page';
 import { CompanyProfileEditPage } from '../page-object/company-profile-edit-page';
 import { NavigationBanner } from '../page-object/components/navigation-banner';
+import { RecordTabs } from '../page-object/components/record-tabs';
 import { BasePage } from '../page-object/base-page';
 import { InitialFormDeclaraPage } from '../page-object/initial-form-declare-page';
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
@@ -48,6 +49,7 @@ export type PageFixtureType = {
     requestEoriChangePage: RequestEoriChangePage;
     companyProfileEditPage: CompanyProfileEditPage;
     navigationBanner: NavigationBanner;
+    recordTabs: RecordTabs;
     representTraderPage: RepresentTraderPage;
     representationBanner: RepresentationBanner;
     consignmentDetailPage: ConsignmentDetailPage;
@@ -116,6 +118,10 @@ export const pageFixture: ExtendParams[0] = {
 
     navigationBanner: async ({ page }, use) => {
         await use(new NavigationBanner(page));
+    },
+
+    recordTabs: async ({ page }, use) => {
+        await use(new RecordTabs(page));
     },
 
     representTraderPage: async ({ page }, use) => {

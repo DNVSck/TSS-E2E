@@ -58,13 +58,23 @@ export class PortalPage extends BasePage {
      * simply had not arrived.
      */
     async clickSignIn(): Promise<void> {
+        await this.openSignInChoice();
+        await this.selectSignIn();
+    }
+
+    /** Stops on the sign-in choice screen, leaving the radio unanswered. */
+    async openSignInChoice(): Promise<void> {
         await this.signInBtn.waitFor({ state: 'visible', timeout: PORTAL_RENDER_TIMEOUT });
         await this.signInBtn.click({ timeout: PORTAL_RENDER_TIMEOUT });
+        await this.signInRadio.waitFor({ state: 'visible', timeout: PORTAL_RENDER_TIMEOUT });
+    }
+
+    /** Answers the sign-in choice screen, once a caller has finished with it. */
+    async confirmSignInChoice(): Promise<void> {
         await this.selectSignIn();
     }
 
     private async selectSignIn(): Promise<void> {
-        await this.signInRadio.waitFor({ state: 'visible', timeout: PORTAL_RENDER_TIMEOUT });
         await this.signInRadio.check({ timeout: PORTAL_RENDER_TIMEOUT });
         await this.signInChoiceContinue.click({ timeout: PORTAL_RENDER_TIMEOUT });
     }

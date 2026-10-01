@@ -2,6 +2,7 @@ import { ReportLog } from '../../core/report/report-log';
 import { GoodsData } from '../../test-data/goods-data';
 import { GoodsItemSteps } from './goods-item-steps';
 import { DeclareNirmsFlow } from './declare-nirms-flow';
+import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 
 /** What the consignment already answered, and the goods item now depends on. */
 export interface SfdStandaloneGoodsJourney {
@@ -39,40 +40,50 @@ export class AddNewSfdStandaloneGoodsItemFlow {
 
     async addNewSfdStandaloneGoodsItem(
         input: GoodsData,
-        journey: SfdStandaloneGoodsJourney
+        journey: SfdStandaloneGoodsJourney,
+        checkpoint?: AccessibilityCheckpoint
     ): Promise<void> {
         await ReportLog.step('Add new SFD standalone goods item', async () => {
             await this.steps.openNewGoodsRecord();
+            await checkpoint?.('Goods item - procedure code', { probeErrors: true });
             await this.steps.selectGoodsProcedureCode(input);
+            await checkpoint?.('Goods item - additional procedure code', { probeErrors: true });
             await this.steps.selectAdditionalProcedureCode(input);
-            await this.steps.selectSupervisingCustomsOfficeIfAsked(input);
-            await this.steps.enterWarehouseIdentifierIfAsked(input);
+            await this.steps.selectSupervisingCustomsOfficeIfAsked(input, checkpoint);
+            await this.steps.enterWarehouseIdentifierIfAsked(input, checkpoint);
 
             if (journey.isControlledConsignment) {
-                await this.steps.declareControlledAndDangerousGoods(input);
+                await this.steps.declareControlledAndDangerousGoods(input, checkpoint);
+                await checkpoint?.('Goods item - country of origin', { probeErrors: true });
                 await this.steps.enterCountryOfOrigin(input);
+                await checkpoint?.('Goods item - commodity', { probeErrors: true });
                 await this.steps.enterCommodityInformation(input);
             } else {
                 // The EIDR branch's commodity screen does not render the supplementary
                 // units field, so it uses the step that does not touch it - the same
                 // split the ENS journeys already make for ENS-only and EIDR.
+                await checkpoint?.('Goods item - commodity', { probeErrors: true });
                 await this.steps.enterCommodityInformationWithoutSupplementaryUnits(input);
             }
 
             await this.declareNirmsFlow.answerNirms(input, {
                 isEnsOnly: false, useIMMI: false, importerEORI: journey.declaringForEori,
-            });
+            }, checkpoint);
 
+            await checkpoint?.('Goods item - packaging', { probeErrors: true });
             await this.steps.enterStandalonePackagingDetails(input);
 
             // Gross and net are one screen; the page fills net only when the screen
             // renders it, so this covers both branches without the caller guessing.
+            await checkpoint?.('Goods item - weight', { probeErrors: true });
             await this.steps.enterWeightInformation(input);
 
             if (journey.isControlledConsignment) {
+                await checkpoint?.('Goods item - item price', { probeErrors: true });
                 await this.steps.enterItemPrice(input);
             }
 
+            await checkpoint?.('Goods item - check your answers');
             await this.steps.finishGoodsItemDeclaration();
         });
     }

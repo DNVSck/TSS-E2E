@@ -197,3 +197,7 @@ export const goods = (overrides?: Partial<GoodsData>): GoodsData => {
             ?? generateRandomWarehouseIdentifier(data.warehouseType),
     };
 };
+
+export const AUDIT_RECORD_SAMPLE = {
+    taricAdditionalCode: '1234',
+};

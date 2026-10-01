@@ -10,6 +10,9 @@ import { SupplementaryDeclarationSteps } from '../supplementary-declaration/supp
 import {
     SupplementaryDeclarationData, supplementaryDeclaration,
 } from '../../test-data/supplementary-declaration-data';
+import { AccessibilityAudit, AccessibilityCheckpoint, checkpointFor } from '../accessibility-audit-flow';
+import { documentReference } from '../../test-data/document-reference-data';
+import { ADDITIONAL_PROCEDURE_CODES } from '../../constant/additional-procedure-codes-constant';
 import { submittedSupplementaryStatusKeys, verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
@@ -37,6 +40,7 @@ export interface CompleteSupplementaryDeclarationOptions {
      * submittedSupplementaryStatusKeys.
      */
     expectedStatusKeys?: TranslationKey[];
+    audit?: AccessibilityAudit;
 }
 
 /**
@@ -81,15 +85,49 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
         options: CompleteSupplementaryDeclarationOptions
     ): Promise<string> {
         const input = supplementaryDeclaration(options.overrides);
+        const reference = await this.declare(options, input);
 
+        await this.submitAndSettle(input, reference, options.expectedStatusKeys);
+
+        return reference;
+    }
+
+    async declareSupplementaryDeclaration(
+        options: CompleteSupplementaryDeclarationOptions
+    ): Promise<string> {
+        return this.declare(options, supplementaryDeclaration(options.overrides));
+    }
+
+    async submitSupplementaryDeclaration(checkpoint?: AccessibilityCheckpoint): Promise<void> {
+        await ReportLog.step('Submit the supplementary declaration', async () => {
+            const asked = await this.overviewPage.submitAndWaitForPartiesQuestion();
+
+            if (!asked) {
+                return;
+            }
+
+            // Behind the condition: this screen is only put when the declaration names
+            // a party the company is not authorised to act for.
+            await checkpoint?.('Supplementary declaration - confirm unauthorised related parties');
+            await this.overviewPage.confirmUnauthorisedParties();
+            ReportLog.setParameter('Unauthorised related parties', 'confirmed at submission');
+        });
+    }
+
+    private async declare(
+        options: CompleteSupplementaryDeclarationOptions,
+        input: SupplementaryDeclarationData
+    ): Promise<string> {
         reportTestAccount(this.authAccount, 'completeSupplementaryDeclaration');
 
-        const reference = await this.openSupplementaryDeclarationFor(options);
-        await this.completeConsignmentHeader(input);
-        await this.chooseMethodOfPayment(input);
+        const checkpoint = checkpointFor(options.audit, options.testInfo);
+
+        const reference = await this.openSupplementaryDeclarationFor(options, checkpoint);
+        await checkpoint('Supplementary declaration - overview (draft)');
+        await this.completeConsignmentHeader(input, checkpoint);
+        await this.chooseMethodOfPayment(input, checkpoint);
         await this.removeHoldersOfAuthorisation(input);
-        await this.completeGoodsRecord(input);
-        await this.submitAndSettle(input, reference, options.expectedStatusKeys);
+        await this.completeGoodsRecord(input, options, checkpoint);
 
         return reference;
     }
@@ -106,7 +144,8 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
      * that proves the match is not the one that produced it.
      */
     private async openSupplementaryDeclarationFor(
-        options: CompleteSupplementaryDeclarationOptions
+        options: CompleteSupplementaryDeclarationOptions,
+        checkpoint?: AccessibilityCheckpoint
     ): Promise<string> {
         const { testInfo, url, movementLrn, frontierLrn } = options;
 
@@ -115,6 +154,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
             async () => {
                 await this.basePage.navigateToPortal(url, testInfo);
                 await this.portalPage.openDraftDeclarations();
+                await checkpoint?.('Portal - draft declarations list');
 
                 const reference = await this.declarationOverviewPage
                     .openSupplementaryDeclarationFor(movementLrn);
@@ -148,29 +188,32 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
      *
      * Which is why the payment method is chosen AFTER this, in a step of its own.
      */
-    private async completeConsignmentHeader(input: SupplementaryDeclarationData): Promise<void> {
+    private async completeConsignmentHeader(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
         await ReportLog.step('Complete the consignment details the frontier declaration never took', async () => {
             await this.overviewPage.startHeaderWizard();
 
             // Only asked when the company profile left it unanswered. Answering it here
             // costs nothing and keeps the wizard moving; the deliberate choice is made
             // afterwards, in chooseMethodOfPayment.
-            await this.steps.selectMethodOfPaymentIfAsked(input);
+            await this.steps.selectMethodOfPaymentIfAsked(input, checkpoint);
 
-            await this.steps.enterMeansOfTransportDetailsIfAsked(input);
-            await this.steps.enterExporterProfileIfAsked(input);
-            await this.steps.enterDeliveryTermsIfAsked(input);
+            await this.steps.enterMeansOfTransportDetailsIfAsked(input, checkpoint);
+            await this.steps.enterExporterProfileIfAsked(input, checkpoint);
+            await this.steps.enterDeliveryTermsIfAsked(input, checkpoint);
 
             // Three screens, of which the delivery terms answer selects one or two:
             // knowing the UN/LOCODE takes it outright, not knowing it asks for the
             // country and then the place. Whichever the wizard did not go to is simply
             // not on the page, so both are offered and only one can match.
-            await this.steps.selectUnlocodeIfAsked(input);
-            await this.steps.selectDeliveryCountryIfAsked(input);
-            await this.steps.selectDeliveryPlaceIfAsked(input);
+            await this.steps.selectUnlocodeIfAsked(input, checkpoint);
+            await this.steps.selectDeliveryCountryIfAsked(input, checkpoint);
+            await this.steps.selectDeliveryPlaceIfAsked(input, checkpoint);
 
-            await this.steps.selectInvoiceCurrencyIfAsked(input);
-            await this.steps.completeWizard('consignment');
+            await this.steps.selectInvoiceCurrencyIfAsked(input, checkpoint);
+            await this.steps.completeWizard('consignment', checkpoint);
         });
     }
 
@@ -186,11 +229,14 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
      * returns to check-your-answers when nothing else is outstanding, and asks for
      * whatever is if something is - hence the conditional confirm.
      */
-    private async chooseMethodOfPayment(input: SupplementaryDeclarationData): Promise<void> {
+    private async chooseMethodOfPayment(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
         await ReportLog.step(`Pay the duty by "${input.methodOfPayment}"`, async () => {
             await this.overviewPage.changeMethodOfPayment();
-            await this.steps.selectMethodOfPaymentIfAsked(input);
-            await this.steps.completeWizardIfOnCheckYourAnswers('method of payment');
+            await this.steps.selectMethodOfPaymentIfAsked(input, checkpoint);
+            await this.steps.completeWizardIfOnCheckYourAnswers('method of payment', checkpoint);
         });
     }
 
@@ -231,19 +277,28 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
      * has one. A multi-item declaration would loop here, which is why the record is
      * opened by position rather than by name.
      */
-    private async completeGoodsRecord(input: SupplementaryDeclarationData): Promise<void> {
+    private async completeGoodsRecord(
+        input: SupplementaryDeclarationData,
+        options: CompleteSupplementaryDeclarationOptions,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
         await ReportLog.step('Value the goods so the duty can be calculated', async () => {
             await this.overviewPage.openGoodsRecord();
+            await checkpoint?.('Supplementary declaration - goods record');
+            await options.audit?.verifyEveryTab({
+                testInfo: options.testInfo, record: 'Supplementary declaration goods record',
+            });
+            await this.auditGoodsRecordWizards(options);
             await this.goodsRecordPage.startGoodsWizard();
 
-            await this.steps.selectCountryOfOriginIfAsked(input);
-            await this.steps.enterSupplementaryUnitsIfAsked(input);
-            await this.steps.enterNetMassIfAsked(input);
-            await this.steps.selectNatureOfGoodsIfAsked(input);
-            await this.steps.enterPreferenceAndValuationIfAsked(input);
-            await this.steps.enterInvoiceDetailsIfAsked(input);
-            await this.steps.enterStatisticalValueIfAsked(input);
-            await this.steps.completeWizard('goods item');
+            await this.steps.selectCountryOfOriginIfAsked(input, checkpoint);
+            await this.steps.enterSupplementaryUnitsIfAsked(input, checkpoint);
+            await this.steps.enterNetMassIfAsked(input, checkpoint);
+            await this.steps.selectNatureOfGoodsIfAsked(input, checkpoint);
+            await this.steps.enterPreferenceAndValuationIfAsked(input, checkpoint);
+            await this.steps.enterInvoiceDetailsIfAsked(input, checkpoint);
+            await this.steps.enterStatisticalValueIfAsked(input, checkpoint);
+            await this.steps.completeWizard('goods item', checkpoint);
 
             await this.removeDocumentReferences(input);
             await this.declareAdditionalProcedureCodes(input);
@@ -252,6 +307,27 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
             // The goods wizard ends on the goods record, not on the declaration, and
             // the record has no way forward - only the breadcrumb back.
             await this.goodsRecordPage.goToSupplementaryDeclaration();
+        });
+    }
+
+
+    private async auditGoodsRecordWizards(
+        options: CompleteSupplementaryDeclarationOptions
+    ): Promise<void> {
+        const { audit, testInfo } = options;
+        const record = 'Supplementary declaration';
+
+        await audit?.verifyWizard({
+            testInfo, record, name: 'document reference',
+            open: () => this.goodsRecordPage.declareNewDocumentReference(),
+            steps: () => this.documentReferencePage.steps(documentReference()),
+        });
+
+        await audit?.verifyWizard({
+            testInfo, record, name: 'additional procedure code',
+            open: () => this.goodsRecordPage.declareNewAdditionalProcedureCode(),
+            steps: () => this.additionalProcedureCodePage.steps(
+                ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG),
         });
     }
 
@@ -401,13 +477,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
     ): Promise<void> {
         const expected = expectedStatusKeys ?? submittedSupplementaryStatusKeys(input.methodOfPayment);
 
-        await ReportLog.step('Submit the supplementary declaration', async () => {
-            const outcome = await this.overviewPage.submitAndConfirmPartiesIfAsked();
-
-            if (outcome === 'parties-confirmed') {
-                ReportLog.setParameter('Unauthorised related parties', 'confirmed at submission');
-            }
-        });
+        await this.submitSupplementaryDeclaration();
 
         await ReportLog.step(
             'Wait for the service and CDS to settle the declaration, and check where it landed',

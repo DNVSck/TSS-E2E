@@ -1,4 +1,4 @@
-import { BasePage } from "./base-page";
+import { BasePage, WizardStep } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import {
     fillInputValue, selectAutocompleteValue, clickToLeaveScreen, readErrorSummary,
@@ -46,6 +46,13 @@ export class AdditionalInformationDeclarePage extends BasePage {
     }
 
     /** "Check your answers" — the "Complete and submit" button commits the record. */
+    steps(input: { code: string; description: string }): WizardStep[] {
+        return [
+            { screen: 'code', answer: () => this.selectAdditionalInformationCode(input.code) },
+            { screen: 'description', answer: () => this.enterDescription(input.description) },
+        ];
+    }
+
     async confirmAndSubmit(): Promise<string[]> {
         try {
             await clickToLeaveScreen(this.page, this.commonFinishButton);

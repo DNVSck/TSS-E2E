@@ -6,6 +6,7 @@ import {
     CompanyPermissionService,
 } from '../api-service/portal-api/company-permission-service';
 import { ENV } from '../../config/environment';
+import { AccessibilityCheckpoint } from './accessibility-audit-flow';
 
 export class InitialFormDeclarationFlow {
     constructor(
@@ -13,11 +14,17 @@ export class InitialFormDeclarationFlow {
         private readonly companyPermissionService: CompanyPermissionService,
     ) { }
 
-    async completeInitialFormDeclaration(input: InitialFormData): Promise<void> {
+    async completeInitialFormDeclaration(
+        input: InitialFormData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
         await ReportLog.step('Complete Initial form', async () => {
+            await checkpoint?.('Declaration - direction', { probeErrors: true });
             await this.selectDirectionOfDeclaration(input);
+            await checkpoint?.('Declaration - type of submission', { probeErrors: true });
             await this.selectTypeOfSubmission(input);
-            await this.declareSubmissionDetails(input);
+            await this.declareSubmissionDetails(input, checkpoint);
+            await checkpoint?.('Declaration - check your answers');
             await this.finishInitialFormDeclaration();
         });
     }
@@ -35,13 +42,17 @@ export class InitialFormDeclarationFlow {
     }
 
     /** Which follow-up screen the type of submission opens - one screen either way. */
-    async declareSubmissionDetails(input: InitialFormData): Promise<void> {
+    async declareSubmissionDetails(
+        input: InitialFormData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
         const { TYPE_OF_SUBMISSION } = INITIAL_FORM_DECLARATION;
         const {
             typeOfSubmission, typeOfEnsSubmission, standaloneDeclarationType, declaringForEori,
         } = input;
 
         if (typeOfSubmission === TYPE_OF_SUBMISSION.ENS) {
+            await checkpoint?.('Declaration - type of ENS submission', { probeErrors: true });
             await ReportLog.step('Select the type of ENS submission', async () => {
                 if (!typeOfEnsSubmission) {
                     throw new Error('Test data for an ENS submission must set "typeOfEnsSubmission".');
@@ -52,8 +63,10 @@ export class InitialFormDeclarationFlow {
         }
 
         if (typeOfSubmission === TYPE_OF_SUBMISSION.STANDALONE) {
+            await checkpoint?.('Declaration - importer', { probeErrors: true });
             await this.declareImporter(declaringForEori);
 
+            await checkpoint?.('Declaration - standalone type', { probeErrors: true });
             await ReportLog.step('Select the standalone declaration type', async () => {
                 if (!standaloneDeclarationType) {
                     throw new Error('Test data for a standalone submission must set "standaloneDeclarationType".');

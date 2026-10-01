@@ -1,4 +1,4 @@
-import { BasePage } from "./base-page";
+import { BasePage, WizardStep } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 
 /**
@@ -30,8 +30,14 @@ export class TaricAdditionalCodeDeclarePage extends BasePage {
     }
 
     /** The whole wizard for a single taric-additional-code record. */
+    steps(code: string): WizardStep[] {
+        return [{ screen: 'code', answer: () => this.enterTaricAdditionalCode(code) }];
+    }
+
     async declareTaricAdditionalCode(code: string): Promise<string[]> {
-        await this.enterTaricAdditionalCode(code);
+        for (const step of this.steps(code)) {
+            await step.answer();
+        }
         return this.confirmAndSubmit();
     }
 }

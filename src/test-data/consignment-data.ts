@@ -242,3 +242,8 @@ export const ensOnlyConsignment = (overrides?: Partial<ConsignmentData>): Consig
     ensOnlyReason: ENS_ONLY_REASON.STANDALONE_DECLARATION_IN_TSS,
     ...overrides,
 });
+
+export const CONSIGNMENT_MAX_SCREEN_COVERAGE: Partial<ConsignmentData> = {
+    isGoodsCrossEUBorder: true,
+    isSameContainer: false,
+};
