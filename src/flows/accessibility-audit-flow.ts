@@ -62,9 +62,9 @@ export type AccessibilityCheckpoint =
 export function checkpointFor(
     audit: AccessibilityAudit | undefined,
     testInfo: TestInfo
-): AccessibilityCheckpoint {
+): AccessibilityCheckpoint | undefined {
     if (!audit) {
-        return async () => { };
+        return undefined;
     }
 
     return (screen, options) => options?.probeErrors

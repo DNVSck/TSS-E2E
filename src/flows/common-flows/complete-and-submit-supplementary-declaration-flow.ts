@@ -123,7 +123,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
         const checkpoint = checkpointFor(options.audit, options.testInfo);
 
         const reference = await this.openSupplementaryDeclarationFor(options, checkpoint);
-        await checkpoint('Supplementary declaration - overview (draft)');
+        await checkpoint?.('Supplementary declaration - overview (draft)');
         await this.completeConsignmentHeader(input, checkpoint);
         await this.chooseMethodOfPayment(input, checkpoint);
         await this.removeHoldersOfAuthorisation(input);

@@ -149,9 +149,10 @@ export class CreateDraftEnsDeclarationFlow {
             importerEORI: consignmentData.importerEORI,
             useIMMI: !consignmentData.isEnsOnly && consignmentData.useIMMI,
             isEnsOnly: consignmentData.isEnsOnly,
-            isControlledGoods: !consignmentData.isEnsOnly && consignmentData.isControlledGoods,
+            isControlledGoods: !consignmentData.isEnsOnly && !consignmentData.useIMMI
+                && consignmentData.isControlledGoods,
             // The dangerous-goods question shows on ENS-only and on the controlled-goods
-            // SFD journey - not on IMMI (which goes controlled -> country) nor EIDR.
+            // SFD journey - not on IMMI nor EIDR.
             hasDangerousGoods: consignmentData.isEnsOnly || (!consignmentData.useIMMI && consignmentData.isControlledGoods),
             hasGoodsContainer: consignmentData.isGoodsCrossEUBorder && !consignmentData.isSameContainer,
             hasInvoiceDetails: !consignmentData.isEnsOnly && (consignmentData.useIMMI || consignmentData.isControlledGoods),

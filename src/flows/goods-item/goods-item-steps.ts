@@ -238,8 +238,8 @@ export class GoodsItemSteps {
      *
      * For the journeys where the two questions are NOT that chain, see
      * AddNewEnsGoodsItemFlow: on ENS-only the dangerous question is asked with no
-     * controlled question before it, and on IMMI the controlled question is asked with
-     * no dangerous question after it. Those call the halves directly.
+     * controlled question before it, and IMMI is asked neither. Those call the halves
+     * directly.
      */
     async declareControlledAndDangerousGoods(
         input: GoodsData,

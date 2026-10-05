@@ -45,7 +45,7 @@ export class AuditDeclarationFlow {
         await this.movementOverviewFlow.waitForSubmittedMovementOverview();
         // Scanned without navigating: the message box is put up once, by the redirect
         // submitting produced, and re-requesting the overview would lose it.
-        await checkpoint('Movement - overview (submitted)');
+        await checkpoint?.('Movement - overview (submitted)');
     }
 
     async auditSfdStandalone(options: SfdStandaloneDeclarationOptions): Promise<void> {
@@ -68,7 +68,7 @@ export class AuditDeclarationFlow {
             testInfo: options.testInfo, record: 'Supplementary declaration',
         });
         await this.supplementaryDeclarationFlow.submitSupplementaryDeclaration(checkpoint);
-        await checkpoint('Supplementary declaration - overview (submitted)');
+        await checkpoint?.('Supplementary declaration - overview (submitted)');
     }
     async auditGmr(options: GmrAuditOptions): Promise<void> {
         const checkpoint = checkpointFor(options.audit, options.testInfo);
@@ -84,7 +84,7 @@ export class AuditDeclarationFlow {
         await this.gmrOverviewFlow.auditExternalContactWizard(options.audit, options.testInfo);
 
         await this.gmrDetailsPage.generateBarcode();
-        await checkpoint('GMR - goods movement reference barcode');
+        await checkpoint?.('GMR - goods movement reference barcode');
     }
 
     // A standalone declaration has no movement overview to return to: it stays on its
@@ -95,6 +95,6 @@ export class AuditDeclarationFlow {
         const checkpoint = checkpointFor(options.audit, options.testInfo);
 
         await this.consignmentOverviewFlow.submitConsignmentAndReadOutcome();
-        await checkpoint('Consignment - overview (submitted)');
+        await checkpoint?.('Consignment - overview (submitted)');
     }
 }

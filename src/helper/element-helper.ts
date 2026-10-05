@@ -275,15 +275,41 @@ export async function readFieldIfPresent(field: Locator): Promise<string> {
 // types a value the service also accepts as a bare query; the TGP screen, which needs
 // a real record, rejected it outright.
 
-const AUTOCOMPLETE_ENHANCED_TIMEOUT = 25_000;
+const AUTOCOMPLETE_ENHANCED_TIMEOUT = 10_000;
+const AUTOCOMPLETE_ENHANCED_RELOADED_TIMEOUT = 25_000;
 const AUTOCOMPLETE_SUGGESTIONS_TIMEOUT = 8_000;
+
+async function isEnhanced(input: Locator, timeout: number): Promise<boolean> {
+    return expect(input).toHaveAttribute('role', 'combobox', { timeout })
+        .then(() => true, () => false);
+}
+
+async function waitForAutocomplete(input: Locator): Promise<void> {
+    if (await isEnhanced(input, AUTOCOMPLETE_ENHANCED_TIMEOUT)) {
+        return;
+    }
+
+    const page = input.page();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    if (await isEnhanced(input, AUTOCOMPLETE_ENHANCED_RELOADED_TIMEOUT)) {
+        return;
+    }
+
+    throw new Error(
+        `${input} is still a plain input after a reload, so the page's JavaScript never `
+        + `enhanced it into an autocomplete. There is no suggestion list to pick from, and `
+        + `typing into it would leave the component's value empty. On "`
+        + `${new URL(page.url()).pathname}".`
+    );
+}
 
 export async function selectAutocompleteValue(
     input: Locator,
     firstOption: Locator,
     value: string
 ): Promise<void> {
-    await expect(input).toHaveAttribute('role', 'combobox', { timeout: AUTOCOMPLETE_ENHANCED_TIMEOUT });
+    await waitForAutocomplete(input);
 
     for (let attempt = 1; attempt <= 3; attempt++) {
         await input.click();

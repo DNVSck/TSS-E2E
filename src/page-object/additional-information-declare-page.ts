@@ -1,7 +1,7 @@
 import { BasePage, WizardStep } from "./base-page";
 import { Page, Locator, expect } from '@playwright/test';
 import {
-    fillInputValue, selectAutocompleteValue, clickToLeaveScreen, readErrorSummary,
+    fillInputValue, selectDropdownValue, clickToLeaveScreen, readErrorSummary,
 } from '../helper/element-helper';
 
 const DESCRIPTION_TIMEOUT = 150_000;
@@ -10,26 +10,23 @@ const DESCRIPTION_TIMEOUT = 150_000;
  * The "New additional information" wizard, reached from the goods item's
  * "Additional information" tab:
  *
- *   1. "Select an additional information code" — the code accessible-autocomplete.
+ *   1. "Select an additional information code" — a native select.
  *   2. "Provide a description for your additional information code" — a free-text input.
  *   3. "Check your answers" — commits the record with "Complete and submit".
  */
 export class AdditionalInformationDeclarePage extends BasePage {
 
-    private readonly codeInput: Locator;
-    private readonly codeFirstOption: Locator;
+    private readonly codeDropdown: Locator;
     private readonly descriptionInput: Locator;
 
     constructor(page: Page) {
         super(page);
-        this.codeInput = page.locator("input#code");
-        this.codeFirstOption = page.locator("#code__option--0");
+        this.codeDropdown = page.locator("select#code");
         this.descriptionInput = page.locator("input#description");
     }
 
-    /** "Select an additional information code" — commit the autocomplete value. */
     async selectAdditionalInformationCode(code: string): Promise<void> {
-        await selectAutocompleteValue(this.codeInput, this.codeFirstOption, code);
+        await selectDropdownValue(this.codeDropdown, code);
         await this.clickContinueButton();
     }
 
