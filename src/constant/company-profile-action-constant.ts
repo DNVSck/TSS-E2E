@@ -59,6 +59,7 @@ export const COMPANY_PROFILE_ACTION = {
 export type CompanyProfileActionKey = keyof typeof COMPANY_PROFILE_ACTION;
 
 export const COMPANY_ADDRESS_FIELD = {
+    STREET_NUMBER: 'streetNumber',
     LINE_1: COMPANY_PROFILE_ACTION.ADDRESS,
     CITY: 'city',
     POST_CODE: 'postCode',

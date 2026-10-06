@@ -204,8 +204,12 @@ export function generateRandomUkPhoneNumber(): string {
     return `${UK_MOBILE_PREFIX}${StringUtil.randomNumeric(UK_MOBILE_SUBSCRIBER_DIGITS, UK_MOBILE_SUBSCRIBER_DIGITS)}`;
 }
 
+export function generateRandomStreetNumber(): string {
+    return StringUtil.randomBuildingNumber();
+}
+
 export function generateRandomAddressLine(): string {
-    return plainText(StringUtil.randomAddress());
+    return plainText(StringUtil.randomStreetName());
 }
 
 export function generateRandomCity(): string {

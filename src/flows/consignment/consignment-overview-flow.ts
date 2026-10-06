@@ -84,10 +84,10 @@ export class ConsignmentOverviewFlow {
     /**
      * Report the standalone consignment's LRN as soon as its draft exists, so a run
      * captures it even if a later step fails - mirrors verifyDraftConsignment for ENS.
-     * The expected prefix comes from the journey (IMMI "GLR", SFD "SFD", FFD "FFD"),
+     * The expected prefix comes from the journey (IMMI "GLR", SFD "DEC", FFD "FFD"),
      * so this checks the journey that ran rather than any standalone reference.
      */
-    async verifyStandaloneConsignmentLrn(expectedPrefix?: RegExp): Promise<string> {
+    async verifyStandaloneConsignmentLrn(expectedPrefix: RegExp): Promise<string> {
         return ReportLog.step('Validate standalone consignment LRN', async () => {
             const { consignmentReference, declarationStatus } =
                 await this.consignmentOverviewPage.readDraftStandaloneConsignment(expectedPrefix);

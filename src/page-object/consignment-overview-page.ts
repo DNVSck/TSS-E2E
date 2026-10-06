@@ -145,18 +145,6 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         return submitAndReadErrors(this.page, this.confirmAndSubmitButton);
     }
 
-    /**
-     * The consignment's own reference, read off the route it is served at: every
-     * overview lives at ".../<reference>/overview", and a tab adds a segment after
-     * that rather than changing what comes before it.
-     */
-    private referenceFromRoute(): string {
-        const pathname = StringUtil.stripTrailingSlashes(new URL(this.page.url()).pathname);
-        const consignmentRoute = pathname.slice(0, pathname.indexOf('/overview'));
-
-        return consignmentRoute.slice(consignmentRoute.lastIndexOf('/') + 1);
-    }
-
 
     /**
      * The route of every GOODS ITEM this consignment lists, in page order.
@@ -298,14 +286,11 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     /**
      * Read the freshly-created standalone consignment's reference and status.
      *
-     * Reads only - which prefix a journey stamps (IMMI "GLR", SFD "SFD", FFD "FFD") is
-     * the flow's expectation, not this page's. That separation is what lets a spec that
-     * does not care about the LRN skip the check: welding it here is why the authority
-     * test on a controlled SFD went red on defect 1239.
+     * Reads only - which prefix a journey stamps (IMMI "GLR", SFD "DEC", FFD "FFD") is
+     * the flow's expectation, not this page's.
      *
-     * BOTH rows are read without throwing, because either can be legitimately absent:
-     * the Status row only appears once the consignment has been submitted, and the SFD
-     * (controlled goods) overview is missing its LRN row outright (defect 1239).
+     * The Status row is read without throwing because it can be legitimately absent: it
+     * only appears once the consignment has been submitted.
      *
      * Which is why the wait below is not optional. These pages paint their summary list
      * a beat after load (see readFieldWhenVisible), so reading immediately cannot tell
@@ -316,27 +301,18 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
      * And the wait is deliberately allowed to THROW. Every loaded overview has a summary
      * list, whatever rows it happens to carry, so failing here means the page is not the
      * one we think it is - a lost session, a redirect, a page that never rendered.
-     * Swallowing that would report it as an empty LRN, which is exactly what the missing
-     * row above looks like: one real defect and one broken run, indistinguishable.
+     * Swallowing that would report it as an empty LRN, which reads as a missing row:
+     * one service fault and one broken run, indistinguishable.
      */
     async readDraftStandaloneConsignment(
-        expectedPrefix?: RegExp
+        expectedPrefix: RegExp
     ): Promise<{ consignmentReference: string; declarationStatus: string }> {
         await this.contentRows.first().waitFor({ state: 'visible', timeout: RENDER_TIMEOUT.SUMMARY_LIST });
 
-        // TEMPORARY - defect 1239. The summary row is read first and the route only when
-        // it is absent, which on the SFD standalone overview it is. Everything downstream
-        // needs the reference, so it is taken from the route rather than left empty.
-        // Delete the fallback once 1239 is fixed and read the row alone again.
-        const consignmentReference =
-            await readFieldIfPresent(this.localReferenceNumber) || this.referenceFromRoute();
+        const consignmentReference = await readFieldIfPresent(this.localReferenceNumber);
         const declarationStatus = await readFieldIfPresent(this.status);
 
-        // No prefix means the caller wants the reference reported but not judged - the
-        // journey whose LRN row is missing has nothing to match against.
-        if (expectedPrefix) {
-            expect.soft(consignmentReference, 'Consignment LRN').toMatch(expectedPrefix);
-        }
+        expect.soft(consignmentReference, 'Consignment LRN').toMatch(expectedPrefix);
 
         return { consignmentReference, declarationStatus };
     }

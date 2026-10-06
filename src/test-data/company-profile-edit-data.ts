@@ -6,7 +6,8 @@ import { METHOD_OF_PAYMENT, MethodOfPaymentCode } from '../constant/method-of-pa
 import { defermentAuthorisation } from '../helper/authorisation-helper';
 import {
     generateRandomAddressLine, generateRandomBusinessEmail, generateRandomBusinessName, generateRandomCountryCode,
-    generateRandomCity, generateRandomUkPhoneNumber, generateRandomUkPostcode, generateRandomUkVatNumber,
+    generateRandomCity, generateRandomStreetNumber, generateRandomUkPhoneNumber, generateRandomUkPostcode,
+    generateRandomUkVatNumber,
     generateRandomCseAuthorisationNumber, generateRandomSdpAuthorisationNumber, generateRandomEidrAuthorisationNumber,
     generateRandomDefermentAccountNumber, generateRandomXiGuaranteeReferenceNumber,
     pickRandomExcept,
@@ -16,6 +17,7 @@ export interface CompanyProfileInput {
     id: string;
     value: string;
     shownAsOptionText?: boolean;
+    shownOnSameLine?: boolean;
 }
 
 export interface CompanyProfileFieldEdit {
@@ -62,7 +64,8 @@ export const contactDetailsEdits = (): CompanyProfileFieldEdit[] => [
     {
         field: 'ADDRESS',
         inputs: [
-            { id: COMPANY_ADDRESS_FIELD.LINE_1, value: generateRandomAddressLine() },
+            { id: COMPANY_ADDRESS_FIELD.STREET_NUMBER, value: generateRandomStreetNumber() },
+            { id: COMPANY_ADDRESS_FIELD.LINE_1, value: generateRandomAddressLine(), shownOnSameLine: true },
             { id: COMPANY_ADDRESS_FIELD.CITY, value: generateRandomCity() },
             { id: COMPANY_ADDRESS_FIELD.POST_CODE, value: generateRandomUkPostcode() },
             {

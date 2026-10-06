@@ -36,22 +36,23 @@ export class AddNewEnsConsignmentFlow {
                 !input.isEnsOnly && (input.useIMMI || input.isControlledGoods);
 
             await this.consignmentSteps.clickNewEnsConsignment();
+
+            await checkpoint?.('Consignment - importer EORI', { probeErrors: true });
+            await this.consignmentSteps.fillImporterEori(input.importerEORI);
+
             await checkpoint?.('Consignment - ENS only choice', { probeErrors: true });
             await this.declareEnsOnlyChoice(input, checkpoint);
 
-            if (input.isEnsOnly) {
-                await this.consignmentSteps.auditPartyScreens('buyer', checkpoint);
-                await this.consignmentSteps.fillBuyerDetails(input.buyerEORI, toPartyAddress('buyer', input));
-            } else {
-                await checkpoint?.('Consignment - importer EORI', { probeErrors: true });
-                await this.consignmentSteps.fillImporterEori(input.importerEORI);
+            if (input.representationType) {
+                await checkpoint?.('Consignment - representation type', { probeErrors: true });
+                await this.consignmentSteps.selectRepresentationType(input.representationType);
+            }
 
-                if (input.representationType) {
-                    await checkpoint?.('Consignment - representation type', { probeErrors: true });
-                    await this.consignmentSteps.selectRepresentationType(input.representationType);
-                }
+            // Every journey reaches this now: the importer is known before the ENS-only
+            // choice is made, so the buyer can be asked against it on both.
+            await this.fillBuyerInformation(input, checkpoint);
 
-                await this.fillBuyerInformation(input, checkpoint);
+            if (!input.isEnsOnly) {
                 await this.declareUseImmi(input, checkpoint);
 
                 // Accepting IMMI is the only answer that retires the question.

@@ -155,6 +155,14 @@ export class StringUtil {
         return faker.location.streetAddress();
     }
 
+    static randomStreetName(): string {
+        return faker.location.street();
+    }
+
+    static randomBuildingNumber(): string {
+        return faker.location.buildingNumber();
+    }
+
     /**
      * Generate random city using Faker
      */

@@ -28,7 +28,7 @@ export const NIRMS_COMMODITY = {
             documentReference({
                 documentCode: DOCUMENT_CODE.C644,
                 documentStatus: DOCUMENT_STATUS.AE,
-                documentReference: '0054039',
+                documentReference: 'COI.XI.2025.1234567',
             }),
         ],
     },
@@ -41,7 +41,7 @@ export const NIRMS_COMMODITY = {
             documentReference({
                 documentCode: DOCUMENT_CODE.C644,
                 documentStatus: DOCUMENT_STATUS.AE,
-                documentReference: '0054039',
+                documentReference: 'COI.XI.2025.1234567',
             }),
              documentReference({
                 documentCode: DOCUMENT_CODE.C640,
@@ -65,7 +65,7 @@ export const NIRMS_COMMODITY = {
             documentReference({
                 documentCode: DOCUMENT_CODE.C644,
                 documentStatus: DOCUMENT_STATUS.AE,
-                documentReference: '0054039',
+                documentReference: 'COI.XI.2025.1234567',
             }),
         ],
     },

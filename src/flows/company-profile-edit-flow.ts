@@ -80,7 +80,10 @@ export class CompanyProfileEditFlow {
                 const entered: string[] = [];
                 for (const input of edit.inputs) {
                     await this.companyProfileEditPage.enterValue(input.id, input.value);
-                    entered.push(await this.textShownFor(input));
+                    const shown = await this.textShownFor(input);
+                    const previous = input.shownOnSameLine ? entered.pop() : undefined;
+
+                    entered.push(previous ? `${previous} ${shown}` : shown);
                 }
                 expected.set(edit.field, entered);
 

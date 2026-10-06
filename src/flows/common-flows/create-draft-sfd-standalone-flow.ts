@@ -14,6 +14,7 @@ import { initialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
+import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 
 /** What a caller supplies to build an SFD standalone declaration. */
 export interface SfdStandaloneDeclarationOptions {
@@ -81,14 +82,8 @@ export class CreateDraftSfdStandaloneFlow {
         await this.initialFormFlow.completeInitialFormDeclaration(initialForm, checkpoint);
         await this.addConsignmentFlow.addNewSfdStandaloneConsignment(consignmentData, checkpoint);
         // Report the LRN as soon as the draft exists, before anything that could fail.
-        //
-        // PREFIX CHECK OFF - defect 1239. It normally asserts "DEC", which says the SFD
-        // journey ran rather than merely that some standalone draft exists. The overview
-        // is missing its LRN row entirely, so the reference reads empty and the check
-        // fails on a row the service never painted - a minor defect that was failing the
-        // whole journey. Pass LOCAL_REFERENCE.DEC_PREFIX again once 1239 is fixed.
         const consignmentReference =
-            await this.consignmentOverviewFlow.verifyStandaloneConsignmentLrn();
+            await this.consignmentOverviewFlow.verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.DEC_PREFIX);
         await auditTabs('Consignment');
         await this.consignmentOverviewFlow.auditRecordWizards(options.audit, testInfo);
         await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);

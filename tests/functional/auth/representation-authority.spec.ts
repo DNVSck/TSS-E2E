@@ -735,17 +735,6 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
     });
 
     /**
-     * EXPECTED RED on "Consignment LRN", and deliberately left that way.
-     *
-     * A controlled-goods SFD overview renders no LRN row at all (defect 1239), so the
-     * journey's own draft check reads "" and soft-fails. The same failure appears in the
-     * SFD standalone JOURNEY spec - it is the product, not this test.
-     *
-     * It could be stepped around now that the assertion lives in the flow rather than
-     * the page, and that was considered and REJECTED (2026-08-14): a defect that
-     * no longer shows anywhere is a defect nobody fixes. Everything after that line
-     * passes - the lever rejects, and all three parties answer as the table says.
-     *
      * A standalone SFD, refused by the OTHER lever.
      *
      * An SFD standalone goods item declares no UKIMS document to break, so the rejection
@@ -817,9 +806,6 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
      *
      * A declaration of its own: a rejection can be corrected once, so the agent's route
      * and the company's route cannot share a record.
-     *
-     * Carries the same EXPECTED RED on "Consignment LRN" as the test above (defect 1239),
-     * for the same reason and deliberately.
      */
     test('Verify that the Importer, on its own login, can correct and resubmit a rejected standalone SFD the Agent created for it', { tag: ['@auth', '@authorisation'] }, async ({
         createAndSubmitSfdStandaloneFlow, declarationAccessFlow, checkAuthorityFlow,
