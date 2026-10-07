@@ -18,6 +18,8 @@ export class CompanyProfileUsersPage extends BasePage {
     /** The company-level action that brings a new user in, above the table. */
     private static readonly INVITE_USER_ROUTE = '/company-profile/invite-user';
 
+    private static readonly USERS_ROUTE = '/company-profile/users';
+
     /** One row per user in the table body; the header row is not one. */
     protected override get contentRows(): Locator {
         return this.page.locator('main table tbody tr');
@@ -34,9 +36,14 @@ export class CompanyProfileUsersPage extends BasePage {
      * Scoped to links pointing back into company-profile routes, which is what makes
      * this hold when a link is added: a new management action lands in the list
      * automatically rather than being silently unchecked.
+     *
+     * Links back to this screen itself (the search filters' "Clear") are left out: they
+     * reset the list and grant nothing.
      */
     protected override get actionLinks(): Locator {
-        return this.page.locator("main a[href*='/company-profile/']");
+        return this.page.locator(
+            `main a[href*='/company-profile/']:not([href$='${CompanyProfileUsersPage.USERS_ROUTE}'])`
+        );
     }
 
     /**
