@@ -97,7 +97,12 @@ steps:
       for account_number in 1 2 3 4; do
         normalise_optional_variable "AGENT_USER_NAME_${account_number}"
         normalise_optional_variable "AGENT_TOTP_SECRET_${account_number}"
+        normalise_optional_variable "IMPORTER_TOTP_SECRET_${account_number}"
       done
+
+      normalise_optional_variable "IMPORTER_PASSWORD_1"
+      normalise_optional_variable "TSS_DDA_PASSWORD"
+      normalise_optional_variable "TSS_DDA_TOTP_SECRET"
 
       require_variable() {
         local name="$1"
@@ -177,7 +182,11 @@ steps:
       HAULIER_EORI: $(HAULIER_EORI)
 
       IMPORTER_PASSWORD: $(IMPORTER_PASSWORD)
-      IMPORTER_TOTP_SECRET: $(IMPORTER_TOTP_SECRET)
+      IMPORTER_PASSWORD_1: $(IMPORTER_PASSWORD_1)
+      IMPORTER_TOTP_SECRET_1: $(IMPORTER_TOTP_SECRET_1)
+      IMPORTER_TOTP_SECRET_2: $(IMPORTER_TOTP_SECRET_2)
+      IMPORTER_TOTP_SECRET_3: $(IMPORTER_TOTP_SECRET_3)
+      IMPORTER_TOTP_SECRET_4: $(IMPORTER_TOTP_SECRET_4)
       IMPORTER_EORI: $(IMPORTER_EORI)
       IMPORTER_IPO: $(IMPORTER_IPO)
       IMPORTER_UKIMS: $(IMPORTER_UKIMS)

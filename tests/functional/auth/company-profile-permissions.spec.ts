@@ -1,8 +1,9 @@
+import { BASE_URL } from '../../../config/environment';
 import { COMPANY_PROFILE, getCredentials, isProfileConfigured } from '../../../src/auth/credentials';
 import { ALL_COMPANY_PROFILE_ACTIONS } from '../../../src/constant/company-profile-action-constant';
 import { ReportLog } from '../../../src/core/report/report-log';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
-import { test, expect, getBaseUrl } from '../../test-hooks';
+import { test, expect } from '../../base-test';
 import { COMPANY_PROFILE_SECTIONS } from '../../../src/test-data/company-profile-edit-data';
 
 const ACCOUNT_HOLDER_TEST_ID = '2406';
@@ -24,7 +25,7 @@ test.describe('TSS Portal company profile - edit permissions', () => {
 
         const account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
 
-        await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });
+        await signInFlow.signIn(account, { baseUrl: BASE_URL, testInfo });
 
         await ReportLog.step('Check what the company profile page offers the holder', async () => {
             const profile = await companyProfileFlow.openCompanyProfile();
@@ -56,7 +57,7 @@ test.describe('TSS Portal company profile - edit permissions', () => {
 
         const account = getCredentials(COMPANY_PROFILE.PRIMARY_HOLDER);
 
-        await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });
+        await signInFlow.signIn(account, { baseUrl: BASE_URL, testInfo });
 
         await ReportLog.step('Check each EORI change sends the holder to contact support', async () => {
             await companyProfileFlow.openCompanyProfile();
@@ -70,7 +71,7 @@ test.describe('TSS Portal company profile - edit permissions', () => {
 
         const account = getCredentials(COMPANY_PROFILE.NON_PRIMARY_HOLDER);
 
-        await signInFlow.signIn(account, { baseUrl: getBaseUrl(), testInfo });
+        await signInFlow.signIn(account, { baseUrl: BASE_URL, testInfo });
 
         await ReportLog.step('Check what the company profile page offers a non-holder', async () => {
             const profile = await companyProfileFlow.openCompanyProfile();
@@ -96,7 +97,7 @@ test.describe('TSS Portal company profile - edit permissions', () => {
             test(`Verify PAH Can Edit the "${section.name}" on the Company Profile`, { tag: ['@regression'], lock: COMPANY_PROFILE.PRIMARY_HOLDER }, async ({ companyProfileEditFlow }, testInfo) => {
                 reportTestCaseLink(ACCOUNT_HOLDER_TEST_ID);
 
-                await companyProfileEditFlow.openCompanyProfile(getBaseUrl(), testInfo);
+                await companyProfileEditFlow.openCompanyProfile(BASE_URL, testInfo);
 
                 await ReportLog.step(`Change the ${section.name.toLowerCase()} and check the profile shows them`, () =>
                     companyProfileEditFlow.verifyFieldEdits(section.edits())
@@ -107,7 +108,7 @@ test.describe('TSS Portal company profile - edit permissions', () => {
         test('Verify PAH Can Edit the "Preferred Method of Payment" on the Company Profile', { tag: ['@regression'], lock: COMPANY_PROFILE.PRIMARY_HOLDER }, async ({ companyProfileEditFlow }, testInfo) => {
             reportTestCaseLink(ACCOUNT_HOLDER_TEST_ID);
 
-            await companyProfileEditFlow.openCompanyProfile(getBaseUrl(), testInfo);
+            await companyProfileEditFlow.openCompanyProfile(BASE_URL, testInfo);
 
             await ReportLog.step('Change the preferred method of payment and check the profile and the Portal API show it', () =>
                 companyProfileEditFlow.verifyPreferredPaymentMethodEdit()

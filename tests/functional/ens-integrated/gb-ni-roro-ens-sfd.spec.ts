@@ -1,25 +1,29 @@
 ﻿import { ADDITIONAL_INFORMATION_CODE } from '../../../src/constant/additional-information-constant';
 import { ReportLog } from '../../../src/core/report/report-log';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
-import { getBaseUrl, test } from '../../test-hooks';
+import { test } from '../../base-test';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import {
     documentReference, ensSfdGoodsDocuments,
 } from '../../../src/test-data/document-reference-data';
 import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
-import { IMPORTER_EXW } from '../../../config/environment';
+import { IMPORTER_EXW, BASE_URL } from '../../../config/environment';
 import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
 import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
 import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { additionalInformation } from '../../../src/test-data/additional-information-data';
 import { NIRMS_COMMODITY, nirmsGoodsItem } from '../../../src/test-data/nirms-data';
+import { rejectedByCds } from '../../../src/test-data/rejection-lever-data';
+import { ensSfdDeclaration } from '../../../src/test-data/ens-declaration-data';
+import { CANCELLATION_REASON } from '../../../src/test-data/consignment-data';
 
 const ENS_SFD_ACCO = '2253';
 const ENS_SFD_UNACCO = '2254';
 const ENS_SFD_EXCISE = '6661';
 const ENS_SFD_NIRMS = '4638';
+const ENS_SFD_RESUBMIT_AFTER_CDS = '2814';
 
 test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Represents Trader', () => {
   // Runs as AGENT: this worker replays its own AGENT account's cached session
@@ -36,7 +40,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
     const { generatedConsignment: sfd } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: {
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         },
@@ -59,7 +63,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
     const { generatedConsignment: sfd } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: {
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
         },
@@ -82,7 +86,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
     const { generatedConsignment: sfd } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: {
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         },
@@ -116,7 +120,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
     const { generatedConsignment: sfd } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: {
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         },
@@ -138,4 +142,47 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
     );
   });
 
+});
+
+
+test.describe('GB to NI RoRo Simplified Customs Declaration Process - Resubmission after CDS refuses the SFD', () => {
+  test.use({ authProfile: COMPANY_PROFILE.AGENT });
+
+  // No ICS2 skip here, unlike the ENS-only resubmission: CDS refuses this one, and it
+  // does so on every environment because the lever is the declaration's own data.
+  test.beforeEach(async () => {
+    await ReportLog.setFeature('GB to NI RoRo Simplified Customs Declaration Process');
+  });
+
+  test('Verify an SFD consignment in "Trader Input Required" by CDS can be corrected and resubmitted', { tag: ['@regression', '@resubmission'] }, async ({
+    createAndSubmitEnsDeclarationFlow, resubmitDeclarationFlow
+  }, testInfo) => {
+    await ReportLog.setStory('ENS-SFD - CDS refuses the holder of authorisation, and the trader corrects it and resubmits');
+    reportTestCaseLink(ENS_SFD_RESUBMIT_AFTER_CDS);
+
+    await createAndSubmitEnsDeclarationFlow.submitEnsDeclarationExpectingRejection(
+      ensSfdDeclaration(testInfo, rejectedByCds()), 'SFD'
+    );
+    await resubmitDeclarationFlow.correctHolderOfAuthorisationAndResubmitSfd(holderOfAuthorisation());
+  });
+});
+
+
+test.describe('GB to NI RoRo Simplified Customs Declaration Process - Cancellation after CDS refuses the SFD', () => {
+  test.use({ authProfile: COMPANY_PROFILE.AGENT });
+
+  test.beforeEach(async () => {
+    await ReportLog.setFeature('GB to NI RoRo Simplified Customs Declaration Process');
+  });
+
+  test('Verify an SFD consignment in "Trader Input Required" by CDS can be cancelled instead of corrected', { tag: ['@regression', '@cancellation'] }, async ({
+    createAndSubmitEnsDeclarationFlow, cancelEnsDeclarationFlow
+  }, testInfo) => {
+    await ReportLog.setStory('ENS-SFD - CDS refuses the holder of authorisation, and the trader cancels rather than correcting');
+
+    await createAndSubmitEnsDeclarationFlow.submitEnsDeclarationExpectingRejection(
+      ensSfdDeclaration(testInfo, rejectedByCds()), 'SFD'
+    );
+    await cancelEnsDeclarationFlow.cancelRefusedSfdConsignmentAndVerifyItIsCancelled(CANCELLATION_REASON);
+  });
 });

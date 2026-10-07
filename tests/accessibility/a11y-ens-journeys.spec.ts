@@ -1,5 +1,6 @@
+import { BASE_URL } from '../../config/environment';
 import { ReportLog } from '../../src/core/report/report-log';
-import { getBaseUrl, test } from '../test-hooks';
+import { test } from '../base-test';
 import { COMPANY_PROFILE } from '../../src/auth/credentials';
 import { ACCESSIBILITY_JOURNEY_TIMEOUT } from '../../src/constant/timeout-constant';
 import {
@@ -23,7 +24,7 @@ test.describe('ENS integrated journeys - WCAG 2.2 AA Compliance', () => {
 
         await auditDeclarationFlow.auditEnsDeclaration({
           testInfo,
-          url: getBaseUrl(),
+          url: BASE_URL,
           audit: accessibilityAuditFlow,
           movementOverrides: ENS_AUDIT_MOVEMENT,
           consignmentOverrides: journey.consignmentOverrides,

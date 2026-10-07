@@ -3,7 +3,7 @@ import {
     BASE_URL, IMPORTER_COMPANY_NAME, HAULIER_COMPANY_NAME, IS_ISC2_MOCK,
 } from '../../../config/environment';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
-import { ensSfdGoodsDocuments } from '../../../src/test-data/document-reference-data';
+import { ensSfdGoodsDocuments, importerUkimsDocument } from '../../../src/test-data/document-reference-data';
 import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
 import {
     immiStandaloneGoodsItem, immiStandaloneTransportDocument,
@@ -16,9 +16,11 @@ import { CONTAINER_SUPPLIER_TYPE } from '../../../src/constant/container-supplie
 import { generateRandomContainerIdentifierNumber } from '../../../src/helper/data-generate-helper';
 import {
     ensOnlyDeclaration, ensSfdDeclaration, ensImmiDeclaration, ensEidrDeclaration,
-    rejectedByIcs2, rejectedByCds, immiRejectedByCds, importerUkimsDocument,
+} from '../../../src/test-data/ens-declaration-data';
+import {
+    rejectedByIcs2, rejectedByCds, immiRejectedByCds,
     immiStandaloneRejectedByCds, sfdStandaloneRejectedByCds,
-} from '../../../src/test-data/representation-authority-data';
+} from '../../../src/test-data/rejection-lever-data';
 import {
     ENS_ONLY_AUTHORITY, GENERATED_DECLARATION_AUTHORITY, ENS_EIDR_AUTHORITY, STANDALONE_AUTHORITY,
     MOVEMENT_GMR_AUTHORITY,
@@ -34,7 +36,7 @@ import { CONSIGNMENT_ACTION } from '../../../src/constant/consignment-action-con
 import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
 import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
 import { checkRefusedOnceRepresentationEnds } from '../../../src/flows/authority-check-flow';
-import { test } from '../../test-hooks';
+import { test } from '../../base-test';
 
 
 test.describe('ENS Integrated declaration authority - Agent declares as itself', () => {

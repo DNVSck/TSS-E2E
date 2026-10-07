@@ -1,4 +1,5 @@
-import { expect, getBaseUrl, test } from '../../test-hooks';
+import { BASE_URL } from '../../../config/environment';
+import { expect, test } from '../../base-test';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
 import { COMPANY_PROFILE, accountFor, isProfileConfigured } from '../../../src/auth/credentials';
@@ -28,7 +29,7 @@ test.describe('TSS Portal concurrent login', () => {
 
             const result = await concurrentLoginFlow.signInOnBothDevices({
                 credentials: account,
-                baseUrl: getBaseUrl(),
+                baseUrl: BASE_URL,
                 testInfo,
             });
 

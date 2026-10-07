@@ -20,6 +20,27 @@ export class GmrOverviewFlow {
         private readonly t: TFunction,
     ) { }
 
+    locateGmrRecordHere(): string {
+        return this.gmrDetailsPage.getCurrentUrl();
+    }
+
+    async cancelGmr(record: string): Promise<void> {
+        await ReportLog.step('Cancel the GMR', async () => {
+            await this.gmrDetailsPage.navigateToUrlDirect(record);
+            await this.gmrDetailsPage.cancelGMR();
+        });
+    }
+
+    async verifyCreateGmrIsOffered(expected: boolean, because: string): Promise<void> {
+        await ReportLog.step(
+            `Verify the movement ${expected ? 'offers' : 'withholds'} Create GMR ${because}`,
+            async () => {
+                const offered = await this.movementOverviewPage.readCreateGmrOffered();
+                ReportLog.setParameter(`Create GMR offered ${because}`, String(offered));
+                expect(offered, `Create GMR offered ${because}`).toBe(expected);
+            }
+        );
+    }
 
     async auditExternalContactWizard(
         audit: AccessibilityAudit | undefined,
@@ -80,7 +101,7 @@ export class GmrOverviewFlow {
             expect.soft(status, `GMR status after ${stage}`).toBe(this.t('status.open'));
 
             ReportLog.setParameter('GMR ID', gmrId);
-            ReportLog.setParameter(`GMR status (after ${stage})`, status);
+            ReportLog.setParameter(`GMR status after ${stage}`, status);
             return status;
         });
     }
@@ -92,7 +113,7 @@ export class GmrOverviewFlow {
             }
 
             const shown = await this.gmrDetailsPage.waitForHmrcGvmsLastUpdate();
-            ReportLog.setParameter(`HMRC GVMS last update (${because})`, shown || 'not shown');
+            ReportLog.setParameter(`GVMS update ${because}`, shown || 'not shown');
 
             expect(shown,
                 `HMRC GVMS last update must already stand ${because} - GVMS never answered `
@@ -113,8 +134,8 @@ export class GmrOverviewFlow {
             const { shown, movedOn } =
                 await this.gmrDetailsPage.waitForHmrcGvmsLastUpdateAfter(baseline);
 
-            ReportLog.setParameter('HMRC GVMS last update (before)', baseline || 'not shown');
-            ReportLog.setParameter('HMRC GVMS last update (after)', shown || 'not shown');
+            ReportLog.setParameter('GVMS update before', baseline || 'not shown');
+            ReportLog.setParameter('GVMS update after', shown || 'not shown');
 
             expect(movedOn,
                 `HMRC GVMS last update should stand later than "${baseline || 'not shown'}" once `
@@ -135,9 +156,26 @@ export class GmrOverviewFlow {
     async verifyGmrStatus(expectedStatusKey: TranslationKey, because: string): Promise<string> {
         await this.openRecord(`the GMR record opened so its status can be read (${because})`);
 
+        return this.assertGmrStatus(expectedStatusKey, because);
+    }
+
+    async verifyGmrStatusAt(
+        record: string,
+        expectedStatusKey: TranslationKey,
+        because: string
+    ): Promise<string> {
+        await this.gmrDetailsPage.navigateToUrlDirect(record);
+
+        return this.assertGmrStatus(expectedStatusKey, because);
+    }
+
+    private async assertGmrStatus(
+        expectedStatusKey: TranslationKey,
+        because: string
+    ): Promise<string> {
         const { status } = await this.gmrDetailsPage.waitForGmrStatus(expectedStatusKey);
 
-        ReportLog.setParameter(`GMR status (${because})`, status);
+        ReportLog.setParameter(`GMR status ${because}`, status);
         expect(status, `GMR status ${because}`).toBe(this.t(expectedStatusKey));
 
         return status;

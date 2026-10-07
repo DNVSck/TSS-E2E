@@ -31,6 +31,8 @@ export const COMPANY_PROFILE = {
      * One agent can only ever be asked about its own work.
      */
     AGENT_B: 'AGENT_B',
+
+    TSS_DDA: 'TSS_DDA',
 } as const;
 
 /**
@@ -86,7 +88,8 @@ const DEFAULT_AUTH_PROFILES: CompanyProfile[] = [
  *
  * Deliberately outside the default list, not missing from it. AGENT_B appears in one
  * authority test; signing it in on every run would spend a login, and an expired
- * password on it would block suites that never mention it.
+ * password on it would block suites that never mention it. TSS_DDA is the same case,
+ * and is also not configured on every environment.
  *
  * UNDER SUSPICION as of 2026-09-02: the only two tests that used this path both failed
  * waiting for the portal sign-in link in the browser it launches - HAULIER was moved to
@@ -95,6 +98,7 @@ const DEFAULT_AUTH_PROFILES: CompanyProfile[] = [
  */
 const ON_DEMAND_PROFILES: ReadonlySet<CompanyProfile> = new Set([
     COMPANY_PROFILE.AGENT_B,
+    COMPANY_PROFILE.TSS_DDA,
 ]);
 
 /** True when this profile is signed in on first use rather than in globalSetup. */

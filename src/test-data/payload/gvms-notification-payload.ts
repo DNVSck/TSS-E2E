@@ -106,6 +106,13 @@ export const GVMS_STATE = {
         notificationStatus: NOTIFICATION_STATUS.ACKNOWLEDGED,
         statusVersion: 1,
     },
+    CANCELLED: {
+        name: 'CANCELLED',
+        gmrState: 'CANCELLED',
+        inspectionRequired: false,
+        notificationStatus: NOTIFICATION_STATUS.RECEIVED,
+        statusVersion: 3,
+    },
 } as const satisfies Record<string, GvmsStateMessage>;
 
 /**

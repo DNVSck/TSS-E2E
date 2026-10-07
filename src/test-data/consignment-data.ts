@@ -230,6 +230,21 @@ export const consignment = (overrides?: Partial<ConsignmentData>): ConsignmentDa
     ...overrides,
 });
 
+export const CANCELLATION_REASON = 'Cancelled by the automated regression suite';
+
+export type ContainerIdentification = Pick<ConsignmentData,
+    'containerIdentifierNumber' | 'containerSize' | 'containerPackedStatus' | 'containerSupplierType'>;
+
+export const containerIdentification = (
+    overrides?: Partial<ContainerIdentification>
+): ContainerIdentification => ({
+    containerIdentifierNumber: generateRandomContainerIdentifierNumber(),
+    containerSize: defaults.containerSize,
+    containerPackedStatus: defaults.containerPackedStatus,
+    containerSupplierType: defaults.containerSupplierType,
+    ...overrides,
+});
+
 /**
  * The "ENS only" journey. A reason is mandatory, so it is supplied here rather
  * than left to every call site to remember.

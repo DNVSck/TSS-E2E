@@ -35,7 +35,9 @@
     "countryOfOrigin": "Gwlad wreiddiol"
   },
   "movementHeaderOverview": {
-    "declarationStatus": "Statws y datganiad"
+    "declarationStatus": "Statws y datganiad",
+    "cancelScopeConsignments": "Bydd pob Llwyth nad yw wedi'i Ganslo o dan y Pennawd hwn yn cael ei ganslo.",
+    "cancelScopeCustomsDeclarations": "Ni fydd Datganiadau Tollau cysylltiedig yn cael eu canslo gan y weithred hon."
   },
   "consignmentDetail": {
     "movementReferenceNumber": "Rhif cyfeirnod symud"
@@ -63,6 +65,8 @@
     "completed": "Wedi'i gwblhau",
     "traderInputRequired": "Mewnbwn Masnachwr sy'n Ofynnol",
     "closed": "Ar gau",
+    "cancelled": "Wedi'i ganslo",
+    "pendingCancellation": "Yn disgwyl cael ei ganslo",
     "processing": "Wrthi'n prosesu",
     "paymentPending": "Taliad yn yr arfaeth",
     "taxCalculation": "Cyfrifiad treth"

@@ -1,5 +1,6 @@
+import { BASE_URL } from '../../config/environment';
 import { ReportLog } from '../../src/core/report/report-log';
-import { getBaseUrl, test } from '../test-hooks';
+import { test } from '../base-test';
 import { COMPANY_PROFILE } from '../../src/auth/credentials';
 import { ACCESSIBILITY_JOURNEY_TIMEOUT } from '../../src/constant/timeout-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../src/constant/additional-procedure-codes-constant';
@@ -27,7 +28,7 @@ test.describe('SFD standalone journey - WCAG 2.2 AA Compliance', () => {
 
     await auditDeclarationFlow.auditSfdStandalone({
       testInfo,
-      url: getBaseUrl(),
+      url: BASE_URL,
       audit: accessibilityAuditFlow,
       consignmentOverrides: SFD_STANDALONE_MAX_SCREEN_COVERAGE,
       goodsItemOverrides: sfdStandaloneGoodsItem({

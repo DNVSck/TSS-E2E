@@ -1,7 +1,9 @@
 ﻿import { MovementOverviewFlow, GeneratedConsignment } from '../movement/movement-overview-flow';
 import { ConsignmentOverviewFlow, citedAs } from '../consignment/consignment-overview-flow';
 import { GoodsJourneyContext } from '../goods-item/add-new-ens-goods-item-flow';
-import { CreateDraftEnsDeclarationFlow, EnsDeclarationOptions } from './create-draft-ens-declaration-flow';
+import {
+    CreateDraftEnsDeclarationFlow, DraftEnsDeclaration, EnsDeclarationOptions,
+} from './create-draft-ens-declaration-flow';
 import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import { requiresWarehouseIdentifier } from '../../helper/procedure-code-helper';
 import { SUPERVISING_CUSTOMS_OFFICE } from '../../constant/supervising-customs-office-constant';
@@ -12,6 +14,9 @@ import { IMPORTER_NIRMS } from '../../../config/environment';
 import { nirmsDocumentCitations } from '../../test-data/nirms-data';
 import { documentReference } from '../../test-data/document-reference-data';
 
+
+/** Which declaration of a movement a rejection lever aims at. */
+export type RefusedDeclaration = 'ENS' | 'SFD' | 'IMMI';
 
 export interface EnsDeclarationResult {
     transportDocumentNumber: string;
@@ -53,6 +58,30 @@ export class CreateAndSubmitEnsDeclarationFlow {
         };
     }
 
+    async submitEnsDeclarationExpectingRejection(
+        options: EnsDeclarationOptions,
+        refused: RefusedDeclaration = 'ENS'
+    ): Promise<DraftEnsDeclaration> {
+        const draft = await this.createDraftEnsDeclarationFlow.createDraftEnsDeclaration(options);
+
+        await this.consignmentOverviewFlow.goToConsignmentOverview();
+        await this.consignmentOverviewFlow.submitConsignment();
+        await this.movementOverviewFlow.waitForSubmittedMovementOverview();
+        await this.verifyRefused(refused);
+
+        return draft;
+    }
+
+    private async verifyRefused(refused: RefusedDeclaration): Promise<void> {
+        const refusalChecks: Record<RefusedDeclaration, () => Promise<unknown>> = {
+            ENS: () => this.movementOverviewFlow.verifyEnsConsignmentTraderInputRequired(),
+            SFD: () => this.movementOverviewFlow.verifySfdConsignmentTraderInputRequired(),
+            IMMI: () => this.movementOverviewFlow.verifyImmiConsignmentTraderInputRequired(),
+        };
+
+        await refusalChecks[refused]();
+    }
+
     private async verifyNirmsOnGeneratedSfd(nirmsDocumentCodes: string[]): Promise<void> {
         const citations = nirmsDocumentCitations(nirmsDocumentCodes, new Date().getFullYear());
 
@@ -62,7 +91,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
 
         await this.movementOverviewFlow.openGeneratedSfdConsignment();
         await this.consignmentOverviewFlow.openGoodsItem();
-        await this.goodsOverviewFlow.verifyDocumentReferences(citations);
+        await this.goodsOverviewFlow.verifyDocumentReferences(citations, 'SFD');
     }
 
     private async verifyNirmsOnGeneratedImmi(importerEORI: string): Promise<void> {
@@ -80,7 +109,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
                 documentStatus: undefined,
                 documentReason: undefined,
             }),
-        ]);
+        ], 'IMMI');
         await this.goodsOverviewFlow.verifyAdditionalProcedureCodes([
             ADDITIONAL_PROCEDURE_CODES.SPIMM_NIRMS_1RM,
         ]);

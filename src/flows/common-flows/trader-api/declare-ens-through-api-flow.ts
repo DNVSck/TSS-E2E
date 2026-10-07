@@ -141,7 +141,7 @@ export class DeclareEnsThroughApiFlow {
                 attachRequest('ENS consignment', payload);
 
                 const reference = await this.consignmentService.createConsignment(payload);
-                ReportLog.setParameter('ENS consignment', reference);
+                ReportLog.setParameter('ENS consignment LRN', reference);
                 return reference;
             }
         );
@@ -186,7 +186,7 @@ export class DeclareEnsThroughApiFlow {
                     return;
                 }
 
-                ReportLog.setParameter('Declaration reference', declaration.reference);
+                ReportLog.setParameter('Declaration LRN', declaration.reference);
                 ReportLog.setParameter('Declaration status', declaration.status);
 
                 if (!isDeclarationStatus(

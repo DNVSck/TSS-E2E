@@ -126,6 +126,7 @@ export class GmrDetailsPage extends BasePage {
 
     async cancelGMR(): Promise<void> {
         await this.cancelGMRButton.click();
+        await this.page.waitForURL(url => !MOVEMENT_ROUTE.GMR_RECORD_PATH.test(url.pathname));
     }
 
     async generateBarcode(): Promise<void> {
@@ -174,9 +175,10 @@ export class GmrDetailsPage extends BasePage {
     }
 
     /**
-     * The same wait for any status GVMS can move a GMR to. The GMR ID is held to the
-     * same rule throughout: once issued it stays, so a status that arrives without it
-     * is not the answer.
+     * The same wait for any status GVMS can move a GMR to. Once the GMR ID is issued it
+     * stays, so for an Open GMR, or one already showing an ID, a status that arrives
+     * without it is not the answer. A draft never sent to GVMS has no ID and is waited
+     * on by status alone.
      *
      * Refuses to read anywhere but the GMR record. "Status" is a summary-list row on
      * the movement overview and on every consignment too, so a caller that had
@@ -188,17 +190,22 @@ export class GmrDetailsPage extends BasePage {
         this.refuseUnlessOnGmrRecord();
 
         const expected = this.t!(expectedStatusKey);
-        let gmrId = '';
+        let gmrId = await readFieldIfPresent(this.gmrId);
         let status = '';
+        const idRequired = expectedStatusKey === 'status.open'
+            || LOCAL_REFERENCE.GMR_PREFIX.test(gmrId);
 
         await expect(async () => {
             status = await readFieldIfPresent(this.status);
             gmrId = await readFieldIfPresent(this.gmrId);
-            if (status !== expected || !LOCAL_REFERENCE.GMR_PREFIX.test(gmrId)) {
+            const idIssued = LOCAL_REFERENCE.GMR_PREFIX.test(gmrId);
+            if (status !== expected || (idRequired && !idIssued)) {
                 await this.page.reload();
             }
             expect(status, `GMR status ${expected}`).toBe(expected);
-            expect(gmrId, 'GMR ID issued').toMatch(LOCAL_REFERENCE.GMR_PREFIX);
+            if (idRequired) {
+                expect(gmrId, 'GMR ID issued').toMatch(LOCAL_REFERENCE.GMR_PREFIX);
+            }
         })
             .toPass({ timeout: GMR_OPEN_POLL_TIMEOUT, intervals: [2_000, 3_000, 5_000] })
             .catch(() => { /* soft: return whatever was last read for the caller to report */ });

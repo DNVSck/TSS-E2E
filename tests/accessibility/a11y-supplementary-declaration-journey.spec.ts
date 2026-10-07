@@ -1,8 +1,8 @@
 import { ReportLog } from '../../src/core/report/report-log';
-import { getBaseUrl, test } from '../test-hooks';
+import { test } from '../base-test';
 import { COMPANY_PROFILE } from '../../src/auth/credentials';
 import { ACCESSIBILITY_JOURNEY_TIMEOUT } from '../../src/constant/timeout-constant';
-import { TSS_DDA_COMPANY_NAME } from '../../config/environment';
+import { TSS_DDA_COMPANY_NAME, BASE_URL } from '../../config/environment';
 import {
   declaredThroughTraderApi, tssDefermentSupplementaryDeclaration,
 } from '../../src/test-data/supplementary-declaration-data';
@@ -35,12 +35,12 @@ test.describe('Supplementary declaration journey - WCAG 2.2 AA Compliance', () =
     );
 
     await representTraderFlow.openPortalAndRepresent(
-      getBaseUrl(), testInfo, TSS_DDA_COMPANY_NAME
+      BASE_URL, testInfo, TSS_DDA_COMPANY_NAME
     );
 
     await auditDeclarationFlow.auditSupplementaryDeclaration({
       testInfo,
-      url: getBaseUrl(),
+      url: BASE_URL,
       movementLrn,
       frontierLrn,
       audit: accessibilityAuditFlow,

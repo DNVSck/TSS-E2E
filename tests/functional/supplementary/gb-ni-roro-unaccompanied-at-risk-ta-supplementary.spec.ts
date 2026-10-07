@@ -1,5 +1,6 @@
+import { BASE_URL } from '../../../config/environment';
 import { ReportLog } from '../../../src/core/report/report-log';
-import { getBaseUrl, test } from '../../test-hooks';
+import { test } from '../../base-test';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import {
         tssDefermentSupplementaryDeclaration,
@@ -30,13 +31,13 @@ test.describe('GB to NI RoRo Unaccompanied At Risk Temporary Admission - Supplem
             await ReportLog.setStory('SD - GB to NI RoRo Unaccompanied At Risk - Temporary Admission');
             reportTestCaseLink(SFD_SUPP_TEA);
             const { movementLrn, frontierLrn } = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement', () =>
-                generateSdDraftFromEnsSfdFlow.generateSdDraft({ testInfo, url: getBaseUrl(), overrides: tempAdmissionSupplementaryDeclarationMovement() })
+                generateSdDraftFromEnsSfdFlow.generateSdDraft({ testInfo, url: BASE_URL, overrides: tempAdmissionSupplementaryDeclarationMovement() })
             );
 
             await ReportLog.step('Complete and submit the supplementary declaration', () =>
                 completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
                     testInfo,
-                    url: getBaseUrl(),
+                    url: BASE_URL,
                     movementLrn,
                     frontierLrn,
                     overrides: tssDefermentSupplementaryDeclaration(),

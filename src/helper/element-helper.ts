@@ -231,9 +231,11 @@ export async function readErrorSummary(page: Page): Promise<string[]> {
 
 const SUBMIT_SETTLE_TIMEOUT = 5_000;
 
+
 export async function submitAndReadErrors(page: Page, button: Locator): Promise<string[]> {
     const from = page.url();
     const origin = new URL(from).origin;
+    const standing = await readErrorSummary(page);
     const answered = page.waitForResponse(response =>
         response.request().method() === 'POST' && new URL(response.url()).origin === origin
     );
@@ -241,12 +243,19 @@ export async function submitAndReadErrors(page: Page, button: Locator): Promise<
     await button.click();
     await answered;
 
-    await Promise.race([
+    const left = page
+        .waitForURL(url => url.href !== from, { waitUntil: 'domcontentloaded', timeout: SUBMIT_SETTLE_TIMEOUT })
+        .catch(() => undefined);
+
+    await (standing.length > 0 ? left : Promise.race([
         page.locator(GOVUK.ERROR_SUMMARY.LIST).first()
             .waitFor({ state: 'visible', timeout: SUBMIT_SETTLE_TIMEOUT }).catch(() => undefined),
-        page.waitForURL(url => url.href !== from, { waitUntil: 'domcontentloaded', timeout: SUBMIT_SETTLE_TIMEOUT })
-            .catch(() => undefined),
-    ]);
+        left,
+    ]));
+
+    if (page.url() !== from) {
+        return [];
+    }
 
     const errors = await readErrorSummary(page);
     if (errors.length > 0) {

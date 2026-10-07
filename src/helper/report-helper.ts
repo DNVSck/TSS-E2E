@@ -111,3 +111,9 @@ export async function attachScreenshotIfFailedSince(
         ReportLog.addAttachment(`FAILED - ${label}`, await capture(), 'image/png');
     } catch { /* the failure being reported matters more than the picture of it */ }
 }
+
+export function reportAttempts(call: string, attempts: number): void {
+    if (attempts > 1) {
+        ReportLog.setParameter(`${call} answered on attempt`, String(attempts));
+    }
+}

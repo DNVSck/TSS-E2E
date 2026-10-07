@@ -23,7 +23,13 @@ export const MOVEMENT_ROUTE = {
     GOODS_MOVEMENT_SEGMENT: 'goods-movement',
     OVERVIEW_SEGMENT: 'overview',
     NEW_CONSIGNMENT_SEGMENT: 'new-consignment',
+    GMR_DETAILS_TAB_SEGMENT: 'gmr-details',
     GMR_RECORD_PATH: /\/goods-movement-records\/GMR\d+/,
+} as const;
+
+export const CANCELLATION_ROUTE = {
+    CANCEL_SEGMENT: 'cancel',
+    CONFIRMATION_SEGMENT: 'cancel-confirmation',
 } as const;
 
 export const SUPPLEMENTARY_DECLARATION_ROUTE = {

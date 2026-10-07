@@ -3,6 +3,13 @@ import { MovementOverviewFlow } from '../movement/movement-overview-flow';
 import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import { CDS_RESPONSE, DeclarationIdentity } from '../../test-data/payload/cds-notification-payload';
 import { TranslationKey } from '../../fixtures/locale-fixture';
+import {
+    CancelSupplementaryDeclarationFlow, LinkedSupplementaryDeclaration,
+} from './cancel-supplementary-declaration-flow';
+import {
+    SimplifiedFrontierDeclarationService,
+} from '../../api-service/trader-api/simplified-frontier-declaration-service';
+import { ReportLog } from '../../core/report/report-log';
 
 
 export class TriggerFinalStatusThroughCdsFlow {
@@ -10,7 +17,25 @@ export class TriggerFinalStatusThroughCdsFlow {
         private readonly cdsNotificationFlow: CdsNotificationFlow,
         private readonly movementOverviewFlow: MovementOverviewFlow,
         private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
+        private readonly cancelSupplementaryDeclarationFlow: CancelSupplementaryDeclarationFlow,
+        private readonly simplifiedFrontierDeclarationService: SimplifiedFrontierDeclarationService,
     ) { }
+
+    async acceptSupplementaryDeclarationCancellationThroughCds(
+        declaration: LinkedSupplementaryDeclaration
+    ): Promise<void> {
+        await ReportLog.step('Accept the supplementary declaration cancellation through CDS', async () => {
+            const sfd = await this.simplifiedFrontierDeclarationService.readSfd(declaration.frontierLrn);
+
+            await this.cdsNotificationFlow.sendResponse(
+                CDS_RESPONSE.DMSINV, { lrn: declaration.frontierLrn, mrn: sfd.movementReferenceNumber }
+            );
+
+            await this.cancelSupplementaryDeclarationFlow.verifySupplementaryDeclarationAndLinkedSfdAreCancelled(
+                declaration, `after CDS sent ${CDS_RESPONSE.DMSINV.name}`
+            );
+        });
+    }
 
     /**
      * Take the SFD a movement generated from "Awaiting arrival" to "Arrived".

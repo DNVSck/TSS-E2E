@@ -1,9 +1,12 @@
+import { BASE_URL } from '../../../config/environment';
 import { ReportLog } from '../../../src/core/report/report-log';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
-import { getBaseUrl, test } from '../../test-hooks';
+import { test } from '../../base-test';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { gmrData } from '../../../src/test-data/gmr-data';
 import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
+import { ensSfdDeclaration } from '../../../src/test-data/ens-declaration-data';
+import { CANCELLATION_REASON } from '../../../src/test-data/consignment-data';
 import {
   GMR_MOVEMENT, sfdGmrJourney, immiGmrJourney, eidrGmrJourney,
 } from '../../../src/test-data/gmr-journey-data';
@@ -14,6 +17,9 @@ const GMR_ENS_EIDR = '6667';
 const GMR_ENS_SFD_GMR_AUTOMATION = '6668';
 const GMR_ENS_IMMI_GMR_AUTOMATION = '6669';
 const GMR_ENS_EIDR_GMR_AUTOMATION = '6670';
+const GMR_ONE_LIVE_AT_A_TIME = '3238';
+const GMR_OPEN_CANCELLED = '3266';
+const GMR_AUTO_CANCELLED_WITH_MOVEMENT = '3269';
 
 test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
@@ -28,7 +34,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
     await raiseMovementForGmrFlow.raiseMovement({
       testInfo,
-      url: getBaseUrl(),
+      url: BASE_URL,
       journey: sfdGmrJourney(GMR_MOVEMENT.ACCOMPANIED),
     });
 
@@ -53,7 +59,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
     await raiseMovementForGmrFlow.raiseMovement({
       testInfo,
-      url: getBaseUrl(),
+      url: BASE_URL,
       journey: immiGmrJourney(GMR_MOVEMENT.UNACCOMPANIED),
     });
 
@@ -77,7 +83,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
     await raiseMovementForGmrFlow.raiseMovement({
       testInfo,
-      url: getBaseUrl(),
+      url: BASE_URL,
       journey: eidrGmrJourney(GMR_MOVEMENT.ACCOMPANIED),
     });
 
@@ -104,7 +110,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
     const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
       .raiseEligibleMovementThroughTraderApi({ journey: immiGmrJourney(GMR_MOVEMENT.ACCOMPANIED) });
 
-    await declarationAccessFlow.openDeclarationInPortal(getBaseUrl(), testInfo, consignmentReference);
+    await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
 
     const gmrReference = await ReportLog.step('Create and submit the GMR', () =>
       createAndSubmitGmrFlow.addNewGmrAndSubmit(
@@ -125,7 +131,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
     const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
       .raiseEligibleMovementThroughTraderApi({ journey: eidrGmrJourney(GMR_MOVEMENT.UNACCOMPANIED) });
 
-    await declarationAccessFlow.openDeclarationInPortal(getBaseUrl(), testInfo, consignmentReference);
+    await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
 
     const gmrReference = await ReportLog.step('Create and submit the GMR', () =>
       createAndSubmitGmrFlow.addNewGmrAndSubmit(
@@ -146,7 +152,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
     const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
       .raiseEligibleMovementThroughTraderApi({ journey: sfdGmrJourney(GMR_MOVEMENT.UNACCOMPANIED) });
 
-    await declarationAccessFlow.openDeclarationInPortal(getBaseUrl(), testInfo, consignmentReference);
+    await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
 
     const gmrReference = await ReportLog.step('Create and submit the GMR', () =>
       createAndSubmitGmrFlow.addNewGmrAndSubmit(
@@ -180,7 +186,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
     const { movementLrn, consignmentReference } = await raiseMovementForGmrThroughApiFlow
       .raiseEligibleMovementThroughTraderApi({ journey });
 
-    await declarationAccessFlow.openDeclarationInPortal(getBaseUrl(), testInfo, consignmentReference);
+    await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
 
     await ReportLog.step('Create and submit the GMR', () =>
       createAndSubmitGmrFlow.addNewGmrAndSubmit(
@@ -215,7 +221,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
     const { movementLrn, consignmentReference } = await raiseMovementForGmrThroughApiFlow
       .raiseEligibleMovementThroughTraderApi({ journey });
 
-    await declarationAccessFlow.openDeclarationInPortal(getBaseUrl(), testInfo, consignmentReference);
+    await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
 
     await ReportLog.step('Create and submit the GMR', () =>
       createAndSubmitGmrFlow.addNewGmrAndSubmit(
@@ -250,7 +256,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
     const { movementLrn, consignmentReference } = await raiseMovementForGmrThroughApiFlow
       .raiseEligibleMovementThroughTraderApi({ journey });
 
-    await declarationAccessFlow.openDeclarationInPortal(getBaseUrl(), testInfo, consignmentReference);
+    await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
 
     await ReportLog.step('Create and submit the GMR', () =>
       createAndSubmitGmrFlow.addNewGmrAndSubmit(
@@ -265,5 +271,64 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
       .addEligibleConsignmentThroughTraderApi(movementLrn, journey);
 
     await gmrOverviewFlow.verifyGmrResubmitted(lastUpdateBefore);
+  });
+});
+
+
+test.describe('GB to NI RoRo GMR - Cancellation', () => {
+  test.use({ authProfile: COMPANY_PROFILE.AGENT });
+
+  test.beforeEach(async () => {
+    await ReportLog.setFeature('GB to NI RoRo GMR');
+  });
+
+  test('Verify a movement takes one GMR at a time, and takes another once a "Draft" GMR is cancelled', { tag: ['@regression', '@cancellation'] }, async ({
+    raiseMovementForGmrThroughApiFlow, declarationAccessFlow, cancelGmrFlow
+  }, testInfo) => {
+    await ReportLog.setStory('GMR - one live GMR per movement, released by cancelling the draft');
+    reportTestCaseLink(GMR_ONE_LIVE_AT_A_TIME);
+
+    const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
+      .raiseEligibleMovementThroughTraderApi({ journey: sfdGmrJourney(GMR_MOVEMENT.ACCOMPANIED) });
+    await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
+    await declarationAccessFlow.locateMovementHeader();
+
+    await cancelGmrFlow.verifyMovementTakesOneLiveGmrAtATime(
+      gmrData({ route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES })
+    );
+  });
+
+  test('Verify a "Draft" GMR with Auto Update GMR enabled is cancelled automatically when its "Draft" movement is cancelled', { tag: ['@regression', '@cancellation'] }, async ({
+    raiseMovementForGmrThroughApiFlow, createDraftEnsDeclarationFlow, cancelGmrFlow
+  }, testInfo) => {
+    await ReportLog.setStory('GMR auto update - cancelling the movement takes its draft GMR with it');
+    reportTestCaseLink(GMR_AUTO_CANCELLED_WITH_MOVEMENT);
+
+    const autoUpdates = await raiseMovementForGmrThroughApiFlow.isGmrAutoUpdateAllowed();
+    test.skip(!autoUpdates,
+      'gmr_auto_update is off for this company, so cancelling the movement leaves its GMR alone'
+    );
+
+    await createDraftEnsDeclarationFlow.createDraftEnsDeclaration(ensSfdDeclaration(testInfo, {}));
+
+    await cancelGmrFlow.verifyDraftGmrIsCancelledWithItsMovement(
+      gmrData({ route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES }),
+      CANCELLATION_REASON
+    );
+  });
+
+  test('Verify an "Open" GMR can be cancelled once GVMS accepts the cancellation', { tag: ['@regression', '@cancellation'] }, async ({
+    raiseMovementForGmrThroughApiFlow, declarationAccessFlow, cancelGmrFlow
+  }, testInfo) => {
+    await ReportLog.setStory('GMR - cancelling an Open GMR waits on GVMS to accept it');
+    reportTestCaseLink(GMR_OPEN_CANCELLED);
+
+    const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
+      .raiseEligibleMovementThroughTraderApi({ journey: sfdGmrJourney(GMR_MOVEMENT.ACCOMPANIED) });
+    await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
+
+    await cancelGmrFlow.verifyOpenGmrCancelsOnceGvmsAccepts(
+      gmrData({ route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES })
+    );
   });
 });

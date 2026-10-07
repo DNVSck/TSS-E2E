@@ -6,7 +6,9 @@ import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
     readFieldWhenVisible, readFieldIfPresent, readErrorSummary,
 } from '../helper/element-helper';
-import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
+import {
+    isTraderInputRequiredStatus, isDeclarationStatus, declarationStatusPattern,
+} from '../helper/declaration-status-helper';
 
 /** The MRN is populated asynchronously after the consignment is authorised. */
 const MRN_POLL_TIMEOUT = 120_000;
@@ -67,7 +69,7 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
      * Returns '' if the row is not present yet (never throws), so a poll can decide
      * whether to wait.
      */
-    private async readMovementReferenceNumber(): Promise<string> {
+    async readMovementReferenceNumber(): Promise<string> {
         return alphanumericOnly(await readFieldIfPresent(this.movementReferenceNumber));
     }
 
@@ -146,12 +148,12 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
 
         await expect(async () => {
             status = await readFieldIfPresent(this.status);
-            if (status === expected) {
+            if (isDeclarationStatus(status, expected)) {
                 return;
             }
 
             await this.page.reload();
-            expect(status, 'Consignment status').toBe(expected);
+            expect(status, 'Consignment status').toMatch(declarationStatusPattern(expected));
         })
             .toPass({ timeout, intervals: [2_000, 3_000, 5_000] })
             .catch(() => { /* the caller asserts; this only decides how long to wait */ });

@@ -1,6 +1,13 @@
 import { BasePage } from '../base-page';
-import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue, currentWizardStep, waitForWizardStepToChange } from '../../helper/element-helper';
+import { Page, Locator, expect } from '@playwright/test';
+import {
+    selectDropdownValue, currentWizardStep, waitForWizardStepToChange, fillInputValue,
+    clickToLeaveScreen,
+} from '../../helper/element-helper';
+
+const EORI_SCREEN_TIMEOUT = 15_000;
+const EORI_SCREEN_RELOADED_TIMEOUT = 30_000;
+const EORI_SUBMIT_TIMEOUT = 150_000;
 
 /**
  * A trade party involved in a consignment. Consignment declaration repeats the
@@ -94,15 +101,31 @@ export class PartyBlock extends BasePage {
         await this.eoriInput.waitFor({ state: 'visible', timeout: timeoutMs });
     }
 
-    /** Fill the EORI field only (caller decides when to continue). */
-    async fillEori(eori: string): Promise<void> {
-        await this.eoriInput.fill(eori);
+    private async waitForEoriScreen(): Promise<void> {
+        await this.page.waitForLoadState('domcontentloaded');
+
+        const arrived = await this.eoriInput
+            .waitFor({ state: 'visible', timeout: EORI_SCREEN_TIMEOUT })
+            .then(() => true, () => false);
+
+        if (arrived) {
+            return;
+        }
+
+        await this.page.reload({ waitUntil: 'domcontentloaded' });
+        await this.waitForScreenField(
+            this.eoriInput, `${this.party} EORI`, EORI_SCREEN_RELOADED_TIMEOUT
+        );
     }
 
-    /** Fill the EORI field and continue to the next screen. */
     async enterEori(eori: string): Promise<void> {
-        await this.fillEori(eori);
-        await this.clickContinueButton();
+        await this.waitForEoriScreen();
+
+        await expect(async () => {
+            await fillInputValue(this.eoriInput, eori);
+            await expect(this.eoriInput).toHaveValue(eori);
+            await clickToLeaveScreen(this.page, this.commonContinueButton);
+        }).toPass({ timeout: EORI_SUBMIT_TIMEOUT });
     }
 
 
@@ -117,13 +140,12 @@ export class PartyBlock extends BasePage {
      * declared in the test data.
      */
     async submitEori(eori: string, timeoutMs: number): Promise<'accepted' | 'address'> {
-        // Read the step only after the field is there. Filling waits for it, which
-        // also proves the previous screen has finished handing over; reading the
-        // URL first could capture the step we are still leaving.
-        await this.fillEori(eori);
+        // Read the step only once this party's own field is on screen: reading the URL
+        // first could capture the step we are still leaving, and name the wrong party.
+        await this.waitForEoriScreen();
         const eoriStep = currentWizardStep(this.page);
 
-        await this.clickContinueButton();
+        await this.enterEori(eori);
 
         // Continue posts back to the same step, then redirects roughly 400ms later.
         // Reading page.url() straight after the click would therefore always see

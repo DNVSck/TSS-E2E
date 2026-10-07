@@ -1,25 +1,30 @@
-import { ADDITIONAL_INFORMATION_CODE } from '../../../src/constant/additional-information-constant';
-﻿import { reportTestCaseLink } from '../../../src/helper/report-helper';
+﻿import { ADDITIONAL_INFORMATION_CODE } from '../../../src/constant/additional-information-constant';
+import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
-import { getBaseUrl, test } from '../../test-hooks';
+import { test } from '../../base-test';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
-import { documentReference } from '../../../src/test-data/document-reference-data';
+import { documentReference, importerUkimsDocument } from '../../../src/test-data/document-reference-data';
 import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
 import { previousDocument } from '../../../src/test-data/previous-document-data';
 import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
 import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
-import { IMPORTER_UKIMS, IMPORTER_EXW } from '../../../config/environment';
+import { IMPORTER_UKIMS, IMPORTER_EXW, BASE_URL } from '../../../config/environment';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
 import { TGP_RECORD } from '../../../src/test-data/tgp-record-data';
 import { additionalInformation } from '../../../src/test-data/additional-information-data';
+import { immiRejectedByCds } from '../../../src/test-data/rejection-lever-data';
+import { ensImmiDeclaration } from '../../../src/test-data/ens-declaration-data';
+import { CANCELLATION_REASON } from '../../../src/test-data/consignment-data';
 
 const ENS_IMMI_NO_TGP = '2809';
 const ENS_IMMI_TGP = '2793';
 const IMMI_NIRMS = '4912';
 const IMMI_EXCISE = '6660';
+const ENS_IMMI_RESUBMIT_AFTER_CDS = '2814';
+const ENS_IMMI_CANCEL_AFTER_CDS = '2827';
 
 test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () => {
   // Runs as AGENT: this worker replays its own AGENT account's cached session
@@ -38,7 +43,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     const { generatedConsignment: immi } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
         consignmentOverrides: {
           useIMMI: true,
@@ -72,7 +77,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     const { generatedConsignment: immi } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
         consignmentOverrides: {
           useIMMI: true,
@@ -118,7 +123,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     const { generatedConsignment: immi } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
         consignmentOverrides: {
           useIMMI: true,
@@ -156,7 +161,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     const { generatedConsignment: immi } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
         consignmentOverrides: {
           useIMMI: true,
@@ -194,7 +199,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     const { generatedConsignment: immi } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
         consignmentOverrides: {
           useIMMI: true,
@@ -219,4 +224,48 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
     );
   });
 
+});
+
+
+test.describe('GB to NI RoRo IMMI Pre-movement - Resubmission after CDS refuses the IMMI', () => {
+  test.use({ authProfile: COMPANY_PROFILE.AGENT });
+
+  test.beforeEach(async () => {
+    await ReportLog.setFeature('GB to NI RoRo IMMI Pre-movement');
+  });
+
+  test('Verify an IMMI consignment in "Trader Input Required" by CDS can be corrected and resubmitted', { tag: ['@regression', '@resubmission'] }, async ({
+    createAndSubmitEnsDeclarationFlow, resubmitDeclarationFlow
+  }, testInfo) => {
+    await ReportLog.setStory('ENS-IMMI - CDS refuses the UKIMS number, and the trader corrects it and resubmits');
+    reportTestCaseLink(ENS_IMMI_RESUBMIT_AFTER_CDS);
+
+    // The lever rides on the GOODS ITEM, which is where the UKIMS number lives and
+    // where the correction below puts the importer's own number back.
+    await createAndSubmitEnsDeclarationFlow.submitEnsDeclarationExpectingRejection(
+      ensImmiDeclaration(testInfo, immiRejectedByCds()), 'IMMI'
+    );
+    await resubmitDeclarationFlow.correctUkimsDocumentAndResubmitImmi(importerUkimsDocument());
+  });
+});
+
+
+test.describe('GB to NI RoRo IMMI Pre-movement - Cancellation after CDS refuses the IMMI', () => {
+  test.use({ authProfile: COMPANY_PROFILE.AGENT });
+
+  test.beforeEach(async () => {
+    await ReportLog.setFeature('GB to NI RoRo IMMI Pre-movement');
+  });
+
+  test('Verify an IMMI consignment in "Trader Input Required" by CDS can be cancelled instead of corrected', { tag: ['@regression', '@cancellation'] }, async ({
+    createAndSubmitEnsDeclarationFlow, cancelEnsDeclarationFlow
+  }, testInfo) => {
+    await ReportLog.setStory('ENS-IMMI - CDS refuses the UKIMS number, and the trader cancels rather than correcting');
+    reportTestCaseLink(ENS_IMMI_CANCEL_AFTER_CDS);
+
+    await createAndSubmitEnsDeclarationFlow.submitEnsDeclarationExpectingRejection(
+      ensImmiDeclaration(testInfo, immiRejectedByCds()), 'IMMI'
+    );
+    await cancelEnsDeclarationFlow.cancelRefusedImmiConsignmentAndVerifyItIsCancelled(CANCELLATION_REASON);
+  });
 });

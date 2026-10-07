@@ -1,8 +1,23 @@
-import { APIRequestContext, APIResponse } from '@playwright/test';
+import { APIRequestContext, APIResponse, errors } from '@playwright/test';
 import { StringUtil } from '../core/util/string-util';
 
 /** How much of a failing response body an error message quotes. */
 const ERROR_BODY_LIMIT = 500;
+
+const UNANSWERED_ATTEMPTS = 3;
+const UNANSWERED_TIMEOUT = 20_000;
+const SERVER_ERROR_STATUS = 500;
+
+class ApiResponseError extends Error {
+    constructor(message: string, readonly status: number) {
+        super(message);
+    }
+}
+
+function isUnanswered(error: unknown): boolean {
+    return error instanceof errors.TimeoutError
+        || (error instanceof ApiResponseError && error.status >= SERVER_ERROR_STATUS);
+}
 
 /**
  * Make a path relative to the service's base URL, whichever way it was written.
@@ -44,15 +59,34 @@ export abstract class BaseApiClient {
     protected async post(
         path: string,
         body?: unknown,
-        headers?: Record<string, string>
+        headers?: Record<string, string>,
+        timeout?: number
     ): Promise<APIResponse> {
         const route = relativeToBase(path);
         const response = await this.request.post(route, {
             ...(body === undefined ? {} : { data: body }),
             ...(headers ? { headers } : {}),
+            ...(timeout === undefined ? {} : { timeout }),
         });
         await this.assertSucceeded('POST', route, response);
         return response;
+    }
+
+    protected async postUntilAnswered(
+        path: string,
+        body: unknown,
+        headers?: Record<string, string>
+    ): Promise<number> {
+        for (let attempt = 1; ; attempt++) {
+            try {
+                await this.post(path, body, headers, UNANSWERED_TIMEOUT);
+                return attempt;
+            } catch (error) {
+                if (attempt >= UNANSWERED_ATTEMPTS || !isUnanswered(error)) {
+                    throw error;
+                }
+            }
+        }
     }
 
     protected async put(path: string, body: unknown): Promise<APIResponse> {
@@ -81,9 +115,10 @@ export abstract class BaseApiClient {
             return;
         }
 
-        throw new Error(
+        throw new ApiResponseError(
             `${method} ${path} failed with ${response.status()} ${response.statusText()}: `
-            + StringUtil.truncate(await response.text(), ERROR_BODY_LIMIT)
+            + StringUtil.truncate(await response.text(), ERROR_BODY_LIMIT),
+            response.status()
         );
     }
 }

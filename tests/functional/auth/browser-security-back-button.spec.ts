@@ -1,6 +1,6 @@
-import { test, expect, getBaseUrl } from '../../test-hooks';
+import { test, expect } from '../../base-test';
 import { COMPANY_PROFILE, UserCredentials, accountFor, isProfileConfigured } from '../../../src/auth/credentials';
-import { OTP_ENABLED } from '../../../config/environment';
+import { OTP_ENABLED, BASE_URL } from '../../../config/environment';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
 import { AuthPageUrls } from '../../../src/flows/sign-in-flow';
@@ -59,7 +59,7 @@ test.describe('TSS Portal sign-in - browser security (Test Case 2549)', () => {
         if (!account) {
             return;
         }
-        await signInFlow.restoreSignedInState(account, { baseUrl: getBaseUrl(), testInfo });
+        await signInFlow.restoreSignedInState(account, { baseUrl: BASE_URL, testInfo });
     });
 
     test('Verify browser security: back button and history protection after MFA',
@@ -75,7 +75,7 @@ test.describe('TSS Portal sign-in - browser security (Test Case 2549)', () => {
 
             // ========== STEP 1: Back Button Protection ==========
             await ReportLog.step('Step 1: Verify back button protection after MFA', async () => {
-                await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+                await signInFlow.openSignInScreen({ baseUrl: BASE_URL, testInfo });
 
                 authPageUrls = await signInFlow.submitValidCredentials(account);
 
@@ -85,7 +85,7 @@ test.describe('TSS Portal sign-in - browser security (Test Case 2549)', () => {
                 expect(isSignedIn, 'User should be authenticated').toBe(true);
 
                 const dashboardUrl = await basePage.getCurrentUrl();
-                ReportLog.setParameter('Dashboard URL before back button', dashboardUrl);
+                ReportLog.setParameter('URL before back', dashboardUrl);
 
                 await signInFlow.clickBrowserBackButton();
                 const isMfaVisible = await signInPage.isOtpScreenVisible();
@@ -93,7 +93,7 @@ test.describe('TSS Portal sign-in - browser security (Test Case 2549)', () => {
                 const stillSignedIn = await navigationBanner.isSignedIn();
                 expect(stillSignedIn, 'User should still be signed in after back button').toBe(true);
 
-                ReportLog.setParameter('Step 1 Status', 'PASSED - Back button protection verified');
+                ReportLog.setParameter('Back button protection', 'verified');
             });
 
             await ReportLog.step('Step 2: Verify cached pages not accessible via browser history', async () => {

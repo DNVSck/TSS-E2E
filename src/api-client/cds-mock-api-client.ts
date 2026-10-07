@@ -22,7 +22,7 @@ export class CdsMockApiClient extends BaseApiClient {
     }
 
     /** Push one CDS response to the portal. Throws unless the callback accepts it. */
-    async sendDeclarationResponse(body: Record<string, unknown>): Promise<void> {
-        await this.post(HMRC_CALLBACK_PATH, body);
+    async sendDeclarationResponse(body: Record<string, unknown>): Promise<number> {
+        return this.postUntilAnswered(HMRC_CALLBACK_PATH, body);
     }
 }

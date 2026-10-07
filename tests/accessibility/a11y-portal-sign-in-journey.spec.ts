@@ -1,4 +1,5 @@
-import { test, getBaseUrl } from '../test-hooks';
+import { BASE_URL } from '../../config/environment';
+import { test } from '../base-test';
 import { ReportLog } from '../../src/core/report/report-log';
 import { COMPANY_PROFILE, accountFor, isProfileConfigured } from '../../src/auth/credentials';
 import { portalToken } from '../../src/auth/portal-token';
@@ -35,7 +36,7 @@ test.describe('Portal sign-in journey - WCAG 2.2 AA', () => {
 
             await signInFlow.signIn(
                 accountFor(COMPANY_PROFILE.AUTH_ACCOUNT, testInfo.parallelIndex),
-                { baseUrl: getBaseUrl(), testInfo },
+                { baseUrl: BASE_URL, testInfo },
                 { checkpoint: checkpointFor(accessibilityAuditFlow, testInfo), probeErrors: true }
             );
         });

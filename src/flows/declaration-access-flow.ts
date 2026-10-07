@@ -268,6 +268,10 @@ export class DeclarationAccessFlow {
         await this.consignmentDetailPage.navigateToUrlDirect(url);
     }
 
+    locateConsignmentHere(): string {
+        return this.consignmentDetailPage.getCurrentUrl();
+    }
+
     /** What the company THIS flow speaks for is looking at - the name is what it adds. */
     async captureCompanyView(): Promise<Buffer> {
         return this.consignmentDetailPage.screenshotPng();
@@ -292,7 +296,7 @@ export class DeclarationAccessFlow {
             const status = await this.consignmentDetailPage
                 .waitForStatus(expectedStatusKey, RESUBMIT_STATUS_POLL_TIMEOUT);
 
-            ReportLog.setParameter('Status after resubmission', status);
+            ReportLog.setParameter('Status after resubmit', status);
 
             // Why, not just what. The status alone says the correction was refused and
             // stops there; the overview carries the CDS codes that name the field, and
@@ -308,8 +312,8 @@ export class DeclarationAccessFlow {
             }
 
             expect.soft(status, reasons.length > 0
-                ? `Status after resubmission - CDS still refuses it: ${reasons.join(' | ')}`
-                : 'Status after resubmission'
+                ? `Consignment status after resubmission - CDS still refuses it: ${reasons.join(' | ')}`
+                : 'Status after resubmit'
             ).not.toBe(this.t('status.traderInputRequired'));
             return status;
         });

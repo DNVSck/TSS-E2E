@@ -1,6 +1,6 @@
 import { COMPANY_PROFILE, UserCredentials, accountFor, isProfileConfigured } from '../../../src/auth/credentials';
-import { OTP_ENABLED } from '../../../config/environment';
-import { test, expect, getBaseUrl } from '../../test-hooks';
+import { OTP_ENABLED, BASE_URL } from '../../../config/environment';
+import { test, expect } from '../../base-test';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ERROR_MESSAGE } from '../../../src/constant/error-message-constant';
 
@@ -65,13 +65,13 @@ test.describe('TSS Portal sign-in - negative cases', () => {
         if (!account) {
             return;
         }
-        await signInFlow.restoreSignedInState(account, { baseUrl: getBaseUrl(), testInfo });
+        await signInFlow.restoreSignedInState(account, { baseUrl: BASE_URL, testInfo });
     });
 
     for (const { title, description, getUsername, getPassword } of REJECTED_CREDENTIAL_CASES) {
         test(title, { tag: ['@auth', '@negative', '@regression'] }, async ({ signInFlow }, testInfo) => {
             reportTestCaseLink(INVALID_CREDENTIAL_TEST_ID);
-            await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+            await signInFlow.openSignInScreen({ baseUrl: BASE_URL, testInfo });
 
             const message = await signInFlow.submitRejectedCredentials(
                 getUsername(account),
@@ -88,7 +88,7 @@ test.describe('TSS Portal sign-in - negative cases', () => {
         test.skip(!OTP_ENABLED, 'This environment does not ask for an authenticator code.');
         reportTestCaseLink(INVALID_MFA_CODE_TEST_ID);
 
-        await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+        await signInFlow.openSignInScreen({ baseUrl: BASE_URL, testInfo });
 
         await signInFlow.submitValidCredentials(account);
         const message = await signInFlow.submitWrongAuthenticatorCode(account);
@@ -111,7 +111,7 @@ test.describe('TSS Portal sign-in - sensitive field security (Test Case 2551)', 
         async ({ signInFlow }, testInfo) => {
             reportTestCaseLink(NO_CREDENTIAL_CACHE_TEST_ID);
             
-            await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+            await signInFlow.openSignInScreen({ baseUrl: BASE_URL, testInfo });
             const passwordAutocomplete = await signInFlow.getPasswordFieldAutocomplete();
             expect(passwordAutocomplete ?? '', 
                 'AC01: Password field must have autocomplete="off" or autocomplete="current-password" to prevent browser auto-fill')
@@ -130,7 +130,7 @@ test.describe('TSS Portal sign-in - sensitive field security (Test Case 2551)', 
             
             test.skip(!OTP_ENABLED, 'This environment does not ask for an authenticator code.');            
             const account = accountFor(COMPANY_PROFILE.AUTH_ACCOUNT, testInfo.parallelIndex);
-            await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+            await signInFlow.openSignInScreen({ baseUrl: BASE_URL, testInfo });
             await signInFlow.submitValidCredentials(account);
     
             const otpAutocomplete = await signInFlow.getOtpFieldAutocomplete();

@@ -70,8 +70,8 @@ export class ConsignmentOverviewFlow {
         return ReportLog.step('Validate draft ENS consignment', async () => {
             const { consignmentReference, declarationStatus } =
                 await this.consignmentOverviewPage.assertDraftConsignment();
-            ReportLog.setParameter('ENS Consignment reference', consignmentReference);
-            ReportLog.setParameter('ENS Consignment status (draft)', declarationStatus);
+            ReportLog.setParameter('ENS consignment LRN', consignmentReference);
+            ReportLog.setParameter('Draft ENS status', declarationStatus);
 
             // Returned as well as reported, for the same reason
             // verifyStandaloneConsignmentLrn returns its LRN: only the session that
@@ -96,7 +96,7 @@ export class ConsignmentOverviewFlow {
             // empty parameter before then would read as "status unknown/blank" rather
             // than "not yet shown".
             if (declarationStatus) {
-                ReportLog.setParameter('Consignment status (draft)', declarationStatus);
+                ReportLog.setParameter('Draft consignment status', declarationStatus);
             }
 
             // Returned as well as reported: a standalone declaration is named to CDS by
@@ -112,7 +112,7 @@ export class ConsignmentOverviewFlow {
     async verifyStandaloneConsignmentSubmitted(expectedStatusKey: TranslationKey): Promise<void> {
         await ReportLog.step('Verify standalone consignment submitted', async () => {
             const status = await this.consignmentOverviewPage.waitForSubmittedStatus(expectedStatusKey);
-            ReportLog.setParameter('Consignment status (submitted)', status);
+            ReportLog.setParameter('Submitted consignment status', status);
 
             // Reported first, then thrown: a journey that expected an authorisation
             // cannot do anything meaningful with a consignment the service handed back,
@@ -185,6 +185,53 @@ export class ConsignmentOverviewFlow {
 
     async submitConsignmentAndReadOutcome(): Promise<string[]> {
         return ReportLog.step('Submit consignment', async () => this.submitAndReadOutcome());
+    }
+
+    async resubmitConsignment(): Promise<void> {
+        await ReportLog.step('Resubmit consignment', async () => {
+            await this.consignmentOverviewPage.goToConsignmentOverview();
+            verifySubmittedWithoutErrors(
+                await this.consignmentOverviewPage.confirmAndResubmit(), 'the resubmitted consignment'
+            );
+        });
+    }
+
+    async verifyConsignmentOverviewStatus(expectedStatusKey: TranslationKey): Promise<string> {
+        const expected = this.t(expectedStatusKey);
+
+        return ReportLog.step(`Verify the consignment reads ${expected}`, async () => {
+            const status = await this.consignmentOverviewPage.readConsignmentStatus();
+            ReportLog.setParameter('Overview status', status);
+            expect(status, 'Consignment status').toBe(expected);
+            return status;
+        });
+    }
+
+
+    async verifyConsignmentStillOffersActions(): Promise<void> {
+        await ReportLog.step('Verify the consignment can still be acted on', async () => {
+            expect(await this.readEnabledActions(),
+                'Actions offered on a consignment that was not cancelled (expects at least one)')
+                .not.toEqual([]);
+        });
+    }
+
+
+    async verifyConsignmentOffersNoActions(): Promise<void> {
+        await ReportLog.step('Verify the cancelled consignment can no longer be acted on', async () => {
+            expect(await this.readEnabledActions(),
+                'Actions offered on a cancelled consignment (expects none)').toEqual([]);
+        });
+    }
+
+    private async readEnabledActions(): Promise<string[]> {
+        const offered = (await this.consignmentOverviewPage.listActionButtons())
+            .filter(action => action.enabled)
+            .map(action => action.value);
+
+        ReportLog.setParameter('Actions still offered', offered.join(', ') || 'none');
+
+        return offered;
     }
 
     private async submitAndReadOutcome(): Promise<string[]> {

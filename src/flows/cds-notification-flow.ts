@@ -1,5 +1,6 @@
 import { CdsMockApiClient } from '../api-client/cds-mock-api-client';
 import { ReportLog } from '../core/report/report-log';
+import { reportAttempts } from '../helper/report-helper';
 import { IS_CDS_MOCK_AVAILABLE } from '../../config/environment';
 import {
     buildCdsNotification, DeclarationIdentity, CdsResponseMessage,
@@ -51,12 +52,11 @@ export class CdsNotificationFlow {
 
         this.assertIdentified(response, declaration);
 
-        await ReportLog.step(
-            `CDS sends ${response.name} for declaration ${declaration.mrn}`,
-            () => this.cdsMockApiClient.sendDeclarationResponse(
-                buildCdsNotification(response, declaration)
-            )
-        );
+        const body = buildCdsNotification(response, declaration);
+
+        await ReportLog.step(`CDS sends ${response.name} for declaration ${declaration.mrn}`, async () => {
+            reportAttempts(`CDS ${response.name}`, await this.cdsMockApiClient.sendDeclarationResponse(body));
+        });
     }
 
     /**

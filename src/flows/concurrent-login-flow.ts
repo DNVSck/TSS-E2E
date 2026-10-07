@@ -60,8 +60,8 @@ export class ConcurrentLoginFlow {
         const deviceASignedIn = await this.deviceABanner.isSignedIn();
         const deviceBSignedIn = await this.deviceBBanner.isSignedIn();
 
-        ReportLog.setParameter('Device A still signed in after B', String(deviceASignedIn));
-        ReportLog.setParameter('Device B signed in', String(deviceBSignedIn));
+        ReportLog.setParameter('Device A after B signs in', String(deviceASignedIn));
+        ReportLog.setParameter('Device B session', String(deviceBSignedIn));
 
         return { deviceASignedIn, deviceBSignedIn };
     }

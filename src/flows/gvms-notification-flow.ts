@@ -1,5 +1,6 @@
 import { GvmsMockApiClient } from '../api-client/gvms-mock-api-client';
 import { ReportLog } from '../core/report/report-log';
+import { reportAttempts } from '../helper/report-helper';
 import { IS_GVMS_MOCK_AVAILABLE } from '../../config/environment';
 import {
     buildGvmsNotification, GmrIdentity, GvmsStateMessage,
@@ -41,10 +42,11 @@ export class GvmsNotificationFlow {
 
         this.assertIdentified(state, gmr);
 
-        await ReportLog.step(
-            `GVMS reports ${state.name} for GMR ${gmr.gmrId}`,
-            () => this.gvmsMockApiClient.sendGmrNotification(buildGvmsNotification(state, gmr))
-        );
+        const body = buildGvmsNotification(state, gmr);
+
+        await ReportLog.step(`GVMS reports ${state.name} for GMR ${gmr.gmrId}`, async () => {
+            reportAttempts(`GVMS ${state.name}`, await this.gvmsMockApiClient.sendGmrNotification(body));
+        });
     }
 
     /**

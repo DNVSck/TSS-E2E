@@ -6,12 +6,14 @@ import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
     clickLinkAndWaitForRoute, clickLinkAndWaitForNavigation, switchToTabAndClickNew,
     readFieldWhenVisible, readFieldIfPresent, newRecordButton, textsOf, submitAndReadErrors,
+    readErrorSummary,
 } from '../helper/element-helper';
 import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
 import { StringUtil } from '../core/util/string-util';
 import { CONSIGNMENT_TAB_ROUTE } from '../constant/overview-tab-route-constant';
+import { CancellationScreen } from './components/cancellation-screen';
 import {
     waitForOpenTabPanel, OPEN_TAB_RECORD, RECORD_LINK, RECORD_DELETE_BUTTON,
 } from './components/record-tabs';
@@ -22,6 +24,8 @@ const RECORD_DELETE_TIMEOUT = 20_000;
 
 /** After submit, the status flips to "Awaiting arrival" asynchronously. */
 const SUBMIT_STATUS_POLL_TIMEOUT = 60_000;
+
+const CANCEL_SETTLE_TIMEOUT = 20_000;
 
 export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
 
@@ -35,6 +39,9 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     private readonly newPreviousDocumentBtn: Locator;
     private readonly newHolderOfAuthorisationBtn: Locator;
     private readonly confirmAndSubmitButton: Locator;
+    private readonly cancelButton: Locator;
+    private readonly cancellationScreen: CancellationScreen;
+    private readonly recordOverviewLink: Locator;
     private readonly consignmentBreadcrumbLink: Locator;
     private readonly openTabRecords: Locator;
 
@@ -76,6 +83,9 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         this.openTabRecords = page.locator(OPEN_TAB_RECORD);
         this.documentTab = page.locator(`//a[contains(@href, '/overview${CONSIGNMENT_TAB_ROUTE.DOCUMENTS}#overview-tab')]`);
         this.confirmAndSubmitButton = page.locator(`button[value='${CONSIGNMENT_ACTION.SUBMIT}']`);
+        this.cancelButton = page.locator(`button[value='${CONSIGNMENT_ACTION.CANCEL}']`);
+        this.cancellationScreen = new CancellationScreen(page);
+        this.recordOverviewLink = page.locator("main a[href$='/overview']");
     }
 
 
@@ -119,7 +129,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         return declarationType;
     }
 
-    private async getConsignmentStatus(): Promise<string> {
+    async readConsignmentStatus(): Promise<string> {
         return readFieldWhenVisible(this.status, RENDER_TIMEOUT.SUMMARY_LIST);
     }
 
@@ -132,7 +142,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
      */
     async assertDraftConsignment(): Promise<{ consignmentReference: string; declarationStatus: string }> {
         const consignmentReference = await this.getConsignmentLocalReferenceNumber();
-        const declarationStatus = await this.getConsignmentStatus();
+        const declarationStatus = await this.readConsignmentStatus();
         const expectedStatus = this.t!('status.draft');
 
         expect.soft(consignmentReference, 'Consignment reference').toMatch(LOCAL_REFERENCE.DEC_PREFIX);
@@ -143,6 +153,26 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
 
     async confirmAndSubmit(): Promise<string[]> {
         return submitAndReadErrors(this.page, this.confirmAndSubmitButton);
+    }
+
+    async confirmAndResubmit(): Promise<string[]> {
+        const previousVerdict = await readErrorSummary(this.page);
+        const errors = await this.confirmAndSubmit();
+
+        return errors.filter(error => !previousVerdict.includes(error));
+    }
+
+    async openCancelDeclaration(): Promise<void> {
+        await this.cancelButton.click();
+        await this.cancellationScreen.waitForReason(RENDER_TIMEOUT.RECORD_DETAIL);
+    }
+
+    async confirmCancellation(reason: string): Promise<string[]> {
+        return this.cancellationScreen.confirm(reason, CANCEL_SETTLE_TIMEOUT);
+    }
+
+    async returnToRecordOverview(): Promise<void> {
+        await clickLinkAndWaitForRoute(this.page, this.recordOverviewLink);
     }
 
 

@@ -46,10 +46,10 @@ export class GvmsMockApiClient extends BaseApiClient {
      * different key order, a space - invalidates it, and the callback answers with a
      * refusal that says nothing about why.
      */
-    async sendGmrNotification(body: Record<string, unknown>): Promise<void> {
+    async sendGmrNotification(body: Record<string, unknown>): Promise<number> {
         const raw = JSON.stringify(body);
 
-        await this.post(HMRC_CALLBACK_PATH, raw, {
+        return this.postUntilAnswered(HMRC_CALLBACK_PATH, raw, {
             'Content-Type': 'application/json',
             [SIGNATURE_HEADER]: this.sign(raw),
         });

@@ -1,5 +1,6 @@
+import { BASE_URL } from '../../../config/environment';
 ﻿import { ReportLog } from '../../../src/core/report/report-log';
-import { getBaseUrl, test } from '../../test-hooks';
+import { test } from '../../base-test';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
@@ -23,7 +24,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
     const { transportDocumentNumber, ensMrn } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: {
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         },
@@ -42,7 +43,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
     const { transportDocumentNumber, ensMrn } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: { 
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED 
         },
@@ -63,7 +64,7 @@ test.describe('GB to NI RoRo EIDR Declaration Process - Agent Represents Trader'
     const { transportDocumentNumber, ensMrn } = await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         movementOverrides: {
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         },

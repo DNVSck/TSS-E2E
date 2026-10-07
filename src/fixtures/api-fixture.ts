@@ -50,6 +50,8 @@ function serviceBase(host: string): string {
     return host ? `${StringUtil.stripTrailingSlashes(host)}/` : host;
 }
 
+const NO_BROWSER_SESSION = { cookies: [], origins: [] };
+
 /** Basic-auth header, or nothing at all when the service is unsecured. */
 function basicAuth(username: string, password: string): Record<string, string> {
   return username
@@ -115,6 +117,7 @@ export const apiFixture: ExtendParams[0] = {
      use) => {
     const ctx = await request.newContext({
       baseURL: serviceBase(RMQ_HOST),
+      storageState: NO_BROWSER_SESSION,
       extraHTTPHeaders: {
         'Content-Type': 'application/json',
         ...basicAuth(RMQ_USERNAME, RMQ_PWD),
@@ -129,6 +132,7 @@ export const apiFixture: ExtendParams[0] = {
      use) => {
     const ctx = await request.newContext({
       baseURL: serviceBase(CDS_MOCK_HOST),
+      storageState: NO_BROWSER_SESSION,
       extraHTTPHeaders: {
         'Content-Type': 'application/json',
         // Sent verbatim: the callback expects the token as the whole header value, not
@@ -147,7 +151,10 @@ export const apiFixture: ExtendParams[0] = {
 
   gvmsMockApiRequest: async ({}, // NOSONAR typescript:S3799
      use) => {
-    const ctx = await request.newContext({ baseURL: serviceBase(CDS_MOCK_HOST) });
+    const ctx = await request.newContext({
+      baseURL: serviceBase(CDS_MOCK_HOST),
+      storageState: NO_BROWSER_SESSION,
+    });
 
     await use(ctx);
     await ctx.dispose();
@@ -203,6 +210,7 @@ export const apiFixture: ExtendParams[0] = {
   traderApiRequest: async ({ portalAccessToken }, use) => {
     const ctx = await request.newContext({
       baseURL: serviceBase(TRADER_API_BASE_URL),
+      storageState: NO_BROWSER_SESSION,
       extraHTTPHeaders: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${portalAccessToken}`,
@@ -216,6 +224,7 @@ export const apiFixture: ExtendParams[0] = {
   portalApiRequest: async ({ portalAccessToken }, use) => {
     const ctx = await request.newContext({
       baseURL: serviceBase(PORTAL_API_BASE_URL),
+      storageState: NO_BROWSER_SESSION,
       extraHTTPHeaders: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${portalAccessToken}`,

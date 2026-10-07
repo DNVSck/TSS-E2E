@@ -1,4 +1,5 @@
-import { test, expect, getBaseUrl } from '../../test-hooks';
+import { BASE_URL } from '../../../config/environment';
+import { test, expect } from '../../base-test';
 import { ERROR_MESSAGE } from '../../../src/constant/error-message-constant';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
@@ -38,7 +39,7 @@ test.describe('TSS Portal - Password Case-Sensitivity and Visibility (Test Case 
         }
         // Steps 2 and 3 leave failed attempts against the account; a successful
         // sign-in is what clears the counter.
-        await signInFlow.restoreSignedInState(account, { baseUrl: getBaseUrl(), testInfo });
+        await signInFlow.restoreSignedInState(account, { baseUrl: BASE_URL, testInfo });
     });
 
     test('Test Case 2546 - Password case-sensitivity and Show/Hide button functionality',
@@ -48,7 +49,7 @@ test.describe('TSS Portal - Password Case-Sensitivity and Visibility (Test Case 
 
             // ---- Step 1: the sign-in screen offers an empty, masked password field ----
             await ReportLog.step('Step 1: The sign-in screen shows an empty password field and a Show button', async () => {
-                await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+                await signInFlow.openSignInScreen({ baseUrl: BASE_URL, testInfo });
 
                 expect(await signInFlow.getPasswordFieldValue(), 'Password field starts empty')
                     .toBe('');
@@ -71,7 +72,7 @@ test.describe('TSS Portal - Password Case-Sensitivity and Visibility (Test Case 
 
             for (const { value, description } of variants) {
                 await ReportLog.step(`Steps 2-3: Sign-in is refused for ${description}`, async () => {
-                    await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+                    await signInFlow.openSignInScreen({ baseUrl: BASE_URL, testInfo });
 
                     const message = await signInFlow.submitRejectedCredentials(
                         account.username,
@@ -89,7 +90,7 @@ test.describe('TSS Portal - Password Case-Sensitivity and Visibility (Test Case 
             // while the user types, so submitting would leave the only screen that can be
             // observed - and would spend a real sign-in attempt to learn nothing.
             await ReportLog.step('Step 4: The correct password is masked as it is typed', async () => {
-                await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+                await signInFlow.openSignInScreen({ baseUrl: BASE_URL, testInfo });
                 await signInFlow.enterPassword(account.password);
 
                 expect(await signInFlow.isPasswordMasked(), 'Password is masked by default')

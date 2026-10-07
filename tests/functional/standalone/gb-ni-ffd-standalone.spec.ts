@@ -1,7 +1,7 @@
 ﻿import { ReportLog } from '../../../src/core/report/report-log';
-import { getBaseUrl, test } from '../../test-hooks';
+import { test } from '../../base-test';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
-import { IMPORTER_COMPANY_NAME } from '../../../config/environment';
+import { IMPORTER_COMPANY_NAME, BASE_URL } from '../../../config/environment';
 import { ffdStandaloneGoodsItem } from '../../../src/test-data/ffd-standalone-goods-item-data';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 
@@ -20,7 +20,7 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Agent Represen
     await ReportLog.step('Create and submit the FFD standalone declaration', () =>
       createAndSubmitFfdStandaloneFlow.completeFfdStandaloneFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         consignmentOverrides: {
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         },
@@ -36,7 +36,7 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Agent Represen
     await ReportLog.step('Create and submit the FFD standalone declaration', () =>
       createAndSubmitFfdStandaloneFlow.completeFfdStandaloneFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         consignmentOverrides: {
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
         },
@@ -47,13 +47,11 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Agent Represen
 });
 
 
-test.describe('GB to NI RoRo FFD Standalone Declaration Process - Importer Declare by themself', { lock: COMPANY_PROFILE.IMPORTER }, () => {
+test.describe('GB to NI RoRo FFD Standalone Declaration Process - Importer Declare by themself', () => {
   // The importer signs in as their OWN company, so there is NO representation:
   // no representTrader here, and representationType is left undefined so the flow
   // skips the "Representation information" screen.
 
-  // The lock on the describe above: this company has one login, so its tests take
-  // turns wherever they live. Every spec running as it must name the same lock.
   test.use({ authProfile: COMPANY_PROFILE.IMPORTER });
 
   test.beforeEach(async () => {
@@ -65,7 +63,7 @@ test.describe('GB to NI RoRo FFD Standalone Declaration Process - Importer Decla
     await ReportLog.step('Create and submit the FFD standalone declaration', () =>
       createAndSubmitFfdStandaloneFlow.completeFfdStandaloneFlow({
         testInfo,
-        url: getBaseUrl(),
+        url: BASE_URL,
         consignmentOverrides: {
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
           // Signed in as the importer's own company, so the app never shows the

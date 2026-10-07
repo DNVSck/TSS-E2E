@@ -62,8 +62,8 @@ export class GenerateSdDraftFromEnsSfdFlow {
 
         // Reported as well as returned, so a run that later fails to find the SD says
         // which movement it was looking under and which declaration it expected.
-        ReportLog.setParameter('Supplementary declaration raised under', movementLrn);
-        ReportLog.setParameter('Supplementary declaration raised from', sfd.lrn);
+        ReportLog.setParameter('SD raised under', movementLrn);
+        ReportLog.setParameter('SD raised from', sfd.lrn);
         return { movementLrn, frontierLrn: sfd.lrn };
     }
 }

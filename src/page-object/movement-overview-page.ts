@@ -1,16 +1,24 @@
 import { BasePage } from "./base-page";
 import { RENDER_TIMEOUT } from '../constant/timeout-constant';
-import { MOVEMENT_ROUTE } from '../constant/endpoints-constant';
+import { MOVEMENT_ROUTE, CANCELLATION_ROUTE } from '../constant/endpoints-constant';
 import { Page, Locator, expect } from '@playwright/test';
-import { TFunction } from '../fixtures/locale-fixture';
+import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
-import { readFieldWhenVisible, newRecordButton } from '../helper/element-helper';
+import {
+    readFieldWhenVisible, readFieldIfPresent, newRecordButton, clickLinkAndWaitForRoute, textsOf,
+} from '../helper/element-helper';
 import { StringUtil } from '../core/util/string-util';
 import { GOVUK } from './components/govuk-selectors';
+import { CancellationScreen } from './components/cancellation-screen';
+import { waitForOpenTabPanel } from './components/record-tabs';
 
 
 
 const CONSIGNMENT_VIEW_TIMEOUT = 30_000;
+
+const CANCEL_SETTLE_TIMEOUT = 30_000;
+
+const STATUS_POLL_TIMEOUT = 60_000;
 /**
  * SFD, IMMI and EIDR share this longer wait: each is a linked consignment the
  * backend auto-generates a little after submit — one phenomenon, one knob.
@@ -35,6 +43,10 @@ export class MovementOverviewPage extends BasePage {
     private readonly newENSConsignmentBtn: Locator;
     private readonly uploadCSVBtn: Locator;
     private readonly associateConsignmentBtn: Locator;
+    private readonly cancelDeclarationLink: Locator;
+    private readonly cancellationScreen: CancellationScreen;
+    private readonly cancelledMovementLink: Locator;
+    private readonly cancellationScope: Locator;
 
     private readonly createGMRButton: Locator;
 
@@ -65,15 +77,28 @@ export class MovementOverviewPage extends BasePage {
         this.sfdConsignmentsTab = page.locator("//a[contains(@href, '/overview/sfd-consignments#overview-tab')]");
         this.immiConsignmentsTab = page.locator("//a[contains(@href, '/overview/immi-consignments#overview-tab')]");
         this.eidrConsignmentsTab = page.locator("//a[contains(@href, '/overview/eidr-consignments#overview-tab')]");
-        this.gmrDetailsTab = page.locator("//a[contains(@href, '/overview/gmr-details#overview-tab')]");
+        this.gmrDetailsTab = page.locator(
+            `//a[contains(@href, '/overview/${MOVEMENT_ROUTE.GMR_DETAILS_TAB_SEGMENT}#overview-tab')]`
+        );
 
         // ENS Consignment actions
         this.newENSConsignmentBtn = newRecordButton(page, '?index');
         this.uploadCSVBtn = page.locator("//form[contains(@action,'?index')]//button[@value='upload-csv']");
         this.associateConsignmentBtn = page.locator("//form[contains(@action,'?index')]//button[@value='associate-consignment']");
 
+        this.cancelDeclarationLink = page.locator(
+            `main a[href$='/${CANCELLATION_ROUTE.CANCEL_SEGMENT}']`
+        );
+
+        this.cancellationScreen = new CancellationScreen(page);
+
+        this.cancelledMovementLink = page.locator(
+            `main a[href*='/${MOVEMENT_ROUTE.GOODS_MOVEMENT_SEGMENT}/'][href$='/${MOVEMENT_ROUTE.OVERVIEW_SEGMENT}']`
+        );
+        this.cancellationScope = page.locator('main .govuk-notification-banner__heading, main p.govuk-body');
+
         //GMR actions
-        this.createGMRButton = newRecordButton(page, 'gmr-details');
+        this.createGMRButton = newRecordButton(page, MOVEMENT_ROUTE.GMR_DETAILS_TAB_SEGMENT);
 
         // Summary list fields
         this.localReferenceNumber = this.summaryList.valueOf(localReferenceLabel);
@@ -151,12 +176,51 @@ export class MovementOverviewPage extends BasePage {
         await this.associateConsignmentBtn.click();
     }
 
+    async openCancelDeclaration(): Promise<void> {
+        await this.cancelDeclarationLink.click();
+        await this.cancellationScreen.waitForReason(CANCEL_SETTLE_TIMEOUT);
+    }
+
+    async confirmCancellation(reason: string): Promise<string[]> {
+        return this.cancellationScreen.confirm(reason, CANCEL_SETTLE_TIMEOUT);
+    }
+
+    async returnToCancelledMovement(): Promise<void> {
+        await clickLinkAndWaitForRoute(this.page, this.cancelledMovementLink);
+    }
+
+    async readCancellationScope(): Promise<string[]> {
+        return textsOf(this.cancellationScope);
+    }
+
     async getMovementLocalReferenceNumber(): Promise<string> {
         return readFieldWhenVisible(this.localReferenceNumber, RENDER_TIMEOUT.SUMMARY_LIST);
     }
 
     async getMovementDeclarationStatus(): Promise<string> {
         return readFieldWhenVisible(this.declarationStatus, RENDER_TIMEOUT.SUMMARY_LIST);
+    }
+
+    async waitForDeclarationStatus(
+        expectedStatusKey: TranslationKey,
+        timeout = STATUS_POLL_TIMEOUT
+    ): Promise<string> {
+        const expected = this.t!(expectedStatusKey);
+        let status = '';
+
+        await expect(async () => {
+            status = await readFieldIfPresent(this.declarationStatus);
+            if (status === expected) {
+                return;
+            }
+
+            await this.page.reload();
+            expect(status, 'Movement declaration status').toBe(expected);
+        })
+            .toPass({ timeout, intervals: [2_000, 3_000, 5_000] })
+            .catch(() => { /* the caller asserts; this only decides how long to wait */ });
+
+        return status;
     }
 
     /**
@@ -322,20 +386,12 @@ export class MovementOverviewPage extends BasePage {
      * navigate to some other movement than the one under test.
      */
     private async goToMovementOverview(): Promise<void> {
-        const movement = this.currentMovementNumber();
-        const url = new URL(this.page.url());
-        // Everything before "/goods-movement/" - the portal's own mount point, taken
-        // from the live URL rather than assumed, so a re-mounted service still works.
-        const mountPoint = url.pathname.slice(0, url.pathname.indexOf(`/${MOVEMENT_ROUTE.GOODS_MOVEMENT_SEGMENT}/`));
-        const overviewPath = `${mountPoint}${this.movementOverviewPath(movement)}`;
+        const url = this.movementOverviewUrl();
+        const overviewPath = url.pathname;
 
         if (this.isUnderMovementOverview(overviewPath)) {
             return;
         }
-
-        url.pathname = overviewPath;
-        url.search = '';
-        url.hash = '';
 
         try {
             await this.page.goto(url.toString(), { waitUntil: 'commit' });
@@ -476,6 +532,33 @@ export class MovementOverviewPage extends BasePage {
         await this.gmrDetailsTab.click();
         await this.createGMRButton.waitFor({ state: 'visible' });
         await this.createGMRButton.click();
+    }
+
+    async readCreateGmrOffered(): Promise<boolean> {
+        const overview = this.movementOverviewUrl();
+        const tab = new URL(overview.toString());
+        tab.pathname = `${tab.pathname}/${MOVEMENT_ROUTE.GMR_DETAILS_TAB_SEGMENT}`;
+
+        await this.page.goto(tab.toString(), { waitUntil: 'domcontentloaded' });
+        await waitForOpenTabPanel(this.page, RENDER_TIMEOUT.TAB_PANEL);
+        const offered = await this.createGMRButton.isVisible();
+        await this.page.goto(overview.toString(), { waitUntil: 'domcontentloaded' });
+
+        return offered;
+    }
+
+    private movementOverviewUrl(): URL {
+        const url = new URL(this.page.url());
+
+        const mountPoint = url.pathname.slice(
+            0, url.pathname.indexOf(`/${MOVEMENT_ROUTE.GOODS_MOVEMENT_SEGMENT}/`)
+        );
+
+        url.pathname = `${mountPoint}${this.movementOverviewPath(this.currentMovementNumber())}`;
+        url.search = '';
+        url.hash = '';
+
+        return url;
     }
 
 

@@ -36,6 +36,19 @@ export class TriggerGmrStatusThroughGvmsFlow {
         await this.complete(gmrReference);
     }
 
+
+    async acceptGmrCancellationThroughGvms(gmrReference: string, record: string): Promise<void> {
+        await ReportLog.step('Accept the GMR cancellation through GVMS', async () => {
+            const gmr = await this.waitForGvmsToAnswer(gmrReference);
+
+            await this.gvmsNotificationFlow.sendStateUpdate(GVMS_STATE.CANCELLED, gmr);
+
+            await this.gmrOverviewFlow.verifyGmrStatusAt(
+                record, 'status.cancelled', `after GVMS reported ${GVMS_STATE.CANCELLED.name}`
+            );
+        });
+    }
+
     private async verifyTransport(movement: GmrMovement): Promise<void> {
         await ReportLog.step('Validate the GMR carries the movement transport', () =>
             this.gmrOverviewFlow.verifyTransportIdentity(movement.isTrailerUnaccompanied)

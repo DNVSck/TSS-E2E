@@ -35,6 +35,8 @@ export interface DirectAccessResult {
 }
 
 export class SignInFlow {
+    private passwordToggles = 0;
+
     constructor(
         private readonly basePage: BasePage,
         private readonly portalPage: PortalPage,
@@ -61,7 +63,7 @@ export class SignInFlow {
 
             // Reported here, not in the spec: a report that only says "expected X,
             // got Y" still lacks what the service actually told the user.
-            ReportLog.setParameter(`Error shown for ${description}`, message);
+            ReportLog.setParameter(`${description} error`, message);
             return message;
         });
     }
@@ -95,7 +97,7 @@ export class SignInFlow {
             );
             const message = await this.signInPage.getAuthenticatorCodeErrorMessage();
 
-            ReportLog.setParameter('Error shown for a wrong authenticator code', message);
+            ReportLog.setParameter('Wrong code error', message);
             return message;
         });
     }
@@ -278,7 +280,7 @@ export class SignInFlow {
     async clickBrowserBackButton(): Promise<string> {
         return ReportLog.step('Click browser back button', async () => {
             const urlAfterBack = await this.basePage.clickBrowserBackButton();
-            ReportLog.setParameter('URL after back button', urlAfterBack);
+            ReportLog.setParameter('URL after back', urlAfterBack);
             return urlAfterBack;
         });
     }
@@ -297,8 +299,8 @@ export class SignInFlow {
             const screenVisible = await this.signInPage.isOtpScreenVisible();
             const url = this.basePage.getCurrentUrl();
 
-            ReportLog.setParameter('MFA screen visible after direct access', String(screenVisible));
-            ReportLog.setParameter('Current URL after direct access', url);
+            ReportLog.setParameter('Direct access to MFA', String(screenVisible));
+            ReportLog.setParameter('MFA direct access URL', url);
 
             return { screenVisible, url };
         });
@@ -318,8 +320,8 @@ export class SignInFlow {
             const screenVisible = await this.signInPage.isPasswordScreenVisible();
             const url = this.basePage.getCurrentUrl();
 
-            ReportLog.setParameter('Password screen visible after direct access', String(screenVisible));
-            ReportLog.setParameter('Current URL after direct access', url);
+            ReportLog.setParameter('Direct access to password', String(screenVisible));
+            ReportLog.setParameter('Password direct access URL', url);
 
             return { screenVisible, url };
         });
@@ -346,7 +348,7 @@ export class SignInFlow {
     async isPasswordToggleButtonVisible(): Promise<boolean> {
         return ReportLog.step('Check password toggle button visible', async () => {
             const visible = await this.signInPage.isPasswordToggleButtonVisible();
-            ReportLog.setParameter('Password toggle button visible', String(visible));
+            ReportLog.setParameter('Toggle button', String(visible));
             return visible;
         });
     }
@@ -357,28 +359,28 @@ export class SignInFlow {
      * decides whether masked-or-not is correct for the step it's in.
      */
     async isPasswordMasked(): Promise<boolean> {
-        return ReportLog.step('Check password field masked state', async () => {
-            const masked = await this.signInPage.isPasswordMasked();
-            const fieldType = await this.signInPage.getPasswordFieldType();
-            ReportLog.setParameter('Password field type', fieldType ?? 'unknown');
-            ReportLog.setParameter('Password is masked', String(masked));
-            return masked;
-        });
+        return ReportLog.step('Check password field masked state', async () =>
+            this.signInPage.isPasswordMasked()
+        );
     }
 
     /**
      * Click the password toggle button to show or hide the password.
-     * Captures button text before and after for verification.
+     *
+     * One parameter per toggle, numbered, because this runs several times in a test and
+     * Allure appends a row per call rather than replacing one: five fixed names written
+     * three times each left fifteen rows that could not be told apart.
      */
     async togglePasswordVisibility(): Promise<void> {
         return ReportLog.step('Toggle password visibility', async () => {
-            const buttonTextBefore = await this.signInPage.getPasswordToggleButtonText();
-            ReportLog.setParameter('Button text before toggle', buttonTextBefore);
-            
+            const before = await this.signInPage.getPasswordToggleButtonText();
             await this.signInPage.togglePasswordVisibility();
-            
-            const buttonTextAfter = await this.signInPage.getPasswordToggleButtonText();
-            ReportLog.setParameter('Button text after toggle', buttonTextAfter);
+            const after = await this.signInPage.getPasswordToggleButtonText();
+
+            this.passwordToggles += 1;
+            ReportLog.setParameter(
+                `Password toggle ${this.passwordToggles}`, `${before} -> ${after}`
+            );
         });
     }
 
@@ -386,10 +388,8 @@ export class SignInFlow {
      * Get the current password toggle button text ("Show" or "Hide").
      */
     async getPasswordToggleButtonText(): Promise<string> {
-        return ReportLog.step('Get password toggle button text', async () => {
-            const text = await this.signInPage.getPasswordToggleButtonText();
-            ReportLog.setParameter('Button text', text);
-            return text;
-        });
+        return ReportLog.step('Get password toggle button text', async () =>
+            this.signInPage.getPasswordToggleButtonText()
+        );
     }
 }

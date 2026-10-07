@@ -1,12 +1,15 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './base-page';
 import { GOVUK } from './components/govuk-selectors';
-import { TFunction } from '../fixtures/locale-fixture';
+import { CancellationScreen } from './components/cancellation-screen';
+import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
+import { declarationStatusPattern } from '../helper/declaration-status-helper';
 import {
     readFieldWhenVisible, readFieldIfPresent,
     clickLinkAndWaitForRoute, clickLinkAndEnterWizard, removeTaskListRecord,
 } from '../helper/element-helper';
 import { SUPPLEMENTARY_DECLARATION_ROUTE } from '../constant/endpoints-constant';
+import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
 
 /** This overview paints its summary card a beat after load. */
 const OVERVIEW_READ_TIMEOUT = 15_000;
@@ -16,6 +19,12 @@ const TOGGLE_SETTLE_TIMEOUT = 2_000;
 const UNAUTHORISED_PARTIES_TIMEOUT = 10_000;
 
 const SUBMISSION_LANDING_TIMEOUT = 30_000;
+
+const CANCEL_SETTLE_TIMEOUT = 20_000;
+
+const STATUS_SETTLE_TIMEOUT = 60_000;
+
+const STATUS_POLL_INTERVAL = 2_000;
 
 /**
  * A supplementary declaration's overview - the screen reached from the SD list, and
@@ -37,6 +46,9 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
     private readonly methodOfPaymentChangeLink: Locator;
     private readonly submitButton: Locator;
     private readonly simplifiedDeclarationReference: Locator;
+    private readonly cancelButton: Locator;
+    private readonly cancellationScreen: CancellationScreen;
+    private readonly recordOverviewLink: Locator;
 
     constructor(page: Page, t: TFunction) {
         super(page, t);
@@ -59,6 +71,9 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
         this.goodsRecordLinks = page.locator("main a[href$='/overview']");
         this.methodOfPaymentChangeLink = page.locator("main a[href*='field=methodOfPayment']");
         this.submitButton = page.locator("button[name='action'][value='submit-consignment']");
+        this.cancelButton = page.locator(`button[value='${CONSIGNMENT_ACTION.CANCEL}']`);
+        this.cancellationScreen = new CancellationScreen(page);
+        this.recordOverviewLink = page.locator("main a[href*='/supplementary-declaration/'][href$='/overview']");
         this.simplifiedDeclarationReference = this.summaryList.valueOf(
             this.t!('supplementaryDeclaration.simplifiedDeclarationReference')
         );
@@ -192,10 +207,35 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
         return readFieldIfPresent(this.status);
     }
 
+    async waitForStatus(expectedStatusKey: TranslationKey): Promise<string> {
+        const expected = declarationStatusPattern(this.t!(expectedStatusKey));
+        let status = '';
+
+        await expect(async () => {
+            status = await this.readStatus();
+            expect(status, 'Supplementary declaration status').toMatch(expected);
+        })
+            .toPass({ timeout: STATUS_SETTLE_TIMEOUT, intervals: [STATUS_POLL_INTERVAL] })
+            .catch(() => { });
+
+        return status;
+    }
+
+
+    async openCancelDeclaration(): Promise<void> {
+        await this.cancelButton.click();
+        await this.cancellationScreen.waitForReason(OVERVIEW_READ_TIMEOUT);
+    }
+
+    async confirmCancellation(reason: string): Promise<string[]> {
+        return this.cancellationScreen.confirm(reason, CANCEL_SETTLE_TIMEOUT);
+    }
+
+    async returnToRecordOverview(): Promise<void> {
+        await clickLinkAndWaitForRoute(this.page, this.recordOverviewLink);
+    }
 
     /**
-     * Whatever the service is complaining about, or '' when it is content.
-     *
      * A rejected supplementary declaration says why in a "There is a problem" panel
      * INSIDE the collapsed details - which is how CDS12125 (an unusable deferment
      * account) was found on 2026-08-20. Read as text and never throwing, because this

@@ -7,6 +7,7 @@ export const GOVUK = {
         ROOT: '.govuk-button',
         START: '.govuk-button--start',
     },
+    ERROR_MESSAGE: '.govuk-error-message',
     ERROR_SUMMARY: {
         LIST: '.govuk-error-summary__list',
     },

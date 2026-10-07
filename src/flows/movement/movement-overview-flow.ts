@@ -3,8 +3,11 @@ import { ReportLog } from '../../core/report/report-log';
 import { MovementOverviewPage } from "../../page-object/movement-overview-page";
 import { ConsignmentDetailPage } from "../../page-object/consignment-detail-page";
 import { MRN_COUNTRY_CODE, MrnCountryCode, mrnPrefix, mrnOpening } from '../../constant/local-reference-constants';
-import { isTraderInputRequiredStatus, traderInputRequiredError } from '../../helper/declaration-status-helper';
-import { TFunction } from '../../fixtures/locale-fixture';
+import {
+    isTraderInputRequiredStatus, traderInputRequiredError, verifySubmittedWithoutErrors,
+    verifyRefusedWithErrors,
+} from '../../helper/declaration-status-helper';
+import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 
 
 export interface GeneratedConsignment {
@@ -28,12 +31,71 @@ export class MovementOverviewFlow {
         await this.movementOverviewPage.waitForSubmittedMovementOverview();
     }
 
+
+    async cancelMovementDeclaration(reason: string): Promise<void> {
+        await ReportLog.step('Cancel the movement declaration', async () => {
+            await this.movementOverviewPage.openCancelDeclaration();
+
+            verifySubmittedWithoutErrors(
+                await this.movementOverviewPage.confirmCancellation(reason), 'the cancellation'
+            );
+            ReportLog.setParameter('Cancellation reason', reason);
+
+            await this.movementOverviewPage.returnToCancelledMovement();
+        });
+    }
+
+
+    async verifyCancellationExplainsScopeAndNeedsAReason(): Promise<void> {
+        await this.movementOverviewPage.openCancelDeclaration();
+
+        await ReportLog.step('Verify the cancel screen says what the cancellation reaches', async () => {
+            const expected = [
+                this.t('movementHeaderOverview.cancelScopeConsignments'),
+                this.t('movementHeaderOverview.cancelScopeCustomsDeclarations'),
+            ];
+
+            expect(await this.movementOverviewPage.readCancellationScope(),
+                `Scope explained on the movement cancel screen (must include: ${expected.join(' | ')})`)
+                .toEqual(expect.arrayContaining(expected));
+        });
+
+        await ReportLog.step('Confirm the movement cancellation with no reason', async () => {
+            const errors = await this.movementOverviewPage.confirmCancellation('');
+
+            ReportLog.setParameter('Empty reason refused with', errors.join(' | ') || 'nothing');
+            verifyRefusedWithErrors(errors, 'a movement cancellation with no reason');
+
+            await this.movementOverviewPage.clickBackLink();
+        });
+    }
+
+    async verifyCancellationCanBeDismissed(expectedStatusKey: TranslationKey): Promise<void> {
+        await this.movementOverviewPage.openCancelDeclaration();
+
+        await ReportLog.step('Go back without cancelling the movement', async () => {
+            await this.movementOverviewPage.clickBackLink();
+            await this.verifyMovementStatus(expectedStatusKey);
+        });
+    }
+
+    async verifyMovementStatus(expectedStatusKey: TranslationKey): Promise<string> {
+        const expected = this.t(expectedStatusKey);
+
+        return ReportLog.step(`Verify the movement reads ${expected}`, async () => {
+            const status = await this.movementOverviewPage.waitForDeclarationStatus(expectedStatusKey);
+            ReportLog.setParameter('Movement status', status);
+            expect(status, 'Movement declaration status').toBe(expected);
+            return status;
+        });
+    }
+
     async verifyDraftMovementOverview(): Promise<string> {
         return ReportLog.step('Validate goods movement overview', async () => {
             const { localReferenceNumber, declarationStatus } =
                 await this.movementOverviewPage.assertDraftMovementOverview();
             ReportLog.setParameter('Movement LRN', localReferenceNumber);
-            ReportLog.setParameter('Movement status', declarationStatus);
+            ReportLog.setParameter('Draft movement status', declarationStatus);
             return localReferenceNumber;
         });
     }
@@ -59,12 +121,28 @@ export class MovementOverviewFlow {
             // Report before asserting, so the values are in the report whether the
             // assertion below passes or fails.
             ReportLog.setParameter('ENS MRN', ensMrn);
-            ReportLog.setParameter('ENS Consignment status (submitted)', status);
+            ReportLog.setParameter('Submitted ENS status', status);
 
             expect.soft(ensMrn,
                 `ENS MRN after submission (expected to open ${mrnOpening(MRN_COUNTRY_CODE.ENS)})`)
                 .toMatch(mrnPrefix(MRN_COUNTRY_CODE.ENS));
             return ensMrn;
+        });
+    }
+
+    async verifyEnsConsignmentHasNoMrn(): Promise<void> {
+        await ReportLog.step('Verify the rejected ENS consignment carries no MRN', async () => {
+            const opened = await this.movementOverviewPage.openEnsConsignmentDetail();
+            expect(opened, 'ENS consignment listed').toBe(true);
+
+            const status = await this.consignmentDetailPage.getConsignmentStatus();
+            const ensMrn = await this.consignmentDetailPage.readMovementReferenceNumber();
+            ReportLog.setParameter('Rejected ENS status', status);
+            ReportLog.setParameter('ENS MRN (rejected)', ensMrn || 'none');
+
+            expect(ensMrn, 'ENS MRN before the correction '
+                + '(a resubmission is proved by one arriving, so there must be none yet)')
+                .toBe('');
         });
     }
 
@@ -114,8 +192,8 @@ export class MovementOverviewFlow {
             // an MRN, so that row renders "-" and carries nothing to report.
             const lrn = await this.consignmentDetailPage.getConsignmentLocalReferenceNumber();
             const status = await this.consignmentDetailPage.getConsignmentStatus();
-            ReportLog.setParameter('EIDR LRN', lrn);
-            ReportLog.setParameter('EIDR status', status);
+            ReportLog.setParameter('EIDR consignment LRN', lrn);
+            ReportLog.setParameter('EIDR consignment status', status);
 
             // Asserts the MRN row renders "-"; its value is not recorded (there is none).
             await this.consignmentDetailPage.assertNoMovementReferenceNumber();
@@ -254,7 +332,7 @@ export class MovementOverviewFlow {
             const status = await this.consignmentDetailPage.waitForStatus('status.traderInputRequired');
             // Reported before the assertion, so a run that reached some other status
             // still carries the one it reached.
-            ReportLog.setParameter(`${label} Consignment status (submitted)`, status);
+            ReportLog.setParameter(`Submitted ${label} status`, status);
             expect(status, `${label} consignment status`).toBe(this.t('status.traderInputRequired'));
 
             return status;

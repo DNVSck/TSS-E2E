@@ -24,9 +24,9 @@ const SCREEN_PAINT_TIMEOUT = 90_000;
 /**
  * How long the NIRMS screen gets to appear before the wizard is taken to have skipped it.
  *
- * Short on purpose. The previous screen has already been submitted when this is asked, so
- * the next screen is either painting or is a different one - there is nothing slow to wait
- * for, and every declaration that does not qualify for NIRMS pays this once.
+ * Only ever waited out on a journey the rule says IS owed the screen - DeclareNirmsFlow
+ * does not look at all when it says otherwise - so this is the budget for a screen that
+ * is believed to be coming, not the price of proving an absence.
  */
 const NIRMS_SCREEN_TIMEOUT = 30_000;
 

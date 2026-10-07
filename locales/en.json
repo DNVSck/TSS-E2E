@@ -35,7 +35,9 @@
     "countryOfOrigin": "Country of origin"
   },
   "movementHeaderOverview": {
-    "declarationStatus": "Declaration status"
+    "declarationStatus": "Declaration status",
+    "cancelScopeConsignments": "All non-Cancelled Consignments under this Header will be cancelled.",
+    "cancelScopeCustomsDeclarations": "Linked Customs Declarations will not be cancelled by this action."
   },
   "consignmentDetail": {
     "movementReferenceNumber": "Movement reference number"
@@ -63,6 +65,8 @@
     "completed": "Completed",
     "traderInputRequired": "Trader Input Required",
     "closed": "Closed",
+    "cancelled": "Cancelled",
+    "pendingCancellation": "Pending Cancellation",
     "processing": "Processing",
     "paymentPending": "Pending payment",
     "taxCalculation": "Tax calculation"

@@ -23,6 +23,16 @@ export class AddNewGMRFlow {
         input: GmrData,
         checkpoint?: AccessibilityCheckpoint
     ): Promise<string> {
+        const localReferenceNumber = await this.addNewGmrDraft(input, checkpoint);
+        await this.submitGmrAndVerifyOpen();
+
+        return localReferenceNumber;
+    }
+
+    async addNewGmrDraft(
+        input: GmrData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<string> {
         await this.returnToMovementOverview();
         await this.goToCreateNewGMR();
         await checkpoint?.('GMR - route', { probeErrors: true });
@@ -30,11 +40,13 @@ export class AddNewGMRFlow {
         await checkpoint?.('GMR - check your answers');
         await this.finishGMRCreation();
         await this.gmrOverviewFlow.declareExternalContacts(input.external_contacts_list);
-        const localReferenceNumber = await this.verifyDraftGmr();
+
+        return this.verifyDraftGmr();
+    }
+
+    async submitGmrAndVerifyOpen(): Promise<void> {
         await this.submitGMR();
         await this.gmrOverviewFlow.verifyGmrOpen('submit');
-
-        return localReferenceNumber;
     }
 
     /**
@@ -79,8 +91,8 @@ export class AddNewGMRFlow {
                 .toMatch(LOCAL_REFERENCE.GMR_PREFIX);
             expect.soft(status, 'GMR status').toBe(this.t('status.draft'));
 
-            ReportLog.setParameter('GMR reference', localReferenceNumber);
-            ReportLog.setParameter('GMR status (draft)', status);
+            ReportLog.setParameter('GMR LRN', localReferenceNumber);
+            ReportLog.setParameter('Draft GMR status', status);
 
             return localReferenceNumber;
         });

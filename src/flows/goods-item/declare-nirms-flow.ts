@@ -63,29 +63,25 @@ export class DeclareNirmsFlow {
             );
         }
 
-        // Behind "expected", not before it: on a journey the service never asks, a
-        // checkpoint here would scan whatever screen came next under the NIRMS name.
-        if (expected) {
-            await checkpoint?.('Goods item - NIRMS', { probeErrors: true });
-        }
-
-        const asked = await this.steps.answerNirmsIfAsked(input);
-
-        if (asked === expected) {
-            if (asked && input.useNirms && picksDocuments) {
-                await checkpoint?.('Goods item - NIRMS documents', { probeErrors: true });
-                await this.verifyNirmsDocuments(input, tariffDocumentCodes);
-            }
+        if (!expected) {
             return;
         }
 
-        throw new Error(
-            expected
-                ? `The NIRMS screen was never shown, but it was owed: ${because}. Nothing in `
+        // Behind "expected", not before it: on a journey the service never asks, a
+        // checkpoint here would scan whatever screen came next under the NIRMS name.
+        await checkpoint?.('Goods item - NIRMS', { probeErrors: true });
+
+        if (!await this.steps.answerNirmsIfAsked(input)) {
+            throw new Error(
+                `The NIRMS screen was never shown, but it was owed: ${because}. Nothing in `
                 + `the test data explains this - the screen was not offered.`
-                : `The NIRMS screen was shown, but it should not have been: ${because}. `
-                + `The service and what it permits disagree.`
-        );
+            );
+        }
+
+        if (input.useNirms && picksDocuments) {
+            await checkpoint?.('Goods item - NIRMS documents', { probeErrors: true });
+            await this.verifyNirmsDocuments(input, tariffDocumentCodes);
+        }
     }
 
     private async verifyNirmsDocuments(input: GoodsData, tariffDocumentCodes?: string[]): Promise<void> {

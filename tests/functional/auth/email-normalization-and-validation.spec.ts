@@ -1,6 +1,6 @@
-import { OTP_ENABLED } from '../../../config/environment';
+import { OTP_ENABLED, BASE_URL } from '../../../config/environment';
 import { ERROR_MESSAGE } from '../../../src/constant/error-message-constant';
-import { test, expect, getBaseUrl } from '../../test-hooks';
+import { test, expect } from '../../base-test';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { COMPANY_PROFILE, UserCredentials, accountFor, isProfileConfigured } from '../../../src/auth/credentials';
 
@@ -23,7 +23,7 @@ test('Test Case 2545: Email normalization and invalid format validation',
 
         // Step 1: Navigate to TSS2 service start page
         // The login page is displayed
-        await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+        await signInFlow.openSignInScreen({ baseUrl: BASE_URL, testInfo });
 
         // Steps 4 and 5 are done FIRST, and steps 2 and 3 last.
         //
@@ -70,7 +70,7 @@ test('Test Case 2545: Email normalization and invalid format validation',
             ...account,
             username: account.username.toUpperCase(),
         };
-        await signInFlow.openSignInScreen({ baseUrl: getBaseUrl(), testInfo });
+        await signInFlow.openSignInScreen({ baseUrl: BASE_URL, testInfo });
         await signInFlow.submitValidCredentials(uppercaseEmailCredentials);
 
         // Asserted BEFORE the code is entered. Reaching the authenticator screen is what

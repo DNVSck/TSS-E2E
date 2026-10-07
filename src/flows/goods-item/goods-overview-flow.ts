@@ -71,11 +71,14 @@ export class GoodsOverviewFlow {
     }
 
 
-    async verifyDocumentReferences(expected: DocumentReferenceData[]): Promise<void> {
-        await ReportLog.step('Validate the goods item document references', async () => {
+
+    async verifyDocumentReferences(
+        expected: DocumentReferenceData[], on = 'Goods'
+    ): Promise<void> {
+        await ReportLog.step(`Validate the ${on} document references`, async () => {
             const rows = await this.goodsOverviewPage.listDocumentReferenceRecords();
 
-            ReportLog.setParameter('Document references', this.describeDocumentRows(rows));
+            ReportLog.setParameter(`${on} document references`, this.describeDocumentRows(rows));
 
             for (const document of expected) {
                 const row = rows.find(listed => listed.code === document.documentCode);
@@ -252,7 +255,7 @@ export class GoodsOverviewFlow {
             await this.additionalInformationDeclarePage.enterDescription(item.description);
         }
 
-        ReportLog.setParameter(`Additional information ${item.code}`, summary.join(' | '));
+        ReportLog.setParameter(`Additional info ${item.code}`, summary.join(' | '));
 
         expect(
             summary,

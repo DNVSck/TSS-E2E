@@ -149,7 +149,7 @@ export class GoodsItemSteps {
             );
 
             ReportLog.setParameter(
-                'Supervising customs office',
+                'Goods supervising office',
                 input.supervisingCustomsOffice
             );
         });

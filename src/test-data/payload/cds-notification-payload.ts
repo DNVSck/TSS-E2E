@@ -41,6 +41,10 @@ const NOTIFICATION_STATUS = 'PENDING';
  */
 const DECLARATION_VERSION = 2;
 
+const CANCELLED_DECLARATION_VERSION = 1;
+
+const CANCELLATION_STATEMENT = 'Regression Automation Test';
+
 /**
  * Which declaration a response is about.
  *
@@ -174,6 +178,34 @@ function buildDmsCle09(declaration: DeclarationIdentity, issuedAt: Date): string
         + '</md:MetaData>';
 }
 
+function buildDmsInv(declaration: DeclarationIdentity, issuedAt: Date): string {
+    return '<?xml version="1.0" encoding="UTF-8"?>'
+        + '<md:MetaData xmlns:md="urn:wco:datamodel:WCO:DocumentMetaData-DMS:2"'
+        + ' xmlns="urn:wco:datamodel:WCO:RES-DMS:2">'
+        + '<md:WCODataModelVersionCode>3.6</md:WCODataModelVersionCode>'
+        + '<md:WCOTypeName>RES</md:WCOTypeName>'
+        + '<Response>'
+        + '<FunctionCode>10</FunctionCode>'
+        + `<FunctionalReferenceID>${messageReference()}</FunctionalReferenceID>`
+        + '<IssueDateTime>'
+        + `<DateTimeString formatCode="304">${wcoDateTime(issuedAt)}</DateTimeString>`
+        + '</IssueDateTime>'
+        + '<AdditionalInformation>'
+        + `<StatementDescription>${CANCELLATION_STATEMENT}</StatementDescription>`
+        + '<StatementTypeCode>AFB</StatementTypeCode>'
+        + '</AdditionalInformation>'
+        + '<Declaration>'
+        + '<CancellationDateTime>'
+        + `<DateTimeString formatCode="304">${wcoDateTime(issuedAt)}</DateTimeString>`
+        + '</CancellationDateTime>'
+        + `<FunctionalReferenceID>${declaration.lrn}</FunctionalReferenceID>`
+        + `<ID>${declaration.mrn}</ID>`
+        + `<VersionID>${CANCELLED_DECLARATION_VERSION}</VersionID>`
+        + '</Declaration>'
+        + '</Response>'
+        + '</md:MetaData>';
+}
+
 /**
  * Every CDS response the suite can send.
  *
@@ -184,6 +216,7 @@ function buildDmsCle09(declaration: DeclarationIdentity, issuedAt: Date): string
 export const CDS_RESPONSE = {
     DMSACC_01: { name: 'DMSACC-01', buildMessage: buildDmsAcc01 },
     DMSCLE_09: { name: 'DMSCLE-09', buildMessage: buildDmsCle09 },
+    DMSINV: { name: 'DMSINV', buildMessage: buildDmsInv },
 } as const satisfies Record<string, CdsResponseMessage>;
 
 /**

@@ -1,6 +1,6 @@
 import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
-import { IMPORTER_SDE } from '../../config/environment';
+import { IMPORTER_SDE, IMPORTER_UKIMS } from '../../config/environment';
 
 /**
  * One "document reference" record — the shape behind the goods item's
@@ -57,3 +57,11 @@ export const ensSfdGoodsDocuments = (): DocumentReferenceData[] => [
         documentReference: IMPORTER_SDE,
     }),
 ];
+
+export function importerUkimsDocument(ukims: string = IMPORTER_UKIMS) {
+    return documentReference({
+        documentCode: DOCUMENT_CODE['1UKI'],
+        documentStatus: DOCUMENT_STATUS.AC,
+        documentReference: ukims,
+    });
+}

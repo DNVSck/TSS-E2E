@@ -13,7 +13,9 @@ import {
 import { AccessibilityAudit, AccessibilityCheckpoint, checkpointFor } from '../accessibility-audit-flow';
 import { documentReference } from '../../test-data/document-reference-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../constant/additional-procedure-codes-constant';
-import { submittedSupplementaryStatusKeys, verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
+import {
+    isDeclarationStatus, submittedSupplementaryStatusKeys, verifySubmittedWithoutErrors,
+} from '../../helper/declaration-status-helper';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 import { UserCredentials } from '../../auth/credentials';
@@ -98,6 +100,24 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
         return this.declare(options, supplementaryDeclaration(options.overrides));
     }
 
+    async openSupplementaryDeclaration(
+        options: CompleteSupplementaryDeclarationOptions
+    ): Promise<string> {
+        return this.openSupplementaryDeclarationFor(options);
+    }
+
+    async submitSupplementaryDeclarationExpectingRejection(
+        options: CompleteSupplementaryDeclarationOptions
+    ): Promise<string> {
+        const reference = await this.openSupplementaryDeclarationFor(options);
+
+        await this.submitAndSettle(
+            supplementaryDeclaration(options.overrides), reference, ['status.traderInputRequired']
+        );
+
+        return reference;
+    }
+
     async submitSupplementaryDeclaration(checkpoint?: AccessibilityCheckpoint): Promise<void> {
         await ReportLog.step('Submit the supplementary declaration', async () => {
             const asked = await this.overviewPage.submitAndWaitForPartiesQuestion();
@@ -167,7 +187,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
                     + `(found under movement ${movementLrn})`
                 ).toBe(frontierLrn);
 
-                ReportLog.setParameter('Supplementary declaration', reference);
+                ReportLog.setParameter('SD LRN', reference);
                 return reference;
             }
         );
@@ -486,10 +506,10 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
                     const path = await this.waitForServiceToSettle(reference);
                     const settled = path.at(-1) ?? '';
 
-                    ReportLog.setParameter('Supplementary declaration statuses', path.join(' -> '));
+                    ReportLog.setParameter('SD statuses', path.join(' -> '));
 
                     const shown = await this.overviewPage.readStatus();
-                    ReportLog.setParameter('Supplementary declaration status', shown || 'not shown');
+                    ReportLog.setParameter('SD status', shown || 'not shown');
 
                     expect(shown,
                         `Supplementary declaration status on screen - an empty one means the `
@@ -497,9 +517,12 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
                         + `"${settled}"`)
                         .not.toBe('');
 
-                    expect(expected.map(key => this.t(key)),
-                        `Supplementary declaration status on screen (the service went `
-                        + `${path.join(' -> ')})`).toContain(shown);
+                    const allowed = expected.map(key => this.t(key));
+
+                    expect(allowed.some(status => isDeclarationStatus(shown, status)),
+                        `Supplementary declaration status on screen - "${shown}" should be one `
+                        + `of ${allowed.join(', ')} (the service went ${path.join(' -> ')})`)
+                        .toBe(true);
                 } catch (error) {
                     const problem = await this.overviewPage.readSubmissionProblem();
                     if (problem) {

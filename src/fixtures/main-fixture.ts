@@ -8,6 +8,7 @@ import { workerAuthFixture, WorkerAuthFixtureType } from './worker-auth-fixture'
 import { secondDeviceFixture, SecondDeviceFixtureType } from './second-device-fixture';
 import { companySessionFixture, CompanySessionFixtureType } from './company-session-fixture';
 import { representationFixture, RepresentationFixtureType } from './representation-fixture';
+import { reportFixture, ReportFixtureType } from './report-fixture';
 
 type AllFixtures =
   APIFixtureType &
@@ -18,9 +19,11 @@ type AllFixtures =
   WorkerAuthFixtureType &
   SecondDeviceFixtureType &
   CompanySessionFixtureType &
-  RepresentationFixtureType;
+  RepresentationFixtureType &
+  ReportFixtureType;
 
 export const testMain = test.extend<AllFixtures>({
+  ...reportFixture,
   ...apiFixture,
   ...pageFixture,
   ...localeFixture,

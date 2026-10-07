@@ -123,6 +123,11 @@ export function verifySubmittedWithoutErrors(errors: string[], what: string): vo
         .toEqual([]);
 }
 
+export function verifyRefusedWithErrors(errors: string[], what: string): void {
+    expect(errors, `${what} should be refused - errors the page showed after submitting (expects at least one)`)
+        .not.toEqual([]);
+}
+
 export function isDeclarationStatus(actual: string, expected: string): boolean {
     return actual.trim().toLowerCase() === expected.trim().toLowerCase();
 }

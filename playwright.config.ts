@@ -61,6 +61,7 @@ export default defineConfig({
     ['allure-playwright', { suiteTitle: true }],
     ['junit', { outputFile: 'test-results/junit.xml' }],
     ['line'],
+    ['./src/core/report/test-outcome-reporter.ts'],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {

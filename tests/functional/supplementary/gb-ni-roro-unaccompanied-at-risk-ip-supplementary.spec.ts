@@ -1,5 +1,6 @@
+import { BASE_URL } from '../../../config/environment';
 import { ReportLog } from '../../../src/core/report/report-log';
-import { getBaseUrl, test } from '../../test-hooks';
+import { test } from '../../base-test';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import {
     inwardProcessingSfdSupplementaryDeclaration,
@@ -32,13 +33,13 @@ test.describe('GB to NI RoRo Unaccompanied At Risk Inward Processing - Supplemen
             reportTestCaseLink(SFD_SUPP_IP);
 
             const { movementLrn, frontierLrn } = await ReportLog.step('Raise the supplementary declaration from an ENS-SFD movement', () =>
-                generateSdDraftFromEnsSfdFlow.generateSdDraft({ testInfo, url: getBaseUrl(), overrides: inwardProcessingSfdSupplementaryDeclarationMovement() })
+                generateSdDraftFromEnsSfdFlow.generateSdDraft({ testInfo, url: BASE_URL, overrides: inwardProcessingSfdSupplementaryDeclarationMovement() })
             );
 
             await completeAndSubmitSupplementaryDeclarationFlow
                 .completeSupplementaryDeclaration({
                     testInfo,
-                    url: getBaseUrl(),
+                    url: BASE_URL,
                     movementLrn,
                     frontierLrn,
                     overrides: inwardProcessingSfdSupplementaryDeclaration(),

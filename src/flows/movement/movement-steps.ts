@@ -101,7 +101,7 @@ export class MovementSteps {
         await ReportLog.step('Answer "What role does your business have in this movement?"', async () => {
             await this.movementDeclarePage.chooseBusinessRole(role);
             await this.movementDeclarePage.clickContinueButton();
-            ReportLog.setParameter('Business role in the movement', role);
+            ReportLog.setParameter('Business role', role);
         });
     }
 
