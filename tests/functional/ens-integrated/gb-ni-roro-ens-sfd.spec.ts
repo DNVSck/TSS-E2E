@@ -24,6 +24,7 @@ const ENS_SFD_UNACCO = '2254';
 const ENS_SFD_EXCISE = '6661';
 const ENS_SFD_NIRMS = '4638';
 const ENS_SFD_RESUBMIT_AFTER_CDS = '2814';
+const ENS_SFD_CANCEL_AFTER_CDS = '7102';
 
 test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Represents Trader', () => {
   // Runs as AGENT: this worker replays its own AGENT account's cached session
@@ -179,6 +180,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Cancellati
     createAndSubmitEnsDeclarationFlow, cancelEnsDeclarationFlow
   }, testInfo) => {
     await ReportLog.setStory('ENS-SFD - CDS refuses the holder of authorisation, and the trader cancels rather than correcting');
+    reportTestCaseLink(ENS_SFD_CANCEL_AFTER_CDS);
 
     await createAndSubmitEnsDeclarationFlow.submitEnsDeclarationExpectingRejection(
       ensSfdDeclaration(testInfo, rejectedByCds()), 'SFD'

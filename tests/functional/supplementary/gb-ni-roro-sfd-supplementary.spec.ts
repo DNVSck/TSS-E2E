@@ -20,6 +20,9 @@ const SD_CANCELLED = '6115';
 const SD_CANCEL_DISMISSED = '6116';
 const SD_IMPORTER_TRADER_DDA = '4700';
 const SD_IMPORTER_TSS_DDA = '4699';
+const SD_RESUBMIT = '7106';
+const SD_CANCEL_NEEDS_REASON = '7108';
+const SD_CANCEL_TIR = '7109';
 
 /**
  * The supplementary declaration that follows an ENS-SFD movement, once by each of the
@@ -258,6 +261,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - resubmission after CDS 
             completeAndSubmitSupplementaryDeclarationFlow,
         }, testInfo) => {
             await ReportLog.setStory('Supplementary Declaration - submitted unanswered, handed back, then completed and resubmitted');
+            reportTestCaseLink(SD_RESUBMIT);
 
             const source = await generateSdDraftThroughApiFlow.raiseSdDraft();
 
@@ -322,6 +326,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - cancellation', () => {
             cancelSupplementaryDeclarationFlow,
         }, testInfo) => {
             await ReportLog.setStory('Supplementary Declaration - the service refuses a cancellation with no reason');
+            reportTestCaseLink(SD_CANCEL_NEEDS_REASON);
 
             const source = await generateSdDraftThroughApiFlow.raiseSdDraft();
             await completeAndSubmitSupplementaryDeclarationFlow.openSupplementaryDeclaration({
@@ -362,6 +367,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - cancellation', () => {
             triggerFinalStatusThroughCdsFlow,
         }, testInfo) => {
             await ReportLog.setStory('Supplementary Declaration - handed back by CDS, and the trader cancels it rather than completing it');
+            reportTestCaseLink(SD_CANCEL_TIR);
 
             const source = await generateSdDraftThroughApiFlow.raiseSdDraft();
 

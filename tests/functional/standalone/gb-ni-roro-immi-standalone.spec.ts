@@ -38,6 +38,7 @@ const IMMI_ARRIVED_TGP_4000_1SG ='4919'
 const IMMI_NIRMS = '4912'
 const IMMI_STANDALONE_CANCELLED = '3039';
 const IMMI_STANDALONE_RESUBMIT = '3027';
+const IMMI_STANDALONE_CANCEL_NEEDS_REASON = '7105';
 
 test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represents Trader', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
@@ -604,6 +605,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Cancellation'
     createDraftImmiStandaloneFlow, cancelConsignmentFlow
   }, testInfo) => {
     await ReportLog.setStory('IMMI Standalone - the service refuses a cancellation with no reason');
+    reportTestCaseLink(IMMI_STANDALONE_CANCEL_NEEDS_REASON);
 
     await createDraftImmiStandaloneFlow.createDraftImmiStandalone({
       testInfo,

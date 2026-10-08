@@ -10,6 +10,8 @@ import {
   tssDdaTraderApiSupplementaryDeclarationMovement,
 } from '../../src/test-data/supplementary-declaration-movement-data';
 
+test.use({ trace: 'off' });
+
 // The frontier declaration this SD hangs off is raised through the Trader API: the
 // ENS-SFD wizard has an audit of its own. One payment route only - the TSS DDA fork
 // changes which authorisations come off the declaration, not which screens it puts.

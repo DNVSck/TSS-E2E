@@ -9,6 +9,8 @@ import {
 } from '../../src/test-data/sfd-standalone-consignment-data';
 import { sfdStandaloneGoodsItem } from '../../src/test-data/sfd-standalone-goods-item-data';
 
+test.use({ trace: 'off' });
+
 // Not the ENS wizard: it splits on controlled goods into two routes that never rejoin.
 // The controlled route is the longer - EIDR skips exporter, trader reference and
 // invoice currency.

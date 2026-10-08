@@ -20,6 +20,9 @@ const ENS_ONLY_CANCEL_NEEDS_REASON = '6427';
 const ENS_ONLY_CANCEL_CONSIGNMENT_TIR = '6430';
 const ENS_ONLY_CANCEL_MOVEMENT_TIR = '6491';
 const ENS_ONLY_CANCEL_MOVEMENT_NEEDS_REASON = '6468';
+const ENS_ONLY_CANCEL_MOVEMENT_DISMISSED = '7099';
+const ENS_ONLY_CANCEL_ONE_OF_TWO = '7100';
+const ENS_ONLY_RESUBMIT_AFTER_ICS2 = '7101';
 
 test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Trader', () => {
   // Runs as AGENT: this worker replays its own AGENT account's cached session
@@ -110,6 +113,7 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Cancellation from dr
     createDraftEnsDeclarationFlow, cancelEnsDeclarationFlow
   }, testInfo) => {
     await ReportLog.setStory('ENS-only - open the movement cancel screen, go back, and the movement is untouched');
+    reportTestCaseLink(ENS_ONLY_CANCEL_MOVEMENT_DISMISSED);
 
     await createDraftEnsDeclarationFlow.createDraftEnsDeclaration(ensOnlyDeclaration(testInfo, {}));
     await cancelEnsDeclarationFlow.verifyMovementCancellationCanBeDismissed();
@@ -139,6 +143,7 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Cancellation from dr
     createDraftEnsDeclarationFlow, addNewEnsConsignmentFlow, declarationAccessFlow, cancelEnsDeclarationFlow
   }, testInfo) => {
     await ReportLog.setStory('ENS-only - cancelling one consignment of two stops at that consignment');
+    reportTestCaseLink(ENS_ONLY_CANCEL_ONE_OF_TWO);
 
     await createDraftEnsDeclarationFlow.createDraftEnsDeclaration(ensOnlyDeclaration(testInfo, {}));
     const first = await declarationAccessFlow.locateEnsConsignmentRecords();
@@ -204,6 +209,7 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Resubmission after I
     createAndSubmitEnsDeclarationFlow, resubmitDeclarationFlow
   }, testInfo) => {
     await ReportLog.setStory('ENS-only - ICS2 hands it back, and the trader corrects the container and resubmits');
+    reportTestCaseLink(ENS_ONLY_RESUBMIT_AFTER_ICS2);
 
     await createAndSubmitEnsDeclarationFlow.submitEnsDeclarationExpectingRejection(
       ensOnlyDeclaration(testInfo, rejectedByIcs2())

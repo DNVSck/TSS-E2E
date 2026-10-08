@@ -156,8 +156,10 @@ export const flowFixture: ExtendParams[0] = {
         await use(new PortalAccessFlow(basePage, portalPage));
     },
 
-    accessibilityAuditFlow: async ({ basePage, recordTabs, makeAxeBuilder }, use) => {
-        await use(new AccessibilityAuditFlow(basePage, recordTabs, makeAxeBuilder));
+    accessibilityAuditFlow: async ({ basePage, recordTabs, makeAxeBuilder }, use, testInfo) => {
+        const audit = new AccessibilityAuditFlow(basePage, recordTabs, makeAxeBuilder);
+        await use(audit);
+        await audit.publishSummary(testInfo);
     },
 
     signInFlow: async ({ basePage, portalPage, signInPage, navigationBanner }, use) => {

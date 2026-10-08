@@ -62,6 +62,117 @@ export function scanOutcome(rows: readonly CriterionRow[]): CriterionOutcome {
   return 'NOT APPLICABLE';
 }
 
+export interface ViolationSighting {
+  key: string;
+  criterion: string;
+  rule: string;
+  requires: string;
+  more: string;
+  selector: string;
+  html: string;
+  detail: string;
+}
+
+export interface ViolationTally extends ViolationSighting {
+  screens: string[];
+  screenshot?: string;
+}
+
+export interface AuditCoverage {
+  screens: number;
+  errorStates: number;
+  noErrorWhenEmpty: string[];
+}
+
+function failureDetail(node: { failureSummary?: string }): string {
+  return (node.failureSummary ?? '').split('\n').map(s => s.trim()).filter(Boolean).join(' | ');
+}
+
+function sightingsOfRule(row: CriterionRow, violation: Result): ViolationSighting[] {
+  return violation.nodes.map(node => ({
+    key: `${row.id}|${violation.id}|${targetsOf(node)}`,
+    criterion: `${row.id} ${row.name} (${row.level})`,
+    rule: `${violation.id} (${violation.impact})`,
+    requires: violation.help,
+    more: violation.helpUrl,
+    selector: targetsOf(node),
+    html: node.html,
+    detail: failureDetail(node),
+  }));
+}
+
+export function sightingsOf(rows: readonly CriterionRow[]): ViolationSighting[] {
+  return rows
+    .filter(row => row.outcome === 'VIOLATED')
+    .flatMap(row => row.violations.flatMap(violation => sightingsOfRule(row, violation)));
+}
+
+function coverageLine(coverage: AuditCoverage, tallies: readonly ViolationTally[]): string {
+  return `${coverage.screens} screen(s) scanned, ${coverage.errorStates} of them in their error state - `
+    + `${tallies.length} distinct violation(s)`;
+}
+
+function byReach(tallies: readonly ViolationTally[]): ViolationTally[] {
+  return [...tallies].sort((a, b) => b.screens.length - a.screens.length);
+}
+
+function screenshotNote(tally: ViolationTally): string {
+  return tally.screenshot ? ` (${tally.screenshot})` : '';
+}
+
+export function violationDigest(tallies: readonly ViolationTally[], coverage: AuditCoverage): string {
+  const lines = [`**${coverageLine(coverage, tallies)}**`, ''];
+
+  byReach(tallies).forEach((tally, index) => {
+    lines.push(
+      `${index + 1}. **${tally.criterion}** - \`${tally.rule}\` on **${tally.screens.length}** screen(s)`,
+      `    - selector: \`${tally.selector}\``,
+      `    - ${tally.requires}`,
+      `    - first seen: ${tally.screens[0]}${screenshotNote(tally)}`,
+    );
+  });
+
+  if (coverage.noErrorWhenEmpty.length > 0) {
+    lines.push('', `**No error shown when submitted empty:** ${coverage.noErrorWhenEmpty.join(', ')}`);
+  }
+
+  lines.push('', 'Each violation in full, with every screen it was seen on: a11y-summary.txt. '
+    + 'Every screen and its outcome: a11y-screens.txt.');
+
+  return lines.join('\n');
+}
+
+export function violationReport(tallies: readonly ViolationTally[], coverage: AuditCoverage): string {
+  const lines = [coverageLine(coverage, tallies), ''];
+
+  byReach(tallies).forEach((tally, index) => {
+    lines.push(
+      `${index + 1}. ${tally.criterion} - ${tally.rule} - ${tally.screens.length} screen(s)`,
+      `   requires  : ${tally.requires}`,
+      `   more      : ${tally.more}`,
+      `   selector  : ${tally.selector}`,
+      `   html      : ${tally.html}`,
+      `   detail    : ${tally.detail}`,
+      `   screenshot: ${tally.screenshot ?? 'none'}`,
+      '   screens   :',
+      ...tally.screens.map(screen => `     - ${screen}`),
+      '',
+    );
+  });
+
+  if (coverage.noErrorWhenEmpty.length > 0) {
+    lines.push('NO ERROR SHOWN WHEN SUBMITTED EMPTY', ...coverage.noErrorWhenEmpty.map(s => `  - ${s}`));
+  }
+
+  return lines.join('\n');
+}
+
+export async function attachText(testInfo: TestInfo, name: string, text: string): Promise<void> {
+  const file = testInfo.outputPath(name);
+  await writeFile(file, text);
+  await testInfo.attach(name, { path: file, contentType: 'text/plain' });
+}
+
 /** "1.3.1 Info and Relationships - list -> .selector", one per failing rule. */
 export function violationSummary(rows: readonly CriterionRow[]): string[] {
   return rows
@@ -124,8 +235,7 @@ function ruleDetail(row: CriterionRow, rules: Result[]): string[] {
       lines.push(
         `  selector: ${targetsOf(node)}`,
         `  html    : ${node.html}`,
-        `  detail  : ${(node.failureSummary ?? '').split('\n').map(s => s.trim())
-          .filter(Boolean).join(' | ')}`,
+        `  detail  : ${failureDetail(node)}`,
       );
     }
   }
@@ -138,7 +248,7 @@ function ruleDetail(row: CriterionRow, rules: Result[]): string[] {
  * screen and its outcome so a journey's attachments read as a list of results rather
  * than the same filename repeated twenty times.
  */
-export async function attachScreenReport(report: ScreenReport): Promise<void> {
+export async function attachScreenReport(report: ScreenReport): Promise<string | undefined> {
   const { screen, url, rows, nonWcag, screenshot, testInfo } = report;
   const outcome = scanOutcome(rows);
   const tally = tallyOf(rows);
@@ -191,19 +301,20 @@ export async function attachScreenReport(report: ScreenReport): Promise<void> {
 
   // Written to disk rather than attached as a body, so the URL that was actually
   // scanned can be read straight off the run instead of only from the report viewer.
-  const reportFile = testInfo.outputPath(`${stem}.txt`);
-  await writeFile(reportFile, lines.join('\n'));
-  await testInfo.attach(`${stem}.txt`, { path: reportFile, contentType: 'text/plain' });
+  await attachText(testInfo, `${stem}.txt`, lines.join('\n'));
 
-  if (screenshot) {
-    // Written to disk and attached by path, not as a body: a body-only binary
-    // attachment is held in memory and no reporter here persists it, so it never
-    // reaches the report.
-    const file = testInfo.outputPath(`${stem}.png`);
-    await writeFile(file, screenshot);
-
-    await testInfo.attach(`${stem}.png`, { path: file, contentType: 'image/png' });
+  if (!screenshot) {
+    return undefined;
   }
+
+  // Written to disk and attached by path, not as a body: a body-only binary
+  // attachment is held in memory and no reporter here persists it, so it never
+  // reaches the report.
+  const file = testInfo.outputPath(`${stem}.png`);
+  await writeFile(file, screenshot);
+
+  await testInfo.attach(`${stem}.png`, { path: file, contentType: 'image/png' });
+  return `${stem}.png`;
 }
 
 export function scopeOf(results: AxeResults, ruleIds: readonly string[]): {

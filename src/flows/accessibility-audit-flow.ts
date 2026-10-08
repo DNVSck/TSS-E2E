@@ -5,8 +5,8 @@ import { RecordTabs } from '../page-object/components/record-tabs';
 import { StringUtil } from '../core/util/string-util';
 import { ReportLog } from '../core/report/report-log';
 import {
-    attachScreenReport, CriterionRow, outcomeForRules, scanOutcome, scopeOf,
-    violationSummary,
+    attachScreenReport, attachText, CriterionRow, outcomeForRules, scanOutcome, scopeOf,
+    sightingsOf, violationDigest, violationReport, violationSummary, ViolationSighting, ViolationTally,
 } from '../core/report/accessibility-report';
 import { BEST_PRACTICE_TAGS } from '../constant/accessibility-rules';
 import { readAccessibilityScan } from '../core/util/accessibility-scanner';
@@ -82,6 +82,12 @@ export class AccessibilityAuditFlow implements AccessibilityAudit {
 
     /** The last screen scanned and where it was - see verifyScreenWasReached. */
     private last?: { screen: string; path: string; heading: string };
+
+    private readonly tallies = new Map<string, ViolationTally>();
+
+    private errorStates = 0;
+
+    private readonly noErrorWhenEmpty: string[] = [];
 
     constructor(
         private readonly basePage: BasePage,
@@ -184,20 +190,26 @@ export class AccessibilityAuditFlow implements AccessibilityAudit {
             });
 
             const violations = violationSummary(rows);
+            const sightings = sightingsOf(rows);
+            const unseen = sightings.some(sighting => !this.tallies.has(sighting.key));
 
-            await attachScreenReport({
+            const screenshot = await attachScreenReport({
                 screen,
                 url: results.url,
                 rows,
                 nonWcag: bestPractice.violations
                     .filter(violation => !WCAG_RULE_IDS.includes(violation.id)),
-                screenshot: violations.length > 0
+                screenshot: unseen
                     ? await this.basePage.readScreenshot()
                     : undefined,
                 testInfo,
             });
 
+            this.tally(screen, sightings, screenshot);
             this.screens++;
+            if (screen.endsWith(ERROR_STATE_SUFFIX)) {
+                this.errorStates++;
+            }
             this.audited.push(`${scanOutcome(rows).padEnd(15)}${screen}`);
             await ReportLog.setDescription(this.describeRun());
 
@@ -262,6 +274,7 @@ export class AccessibilityAuditFlow implements AccessibilityAudit {
             }
 
             this.audited.push(`${'NO ERROR'.padEnd(15)}${screen} (submitted empty)`);
+            this.noErrorWhenEmpty.push(screen);
             await ReportLog.setDescription(this.describeRun());
 
             expect.soft(
@@ -312,14 +325,49 @@ export class AccessibilityAuditFlow implements AccessibilityAudit {
         ).toEqual(previous.screen);
     }
 
+    /** The run summed up per violation rather than per screen, once the test is over. */
+    async publishSummary(testInfo: TestInfo): Promise<void> {
+        if (this.screens === 0) {
+            return;
+        }
+
+        await attachText(testInfo, 'a11y-summary.txt', violationReport([...this.tallies.values()], this.coverage()));
+        await attachText(testInfo, 'a11y-screens.txt', this.screenList());
+    }
+
+    private tally(screen: string, sightings: ViolationSighting[], screenshot?: string): void {
+        for (const sighting of sightings) {
+            const known = this.tallies.get(sighting.key);
+
+            if (known) {
+                known.screens.push(screen);
+            } else {
+                this.tallies.set(sighting.key, { ...sighting, screens: [screen], screenshot });
+            }
+        }
+    }
+
+    private coverage() {
+        return {
+            screens: this.screens,
+            errorStates: this.errorStates,
+            noErrorWhenEmpty: this.noErrorWhenEmpty,
+        };
+    }
+
     private describeRun(): string {
+        return violationDigest([...this.tallies.values()], this.coverage());
+    }
+
+    private screenList(): string {
         return [
             `Accessibility audit - ${this.screens} screen(s), WCAG 2.2 AA`,
             '',
             ...this.audited,
             '',
             'One line per screen. The attachment beside each screen carries its criterion',
-            'matrix, the failing selectors and a screenshot of the screen that failed.',
+            'matrix and the failing selectors; a screenshot is attached only where a',
+            'violation first appears, so a repeated one (the header on every screen) is shown once.',
         ].join('\n');
     }
 }

@@ -1,5 +1,6 @@
 import { label, description, parameter } from 'allure-js-commons';
 import { TestInfo } from '@playwright/test';
+import { ReportLog } from './report-log';
 
 /**
  * Test-lifecycle metadata, driven from the auto fixture in report-fixture.ts.
@@ -19,7 +20,9 @@ export class AllureTestManager {
         this.addParameter('Expected Status', testInfo.expectedStatus);
     }
 
-    public static async recordTestOutcome(testInfo: TestInfo): Promise<void> {
+    public static async recordTestOutcome(testInfo: TestInfo, startedAt: Date): Promise<void> {
+        await parameter('Ran', this.formatRun(startedAt, new Date()), { excluded: true });
+
         if (testInfo.status !== 'passed') {
             this.addParameter(
                 'Failures recorded at teardown', String(testInfo.errors.length)
@@ -27,13 +30,26 @@ export class AllureTestManager {
         }
 
         const summary = this.failureSummary(testInfo.errors);
-        if (summary) {
+        if (summary && !ReportLog.hasOwnDescription(testInfo.testId)) {
             await description(summary);
         }
 
         if (testInfo.status === 'skipped') {
             this.addParameter('Skip Reason', testInfo.error?.message ?? 'Test skipped');
         }
+    }
+
+    private static formatRun(start: Date, end: Date): string {
+        const time = new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+        });
+        const day = new Intl.DateTimeFormat('en-GB', {
+            day: '2-digit', month: '2-digit', year: 'numeric', timeZoneName: 'shortOffset',
+        }).formatToParts(start);
+        const part = (type: Intl.DateTimeFormatPartTypes) => day.find(p => p.type === type)?.value ?? '';
+
+        return `${time.format(start)} -> ${time.format(end)} (${part('timeZoneName')}), `
+            + `${part('day')}/${part('month')}/${part('year')}`;
     }
 
     private static failureSummary(errors: readonly { message?: string }[]): string {

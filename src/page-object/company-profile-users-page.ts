@@ -1,5 +1,6 @@
 import { Locator } from '@playwright/test';
 import { BasePage } from './base-page';
+import { ROUTES } from '../constant/endpoints-constant';
 
 /**
  * The company's users screen, reached from "View users" on the company profile.
@@ -14,11 +15,6 @@ export class CompanyProfileUsersPage extends BasePage {
 
     /** A user's own record: .../company-profile/users/<id>/overview */
     private static readonly CHANGE_USER_ROUTE = /\/company-profile\/users\/([^/]+)\/overview$/;
-
-    /** The company-level action that brings a new user in, above the table. */
-    private static readonly INVITE_USER_ROUTE = '/company-profile/invite-user';
-
-    private static readonly USERS_ROUTE = '/company-profile/users';
 
     /** One row per user in the table body; the header row is not one. */
     protected override get contentRows(): Locator {
@@ -42,7 +38,7 @@ export class CompanyProfileUsersPage extends BasePage {
      */
     protected override get actionLinks(): Locator {
         return this.page.locator(
-            `main a[href*='/company-profile/']:not([href$='${CompanyProfileUsersPage.USERS_ROUTE}'])`
+            `main a[href*='${ROUTES.PORTAL.COMPANY_PROFILE}/']:not([href$='${ROUTES.PORTAL.USERS}'])`
         );
     }
 
@@ -67,6 +63,6 @@ export class CompanyProfileUsersPage extends BasePage {
     /** Whether the screen offers to invite a new user into the company. */
     async offersInviteUser(): Promise<boolean> {
         const hrefs = await this.listActionHrefs();
-        return hrefs.some(href => href.includes(CompanyProfileUsersPage.INVITE_USER_ROUTE));
+        return hrefs.some(href => href.includes(ROUTES.PORTAL.INVITE_USER));
     }
 }

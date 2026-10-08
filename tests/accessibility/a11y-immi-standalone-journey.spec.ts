@@ -10,6 +10,8 @@ import {
 } from '../../src/test-data/immi-standalone-consignment-data';
 import { immiStandaloneGoodsItem } from '../../src/test-data/immi-standalone-goods-item-data';
 
+test.use({ trace: 'off' });
+
 // Declared without a Trader Goods Profile on purpose: a TGP item skips the commodity
 // and country-of-origin screens outright, which would cost this audit two screens.
 

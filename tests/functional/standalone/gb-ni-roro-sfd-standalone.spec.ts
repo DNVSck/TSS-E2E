@@ -19,6 +19,15 @@ const EIDR_STANDALONE_CANCEL_DRAFT = '6878';
 const EIDR_STANDALONE_CANCEL_AUTHORISED = '6880';
 const EIDR_STANDALONE_CANCEL_NEEDS_REASON = '6945';
 const EIDR_STANDALONE_CANCEL_DISMISSED = '6947';
+const SFD_STANDALONE_ARRIVED = '7110';
+const SFD_EIDR_STANDALONE_ARRIVED = '7111';
+const SFD_STANDALONE_IMPORTER_ARRIVED = '7112';
+const SFD_EIDR_STANDALONE_IMPORTER_ARRIVED = '7113';
+const SFD_STANDALONE_IMPORTER_PRELODGED = '7114';
+const SFD_EIDR_STANDALONE_IMPORTER_PRELODGED = '7115';
+const SFD_STANDALONE_CANCEL_DRAFT = '7116';
+const SFD_STANDALONE_CANCEL_TIR = '7117';
+const SFD_STANDALONE_RESUBMIT = '7118';
 
 test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represents Trader', () => {
   // The Agent signs in and then represents the importer, so the declaration is made on
@@ -56,6 +65,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
   // isPreLodged, so the override below is the only difference from the test above.
   test('Verify SFD Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Arrived - RoRo (Accompanied)');
+    reportTestCaseLink(SFD_STANDALONE_ARRIVED);
     const sfd = await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
         testInfo,
@@ -98,6 +108,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
   // arrived route does NOT settle on "Arrived".
   test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Arrived - RoRo (Accompanied)');
+    reportTestCaseLink(SFD_EIDR_STANDALONE_ARRIVED);
     await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
         testInfo,
@@ -155,6 +166,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
 
   test('Verify SFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
+    reportTestCaseLink(SFD_STANDALONE_IMPORTER_PRELODGED);
     const sfd = await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
         testInfo,
@@ -171,6 +183,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
 
   test('Verify SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath', '@smoke'] }, async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself');
+    reportTestCaseLink(SFD_STANDALONE_IMPORTER_ARRIVED);
     const sfd = await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
         testInfo,
@@ -191,6 +204,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
 
   test('Verify SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Prelodged - RoRo (Accompanied) - Importer Declare by themself');
+    reportTestCaseLink(SFD_EIDR_STANDALONE_IMPORTER_PRELODGED);
     await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
         testInfo,
@@ -206,6 +220,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
 
   test('Verify SFD-EIDR Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself is created and submitted successfully (4000-000)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitSfdStandaloneFlow }, testInfo) => {
     await ReportLog.setStory('SFD-EIDR Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself');
+    reportTestCaseLink(SFD_EIDR_STANDALONE_IMPORTER_ARRIVED);
     await ReportLog.step('Create and submit the SFD standalone declaration', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
         testInfo,
@@ -232,6 +247,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Cancellation',
     createDraftSfdStandaloneFlow, cancelConsignmentFlow
   }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - cancel the consignment while it is still a draft');
+    reportTestCaseLink(SFD_STANDALONE_CANCEL_DRAFT);
 
     await createDraftSfdStandaloneFlow.createDraftSfdStandalone({
       testInfo,
@@ -247,6 +263,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Cancellation',
     createAndSubmitSfdStandaloneFlow, cancelConsignmentFlow
   }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - CDS hands it back, and the trader cancels rather than correcting');
+    reportTestCaseLink(SFD_STANDALONE_CANCEL_TIR);
 
     await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
       testInfo,
@@ -344,6 +361,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Resubmission a
     },
   }, async ({ createAndSubmitSfdStandaloneFlow, resubmitDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - CDS refuses an authorisation the declaration should not carry, and the trader removes it and resubmits');
+    reportTestCaseLink(SFD_STANDALONE_RESUBMIT);
 
     await ReportLog.step('Declare a standalone SFD CDS will refuse', () =>
       createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({

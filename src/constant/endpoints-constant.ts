@@ -13,6 +13,8 @@ export const ROUTES = {
          *  (its full parent path is not asserted). */
         STOP_REPRESENTING: '/stop-representing',
         COMPANY_PROFILE: '/company-profile',
+        USERS: '/company-profile/users',
+        INVITE_USER: '/company-profile/invite-user',
         REQUEST_EORI_CHANGE: '/company-profile/company-information/request-eori-change',
         COMPANY_INFORMATION_CHECK_ANSWERS: '/company-profile/company-information/edit/check-your-answer!',
     }

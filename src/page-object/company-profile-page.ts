@@ -25,12 +25,12 @@ export class CompanyProfilePage extends BasePage {
 
         // By href, not by its "View users" label - the label is translated. Matched on
         // the end of the href so it holds without the "/portal" prefix too.
-        this.viewUsersLink = page.locator("a[href$='/company-profile/users']");
+        this.viewUsersLink = page.locator(`a[href$='${ROUTES.PORTAL.USERS}']`);
 
         // Scoped to <main>: while a representation is running the phase banner above
         // carries a "Switch business" link to the very same href, and an unscoped
         // selector would match both.
-        this.viewTradersLink = page.locator("main a[href$='/company-profile/traders']");
+        this.viewTradersLink = page.locator(`main a[href$='${ROUTES.PORTAL.TRADERS}']`);
 
         this.eoriChangeLinks = this.actionLinks.and(
             page.locator(`a[href$='${ROUTES.PORTAL.REQUEST_EORI_CHANGE}']`)

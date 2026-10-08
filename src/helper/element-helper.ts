@@ -253,7 +253,11 @@ export async function submitAndReadErrors(page: Page, button: Locator): Promise<
         left,
     ]));
 
-    if (page.url() !== from) {
+    const moved = standing.length > 0
+        ? page.url() !== from
+        : new URL(page.url()).pathname !== new URL(from).pathname;
+
+    if (moved) {
         return [];
     }
 

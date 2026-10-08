@@ -10,8 +10,9 @@ type ExtendParams = Parameters<typeof test.extend<ReportFixtureType>>;
 export const reportFixture: ExtendParams[0] = {
     reportTestLifecycle: [async ({}, // NOSONAR typescript:S3799
         use) => {
+        const startedAt = new Date();
         AllureTestManager.recordTestStart(test.info());
         await use();
-        await AllureTestManager.recordTestOutcome(test.info());
+        await AllureTestManager.recordTestOutcome(test.info(), startedAt);
     }, { auto: true }],
 };

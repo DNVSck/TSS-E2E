@@ -5,6 +5,8 @@ import { COMPANY_PROFILE, accountFor, isProfileConfigured } from '../../src/auth
 import { portalToken } from '../../src/auth/portal-token';
 import { checkpointFor } from '../../src/flows/accessibility-audit-flow';
 
+test.use({ trace: 'off' });
+
 // AUTH_ACCOUNT, not a pooled journey account: this signs in through the UI, and a TOTP
 // code is bound to a 30-second window, so a second sign-in of an account globalSetup
 // already used would replay a code the identity provider rejects.

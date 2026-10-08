@@ -7,6 +7,8 @@ import {
   ENS_AUDIT_JOURNEYS, ENS_AUDIT_MOVEMENT,
 } from '../../src/test-data/ens-audit-journey-data';
 
+test.use({ trace: 'off' });
+
 test.describe('ENS integrated journeys - WCAG 2.2 AA Compliance', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
   test.describe.configure({ timeout: ACCESSIBILITY_JOURNEY_TIMEOUT });

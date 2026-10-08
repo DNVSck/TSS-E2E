@@ -6,6 +6,8 @@ import { ACCESSIBILITY_JOURNEY_TIMEOUT } from '../../src/constant/timeout-consta
 import { ROUTE_ID_CONSTANT } from '../../src/constant/routeId-constant';
 import { GMR_MOVEMENT, sfdGmrJourney } from '../../src/test-data/gmr-journey-data';
 
+test.use({ trace: 'off' });
+
 // The eligible movement is raised through the Trader API: the ENS-SFD wizard has an
 // audit of its own, and walking it here would add seven minutes and no screen. The ENS
 // journeys skip the GMR tab for the same reason - these screens are read here.

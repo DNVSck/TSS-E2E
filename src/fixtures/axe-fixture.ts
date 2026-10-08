@@ -10,6 +10,6 @@ export const axeFixture = {
     { page }: { page: Page },
     use: (value: () => AxeBuilder) => Promise<void>
   ) => {
-    await use(() => new AxeBuilder({ page }));
+    await use(() => new AxeBuilder({ page }).setLegacyMode());
   }
 };

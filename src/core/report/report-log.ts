@@ -10,6 +10,7 @@ import {
     story,
     tags,
 } from 'allure-js-commons';
+import { test } from '@playwright/test';
 
 /**
  * The single facade the test body and flows use to talk to Allure.
@@ -23,6 +24,8 @@ import {
  * picked up automatically by allure-playwright. Do not attach them by hand.
  */
 export class ReportLog {
+
+    private static describedTestId?: string;
 
     public static async info(message: string): Promise<void> {
         console.log(message);
@@ -42,7 +45,12 @@ export class ReportLog {
      * one that stopped the run - the description is where the whole list can go.
      */
     public static async setDescription(text: string): Promise<void> {
+        ReportLog.describedTestId = test.info().testId;
         await description(text);
+    }
+
+    public static hasOwnDescription(testId: string): boolean {
+        return ReportLog.describedTestId === testId;
     }
 
     public static setParameter(name: string, value: string): void {
