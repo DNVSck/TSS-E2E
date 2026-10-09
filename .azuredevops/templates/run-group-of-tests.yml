@@ -45,6 +45,10 @@ parameters:
     type: boolean
     default: true
 
+  - name: shards
+    type: number
+    default: 1
+
 steps:
   - template: test-env-prepare.yml
     parameters:
@@ -94,7 +98,7 @@ steps:
         fi
       }
 
-      for account_number in 1 2 3 4; do
+      for account_number in 1 2 3 4 5 6 7 8; do
         normalise_optional_variable "AGENT_USER_NAME_${account_number}"
         normalise_optional_variable "AGENT_TOTP_SECRET_${account_number}"
         normalise_optional_variable "IMPORTER_TOTP_SECRET_${account_number}"
@@ -116,12 +120,20 @@ steps:
         echo "Configuration present: $name"
       }
 
+      SHARD_TOTAL="${{ parameters.shards }}"
+      SHARD_INDEX="${SYSTEM_JOBPOSITIONINPHASE:-1}"
+      export ACCOUNT_OFFSET=$(( (SHARD_INDEX - 1) * WORKER_COUNT ))
+
+      if [ "$SHARD_INDEX" -gt 1 ]; then
+        export AUTH_PROFILES="AGENT,IMPORTER"
+      fi
+
       require_variable "BASE_URL"
       require_variable "OTP_ENABLED"
       require_variable "HAULIER_COMPANY_NAME"
       require_variable "AGENT_PASSWORD"
 
-      for account_number in $(seq 1 "$WORKER_COUNT"); do
+      for account_number in $(seq $(( ACCOUNT_OFFSET + 1 )) $(( ACCOUNT_OFFSET + WORKER_COUNT ))); do
         require_variable "AGENT_USER_NAME_${account_number}"
 
         if [ "${OTP_ENABLED,,}" = "true" ]; then
@@ -129,22 +141,28 @@ steps:
         fi
       done
 
+      SCOPE_GREP=""
+
+      if [ "$TEST_FILTER" != "none" ] && [ -n "$TEST_FILTER" ]; then
+        SCOPE_GREP="$TEST_FILTER"
+      elif [ "$TEST_SCOPE" = "smoke" ]; then
+        SCOPE_GREP="@smoke"
+      elif [ "$TEST_SCOPE" = "regression" ]; then
+        SCOPE_GREP="@regression"
+      elif [ "$TEST_SCOPE" = "standalone" ]; then
+        TEST_PATH="tests/functional/standalone"
+      elif [ "$TEST_SCOPE" = "ens-integrated" ]; then
+        TEST_PATH="tests/functional/ens-integrated"
+      fi
+
       RUN_ARGS=(
         "$TEST_PATH"
         "--project=chromium-en"
         "--workers=$WORKER_COUNT"
       )
 
-      if [ "$TEST_FILTER" != "none" ] && [ -n "$TEST_FILTER" ]; then
-        RUN_ARGS+=("--grep" "$TEST_FILTER")
-      elif [ "$TEST_SCOPE" = "smoke" ]; then
-        RUN_ARGS+=("--grep" "@smoke")
-      elif [ "$TEST_SCOPE" = "regression" ]; then
-        RUN_ARGS+=("--grep" "@regression")
-      elif [ "$TEST_SCOPE" = "standalone" ]; then
-        RUN_ARGS[0]="tests/functional/standalone"
-      elif [ "$TEST_SCOPE" = "ens-integrated" ]; then
-        RUN_ARGS[0]="tests/functional/ens-integrated"
+      if [ -n "$SCOPE_GREP" ]; then
+        RUN_ARGS+=("--grep" "$SCOPE_GREP")
       fi
 
       echo "Running Playwright tests..."
@@ -153,7 +171,33 @@ steps:
       echo "Test scope: $TEST_SCOPE"
       echo "Workers: $WORKER_COUNT"
 
-      corepack pnpm exec playwright test "${RUN_ARGS[@]}"
+      if [ "$SHARD_TOTAL" -le 1 ]; then
+        corepack pnpm exec playwright test "${RUN_ARGS[@]}"
+        exit 0
+      fi
+
+      echo "Shard:$SHARD_INDEX/$SHARD_TOTAL (accounts from #$(( ACCOUNT_OFFSET + 1 )))"
+
+      SHARD_STATUS=0
+      corepack pnpm exec playwright test "${RUN_ARGS[@]}" \
+        "--grep-invert" "@single-account" "--shard=$SHARD_INDEX/$SHARD_TOTAL" || SHARD_STATUS=$?
+
+      SINGLE_STATUS=0
+      if [ "$SHARD_INDEX" -eq 1 ]; then
+        SINGLE_GREP="@single-account"
+        if [ -n "$SCOPE_GREP" ]; then
+          SINGLE_GREP="(?=.*${SCOPE_GREP})(?=.*@single-account)"
+        fi
+
+        echo "Running the single-account tests on this shard..."
+        KEEP_ALLURE_RESULTS=true JUNIT_OUTPUT_FILE=test-results/single-account/junit.xml \
+          corepack pnpm exec playwright test "$TEST_PATH" "--project=chromium-en" "--workers=$WORKER_COUNT" \
+          "--grep" "$SINGLE_GREP" "--output=test-results/single-account" "--pass-with-no-tests" || SINGLE_STATUS=$?
+      fi
+
+      if [ "$SHARD_STATUS" -ne 0 ] || [ "$SINGLE_STATUS" -ne 0 ]; then
+        exit 1
+      fi
 
     displayName: 'Run tests - ${{ parameters.environment }}'
 
@@ -173,6 +217,10 @@ steps:
       AGENT_TOTP_SECRET_2: $(AGENT_TOTP_SECRET_2)
       AGENT_TOTP_SECRET_3: $(AGENT_TOTP_SECRET_3)
       AGENT_TOTP_SECRET_4: $(AGENT_TOTP_SECRET_4)
+      AGENT_TOTP_SECRET_5: $(AGENT_TOTP_SECRET_5)
+      AGENT_TOTP_SECRET_6: $(AGENT_TOTP_SECRET_6)
+      AGENT_TOTP_SECRET_7: $(AGENT_TOTP_SECRET_7)
+      AGENT_TOTP_SECRET_8: $(AGENT_TOTP_SECRET_8)
 
       AGENT_B_PASSWORD: $(AGENT_B_PASSWORD)
       AGENT_B_TOTP_SECRET: $(AGENT_B_TOTP_SECRET)
@@ -187,6 +235,10 @@ steps:
       IMPORTER_TOTP_SECRET_2: $(IMPORTER_TOTP_SECRET_2)
       IMPORTER_TOTP_SECRET_3: $(IMPORTER_TOTP_SECRET_3)
       IMPORTER_TOTP_SECRET_4: $(IMPORTER_TOTP_SECRET_4)
+      IMPORTER_TOTP_SECRET_5: $(IMPORTER_TOTP_SECRET_5)
+      IMPORTER_TOTP_SECRET_6: $(IMPORTER_TOTP_SECRET_6)
+      IMPORTER_TOTP_SECRET_7: $(IMPORTER_TOTP_SECRET_7)
+      IMPORTER_TOTP_SECRET_8: $(IMPORTER_TOTP_SECRET_8)
       IMPORTER_EORI: $(IMPORTER_EORI)
       IMPORTER_IPO: $(IMPORTER_IPO)
       IMPORTER_UKIMS: $(IMPORTER_UKIMS)
@@ -212,6 +264,10 @@ steps:
       AUTH_ACCOUNT_TOTP_SECRET_2: $(AUTH_ACCOUNT_TOTP_SECRET_2)
       AUTH_ACCOUNT_TOTP_SECRET_3: $(AUTH_ACCOUNT_TOTP_SECRET_3)
       AUTH_ACCOUNT_TOTP_SECRET_4: $(AUTH_ACCOUNT_TOTP_SECRET_4)
+      AUTH_ACCOUNT_TOTP_SECRET_5: $(AUTH_ACCOUNT_TOTP_SECRET_5)
+      AUTH_ACCOUNT_TOTP_SECRET_6: $(AUTH_ACCOUNT_TOTP_SECRET_6)
+      AUTH_ACCOUNT_TOTP_SECRET_7: $(AUTH_ACCOUNT_TOTP_SECRET_7)
+      AUTH_ACCOUNT_TOTP_SECRET_8: $(AUTH_ACCOUNT_TOTP_SECRET_8)
 
       CARRIER_PASSWORD: $(CARRIER_PASSWORD)
       CARRIER_TOTP_SECRET: $(CARRIER_TOTP_SECRET)
@@ -230,18 +286,27 @@ steps:
       TRADER_API_CLIENT_SECRET: $(TRADER_API_CLIENT_SECRET)
       CASE_MANAGEMENT_PASSWORD: $(CASE_MANAGEMENT_PASSWORD)
 
-  - template: publish-test-artifacts.yml
-    parameters:
-      environment: ${{ parameters.environment }}
-      testType: 'all'
+  - ${{ if le(parameters.shards, 1) }}:
+    - template: publish-test-artifacts.yml
+      parameters:
+        environment: ${{ parameters.environment }}
+        testType: 'all'
+
+  - ${{ if gt(parameters.shards, 1) }}:
+    - template: publish-test-artifacts.yml
+      parameters:
+        environment: ${{ parameters.environment }}
+        testType: 'all'
+        mode: shard
 
   - template: cleanup.yml
     parameters:
       environment: ${{ parameters.environment }}
 
-  - template: notify-teams.yml
-    parameters:
-      title: 'TSS-E2E Tests - ${{ parameters.environment }}'
-      testScope: ${{ parameters.testScope }}
-      workers: ${{ parameters.workers }}
-      notifyTeams: ${{ parameters.notifyTeams }}
+  - ${{ if le(parameters.shards, 1) }}:
+    - template: notify-teams.yml
+      parameters:
+        title: 'TSS-E2E Tests - ${{ parameters.environment }}'
+        testScope: ${{ parameters.testScope }}
+        workers: ${{ parameters.workers }}
+        notifyTeams: ${{ parameters.notifyTeams }}

@@ -14,28 +14,24 @@ pool:
   name: TSS-NonProd-EKS
 
 jobs:
-  - job: FunctionalTests_test
-    displayName: 'Run functional regression - test'
-    timeoutInMinutes: 720
-    variables:
-      - group: TSS-E2E-TEST
-    steps:
-      - template: templates/run-group-of-tests.yml
-        parameters:
-          environment: test
-          testScope: regression
-          testFilter: none
-          workers: 2
+  - template: templates/sharded-test-jobs.yml
+    parameters:
+      jobName: FunctionalTests_test
+      displayName: 'Run functional regression - test'
+      environment: test
+      variableGroup: TSS-E2E-TEST
+      testScope: regression
+      testFilter: none
+      workers: 4
+      shards: 2
 
-  - job: FunctionalTests_sit
-    displayName: 'Run functional regression - sit'
-    timeoutInMinutes: 720
-    variables:
-      - group: TSS-E2E-SIT
-    steps:
-      - template: templates/run-group-of-tests.yml
-        parameters:
-          environment: sit
-          testScope: regression
-          testFilter: none
-          workers: 2
+  - template: templates/sharded-test-jobs.yml
+    parameters:
+      jobName: FunctionalTests_sit
+      displayName: 'Run functional regression - sit'
+      environment: sit
+      variableGroup: TSS-E2E-SIT
+      testScope: regression
+      testFilter: none
+      workers: 4
+      shards: 2

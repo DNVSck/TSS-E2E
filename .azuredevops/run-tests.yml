@@ -28,12 +28,20 @@ parameters:
   - name: workers
     displayName: 'Parallel Playwright workers'
     type: number
-    default: 1
+    default: 4
     values:
       - 1
       - 2
       - 3
       - 4
+
+  - name: shards
+    displayName: 'Agents to split the run across (each runs the workers above, on its own accounts)'
+    type: number
+    default: 2
+    values:
+      - 1
+      - 2
 
   - name: runAccessibilityTests
     displayName: 'Run Accessibility Tests'
@@ -76,17 +84,16 @@ pool:
   name: TSS-NonProd-EKS
 
 jobs:
-  - job: Test
-    displayName: 'Run tests - ${{ parameters.environment }}'
-    timeoutInMinutes: 720
-    steps:
-      - template: templates/run-group-of-tests.yml
-        parameters:
-          environment: ${{ parameters.environment }}
-          testScope: ${{ parameters.testScope }}
-          testFilter: ${{ parameters.testFilter }}
-          workers: ${{ parameters.workers }}
-          runAccessibilityTests: ${{ parameters.runAccessibilityTests }}
-          runFunctionalTests: ${{ parameters.runFunctionalTests }}
-          runAll: ${{ parameters.runAll }}
-          notifyTeams: ${{ parameters.notifyTeams }}
+  - template: templates/sharded-test-jobs.yml
+    parameters:
+      jobName: Test
+      displayName: 'Run tests - ${{ parameters.environment }}'
+      environment: ${{ parameters.environment }}
+      testScope: ${{ parameters.testScope }}
+      testFilter: ${{ parameters.testFilter }}
+      workers: ${{ parameters.workers }}
+      shards: ${{ parameters.shards }}
+      runAccessibilityTests: ${{ parameters.runAccessibilityTests }}
+      runFunctionalTests: ${{ parameters.runFunctionalTests }}
+      runAll: ${{ parameters.runAll }}
+      notifyTeams: ${{ parameters.notifyTeams }}

@@ -59,7 +59,7 @@ export default defineConfig({
   },
   reporter: [
     ['allure-playwright', { suiteTitle: true }],
-    ['junit', { outputFile: 'test-results/junit.xml' }],
+    ['junit', { outputFile: process.env.JUNIT_OUTPUT_FILE ?? 'test-results/junit.xml' }],
     ['line'],
     ['./src/core/report/test-outcome-reporter.ts'],
   ],

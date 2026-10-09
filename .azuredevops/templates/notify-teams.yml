@@ -10,6 +10,9 @@ parameters:
   - name: notifyTeams
     type: boolean
     default: true
+  - name: status
+    type: string
+    default: '$(Agent.JobStatus)'
 
 steps:
   - script: |
@@ -17,9 +20,9 @@ steps:
         echo "TEAMS_WEBHOOK_URL not set, skipping notification"
         exit 0
       fi
-      JUNIT="$(Agent.TempDirectory)/reports/test-results/junit.xml"
-      if [ -f "$JUNIT" ]; then
-      bash "$(Build.SourcesDirectory)/.azuredevops/scripts/parse-junit.sh" "$JUNIT" > "$(Agent.TempDirectory)/reports/counts.env"
+      mapfile -t JUNITS < <(find "$(Agent.TempDirectory)/reports" -type f \( -name 'junit.xml' -o -path '*/junit/*.xml' \) 2>/dev/null)
+      if [ "${#JUNITS[@]}" -gt 0 ]; then
+      bash "$(Build.SourcesDirectory)/.azuredevops/scripts/parse-junit.sh" "${JUNITS[@]}" > "$(Agent.TempDirectory)/reports/counts.env"
       . "$(Agent.TempDirectory)/reports/counts.env"
         PASSED="${PASSED:-0}"; FAILED="${FAILED:-0}"; SKIPPED="${SKIPPED:-0}"; TOTAL="${TOTAL:-0}"
         RUN_NOTE=""
@@ -27,7 +30,8 @@ steps:
         PASSED="–"; FAILED="–"; SKIPPED="–"; TOTAL="–"
         RUN_NOTE='{ "type": "TextBlock", "text": "Tests did not run - environment setup failed", "wrap": true, "weight": "Bolder", "color": "Attention" },'
       fi
-      STATUS="$(Agent.JobStatus)"
+      STATUS="${{ parameters.status }}"
+      if [ "$STATUS" = "SucceededWithIssues" ]; then STATUS="PartiallySucceeded"; fi
       CONTAINER_STYLE="default"
       if [ "$STATUS" = "Succeeded" ]; then CONTAINER_STYLE="good";
       elif [ "$STATUS" = "Failed" ]; then CONTAINER_STYLE="attention";

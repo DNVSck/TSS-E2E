@@ -5,7 +5,16 @@ parameters:
   - name: testType
     type: string
 
+  - name: mode
+    type: string
+    default: all
+    values:
+      - all
+      - shard
+      - merge
+
 steps:
+- ${{ if ne(parameters.mode, 'merge') }}:
   - script: |
       set -euo pipefail
 
@@ -38,11 +47,61 @@ steps:
     inputs:
       testResultsFormat: JUnit
       searchFolder: '$(Agent.TempDirectory)/reports'
-      testResultsFiles: 'test-results/junit.xml'
+      testResultsFiles: 'test-results/**/junit.xml'
       mergeTestResults: true
       failTaskOnFailedTests: false
       testRunTitle: '${{ parameters.testType }} tests - ${{ parameters.environment }}'
 
+- ${{ if eq(parameters.mode, 'shard') }}:
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish shard results - ${{ parameters.environment }}'
+    condition: always()
+    inputs:
+      PathtoPublish: '$(Agent.TempDirectory)/reports'
+      ArtifactName: 'shard-results-${{ parameters.environment }}-$(System.JobPositionInPhase)'
+      publishLocation: Container
+
+- ${{ if eq(parameters.mode, 'merge') }}:
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download shard results - ${{ parameters.environment }}'
+    condition: always()
+    inputs:
+      buildType: current
+      downloadType: specific
+      itemPattern: 'shard-results-${{ parameters.environment }}-*/**'
+      downloadPath: '$(Agent.TempDirectory)/shards'
+
+  - script: |
+      set -euo pipefail
+      REPORT_DIR="$(Agent.TempDirectory)/reports"
+      rm -rf "$REPORT_DIR"
+      mkdir -p "$REPORT_DIR/allure-results" "$REPORT_DIR/test-results" "$REPORT_DIR/junit"
+
+      for shard in "$(Agent.TempDirectory)/shards"/shard-results-*/; do
+        name="$(basename "$shard")"
+
+        if [ -d "$shard/allure-results" ]; then
+          cp -r "$shard/allure-results/." "$REPORT_DIR/allure-results/"
+        fi
+
+        if [ -f "$shard/test-results/junit.xml" ]; then
+          cp "$shard/test-results/junit.xml" "$REPORT_DIR/junit/$name.xml"
+        fi
+        if [ -f "$shard/test-results/single-account/junit.xml" ]; then
+          cp "$shard/test-results/single-account/junit.xml" "$REPORT_DIR/junit/$name-single-account.xml"
+        fi
+
+        for dir in "$shard"/test-results/*/ "$shard"/test-results/single-account/*/; do
+          [ -f "$dir/video.webm" ] || [ -f "$dir/trace.zip" ] || continue
+          cp -r "$dir" "$REPORT_DIR/test-results/"
+        done
+      done
+
+      echo "Merged $(find "$REPORT_DIR/allure-results" -name '*-result.json' | wc -l) test result(s) from $(ls -d "$(Agent.TempDirectory)/shards"/shard-results-*/ | wc -l) shard(s)"
+    displayName: 'Merge shard results - ${{ parameters.environment }}'
+    condition: always()
+
+- ${{ if ne(parameters.mode, 'shard') }}:
   - script: |
       set -euo pipefail
       RESULTS="$(Agent.TempDirectory)/reports/allure-results"

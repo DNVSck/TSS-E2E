@@ -10,7 +10,7 @@ const ACCOUNT_HOLDER_TEST_ID = '2406';
 const NON_ACCOUNT_HOLDER_TEST_ID = '2407';
 const EORI_CHANGE_TEST_ID = '2437';
 
-test.describe('TSS Portal company profile - edit permissions', () => {
+test.describe('TSS Portal company profile - edit permissions', { tag: '@single-account' }, () => {
 
     // Both halves of this file need the pair of accounts, so one answer covers it.
     test.skip(

@@ -16,9 +16,10 @@ async function globalSetup(config: FullConfig) {
     `Active Projects: ${config.projects.map(p => p.name).join(', ')}`
   );
 
-  // Clean allure-results BEFORE writing the metadata files into it.
+  // Clean allure-results BEFORE writing the metadata files into it, unless this
+  // run adds to the results of the one before it on the same agent.
   const allureResultsPath = path.resolve('allure-results');
-  if (fs.existsSync(allureResultsPath)) {
+  if (fs.existsSync(allureResultsPath) && process.env.KEEP_ALLURE_RESULTS !== 'true') {
     fs.rmSync(allureResultsPath, { recursive: true, force: true });
   }
 

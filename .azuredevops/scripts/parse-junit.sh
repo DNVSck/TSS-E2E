@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-JUNIT="${1:?usage: parse-junit.sh <junit.xml>}"
+: "${1:?usage: parse-junit.sh <junit.xml> [more junit.xml ...]}"
 
 awk '
   function val(name, s,   a) {
@@ -24,4 +24,4 @@ awk '
     printf "FAILED=%d\n", failures + errors;
     printf "SKIPPED=%d\n", skipped;
   }
-' "$JUNIT"
+' "$@"

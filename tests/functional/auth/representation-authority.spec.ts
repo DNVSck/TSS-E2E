@@ -907,7 +907,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
     });
 
 
-    test('Verify that an Agent company cannot reach a draft standalone declaration created by a different Agent company', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that an Agent company cannot reach a draft standalone declaration created by a different Agent company', { tag: ['@auth', '@authorisation', '@single-account'] }, async ({
         createDraftSfdStandaloneFlow, declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
         test.skip(

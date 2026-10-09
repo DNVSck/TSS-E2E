@@ -203,7 +203,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - completed by the import
 });
 
 
-test.describe('GB to NI RoRo Supplementary Declaration - completed by the importer itself - TSS DDA', { lock: COMPANY_PROFILE.TSS_DDA }, () => {
+test.describe('GB to NI RoRo Supplementary Declaration - completed by the importer itself - TSS DDA', { tag: '@single-account', lock: COMPANY_PROFILE.TSS_DDA }, () => {
     test.use({ authProfile: COMPANY_PROFILE.TSS_DDA });
 
     test.describe.configure({ timeout: 1_200_000 });

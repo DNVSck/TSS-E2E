@@ -143,6 +143,8 @@ export function canRepresentTraders(profile: CompanyProfile): boolean {
  * or a test opening a second company's session - so the reader knows where to look.
  */
 export function assertProfileAuthenticated(profile: CompanyProfile, howAsked: string): void {
+    assertOwnedByThisShard(profile, howAsked);
+
     // An on-demand profile has no session until a test asks for one, and asking is what
     // creates it - so a missing one here is the normal case, not a stale-file hazard.
     if (isOnDemandProfile(profile)) return;
@@ -157,6 +159,18 @@ export function assertProfileAuthenticated(profile: CompanyProfile, howAsked: st
         `expired. Include the profile:\n\n` +
         `    AUTH_PROFILES=${[...authenticated, profile].join(',')}\n\n` +
         `If every run needs it, add it to DEFAULT_AUTH_PROFILES in src/auth/credentials.ts instead.`
+    );
+}
+
+function assertOwnedByThisShard(profile: CompanyProfile, howAsked: string): void {
+    const offset = accountOffset();
+
+    if (offset === 0 || getCredentialsPool(profile).length > 1) return;
+
+    throw new Error(
+        `${howAsked} ${profile}, which has a single account, but this shard runs at ` +
+        `ACCOUNT_OFFSET ${offset}. Single-account profiles belong to the first shard only, ` +
+        `or two agents drive the same login at once. Tag the test '@single-account'.`
     );
 }
 
@@ -287,6 +301,19 @@ function readPoolAccount(
 }
 
 
+export function accountOffset(): number {
+    const raw = process.env.ACCOUNT_OFFSET?.trim();
+
+    if (!raw) return 0;
+
+    const offset = Number(raw);
+    if (!Number.isInteger(offset) || offset < 0) {
+        throw new Error(`ACCOUNT_OFFSET must be a whole number of accounts, 0 or more - got "${raw}".`);
+    }
+
+    return offset;
+}
+
 export function accountFor(profile: CompanyProfile, parallelIndex: number): UserCredentials {
     const pool = getCredentialsPool(profile);
 
@@ -294,13 +321,17 @@ export function accountFor(profile: CompanyProfile, parallelIndex: number): User
         return pool[0];
     }
 
-    if (parallelIndex >= pool.length) {
+    const offset = accountOffset();
+    const slot = offset + parallelIndex;
+
+    if (slot >= pool.length) {
         throw new Error(
-            `No ${profile} account for parallel worker ${parallelIndex}: only ${pool.length} account(s) ` +
-            `are defined, but more ran concurrently. Run with --workers<=${pool.length}, ` +
-            `or add more ${profile}_USER_NAME_<n> accounts in .env.${process.env.ENV ?? '<env>'}.`
+            `No ${profile} account for parallel worker ${parallelIndex} at ACCOUNT_OFFSET ${offset}: ` +
+            `only ${pool.length} account(s) are defined. Run with --workers<=${pool.length - offset}, ` +
+            `lower ACCOUNT_OFFSET, or add more ${profile}_USER_NAME_<n> accounts in ` +
+            `.env.${process.env.ENV ?? '<env>'}.`
         );
     }
 
-    return pool[parallelIndex];
+    return pool[slot];
 }

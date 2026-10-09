@@ -6,7 +6,7 @@ import { createTranslator } from '../fixtures/locale-fixture';
 import { LOCALES_CONSTANT } from '../constant/locales-constant';
 import { authStatePath, isAuthStateFresh, isSessionYoungEnough, AUTH_STATE_TTL_MINUTES } from './auth-state';
 import {
-    CompanyProfile, UserCredentials, accountFor, accountEnvKey, getCredentialsPool,
+    CompanyProfile, UserCredentials, accountFor, accountEnvKey, accountOffset, getCredentialsPool,
     profilesToAuthenticate,
 } from './credentials';
 
@@ -105,15 +105,22 @@ export async function ensureAuthState(workerCount: number): Promise<void> {
 }
 
 /**
- * Sign in one account per worker, capped at the profile's pool size: an account
- * no worker will use is a wasted login. A single-account profile yields a
- * one-element pool, so this reduces to today's behaviour.
+ * Sign in one account per worker, starting at ACCOUNT_OFFSET and capped at the
+ * profile's pool size: an account no worker will use is a wasted login, and one
+ * another shard owns must not be signed in here. A single-account profile yields
+ * a one-element pool, so this reduces to today's behaviour.
  */
 function selectAccounts(profiles: CompanyProfile[], workerCount: number): UserCredentials[] {
     return profiles.flatMap(profile => {
         const pool = getCredentialsPool(profile);
-        const needed = Math.min(pool.length, Math.max(workerCount, 1));
-        return pool.slice(0, needed);
+
+        if (pool.length === 1) {
+            return pool;
+        }
+
+        const offset = accountOffset();
+        const needed = Math.min(pool.length - offset, Math.max(workerCount, 1));
+        return pool.slice(offset, offset + Math.max(needed, 0));
     });
 }
 

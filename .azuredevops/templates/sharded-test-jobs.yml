@@ -1,0 +1,102 @@
+parameters:
+  - name: jobName
+    type: string
+
+  - name: displayName
+    type: string
+
+  - name: environment
+    type: string
+
+  - name: variableGroup
+    type: string
+    default: ''
+
+  - name: testScope
+    type: string
+    default: smoke
+
+  - name: testFilter
+    type: string
+    default: ''
+
+  - name: workers
+    type: number
+    default: 1
+
+  - name: shards
+    type: number
+    default: 1
+
+  - name: runAccessibilityTests
+    type: boolean
+    default: false
+
+  - name: runFunctionalTests
+    type: boolean
+    default: true
+
+  - name: runAll
+    type: boolean
+    default: false
+
+  - name: notifyTeams
+    type: boolean
+    default: true
+
+jobs:
+  - job: ${{ parameters.jobName }}
+    displayName: ${{ parameters.displayName }}
+    timeoutInMinutes: 720
+    ${{ if gt(parameters.shards, 1) }}:
+      strategy:
+        parallel: ${{ parameters.shards }}
+    ${{ if ne(parameters.variableGroup, '') }}:
+      variables:
+        - group: ${{ parameters.variableGroup }}
+    steps:
+      - template: run-group-of-tests.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+          testScope: ${{ parameters.testScope }}
+          testFilter: ${{ parameters.testFilter }}
+          workers: ${{ parameters.workers }}
+          shards: ${{ parameters.shards }}
+          runAccessibilityTests: ${{ parameters.runAccessibilityTests }}
+          runFunctionalTests: ${{ parameters.runFunctionalTests }}
+          runAll: ${{ parameters.runAll }}
+          notifyTeams: ${{ parameters.notifyTeams }}
+
+  - ${{ if gt(parameters.shards, 1) }}:
+    - job: ${{ parameters.jobName }}_report
+      displayName: 'Merge report - ${{ parameters.environment }}'
+      dependsOn: ${{ parameters.jobName }}
+      condition: succeededOrFailed()
+      timeoutInMinutes: 60
+      variables:
+        - ${{ if ne(parameters.variableGroup, '') }}:
+          - group: ${{ parameters.variableGroup }}
+        - name: testsResult
+          value: $[ dependencies.${{ parameters.jobName }}.result ]
+      steps:
+        - template: test-env-prepare.yml
+          parameters:
+            environment: ${{ parameters.environment }}
+
+        - template: publish-test-artifacts.yml
+          parameters:
+            environment: ${{ parameters.environment }}
+            testType: 'all'
+            mode: merge
+
+        - template: notify-teams.yml
+          parameters:
+            title: 'TSS-E2E Tests - ${{ parameters.environment }}'
+            testScope: ${{ parameters.testScope }}
+            workers: '${{ parameters.workers }} per shard x ${{ parameters.shards }} shards'
+            notifyTeams: ${{ parameters.notifyTeams }}
+            status: '$(testsResult)'
+
+        - template: cleanup.yml
+          parameters:
+            environment: ${{ parameters.environment }}
