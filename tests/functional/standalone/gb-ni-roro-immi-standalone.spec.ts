@@ -185,7 +185,6 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
           additionalProcedureCodes: [
             ADDITIONAL_PROCEDURE_CODES.SPIMM_SPECIAL_PROCEDURE_1SP,
             ADDITIONAL_PROCEDURE_CODES.SPIMM_SPECIAL_PROCEDURE_1NR,
-            ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
           ],
         })
       })
