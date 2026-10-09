@@ -66,6 +66,7 @@ export class GoodsDeclarePage extends BasePage {
     private readonly goodsProcedureCodeDropdown: Locator;
 
     private readonly additionalProcedureCodeDropdown: Locator;
+    private readonly additionalProcedureCodeRadios: Locator;
     private readonly supervisingCustomsOfficeDropdown: Locator;
     private readonly warehouseTypeDropdown: Locator;
     private readonly warehouseIdentifierInput: Locator;
@@ -136,6 +137,7 @@ export class GoodsDeclarePage extends BasePage {
 
         // "Additional procedure code"
         this.additionalProcedureCodeDropdown = page.locator("select#additionalProcedureCode");
+        this.additionalProcedureCodeRadios = page.locator("input[name='additionalProcedureCode']");
 
         // "Warehouse identifier" - inserted into the procedure journey only for the
         // procedure codes that declare warehoused goods (see requiresWarehouseIdentifier).
@@ -339,6 +341,11 @@ export class GoodsDeclarePage extends BasePage {
 
     async selectAdditionalProcedureCode(additionalProcedureCode: string): Promise<void> {
         await selectDropdownValue(this.additionalProcedureCodeDropdown, additionalProcedureCode);
+        await this.clickContinueButton();
+    }
+
+    async checkAdditionalProcedureCode(additionalProcedureCode: string): Promise<void> {
+        await checkRadioByValue(this.additionalProcedureCodeRadios, additionalProcedureCode);
         await this.clickContinueButton();
     }
 

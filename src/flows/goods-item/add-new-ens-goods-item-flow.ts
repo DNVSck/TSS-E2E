@@ -76,7 +76,9 @@ export class AddNewEnsGoodsItemFlow {
                 await checkpoint?.('Goods item - procedure code', { probeErrors: true });
                 await this.steps.selectGoodsProcedureCode(input);
                 await checkpoint?.('Goods item - additional procedure code', { probeErrors: true });
-                await this.steps.selectAdditionalProcedureCode(input);
+                await (journey.useIMMI
+                    ? this.steps.selectImmiAdditionalProcedureCode(input)
+                    : this.steps.selectAdditionalProcedureCode(input));
 
                 // The supervising office is asked on the standard and simplified
                 // routes; IMMI is not one of them - the service fills that field in

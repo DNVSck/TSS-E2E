@@ -42,7 +42,7 @@ export class AddNewImmiStandaloneGoodsItemFlow {
             await checkpoint?.('Goods item - procedure code', { probeErrors: true });
             await this.steps.selectGoodsProcedureCode(input);
             await checkpoint?.('Goods item - additional procedure code', { probeErrors: true });
-            await this.steps.selectAdditionalProcedureCode(input);
+            await this.steps.selectImmiAdditionalProcedureCode(input);
 
             // No supervising office step, unlike the standard and simplified wizards
             // beside this one: IMMI is not a route that asks for it, and the service

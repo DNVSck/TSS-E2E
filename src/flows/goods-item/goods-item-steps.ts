@@ -120,6 +120,12 @@ export class GoodsItemSteps {
         });
     }
 
+    async selectImmiAdditionalProcedureCode(input: GoodsData): Promise<void> {
+        await ReportLog.step('Select the additional procedure code', async () => {
+            await this.goodsDeclarePage.checkAdditionalProcedureCode(input.additionalProcedureCode);
+        });
+    }
+
     /**
      * The supervising customs office screen, which comes immediately BEFORE the
      * warehouse identifier one.
