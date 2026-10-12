@@ -3,6 +3,7 @@ import { Page, Locator } from '@playwright/test';
 import { PartyBlock, PartyAddress, PartyType } from './components/party-block';
 import {
     selectDropdownValue, checkRadioByValue, selectAutocompleteValue, typeAutocompleteValue,
+    clickToLeaveScreen,
 } from '../helper/element-helper';
 import { BOOLEAN } from '../constant/radio-value-constant';
 
@@ -13,7 +14,7 @@ export class ConsignmentDeclarePage extends BasePage {
 
     private readonly submitterEoriInput: Locator;
     private readonly linkedConsignmentInput: Locator;
-    private readonly linkedConsignmentFirstOption: Locator;
+    private readonly linkedConsignmentOptions: Locator;
 
     // Trade parties — the repeated "EORI + address" screens live in PartyBlock.
     private readonly importer: PartyBlock;
@@ -60,7 +61,7 @@ export class ConsignmentDeclarePage extends BasePage {
 
         this.submitterEoriInput = page.locator('input#submitterEori');
         this.linkedConsignmentInput = page.locator('input#lrn');
-        this.linkedConsignmentFirstOption = page.locator('#lrn__option--0');
+        this.linkedConsignmentOptions = page.locator("[id^='lrn__option--']");
 
         this.importer = new PartyBlock(page, 'importer');
         this.buyer = new PartyBlock(page, 'buyer');
@@ -102,9 +103,11 @@ export class ConsignmentDeclarePage extends BasePage {
 
     async selectConsignmentToLink(consignmentReference: string): Promise<void> {
         await selectAutocompleteValue(
-            this.linkedConsignmentInput, this.linkedConsignmentFirstOption, consignmentReference
+            this.linkedConsignmentInput,
+            this.linkedConsignmentOptions.filter({ hasText: consignmentReference }).first(),
+            consignmentReference
         );
-        await this.clickContinueButton();
+        await clickToLeaveScreen(this.page, this.commonContinueButton);
     }
 
     async submitConsignmentToLink(consignmentReference: string): Promise<string[]> {
