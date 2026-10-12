@@ -17,19 +17,19 @@ const DESCRIPTION_TIMEOUT = 150_000;
 export class AdditionalInformationDeclarePage extends BasePage {
 
     private readonly codeInput: Locator;
-    private readonly codeFirstOption: Locator;
+    private readonly codeOptions: Locator;
     private readonly descriptionInput: Locator;
 
     constructor(page: Page) {
         super(page);
         this.codeInput = page.locator("input#code");
-        this.codeFirstOption = page.locator("#code__option--0");
+        this.codeOptions = page.locator("[id^='code__option--']");
         this.descriptionInput = page.locator("input#description");
     }
 
     /** "Select an additional information code" — commit the autocomplete value. */
     async selectAdditionalInformationCode(code: string): Promise<void> {
-        await selectAutocompleteValue(this.codeInput, this.codeFirstOption, code);
+        await selectAutocompleteValue(this.codeInput, this.codeOptions, code);
         await this.clickContinueButton();
     }
 

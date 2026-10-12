@@ -287,6 +287,10 @@ export async function readFieldIfPresent(field: Locator): Promise<string> {
 // implementation and it went unnoticed for a long time, because the commodity screen
 // types a value the service also accepts as a bare query; the TGP screen, which needs
 // a real record, rejected it outright.
+//
+// The suggestion clicked is the one that shows the value, never simply the first: the
+// list is fetched while typing, so when typing ends it can still hold the answers to a
+// shorter prefix, led by another record that merely shares it.
 
 const AUTOCOMPLETE_ENHANCED_TIMEOUT = 10_000;
 const AUTOCOMPLETE_ENHANCED_RELOADED_TIMEOUT = 25_000;
@@ -331,24 +335,32 @@ async function typeIntoAutocomplete(input: Locator, value: string): Promise<void
 
 export async function selectAutocompleteValue(
     input: Locator,
-    firstOption: Locator,
+    suggestions: Locator,
     value: string
+): Promise<void> {
+    await selectAutocompleteOption(input, suggestions.filter({ hasText: value }).first(), value);
+}
+
+export async function selectAutocompleteOption(
+    input: Locator,
+    option: Locator,
+    typed: string
 ): Promise<void> {
     await waitForAutocomplete(input);
 
     for (let attempt = 1; attempt <= 3; attempt++) {
-        await typeIntoAutocomplete(input, value);
+        await typeIntoAutocomplete(input, typed);
 
         try {
-            await firstOption.waitFor({ state: 'visible', timeout: AUTOCOMPLETE_SUGGESTIONS_TIMEOUT });
-            await firstOption.click();
+            await option.waitFor({ state: 'visible', timeout: AUTOCOMPLETE_SUGGESTIONS_TIMEOUT });
+            await option.click();
             // The open list overlays whatever sits below it — the Continue button,
             // typically — and swallows the next click, so see it close before moving on.
-            await firstOption.waitFor({ state: 'hidden' });
+            await option.waitFor({ state: 'hidden' });
             return;
         } catch {
             if (attempt === 3) {
-                throw new Error(`Autocomplete suggestions never loaded for "${value}" after 3 attempts.`);
+                throw new Error(`No suggestion matching ${option} was offered for "${typed}" after 3 attempts.`);
             }
         }
     }

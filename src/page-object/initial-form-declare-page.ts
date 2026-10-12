@@ -13,7 +13,7 @@ export class InitialFormDeclaraPage extends BasePage {
     private readonly typeOfEnsSubmissionRadios: Locator;
 
     private readonly importerEoriInput: Locator;
-    private readonly importerEoriFirstOption: Locator;
+    private readonly importerEoriOptions: Locator;
 
     private readonly standaloneDeclarationTypeRadios: Locator;
     private readonly internalMarketMovementOption: Locator;
@@ -32,7 +32,7 @@ export class InitialFormDeclaraPage extends BasePage {
 
         // "Who is the importer?" screen
         this.importerEoriInput = page.locator("input#importerEORI");
-        this.importerEoriFirstOption = page.locator("#importerEORI__option--0");
+        this.importerEoriOptions = page.locator("[id^='importerEORI__option--']");
 
         // "Which standalone customs declaration are you submitting? - Declaration type" screen
         const standaloneDeclarationType = 'input[name="standaloneCustomsType"]';
@@ -58,7 +58,7 @@ export class InitialFormDeclaraPage extends BasePage {
     }
 
     async selectImporter(eori: string): Promise<void> {
-        await selectAutocompleteValue(this.importerEoriInput, this.importerEoriFirstOption, eori);
+        await selectAutocompleteValue(this.importerEoriInput, this.importerEoriOptions, eori);
         await this.clickContinueButton();
     }
 
