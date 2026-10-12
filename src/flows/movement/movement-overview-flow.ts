@@ -90,6 +90,24 @@ export class MovementOverviewFlow {
         });
     }
 
+    async verifyConsignmentListed(consignmentReference: string): Promise<void> {
+        await ReportLog.step('Verify the linked consignment is listed on the movement', async () => {
+            expect(
+                await this.movementOverviewPage.listEnsConsignmentReferences(),
+                `ENS consignments listed on the movement after linking (must include ${consignmentReference})`
+            ).toContain(consignmentReference);
+        });
+    }
+
+    async openLinkedEnsConsignment(consignmentReference: string): Promise<void> {
+        await ReportLog.step(`Open the linked ENS consignment ${consignmentReference}`, async () => {
+            expect(
+                await this.movementOverviewPage.openEnsConsignmentDetailFor(consignmentReference),
+                `ENS consignment ${consignmentReference} opened from the movement (expects its View link)`
+            ).toBe(true);
+        });
+    }
+
     async verifyDraftMovementOverview(): Promise<string> {
         return ReportLog.step('Validate goods movement overview', async () => {
             const { localReferenceNumber, declarationStatus } =

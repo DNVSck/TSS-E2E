@@ -13,7 +13,7 @@ import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import { goods, GoodsData } from '../../test-data/goods-data';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
-import { AccessibilityAudit, checkpointFor } from '../accessibility-audit-flow';
+import { AccessibilityAudit, AccessibilityCheckpoint, checkpointFor } from '../accessibility-audit-flow';
 import { RECORD_TAB } from '../../constant/record-tab-constant';
 
 /** What a caller supplies to build an ENS declaration, whatever it does with it next. */
@@ -39,6 +39,8 @@ export interface DraftEnsDeclaration {
     useNirms: boolean;
     nirmsDocumentCodes: string[];
 }
+
+export type DraftEnsConsignment = Omit<DraftEnsDeclaration, 'movementLrn'>;
 
 /**
  * Builds an ENS declaration - movement header, consignment, goods item and their
@@ -71,36 +73,53 @@ export class CreateDraftEnsDeclarationFlow {
     ) { }
 
     async createDraftEnsDeclaration(options: EnsDeclarationOptions): Promise<DraftEnsDeclaration> {
-        const { testInfo, url } = options;
-
         reportTestAccount(this.authAccount, 'createDraftEnsDeclaration');
 
-        const routeData = initialFormData(options.initialFormOverrides);
-        const movementData = movement(options.movementOverrides);
+        const checkpoint = checkpointFor(options.audit, options.testInfo);
+
+        // Each flow reports its own top-level step; re-wrapping here would add a
+        // redundant nesting level with a second name for the same phase.
+        const movementLrn = await this.createDraftMovement(options, checkpoint);
+        const draftConsignment = await this.declareConsignmentAndGoods(
+            options,
+            consignmentData => this.addNewEnsConsignmentFlow.addNewEnsConsignment(consignmentData, checkpoint),
+            checkpoint
+        );
+
+        return { ...draftConsignment, movementLrn };
+    }
+
+    async createDraftMovement(
+        options: EnsDeclarationOptions,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<string> {
+        await this.accessFlow.openService({ baseUrl: options.url, testInfo: options.testInfo });
+        await this.routeFlow.completeInitialFormDeclaration(initialFormData(options.initialFormOverrides), checkpoint);
+        await this.movementHeaderFlow.completeNewGoodsMovementDeclaration(movement(options.movementOverrides), checkpoint);
+        const movementLrn = await this.movementOverviewFlow.verifyDraftMovementOverview();
+        await this.auditTabs(options, 'Movement', [RECORD_TAB.GMR_DETAILS]);
+
+        return movementLrn;
+    }
+
+    async declareConsignmentAndGoods(
+        options: EnsDeclarationOptions,
+        openConsignmentWizard: (consignmentData: ConsignmentData) => Promise<void>,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<DraftEnsConsignment> {
+        const { audit, testInfo } = options;
         const consignmentData = consignment(options.consignmentOverrides);
         const goodsData = goods(options.goodsItemOverrides);
         const goodsJourney = this.buildGoodsJourney(consignmentData);
 
         reportDeclarationCodes(goodsData);
 
-        const checkpoint = checkpointFor(options.audit, testInfo);
-        // A record's overview IS its first tab, so this walk is the only scan of it.
-        const auditTabs = (record: string, skipTabs?: string[]) =>
-            options.audit?.verifyEveryTab({ testInfo, record, skipTabs });
-
-        // Each flow reports its own top-level step; re-wrapping here would add a
-        // redundant nesting level with a second name for the same phase.
-        await this.accessFlow.openService({ baseUrl: url, testInfo });
-        await this.routeFlow.completeInitialFormDeclaration(routeData, checkpoint);
-        await this.movementHeaderFlow.completeNewGoodsMovementDeclaration(movementData, checkpoint);
-        const movementLrn = await this.movementOverviewFlow.verifyDraftMovementOverview();
-        await auditTabs('Movement', [RECORD_TAB.GMR_DETAILS]);
-        await this.addNewEnsConsignmentFlow.addNewEnsConsignment(consignmentData, checkpoint);
+        await openConsignmentWizard(consignmentData);
         // Report the consignment reference (DEC...) as soon as its draft exists, so a
         // run captures it even if a later step fails.
         const consignmentReference = await this.consignmentOverviewFlow.verifyDraftConsignment();
-        await auditTabs('Consignment');
-        await this.consignmentOverviewFlow.auditRecordWizards(options.audit, testInfo);
+        await this.auditTabs(options, 'Consignment');
+        await this.consignmentOverviewFlow.auditRecordWizards(audit, testInfo);
         await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
         await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
         // Declaring those tabs leaves the overview on the tab's own route; return to
@@ -124,18 +143,22 @@ export class CreateDraftEnsDeclarationFlow {
         await this.goodsOverviewFlow.declareAdditionalProcedureCodes(goodsData.additionalProcedureCodes);
         await this.goodsOverviewFlow.declareTaricAdditionalCodes(goodsData.taricAdditionalCodes);
         await this.goodsOverviewFlow.declareNationalAdditionalCodes(goodsData.nationalAdditionalCodes);
-        await auditTabs('Goods item');
-        await this.goodsOverviewFlow.auditRecordWizards(options.audit, testInfo);
+        await this.auditTabs(options, 'Goods item');
+        await this.goodsOverviewFlow.auditRecordWizards(audit, testInfo);
 
         return {
             consignmentReference,
-            movementLrn,
             transportDocumentNumber: consignmentData.transportDocumentNumber,
             goodsJourney,
             procedureCode: goodsData.procedureCode,
             useNirms: goodsData.useNirms,
             nirmsDocumentCodes: goodsData.nirmsDocumentCodes,
         };
+    }
+
+    // A record's overview IS its first tab, so this walk is the only scan of it.
+    private async auditTabs(options: EnsDeclarationOptions, record: string, skipTabs?: string[]): Promise<void> {
+        await options.audit?.verifyEveryTab({ testInfo: options.testInfo, record, skipTabs });
     }
 
 

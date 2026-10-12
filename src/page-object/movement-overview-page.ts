@@ -176,6 +176,28 @@ export class MovementOverviewPage extends BasePage {
         await this.associateConsignmentBtn.click();
     }
 
+    async listEnsConsignmentReferences(): Promise<string[]> {
+        if (!await this.waitForRecordCard(this.ensConsignmentsTab, this.ensConsignmentViewLink, CONSIGNMENT_VIEW_TIMEOUT)) {
+            return [];
+        }
+
+        const hrefs = await this.ensConsignmentViewLink.evaluateAll(
+            links => links.map(link => link.getAttribute('href') ?? '')
+        );
+
+        return hrefs.flatMap(href =>
+            href.split('/').filter(segment => LOCAL_REFERENCE.DEC_PREFIX.test(segment))
+        );
+    }
+
+    async openEnsConsignmentDetailFor(consignmentReference: string): Promise<boolean> {
+        await this.returnToMovementOverview();
+        return this.openRecordFromTab(
+            this.ensConsignmentsTab,
+            this.ensConsignmentViewLink.and(this.page.locator(`[href*='/${consignmentReference}/']`))
+        );
+    }
+
     async openCancelDeclaration(): Promise<void> {
         await this.cancelDeclarationLink.click();
         await this.cancellationScreen.waitForReason(CANCEL_SETTLE_TIMEOUT);

@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test';
 import { toPartyAddress } from '../../page-object/components/party-block';
 import { ReportLog } from '../../core/report/report-log';
 import { ConsignmentData } from '../../test-data/consignment-data';
@@ -7,6 +8,7 @@ import {
     CompanyPermissionService,
 } from '../../api-service/portal-api/company-permission-service';
 import { ENV } from '../../../config/environment';
+import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 
 /**
  * One consignment on the four ENS-integrated journeys (ENS-only, EIDR, SFD, IMMI).
@@ -20,6 +22,7 @@ export class AddNewEnsConsignmentFlow {
     constructor(
         private readonly consignmentSteps: ConsignmentSteps,
         private readonly companyPermissionService: CompanyPermissionService,
+        private readonly t: TFunction,
     ) { }
 
     async addNewEnsConsignment(
@@ -27,62 +30,101 @@ export class AddNewEnsConsignmentFlow {
         checkpoint?: AccessibilityCheckpoint
     ): Promise<void> {
         await ReportLog.step('Add new ENS consignment', async () => {
-            // The exporter (+ "seller same as exporter?") and the invoice-currency
-            // screen are one coupled pair: both appear on the IMMI and controlled-goods
-            // SFD journeys, and both are absent on the two reduced journeys — ENS-only
-            // and EIDR (SFD with controlled goods = No), which ask for the seller
-            // directly and never reach invoice currency.
-            const hasExporterAndCurrency =
-                !input.isEnsOnly && (input.useIMMI || input.isControlledGoods);
-
             await this.consignmentSteps.clickNewEnsConsignment();
-
-            await checkpoint?.('Consignment - importer EORI', { probeErrors: true });
-            await this.consignmentSteps.fillImporterEori(input.importerEORI);
-
-            await checkpoint?.('Consignment - ENS only choice', { probeErrors: true });
-            await this.declareEnsOnlyChoice(input, checkpoint);
-
-            if (input.representationType) {
-                await checkpoint?.('Consignment - representation type', { probeErrors: true });
-                await this.consignmentSteps.selectRepresentationType(input.representationType);
-            }
-
-            // Every journey reaches this now: the importer is known before the ENS-only
-            // choice is made, so the buyer can be asked against it on both.
-            await this.fillBuyerInformation(input, checkpoint);
-
-            if (!input.isEnsOnly) {
-                await this.declareUseImmi(input, checkpoint);
-
-                // Accepting IMMI is the only answer that retires the question.
-                if (!input.useIMMI) {
-                    await checkpoint?.('Consignment - controlled goods', { probeErrors: true });
-                    await this.consignmentSteps.declareControlledGoods(input.isControlledGoods);
-                }
-            }
-
-            await checkpoint?.('Consignment - transport and destination', { probeErrors: true });
-            await this.fillTransportAndDestinationDetails(input);
-            await this.consignmentSteps.auditPartyScreens('consignor', checkpoint);
-            await this.consignmentSteps.fillConsignorDetails(input.consignorEORI, toPartyAddress('consignor', input));
-            await this.consignmentSteps.auditPartyScreens('consignee', checkpoint);
-            await this.consignmentSteps.fillConsigneeDetails(input.consigneeEORI, toPartyAddress('consignee', input));
-            await this.fillExporterAndSeller(input, hasExporterAndCurrency, checkpoint);
-            // No probe: the trader reference is the one optional field in the wizard, so
-            // an empty submit is accepted by design and would report a false finding.
-            await checkpoint?.('Consignment - trader reference');
-            await this.consignmentSteps.fillTraderReference(input.traderReference ?? '');
-            await this.fillBorderAndContainerInformation(input, checkpoint);
-
-            if (hasExporterAndCurrency) {
-                await checkpoint?.('Consignment - invoice currency', { probeErrors: true });
-                await this.consignmentSteps.selectInvoiceCurrency(input.invoiceCurrency);
-            }
-
-            await checkpoint?.('Consignment - check your answers');
-            await this.consignmentSteps.finishConsignmentDeclaration();
+            await this.declareConsignment(input, checkpoint);
         });
+    }
+
+    async addConsignmentFirstConsignment(
+        input: ConsignmentData,
+        submitterEori: string,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
+        await ReportLog.step('Add consignment-first ENS consignment', async () => {
+            await checkpoint?.('Consignment - ENS submitter EORI', { probeErrors: true });
+            await this.consignmentSteps.fillSubmitterEori(submitterEori);
+            await this.declareConsignment(input, checkpoint);
+        });
+    }
+
+    async associateExistingConsignment(consignmentReference: string): Promise<void> {
+        await ReportLog.step('Associate an existing ENS consignment', async () => {
+            await this.consignmentSteps.clickAssociateConsignment();
+            await this.consignmentSteps.selectConsignmentToLink(consignmentReference);
+        });
+    }
+
+    async verifyAssociationRefused(consignmentReference: string, expectedErrorKey: TranslationKey): Promise<void> {
+        const expected = this.t(expectedErrorKey);
+
+        await ReportLog.step(`Try to link ${consignmentReference} and expect it refused`, async () => {
+            await this.consignmentSteps.clickAssociateConsignment();
+            const errors = await this.consignmentSteps.submitConsignmentToLink(consignmentReference);
+
+            expect(
+                errors,
+                `Linking ${consignmentReference} should be refused - errors shown on "Link an existing consignment" (must include "${expected}")`
+            ).toContain(expected);
+        });
+    }
+
+    private async declareConsignment(
+        input: ConsignmentData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
+        // The exporter (+ "seller same as exporter?") and the invoice-currency
+        // screen are one coupled pair: both appear on the IMMI and controlled-goods
+        // SFD journeys, and both are absent on the two reduced journeys — ENS-only
+        // and EIDR (SFD with controlled goods = No), which ask for the seller
+        // directly and never reach invoice currency.
+        const hasExporterAndCurrency =
+            !input.isEnsOnly && (input.useIMMI || input.isControlledGoods);
+
+        await checkpoint?.('Consignment - importer EORI', { probeErrors: true });
+        await this.consignmentSteps.fillImporterEori(input.importerEORI);
+
+        await checkpoint?.('Consignment - ENS only choice', { probeErrors: true });
+        await this.declareEnsOnlyChoice(input, checkpoint);
+
+        if (input.representationType) {
+            await checkpoint?.('Consignment - representation type', { probeErrors: true });
+            await this.consignmentSteps.selectRepresentationType(input.representationType);
+        }
+
+        // Every journey reaches this now: the importer is known before the ENS-only
+        // choice is made, so the buyer can be asked against it on both.
+        await this.fillBuyerInformation(input, checkpoint);
+
+        if (!input.isEnsOnly) {
+            await this.declareUseImmi(input, checkpoint);
+
+            // Accepting IMMI is the only answer that retires the question.
+            if (!input.useIMMI) {
+                await checkpoint?.('Consignment - controlled goods', { probeErrors: true });
+                await this.consignmentSteps.declareControlledGoods(input.isControlledGoods);
+            }
+        }
+
+        await checkpoint?.('Consignment - transport and destination', { probeErrors: true });
+        await this.fillTransportAndDestinationDetails(input);
+        await this.consignmentSteps.auditPartyScreens('consignor', checkpoint);
+        await this.consignmentSteps.fillConsignorDetails(input.consignorEORI, toPartyAddress('consignor', input));
+        await this.consignmentSteps.auditPartyScreens('consignee', checkpoint);
+        await this.consignmentSteps.fillConsigneeDetails(input.consigneeEORI, toPartyAddress('consignee', input));
+        await this.fillExporterAndSeller(input, hasExporterAndCurrency, checkpoint);
+        // No probe: the trader reference is the one optional field in the wizard, so
+        // an empty submit is accepted by design and would report a false finding.
+        await checkpoint?.('Consignment - trader reference');
+        await this.consignmentSteps.fillTraderReference(input.traderReference ?? '');
+        await this.fillBorderAndContainerInformation(input, checkpoint);
+
+        if (hasExporterAndCurrency) {
+            await checkpoint?.('Consignment - invoice currency', { probeErrors: true });
+            await this.consignmentSteps.selectInvoiceCurrency(input.invoiceCurrency);
+        }
+
+        await checkpoint?.('Consignment - check your answers');
+        await this.consignmentSteps.finishConsignmentDeclaration();
     }
 
 

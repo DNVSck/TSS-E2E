@@ -317,6 +317,18 @@ async function waitForAutocomplete(input: Locator): Promise<void> {
     );
 }
 
+export async function typeAutocompleteValue(input: Locator, value: string): Promise<void> {
+    await waitForAutocomplete(input);
+    await typeIntoAutocomplete(input, value);
+    await input.blur();
+}
+
+async function typeIntoAutocomplete(input: Locator, value: string): Promise<void> {
+    await input.click();
+    await input.fill('');
+    await input.pressSequentially(value, { delay: 120 });
+}
+
 export async function selectAutocompleteValue(
     input: Locator,
     firstOption: Locator,
@@ -325,9 +337,7 @@ export async function selectAutocompleteValue(
     await waitForAutocomplete(input);
 
     for (let attempt = 1; attempt <= 3; attempt++) {
-        await input.click();
-        await input.fill('');
-        await input.pressSequentially(value, { delay: 120 });
+        await typeIntoAutocomplete(input, value);
 
         try {
             await firstOption.waitFor({ state: 'visible', timeout: AUTOCOMPLETE_SUGGESTIONS_TIMEOUT });

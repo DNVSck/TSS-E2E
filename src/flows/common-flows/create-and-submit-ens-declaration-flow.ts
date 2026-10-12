@@ -4,6 +4,7 @@ import { GoodsJourneyContext } from '../goods-item/add-new-ens-goods-item-flow';
 import {
     CreateDraftEnsDeclarationFlow, DraftEnsDeclaration, EnsDeclarationOptions,
 } from './create-draft-ens-declaration-flow';
+import { CreateDraftConsignmentFirstFlow } from './create-draft-consignment-first-flow';
 import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import { requiresWarehouseIdentifier } from '../../helper/procedure-code-helper';
 import { SUPERVISING_CUSTOMS_OFFICE } from '../../constant/supervising-customs-office-constant';
@@ -31,6 +32,7 @@ export class CreateAndSubmitEnsDeclarationFlow {
         private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
         private readonly movementOverviewFlow: MovementOverviewFlow,
         private readonly goodsOverviewFlow: GoodsOverviewFlow,
+        private readonly createDraftConsignmentFirstFlow: CreateDraftConsignmentFirstFlow,
     ) { }
 
     async completeEnsDeclarationFlow(options: EnsDeclarationOptions): Promise<EnsDeclarationResult> {
@@ -39,6 +41,20 @@ export class CreateAndSubmitEnsDeclarationFlow {
         // The draft ends on the goods-item overview; submitConsignment walks back up
         // the breadcrumb itself, so there is nothing to navigate here.
         await this.consignmentOverviewFlow.submitConsignment();
+
+        return this.verifySubmittedDeclaration(draft);
+    }
+
+    async completeConsignmentFirstFlow(options: EnsDeclarationOptions): Promise<EnsDeclarationResult> {
+        const draft = await this.createDraftConsignmentFirstFlow.createDraftConsignmentFirstDeclaration(options);
+
+        await this.movementOverviewFlow.openLinkedEnsConsignment(draft.consignmentReference);
+        await this.consignmentOverviewFlow.submitConsignment();
+
+        return this.verifySubmittedDeclaration(draft);
+    }
+
+    private async verifySubmittedDeclaration(draft: DraftEnsDeclaration): Promise<EnsDeclarationResult> {
         const { ensMrn, generatedConsignment } =
             await this.verifyPostSubmit(draft.goodsJourney, draft.procedureCode);
 

@@ -76,5 +76,9 @@
   },
   "requestEoriChange": {
     "heading": "Contact support to update your EORI number"
+  },
+  "linkConsignment": {
+    "lrnNotFound": "Rhowch LRN dilys. Ni chanfuwyd y llwyth.",
+    "alreadyLinked": "Mae'r llwyth hwn eisoes wedi'i gysylltu â symudiad."
   }
 }

@@ -52,6 +52,7 @@ import { GenerateSdDraftThroughApiFlow } from '../flows/common-flows/trader-api/
 import { ConcurrentLoginFlow } from '../flows/concurrent-login-flow';
 import { LocaleFixtureType } from './locale-fixture';
 import { CreateDraftEnsDeclarationFlow } from '../flows/common-flows/create-draft-ens-declaration-flow';
+import { CreateDraftConsignmentFirstFlow } from '../flows/common-flows/create-draft-consignment-first-flow';
 import { CreateDraftSfdStandaloneFlow } from '../flows/common-flows/create-draft-sfd-standalone-flow';
 import {
     CreateDraftImmiStandaloneFlow,
@@ -93,6 +94,7 @@ export type FlowFixtureType = {
     // Builds a declaration and stops at Draft. The create-and-submit flows carry it
     // to the end; the authority specs take it somewhere else.
     createDraftEnsDeclarationFlow: CreateDraftEnsDeclarationFlow;
+    createDraftConsignmentFirstFlow: CreateDraftConsignmentFirstFlow;
     createDraftImmiStandaloneFlow: CreateDraftImmiStandaloneFlow;
     createDraftSfdStandaloneFlow: CreateDraftSfdStandaloneFlow;
     initialFormDeclarationFlow: InitialFormDeclarationFlow;
@@ -276,8 +278,8 @@ export const flowFixture: ExtendParams[0] = {
         await use(new MovementOverviewFlow(movementOverviewPage, consignmentDetailPage, t));
     },
 
-    addNewEnsConsignmentFlow: async ({ consignmentSteps, companyPermissionService }, use) => {
-        await use(new AddNewEnsConsignmentFlow(consignmentSteps, companyPermissionService));
+    addNewEnsConsignmentFlow: async ({ consignmentSteps, companyPermissionService, t }, use) => {
+        await use(new AddNewEnsConsignmentFlow(consignmentSteps, companyPermissionService, t));
     },
 
     consignmentOverviewFlow: async ({
@@ -365,11 +367,31 @@ export const flowFixture: ExtendParams[0] = {
         ));
     },
 
+    createDraftConsignmentFirstFlow: async ({
+        portalAccessFlow,
+        initialFormDeclarationFlow,
+        createDraftEnsDeclarationFlow,
+        addNewEnsConsignmentFlow,
+        movementOverviewFlow,
+        authAccount
+    }, use) => {
+        await use(new CreateDraftConsignmentFirstFlow(
+            portalAccessFlow,
+            initialFormDeclarationFlow,
+            createDraftEnsDeclarationFlow,
+            addNewEnsConsignmentFlow,
+            movementOverviewFlow,
+            authAccount
+        ));
+    },
+
     createAndSubmitEnsDeclarationFlow: async ({
-        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow, goodsOverviewFlow
+        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow, goodsOverviewFlow,
+        createDraftConsignmentFirstFlow
     }, use) => {
         await use(new CreateAndSubmitEnsDeclarationFlow(
-            createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow, goodsOverviewFlow
+            createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow, goodsOverviewFlow,
+            createDraftConsignmentFirstFlow
         ));
     },
 

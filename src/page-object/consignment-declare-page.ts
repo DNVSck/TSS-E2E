@@ -1,13 +1,19 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { PartyBlock, PartyAddress, PartyType } from './components/party-block';
-import { selectDropdownValue, checkRadioByValue } from '../helper/element-helper';
+import {
+    selectDropdownValue, checkRadioByValue, selectAutocompleteValue, typeAutocompleteValue,
+} from '../helper/element-helper';
 import { BOOLEAN } from '../constant/radio-value-constant';
 
 /** How long the app may take to leave the EORI screen after Continue. */
 const EORI_OUTCOME_TIMEOUT_MS = 15_000;
 
 export class ConsignmentDeclarePage extends BasePage {
+
+    private readonly submitterEoriInput: Locator;
+    private readonly linkedConsignmentInput: Locator;
+    private readonly linkedConsignmentFirstOption: Locator;
 
     // Trade parties — the repeated "EORI + address" screens live in PartyBlock.
     private readonly importer: PartyBlock;
@@ -52,6 +58,10 @@ export class ConsignmentDeclarePage extends BasePage {
     constructor(page: Page) {
         super(page);
 
+        this.submitterEoriInput = page.locator('input#submitterEori');
+        this.linkedConsignmentInput = page.locator('input#lrn');
+        this.linkedConsignmentFirstOption = page.locator('#lrn__option--0');
+
         this.importer = new PartyBlock(page, 'importer');
         this.buyer = new PartyBlock(page, 'buyer');
         this.consignor = new PartyBlock(page, 'consignor');
@@ -83,6 +93,23 @@ export class ConsignmentDeclarePage extends BasePage {
         this.goodsDomesticStatusRadios = page.locator('input[name="goodsDomesticStatus"]');
         this.containerPackedStatusRadios = page.locator('input[name="containerPackedStatus"]');
         this.containerSupplierTypeRadios = page.locator('input[name="containerSupplierType"]');
+    }
+
+    async inputSubmitterEori(submitterEori: string): Promise<string[]> {
+        await this.submitterEoriInput.fill(submitterEori);
+        return this.continueAndReadErrors();
+    }
+
+    async selectConsignmentToLink(consignmentReference: string): Promise<void> {
+        await selectAutocompleteValue(
+            this.linkedConsignmentInput, this.linkedConsignmentFirstOption, consignmentReference
+        );
+        await this.clickContinueButton();
+    }
+
+    async submitConsignmentToLink(consignmentReference: string): Promise<string[]> {
+        await typeAutocompleteValue(this.linkedConsignmentInput, consignmentReference);
+        return this.continueAndReadErrors();
     }
 
     // ===================== "Do you wish to complete ENS only?" =====================

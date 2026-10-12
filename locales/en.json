@@ -76,5 +76,9 @@
   },
   "requestEoriChange": {
     "heading": "Contact support to update your EORI number"
+  },
+  "linkConsignment": {
+    "lrnNotFound": "Enter a valid LRN. The consignment was not found.",
+    "alreadyLinked": "This consignment is already linked to a movement."
   }
 }

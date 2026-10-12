@@ -3,6 +3,7 @@ import { ConsignmentDeclarePage } from '../../page-object/consignment-declare-pa
 import { PartyAddress, PartyType } from '../../page-object/components/party-block';
 import { ReportLog } from '../../core/report/report-log';
 import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
+import { verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
 
 /**
  * One method per consignment wizard screen: it owns that screen's Allure step name,
@@ -46,6 +47,32 @@ export class ConsignmentSteps {
     async clickNewEnsConsignment(): Promise<void> {
         await ReportLog.step('Click New ENS Consignment', async () => {
             await this.movementOverviewPage.clickNewENSConsignment();
+        });
+    }
+
+    async fillSubmitterEori(submitterEori: string): Promise<void> {
+        await ReportLog.step(`Name ${submitterEori} as the ENS submitter`, async () => {
+            verifySubmittedWithoutErrors(
+                await this.consignmentDeclarePage.inputSubmitterEori(submitterEori), 'the ENS submitter EORI'
+            );
+        });
+    }
+
+    async clickAssociateConsignment(): Promise<void> {
+        await ReportLog.step('Click Associate consignment', async () => {
+            await this.movementOverviewPage.clickAssociateConsignment();
+        });
+    }
+
+    async submitConsignmentToLink(consignmentReference: string): Promise<string[]> {
+        return ReportLog.step(`Submit ${consignmentReference} as the consignment to link`, () =>
+            this.consignmentDeclarePage.submitConsignmentToLink(consignmentReference)
+        );
+    }
+
+    async selectConsignmentToLink(consignmentReference: string): Promise<void> {
+        await ReportLog.step(`Select ${consignmentReference} as the consignment to link`, async () => {
+            await this.consignmentDeclarePage.selectConsignmentToLink(consignmentReference);
         });
     }
 

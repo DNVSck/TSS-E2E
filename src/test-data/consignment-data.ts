@@ -232,6 +232,8 @@ export const consignment = (overrides?: Partial<ConsignmentData>): ConsignmentDa
 
 export const CANCELLATION_REASON = 'Cancelled by the automated regression suite';
 
+export const UNKNOWN_CONSIGNMENT_REFERENCE = 'DEC000000000000001';
+
 export type ContainerIdentification = Pick<ConsignmentData,
     'containerIdentifierNumber' | 'containerSize' | 'containerPackedStatus' | 'containerSupplierType'>;
 
