@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from '../base-page';
 import { CONSIGNMENT_ACTION } from '../../constant/consignment-action-constant';
 import { hrefsOf } from '../../helper/element-helper';
@@ -42,6 +42,19 @@ export const RECORD_LINK = `a${GOVUK.TASK_LIST.LINK}, ${GOVUK.TABLE.CELL} a${GOV
 /** The warning button a record carries to remove itself. */
 export const RECORD_DELETE_BUTTON =
     `button[name="action"][value^="${CONSIGNMENT_ACTION.DELETE_PREFIX}"]`;
+
+/** Deleting a record re-renders the tab in place; no navigation to wait on. */
+const RECORD_DELETE_TIMEOUT = 20_000;
+
+export async function deleteTabRecord(records: Locator, label: string): Promise<void> {
+    const matching = records.filter({ hasText: label });
+    await matching.first().waitFor();
+    const before = await matching.count();
+
+    await matching.first().locator(RECORD_DELETE_BUTTON).click();
+
+    await expect(matching).toHaveCount(before - 1, { timeout: RECORD_DELETE_TIMEOUT });
+}
 
 /**
  * The tabbed record lists a declaration overview carries - "Linked goods records",

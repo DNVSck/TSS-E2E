@@ -40,8 +40,10 @@ export class GenerateSdDraftThroughApiFlow {
     async generateSdDraft(
         options: DeclareEnsOptions = {}
     ): Promise<SupplementaryDeclarationSource> {
-        const { movementLrn, sfd } = await this.declareEnsThroughApiFlow
-            .declareEnsSfd(options);
+        const { movementLrn, sfd } = await this.declareEnsThroughApiFlow.declareEnsSfd({
+            ...options,
+            consignmentOverrides: { ...options.consignmentOverrides, generateSupplementaryDeclaration: true },
+        });
 
         await this.cdsNotificationFlow.sendResponse(CDS_RESPONSE.DMSACC_01, sfd);
         await this.cdsNotificationFlow.sendResponse(CDS_RESPONSE.DMSCLE_09, sfd);

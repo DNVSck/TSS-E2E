@@ -1,12 +1,13 @@
 import { test, BrowserContext, Page } from '@playwright/test';
 import { BASE_URL } from '../../config/environment';
-import { CompanyProfile, accountFor } from '../auth/credentials';
+import { CompanyProfile, UserCredentials, accountFor } from '../auth/credentials';
 import { authStatePath, isSessionYoungEnough, sessionFor } from '../auth/auth-state';
 import { BasePage } from '../page-object/base-page';
 import { SignInPage } from '../page-object/sign-in-page';
 import { NavigationBanner } from '../page-object/components/navigation-banner';
 import { SignInFlow } from '../flows/sign-in-flow';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
+import { ReportFixtureType } from './report-fixture';
 import { ConsignmentDetailPage } from '../page-object/consignment-detail-page';
 import { ConsignmentOverviewPage } from '../page-object/consignment-overview-page';
 import { ConsignmentDeclarePage } from '../page-object/consignment-declare-page';
@@ -28,8 +29,19 @@ import { TaricAdditionalCodeDeclarePage } from '../page-object/taric-additional-
 import { NationalAdditionalCodeDeclarePage } from '../page-object/national-additional-code-declare-page';
 import { DeclarationAccessFlow } from '../flows/declaration-access-flow';
 import { PortalPage } from '../page-object/portal-page';
-import { DeclarationSearchPage } from '../page-object/declaration-search-page';
+import { DeclarationOverviewPage } from '../page-object/declaration-overview-page';
 import { LocaleFixtureType, localeForProject } from './locale-fixture';
+import { APIFixtureType } from './api-fixture';
+import { Wizard } from '../page-object/components/wizard';
+import { SupplementaryDeclarationStep } from '../constant/supplementary-declaration-step-constant';
+import { SupplementaryDeclarationOverviewPage } from '../page-object/supplementary-declaration-overview-page';
+import { SupplementaryDeclarationGoodsRecordPage } from '../page-object/supplementary-declaration-goods-record-page';
+import { MovementDeclarePage } from '../page-object/movement-declare-page';
+import { CommercialTermsDeclarePage } from '../page-object/commercial-terms-declare-page';
+import { GoodsDeclarePage } from '../page-object/goods-declare-page';
+import { SupplementaryDeclarationSteps } from '../flows/supplementary-declaration/supplementary-declaration-steps';
+import { CompleteAndSubmitSupplementaryDeclarationFlow } from '../flows/common-flows/complete-and-submit-supplementary-declaration-flow';
+import { SupplementaryDeclarationService } from '../api-service/trader-api/supplementary-declaration-service';
 
 /**
  * A second company, signed in alongside the one the test itself runs as.
@@ -73,6 +85,8 @@ export interface CompanySession {
      */
     readonly gmr: GmrOverviewFlow;
 
+    readonly supplementaryDeclaration: CompleteAndSubmitSupplementaryDeclarationFlow;
+
     /**
      * Close this company's window as soon as it has done its part.
      *
@@ -97,16 +111,28 @@ export interface CompanySession {
  * 2026-09-02 and taken back out - it is the same four lines either way, and one file
  * that plainly says what it builds beats two files that have to be read together.
  */
+interface CompanySessionIdentity {
+    profile: string;
+    account: UserCredentials;
+    supplementaryDeclarationService: SupplementaryDeclarationService;
+}
+
 function buildCompanySession(
     page: Page,
     t: LocaleFixtureType['t'],
-    profile: string
+    identity: CompanySessionIdentity
 ): Omit<CompanySession, 'close'> {
+    const { profile, account, supplementaryDeclarationService } = identity;
     const record = new ConsignmentDetailPage(page, t);
     const overview = new ConsignmentOverviewPage(page, t);
     const movement = new MovementOverviewPage(page, t);
+    const declarationOverview = new DeclarationOverviewPage(page);
+    const supplementaryOverview = new SupplementaryDeclarationOverviewPage(page, t);
 
     const previousDocumentDeclarePage = new PreviousDocumentDeclarePage(page);
+    const documentReferenceDeclarePage = new DocumentReferenceDeclarePage(page);
+    const additionalProcedureCodeDeclarePage = new AdditionalProcedureCodeDeclarePage(page);
+    const portal = new PortalPage(page);
 
     return {
         consignment: new ConsignmentOverviewFlow(
@@ -118,7 +144,7 @@ function buildCompanySession(
             t
         ),
         declarations: new DeclarationAccessFlow(
-            movement, record, new PortalPage(page), new DeclarationSearchPage(page), overview, t, profile
+            movement, record, portal, declarationOverview, overview, supplementaryOverview, t, profile
         ),
         gmr: new GmrOverviewFlow(
             movement,
@@ -127,12 +153,22 @@ function buildCompanySession(
             new ExternalContactDeclarePage(page),
             t,
         ),
+        supplementaryDeclaration: new CompleteAndSubmitSupplementaryDeclarationFlow(
+            new BasePage(page), portal, declarationOverview, supplementaryOverview,
+            new SupplementaryDeclarationGoodsRecordPage(page), documentReferenceDeclarePage,
+            additionalProcedureCodeDeclarePage,
+            new SupplementaryDeclarationSteps(
+                new Wizard<SupplementaryDeclarationStep>(page), new MovementDeclarePage(page),
+                new ConsignmentDeclarePage(page), new CommercialTermsDeclarePage(page), new GoodsDeclarePage(page)
+            ),
+            t, account, supplementaryDeclarationService
+        ),
         goods: new GoodsOverviewFlow(
             new GoodsOverviewPage(page, t),
-            new DocumentReferenceDeclarePage(page),
+            documentReferenceDeclarePage,
             new AdditionalInformationDeclarePage(page),
             previousDocumentDeclarePage,
-            new AdditionalProcedureCodeDeclarePage(page),
+            additionalProcedureCodeDeclarePage,
             new TaricAdditionalCodeDeclarePage(page),
             new NationalAdditionalCodeDeclarePage(page),
             t,
@@ -145,11 +181,13 @@ export type CompanySessionFixtureType = {
 };
 
 type ExtendParams = Parameters<
-    typeof test.extend<CompanySessionFixtureType & LocaleFixtureType & WorkerAuthFixtureType>
+    typeof test.extend<
+        CompanySessionFixtureType & LocaleFixtureType & WorkerAuthFixtureType & ReportFixtureType & APIFixtureType
+    >
 >;
 
 export const companySessionFixture: ExtendParams[0] = {
-    openAs: async ({ browser, t }, use, testInfo) => {
+    openAs: async ({ browser, t, serviceErrors, supplementaryDeclarationService }, use, testInfo) => {
         const opened: BrowserContext[] = [];
 
         await use(async (profile: CompanyProfile): Promise<CompanySession> => {
@@ -180,6 +218,7 @@ export const companySessionFixture: ExtendParams[0] = {
                 locale: localeForProject(testInfo.project),
             });
             opened.push(context);
+            serviceErrors.watch(context, profile);
 
             const page = await context.newPage();
 
@@ -210,7 +249,7 @@ export const companySessionFixture: ExtendParams[0] = {
             }
 
             return {
-                ...buildCompanySession(page, t, profile),
+                ...buildCompanySession(page, t, { profile, account, supplementaryDeclarationService }),
                 close: () => context.close(),
             };
         });

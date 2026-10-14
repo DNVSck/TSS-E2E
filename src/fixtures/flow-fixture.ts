@@ -48,6 +48,7 @@ import { CancelSupplementaryDeclarationFlow } from '../flows/common-flows/cancel
 import { CompleteAndSubmitSupplementaryDeclarationFlow } from '../flows/common-flows/complete-and-submit-supplementary-declaration-flow';
 import { GenerateSdDraftFromEnsSfdFlow } from '../flows/common-flows/generate-sd-draft-from-ens-sfd-flow';
 import { DeclareEnsThroughApiFlow } from '../flows/common-flows/trader-api/declare-ens-through-api-flow';
+import { DeclareStandaloneThroughApiFlow } from '../flows/common-flows/trader-api/declare-standalone-through-api-flow';
 import { GenerateSdDraftThroughApiFlow } from '../flows/common-flows/trader-api/generate-sd-draft-through-api-flow';
 import { ConcurrentLoginFlow } from '../flows/concurrent-login-flow';
 import { LocaleFixtureType } from './locale-fixture';
@@ -143,6 +144,7 @@ export type FlowFixtureType = {
     supplementaryDeclarationSteps: SupplementaryDeclarationSteps;
     generateSdDraftFromEnsSfdFlow: GenerateSdDraftFromEnsSfdFlow;
     declareEnsThroughApiFlow: DeclareEnsThroughApiFlow;
+    declareStandaloneThroughApiFlow: DeclareStandaloneThroughApiFlow;
     generateSdDraftThroughApiFlow: GenerateSdDraftThroughApiFlow;
     cancelSupplementaryDeclarationFlow: CancelSupplementaryDeclarationFlow;
     completeAndSubmitSupplementaryDeclarationFlow: CompleteAndSubmitSupplementaryDeclarationFlow;
@@ -196,10 +198,12 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     declarationAccessFlow: async ({
-        movementOverviewPage, consignmentDetailPage, portalPage, declarationSearchPage, consignmentOverviewPage, t
+        movementOverviewPage, consignmentDetailPage, portalPage, declarationOverviewPage, consignmentOverviewPage,
+        supplementaryDeclarationOverviewPage, t
     }, use) => {
         await use(new DeclarationAccessFlow(
-            movementOverviewPage, consignmentDetailPage, portalPage, declarationSearchPage, consignmentOverviewPage, t
+            movementOverviewPage, consignmentDetailPage, portalPage, declarationOverviewPage, consignmentOverviewPage,
+            supplementaryDeclarationOverviewPage, t
         ));
     },
 
@@ -437,10 +441,10 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     raiseMovementForGmrThroughApiFlow: async ({
-        declareEnsThroughApiFlow, ics2NotificationFlow, companyProfileService
+        traderApiClient, declareEnsThroughApiFlow, ics2NotificationFlow, companyProfileService
     }, use) => {
         await use(new RaiseMovementForGmrThroughApiFlow(
-            declareEnsThroughApiFlow, ics2NotificationFlow, companyProfileService
+            traderApiClient, declareEnsThroughApiFlow, ics2NotificationFlow, companyProfileService
         ));
     },
 
@@ -499,12 +503,20 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     declareEnsThroughApiFlow: async ({
-        movementService, consignmentService, goodsService,
+        traderApiClient, movementService, consignmentService, goodsService,
         simplifiedFrontierDeclarationService, internalMarketMovementService
     }, use) => {
         await use(new DeclareEnsThroughApiFlow(
-            movementService, consignmentService, goodsService,
+            traderApiClient, movementService, consignmentService, goodsService,
             simplifiedFrontierDeclarationService, internalMarketMovementService
+        ));
+    },
+
+    declareStandaloneThroughApiFlow: async ({
+        traderApiClient, internalMarketMovementService, goodsService
+    }, use) => {
+        await use(new DeclareStandaloneThroughApiFlow(
+            traderApiClient, internalMarketMovementService, goodsService
         ));
     },
 

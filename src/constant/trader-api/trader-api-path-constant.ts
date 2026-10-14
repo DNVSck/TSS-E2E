@@ -31,6 +31,7 @@ export const TRADER_API_PATH = {
     SupplementaryDeclarationStatusByReference:
         `${SUPPLEMENTARY_DECLARATIONS}?reference={reference}&fields=status`,
 
+    InternalMarketMovement: INTERNAL_MARKET_MOVEMENT,
     InternalMarketMovementByConsignmentNumber:
         `${INTERNAL_MARKET_MOVEMENT}?consignment_number={consignmentNumber}`,
     InternalMarketMovementByReference: `${INTERNAL_MARKET_MOVEMENT}?reference={reference}`,

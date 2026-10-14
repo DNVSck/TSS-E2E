@@ -100,7 +100,7 @@ export class GoodsItemSteps {
 
         await checkpoint?.('Goods item - TGP number', { probeErrors: true });
         await ReportLog.step('Enter the Trader Goods Profile number', async () => {
-            await this.goodsDeclarePage.selectTgpNumber(record.lookup);
+            await this.goodsDeclarePage.selectTgpNumber(record.lookup, record.recordId);
         });
 
         return { asked: true, usesTgp: true };

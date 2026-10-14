@@ -1,3 +1,4 @@
+import { TraderApiClient } from '../../../api-client/trader-api-client';
 import { DeclareEnsThroughApiFlow } from './declare-ens-through-api-flow';
 import { Ics2NotificationFlow } from '../../ics2-notification-flow';
 import { CompanyProfileService } from '../../../api-service/portal-api/company-profile-service';
@@ -6,6 +7,7 @@ import { ReportLog } from '../../../core/report/report-log';
 
 export interface RaiseMovementForGmrThroughApiOptions {
     journey: GmrJourney;
+    representingCompanyId?: string;
 }
 
 export interface RaisedMovement {
@@ -15,6 +17,7 @@ export interface RaisedMovement {
 
 export class RaiseMovementForGmrThroughApiFlow {
     constructor(
+        private readonly traderApi: TraderApiClient,
         private readonly declareEnsThroughApiFlow: DeclareEnsThroughApiFlow,
         private readonly ics2NotificationFlow: Ics2NotificationFlow,
         private readonly companyProfileService: CompanyProfileService,
@@ -52,18 +55,20 @@ export class RaiseMovementForGmrThroughApiFlow {
     async raiseEligibleMovementThroughTraderApi(
         options: RaiseMovementForGmrThroughApiOptions
     ): Promise<RaisedMovement> {
-        const { journey } = options;
+        const { journey, representingCompanyId } = options;
 
-        const { movementLrn, consignmentReference, transportDocumentNumber } =
-            await ReportLog.step(
-                `Declare an eligible ENS-${journey.declarationType} RoRo (${journey.movement}) movement `
-                + `through the Trader API to raise the GMR against`,
-                () => this.declareEnsThroughApiFlow.declareAndSubmit(journey.declaration())
-            );
+        return this.traderApi.whileRepresenting(representingCompanyId, async () => {
+            const { movementLrn, consignmentReference, transportDocumentNumber } =
+                await ReportLog.step(
+                    `Declare an eligible ENS-${journey.declarationType} RoRo (${journey.movement}) movement `
+                    + `through the Trader API to raise the GMR against`,
+                    () => this.declareEnsThroughApiFlow.declareAndSubmit(journey.declaration())
+                );
 
-        await this.settleConsignment(journey, consignmentReference, transportDocumentNumber);
+            await this.settleConsignment(journey, consignmentReference, transportDocumentNumber);
 
-        return this.reportRaised(journey, movementLrn, consignmentReference);
+            return this.reportRaised(journey, movementLrn, consignmentReference);
+        });
     }
 
     async addEligibleConsignmentThroughTraderApi(

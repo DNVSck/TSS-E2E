@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { TraderApiClient } from '../../../api-client/trader-api-client';
 import { MovementService } from '../../../api-service/trader-api/movement-service';
 import { ConsignmentService } from '../../../api-service/trader-api/consignment-service';
 import { GoodsService } from '../../../api-service/trader-api/goods-service';
@@ -10,14 +11,12 @@ import {
 } from '../../../api-service/trader-api/internal-market-movement-service';
 import { DECLARATION_STATUS } from '../../../constant/trader-api/declaration-status-constant';
 import {
-    isDeclarationStatus, declarationStatusPattern, traderInputRequiredError,
+    isDeclarationStatus, traderInputRequiredError, waitForDeclarationStatus, waitForImmiStatus,
 } from '../../../helper/declaration-status-helper';
 import { MovementData, movement } from '../../../test-data/movements-data';
 import { ConsignmentData, consignment } from '../../../test-data/consignment-data';
 import { GoodsData, goods } from '../../../test-data/goods-data';
-import { headerPayload } from '../../../test-data/payload/trader-api/header-payload';
-import { consignmentPayload } from '../../../test-data/payload/trader-api/consignment-payload';
-import { goodsPayload } from '../../../test-data/payload/trader-api/goods-payload';
+import { consignmentPayload, ensGoodsPayload, headerPayload } from '../../../helper/api-payload-helper';
 import { DeclarationIdentity } from '../../../test-data/payload/cds-notification-payload';
 import { ReportLog } from '../../../core/report/report-log';
 import { attachRequest } from '../../../helper/report-helper';
@@ -35,8 +34,6 @@ const SFD_SETTLES_TIMEOUT = 180_000;
 
 const IMMI_APPEARS_TIMEOUT = 120_000;
 
-const IMMI_SETTLES_TIMEOUT = 180_000;
-
 const SFD_ARRIVES_TIMEOUT = 180_000;
 
 const ENS_MRN_TIMEOUT = 120_000;
@@ -45,18 +42,11 @@ const EIDR_APPEARS_TIMEOUT = 120_000;
 
 const EIDR_AUTHORISES_TIMEOUT = 180_000;
 
-/**
- * Statuses an SFD never leaves, so a wait that sees one has its answer and should not
- * spend the rest of its timeout asking again. "Trader Input Required" means the
- * submission was handed back to the trader: no MRN is ever assigned, so the CDS
- * messages this flow exists to address can never be sent.
- */
-const NEVER_REACHES_ARRIVAL: string[] = [DECLARATION_STATUS.TRADER_INPUT_REQUIRED];
-
 export interface DeclareEnsOptions {
     movementOverrides?: Partial<MovementData>;
     consignmentOverrides?: Partial<ConsignmentData>;
     goodsItemOverrides?: Partial<GoodsData>;
+    representingCompanyId?: string;
 }
 
 export interface DeclaredConsignment {
@@ -70,13 +60,7 @@ export interface DeclaredConsignmentUnderMovement {
     transportDocumentNumber: string;
 }
 
-interface DeclarationStatusWait<T> {
-    what: string;
-    expected: string;
-    timeout: number;
-    unread: T;
-    read: () => Promise<T>;
-}
+export type RefusedGeneratedDeclaration = typeof SFD | typeof IMMI;
 
 export interface EnsSfdDeclaration extends DeclaredConsignment {
     sfd: DeclarationIdentity;
@@ -84,6 +68,7 @@ export interface EnsSfdDeclaration extends DeclaredConsignment {
 
 export class DeclareEnsThroughApiFlow {
     constructor(
+        private readonly traderApi: TraderApiClient,
         private readonly movementService: MovementService,
         private readonly consignmentService: ConsignmentService,
         private readonly goodsService: GoodsService,
@@ -92,19 +77,63 @@ export class DeclareEnsThroughApiFlow {
     ) { }
 
     async declareEnsSfd(options: DeclareEnsOptions = {}): Promise<EnsSfdDeclaration> {
-        const { movementLrn, consignmentReference, transportDocumentNumber } =
-            await this.declareAndSubmit(options);
+        return this.representing(options, async () => {
+            const { movementLrn, consignmentReference, transportDocumentNumber } =
+                await this.submitNewDeclaration(options);
 
-        const sfd = await this.waitForSfdAwaitingArrival(consignmentReference);
+            const sfd = await this.waitForSfdAwaitingArrival(consignmentReference);
 
-        return { movementLrn, consignmentReference, transportDocumentNumber, sfd };
+            return { movementLrn, consignmentReference, transportDocumentNumber, sfd };
+        });
     }
 
 
     async declareAndSubmit(options: DeclareEnsOptions = {}): Promise<DeclaredConsignment> {
+        return this.representing(options, () => this.submitNewDeclaration(options));
+    }
+
+    async declareDraft(options: DeclareEnsOptions = {}): Promise<DeclaredConsignment> {
+        return this.representing(options, () => this.draftNewDeclaration(options));
+    }
+
+    async declareAndSubmitExpectingRefusal(
+        options: DeclareEnsOptions,
+        refused: RefusedGeneratedDeclaration
+    ): Promise<DeclaredConsignment> {
+        return this.representing(options, async () => {
+            const declared = await this.draftNewDeclaration(options);
+
+            await this.submitConsignment(declared.consignmentReference);
+            await this.waitForRefusal(declared.consignmentReference, refused);
+
+            return declared;
+        });
+    }
+
+    private representing<T>(options: DeclareEnsOptions, work: () => Promise<T>): Promise<T> {
+        return this.traderApi.whileRepresenting(options.representingCompanyId, work);
+    }
+
+    private async draftNewDeclaration(options: DeclareEnsOptions): Promise<DeclaredConsignment> {
+        const movementLrn = await this.createMovementHeader(options);
+        const { consignmentReference, transportDocumentNumber } =
+            await this.createUnderMovement(movementLrn, options);
+
+        return { movementLrn, consignmentReference, transportDocumentNumber };
+    }
+
+    private async submitNewDeclaration(options: DeclareEnsOptions): Promise<DeclaredConsignment> {
+        const movementLrn = await this.createMovementHeader(options);
+        const { consignmentReference, transportDocumentNumber } =
+            await this.submitUnderMovement(movementLrn, options);
+
+        return { movementLrn, consignmentReference, transportDocumentNumber };
+    }
+
+    private async createMovementHeader(options: DeclareEnsOptions): Promise<string> {
         const movementData = movement(options.movementOverrides);
 
-        const movementLrn = await ReportLog.step(
+        return ReportLog.step(
             'Create the movement header through the Trader API',
             async () => {
                 const header = headerPayload(movementData);
@@ -116,16 +145,31 @@ export class DeclareEnsThroughApiFlow {
                 return reference;
             }
         );
-
-        const { consignmentReference, transportDocumentNumber } =
-            await this.declareUnderMovement(movementLrn, options);
-
-        return { movementLrn, consignmentReference, transportDocumentNumber };
     }
 
     async declareUnderMovement(
         movementLrn: string,
         options: DeclareEnsOptions = {}
+    ): Promise<DeclaredConsignmentUnderMovement> {
+        return this.representing(options, () => this.submitUnderMovement(movementLrn, options));
+    }
+
+    private async submitUnderMovement(
+        movementLrn: string,
+        options: DeclareEnsOptions
+    ): Promise<DeclaredConsignmentUnderMovement> {
+        const declared = await this.createUnderMovement(movementLrn, options);
+
+        await this.submitConsignment(declared.consignmentReference);
+
+        await this.refuseIfHandedBack(declared.consignmentReference);
+
+        return declared;
+    }
+
+    private async createUnderMovement(
+        movementLrn: string,
+        options: DeclareEnsOptions
     ): Promise<DeclaredConsignmentUnderMovement> {
         const consignmentData = consignment({
             isControlledGoods: true,
@@ -149,16 +193,12 @@ export class DeclareEnsThroughApiFlow {
         await ReportLog.step(
             `Add the goods item to ${consignmentReference}`,
             async () => {
-                const payload = goodsPayload(consignmentReference, goodsData);
+                const payload = ensGoodsPayload(consignmentReference, goodsData, consignmentData);
                 attachRequest('Goods item', payload);
 
                 await this.goodsService.createGoodsItem(payload);
             }
         );
-
-        await this.submitConsignment(consignmentReference);
-
-        await this.refuseIfHandedBack(consignmentReference);
 
         return {
             consignmentReference,
@@ -372,13 +412,33 @@ The last lookup was refused with: ${refusal}`
         return ReportLog.step(
             `Wait for ${IMMI} ${immiNumber} to reach "${DECLARATION_STATUS.AWAITING_ARRIVAL}"`,
             async () => {
-                const immi = await this.waitForImmiStatus(
-                    immiNumber, DECLARATION_STATUS.AWAITING_ARRIVAL, IMMI_SETTLES_TIMEOUT
+                const immi = await waitForImmiStatus(
+                    this.internalMarketMovementService, immiNumber, DECLARATION_STATUS.AWAITING_ARRIVAL
                 );
 
                 ReportLog.setParameter(`${IMMI} MRN`, immi.movementReferenceNumber);
                 return immi.movementReferenceNumber;
             }
+        );
+    }
+
+    private async waitForRefusal(
+        consignmentReference: string,
+        refused: RefusedGeneratedDeclaration
+    ): Promise<void> {
+        const expected = DECLARATION_STATUS.TRADER_INPUT_REQUIRED;
+
+        if (refused === SFD) {
+            const sfdNumber = await this.waitForSfdToExist(consignmentReference);
+            await ReportLog.step(`Wait for SFD ${sfdNumber} to reach "${expected}"`, () =>
+                this.waitForSimplifiedDeclarationStatus({ label: SFD, number: sfdNumber }, expected, SFD_SETTLES_TIMEOUT)
+            );
+            return;
+        }
+
+        const immiNumber = await this.waitForImmiToExist(consignmentReference);
+        await ReportLog.step(`Wait for IMMI ${immiNumber} to reach "${expected}"`, () =>
+            waitForImmiStatus(this.internalMarketMovementService, immiNumber, expected)
         );
     }
 
@@ -453,7 +513,7 @@ The last lookup was refused with: ${refusal}`
     ): Promise<SfdSummary> {
         const { label, number } = declaration;
 
-        return this.waitForDeclarationStatus({
+        return waitForDeclarationStatus({
             what: `${label} ${number}`,
             expected,
             timeout,
@@ -462,52 +522,5 @@ The last lookup was refused with: ${refusal}`
         });
     }
 
-    private async waitForImmiStatus(
-        immiNumber: string, expected: string, timeout: number
-    ): Promise<InternalMarketMovementSummary> {
-        return this.waitForDeclarationStatus({
-            what: `${IMMI} ${immiNumber}`,
-            expected,
-            timeout,
-            unread: {
-                reference: immiNumber,
-                status: '',
-                errorMessage: '',
-                movementReferenceNumber: '',
-            },
-            read: () => this.internalMarketMovementService.readByReference(immiNumber),
-        });
-    }
 
-    private async waitForDeclarationStatus<T extends { status: string }>(
-        wait: DeclarationStatusWait<T>
-    ): Promise<T> {
-        const { what, expected, timeout, read } = wait;
-        let lastRead = wait.unread;
-
-        await expect.poll(async () => {
-            try {
-                lastRead = await read();
-            } catch {
-                lastRead = { ...lastRead, status: '' };
-            }
-
-            if (NEVER_REACHES_ARRIVAL.some(status => isDeclarationStatus(lastRead.status, status))) {
-                throw new Error(
-                    `${what} settled on "${lastRead.status}", which it never leaves, `
-                    + `so it will not reach "${expected}". The declaration was handed back to `
-                    + `the trader - read it in the portal to see which answer it was refused for.`
-                );
-            }
-
-            return lastRead.status;
-        }, {
-            timeout,
-            intervals: [3_000, 5_000, 10_000],
-            message: `${what} never reached "${expected}" - a blank status below `
-                + `means the last read was refused, not that the declaration has no status`,
-        }).toMatch(declarationStatusPattern(expected));
-
-        return lastRead;
-    }
 }

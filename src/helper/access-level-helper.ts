@@ -125,6 +125,19 @@ export function expectFullControl(
         .toEqual(expect.arrayContaining([...requiredActions]));
 }
 
+export function expectSettledControl(
+    access: DeclarationAccess,
+    what: string,
+    requiredActions: readonly string[]
+): void {
+    expectVisible(access, what);
+    expect.soft(access.actionHrefs, `${what} - fields offered to change (a settled record offers none)`)
+        .toEqual([]);
+    expect.soft([...enabledActions(access)].sort((a, b) => a.localeCompare(b)),
+        `${what} - actions offered (a settled record offers exactly ${requiredActions.join(', ') || 'none'})`)
+        .toEqual([...requiredActions].sort((a, b) => a.localeCompare(b)));
+}
+
 /** The actions on a tab that would remove one of its records. */
 const enabledDeletes = (access: DeclarationAccess): string[] =>
     enabledActions(access).filter(action => action.startsWith(CONSIGNMENT_ACTION.DELETE_PREFIX));
@@ -194,55 +207,70 @@ export function expectFullControlAcrossTabs(
     expectEveryTabVisited(tabs, what, expected);
     const failed: string[] = [];
 
-    for (const { name, create, recordsEditedByButton } of expected) {
-        const found = tabs.find(tab => tab.name === name);
+    for (const tab of expected) {
+        const found = tabs.find(one => one.name === tab.name);
         if (!found) {
             continue;
         }
-        const { access } = found;
         const errorsBefore = test.info().errors.length;
-        const actions = enabledActions(access);
 
-        if (create) {
-            expect.soft(actions, `${what} - "${name}" tab create action (must include "${create}")`)
-                .toContain(create);
-        }
-        if (alwaysEnabled.length > 0) {
-            expect.soft(actions,
-                `${what} - "${name}" tab page actions (must include ${alwaysEnabled.join(', ')})`)
-                .toEqual(expect.arrayContaining([...alwaysEnabled]));
-        }
-
-        // A record is edited by opening it and deleted by its own button, so Full means
-        // one of each per record. Counted rather than merely "some", so a screen listing
-        // three records and offering one Delete cannot pass.
-        //
-        // Where the table edits by button, the same demand is made of the button: the
-        // rows carry no link there, so counting links would read a correct table as
-        // offering nothing, and skipping the check would let a broken one pass.
-        const listed = `${access.records.count} record(s) listed`;
-        const openRule = recordsEditedByButton
-            ? 'this table edits by button, so it links none'
-            : `one link per record, ${listed}`;
-
-        expect.soft(access.records.links.length,
-            `${what} - "${name}" tab records that open (${openRule})`)
-            .toBe(recordsEditedByButton ? 0 : access.records.count);
-        if (recordsEditedByButton) {
-            expect.soft(enabledEdits(access).length,
-                `${what} - "${name}" tab records with an Edit button (one per record, ${listed})`)
-                .toBe(access.records.count);
-        }
-        expect.soft(enabledDeletes(access).length,
-            `${what} - "${name}" tab records with a Delete button (one per record, ${listed})`)
-            .toBe(access.records.count);
+        expectFullControlOnTab(tab, found.access, { label: `${what} - "${tab.name}" tab`, alwaysEnabled });
 
         if (test.info().errors.length > errorsBefore) {
-            failed.push(name);
+            failed.push(tab.name);
         }
     }
 
     return failed;
+}
+
+function expectFullControlOnTab(
+    tab: RecordTab,
+    access: DeclarationAccess,
+    context: { label: string; alwaysEnabled: readonly string[] }
+): void {
+    const { label, alwaysEnabled } = context;
+    const actions = enabledActions(access);
+
+    if (tab.create) {
+        expect.soft(actions, `${label} create action (must include "${tab.create}")`)
+            .toContain(tab.create);
+    }
+    if (alwaysEnabled.length > 0) {
+        expect.soft(actions, `${label} page actions (must include ${alwaysEnabled.join(', ')})`)
+            .toEqual(expect.arrayContaining([...alwaysEnabled]));
+    }
+
+    expectEveryRecordHandled(tab, access, label);
+}
+
+// A record is edited by opening it and deleted by its own button, so Full means
+// one of each per record - bar a primary record, which can be changed but never
+// deleted. Counted rather than merely "some", so a screen listing
+// three records and offering one Delete cannot pass.
+//
+// Where the table edits by button, the same demand is made of the button: the
+// rows carry no link there, so counting links would read a correct table as
+// offering nothing, and skipping the check would let a broken one pass.
+function expectEveryRecordHandled(tab: RecordTab, access: DeclarationAccess, label: string): void {
+    const { recordsEditedByButton, primaryRecordUndeletable } = tab;
+    const listed = `${access.records.count} record(s) listed`;
+    const openRule = recordsEditedByButton
+        ? 'this table edits by button, so it links none'
+        : `one link per record, ${listed}`;
+
+    expect.soft(access.records.links.length, `${label} records that open (${openRule})`)
+        .toBe(recordsEditedByButton ? 0 : access.records.count);
+    if (recordsEditedByButton) {
+        expect.soft(enabledEdits(access).length,
+            `${label} records with an Edit button (one per record, ${listed})`)
+            .toBe(access.records.count);
+    }
+    const deletable = Math.max(access.records.count - (primaryRecordUndeletable ? 1 : 0), 0);
+    const deleteRule = primaryRecordUndeletable ? 'one per record except the primary' : 'one per record';
+    expect.soft(enabledDeletes(access).length,
+        `${label} records with a Delete button (${deleteRule}, ${listed})`)
+        .toBe(deletable);
 }
 
 /**

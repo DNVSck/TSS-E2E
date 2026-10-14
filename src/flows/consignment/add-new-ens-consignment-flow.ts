@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { toPartyAddress } from '../../page-object/components/party-block';
 import { ReportLog } from '../../core/report/report-log';
-import { ConsignmentData } from '../../test-data/consignment-data';
+import { ConsignmentData, declaresExporterAndCurrency } from '../../test-data/consignment-data';
 import { ConsignmentSteps } from './consignment-steps';
 import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 import {
@@ -77,8 +77,7 @@ export class AddNewEnsConsignmentFlow {
         // SFD journeys, and both are absent on the two reduced journeys — ENS-only
         // and EIDR (SFD with controlled goods = No), which ask for the seller
         // directly and never reach invoice currency.
-        const hasExporterAndCurrency =
-            !input.isEnsOnly && (input.useIMMI || input.isControlledGoods);
+        const hasExporterAndCurrency = declaresExporterAndCurrency(input);
 
         await checkpoint?.('Consignment - importer EORI', { probeErrors: true });
         await this.consignmentSteps.fillImporterEori(input.importerEORI);

@@ -59,6 +59,7 @@ export interface ConsignmentData {
      */
     useIMMI: boolean;
     useImporterSde?: boolean;
+    generateSupplementaryDeclaration?: boolean;
     /** Asked when IMMI is declined, and when the importer was never offered it. */
     isControlledGoods: boolean;
 
@@ -221,6 +222,12 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber' | 'containerIden
     headerPreviousDocuments: [],
     holdersOfAuthorisation: [],
 };
+
+export const declaresControlledGoods = (consignment: ConsignmentData): boolean =>
+    !consignment.isEnsOnly && !consignment.useIMMI && consignment.isControlledGoods;
+
+export const declaresExporterAndCurrency = (consignment: ConsignmentData): boolean =>
+    !consignment.isEnsOnly && (consignment.useIMMI || consignment.isControlledGoods);
 
 /** The full customs consignment journey. */
 export const consignment = (overrides?: Partial<ConsignmentData>): ConsignmentData => ({

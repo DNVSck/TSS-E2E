@@ -83,6 +83,7 @@ export interface RecordTab {
      * external-contacts table as offering nothing at all.
      */
     recordsEditedByButton?: true;
+    primaryRecordUndeletable?: true;
 }
 
 const CONSIGNMENT_TABS: readonly RecordTab[] = [
@@ -98,6 +99,7 @@ const GOODS_ITEM_TABS: readonly RecordTab[] = [
     {
         name: RECORD_TAB.ADDITIONAL_PROCEDURE_CODES,
         create: NEW_RECORD_ACTION.ADDITIONAL_PROCEDURE_CODE,
+        primaryRecordUndeletable: true,
     },
     { name: RECORD_TAB.NATIONAL_ADDITIONAL_CODES, create: NEW_RECORD_ACTION.NATIONAL_ADDITIONAL_CODE },
     { name: RECORD_TAB.TARIC_ADDITIONAL_CODES, create: NEW_RECORD_ACTION.TARIC_ADDITIONAL_CODE },
@@ -141,6 +143,11 @@ export const DECLARATION_TABS = {
 const IMMI_EIDR_GOODS_ITEM_TABS: readonly RecordTab[] = GOODS_ITEM_TABS.filter(tab =>
     tab.name !== RECORD_TAB.ADDITIONAL_FISCAL_REFERENCES_IDENTIFICATION && tab.name !== RECORD_TAB.TAX_BASE
 );
+
+export const SUPPLEMENTARY_DECLARATION_TABS = {
+    consignment: [] as readonly RecordTab[],
+    goodsItem: [] as readonly RecordTab[],
+};
 
 export const IMMI_EIDR_DECLARATION_TABS = {
     consignment: CONSIGNMENT_TABS,

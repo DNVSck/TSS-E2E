@@ -1,6 +1,10 @@
 import { expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { METHOD_OF_PAYMENT, MethodOfPaymentCode } from '../constant/method-of-payment-constant';
+import { DECLARATION_STATUS } from '../constant/trader-api/declaration-status-constant';
+import {
+    InternalMarketMovementService, InternalMarketMovementSummary,
+} from '../api-service/trader-api/internal-market-movement-service';
 
 /**
  * What status a declaration is expected to settle on, and when it has stopped moving.
@@ -138,4 +142,68 @@ const REGEXP_SPECIAL_CHARACTERS = /[.*+?^${}()|[\]\\]/g;
 export function declarationStatusPattern(expected: string): RegExp {
     const escaped = expected.replaceAll(REGEXP_SPECIAL_CHARACTERS, String.raw`\$&`);
     return new RegExp(String.raw`^\s*${escaped}\s*$`, 'i');
+}
+
+const IMMI_SETTLES_TIMEOUT = 180_000;
+
+/**
+ * Statuses a declaration never leaves, so a wait that sees one has its answer and should
+ * not spend the rest of its timeout asking again. "Trader Input Required" means the
+ * submission was handed back to the trader: no MRN is ever assigned to it.
+ */
+const NEVER_LEFT: string[] = [DECLARATION_STATUS.TRADER_INPUT_REQUIRED];
+
+export interface DeclarationStatusWait<T> {
+    what: string;
+    expected: string;
+    timeout: number;
+    unread: T;
+    read: () => Promise<T>;
+}
+
+export async function waitForDeclarationStatus<T extends { status: string }>(
+    wait: DeclarationStatusWait<T>
+): Promise<T> {
+    const { what, expected, timeout, read } = wait;
+    let lastRead = wait.unread;
+
+    await expect.poll(async () => {
+        try {
+            lastRead = await read();
+        } catch {
+            lastRead = { ...lastRead, status: '' };
+        }
+
+        if (NEVER_LEFT.some(status => isDeclarationStatus(lastRead.status, status)
+            && !isDeclarationStatus(expected, status))) {
+            throw new Error(
+                `${what} settled on "${lastRead.status}", which it never leaves, `
+                + `so it will not reach "${expected}". The declaration was handed back to `
+                + `the trader - read it in the portal to see which answer it was refused for.`
+            );
+        }
+
+        return lastRead.status;
+    }, {
+        timeout,
+        intervals: [3_000, 5_000, 10_000],
+        message: `${what} never reached "${expected}" - a blank status below `
+            + `means the last read was refused, not that the declaration has no status`,
+    }).toMatch(declarationStatusPattern(expected));
+
+    return lastRead;
+}
+
+export function waitForImmiStatus(
+    immiService: InternalMarketMovementService,
+    immiNumber: string,
+    expected: string
+): Promise<InternalMarketMovementSummary> {
+    return waitForDeclarationStatus({
+        what: `IMMI ${immiNumber}`,
+        expected,
+        timeout: IMMI_SETTLES_TIMEOUT,
+        unread: { reference: immiNumber, status: '', errorMessage: '', movementReferenceNumber: '' },
+        read: () => immiService.readByReference(immiNumber),
+    });
 }

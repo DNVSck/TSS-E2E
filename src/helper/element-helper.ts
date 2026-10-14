@@ -57,16 +57,14 @@ const SUBMIT_CLICK_ATTEMPTS = 3;
 /**
  * Click a button that ends a wizard screen, and make sure the screen actually ended.
  *
- * Opt-in, and used by ONE screen - see AdditionalInformationDeclarePage. That screen
- * swallows the first click while it is still hydrating: Playwright dispatches it, the
- * app ignores it, and the run carries on to hunt for a field of the next screen that
- * never opened. Observed on sit 2026-09-08.
+ * Screens swallow the first click while they are still hydrating: Playwright dispatches
+ * it, the app ignores it, and the run carries on to hunt for a field of the next screen
+ * that never opened. Observed on sit 2026-09-08 on AdditionalInformationDeclarePage;
+ * every wizard's Finish goes through here too, via BasePage.clickFinishButton.
  *
- * Every other wizard clicks plainly through BasePage.clickFinishButton. This was
- * briefly the default for all of them and had to be pulled back: on a screen that
- * disables its own submit button while the service works, the retry below spends the
- * action timeout waiting for a button that is not coming back, and a submit that had
- * already succeeded is reported as a failure.
+ * It was once pulled back from Finish: on a screen that disables its own submit button
+ * while the service works, the retry spent the action timeout waiting for a button that
+ * was not coming back. The button check below is what made that safe.
  *
  * Retrying is safe for the same reason it is safe in switchToTabAndClickNew, and only
  * for that reason: the route is what says whether anything happened. A submit that did
@@ -80,20 +78,36 @@ const SUBMIT_CLICK_ATTEMPTS = 3;
  * waiting for a disabled button to become clickable again. So the button is asked too -
  * one that can no longer be clicked has already taken the click, and the only thing
  * left to do is wait longer.
+ *
+ * So is the service: once the click has sent a POST, the submit was taken, however
+ * slowly the service answers or the next screen paints, and it is never clicked again.
+ * A second click then lands on the next screen once it paints - on sit 2026-10-14 one
+ * submitted an empty seller EORI. A redirect waits for that screen; any other answer
+ * is the screen refusing the submit, and its errors are reported.
  */
 export async function clickToLeaveScreen(page: Page, button: Locator): Promise<void> {
-    const from = StringUtil.stripTrailingSlashes(new URL(page.url()).pathname);
+    const { origin, pathname } = new URL(page.url());
+    const from = StringUtil.stripTrailingSlashes(pathname);
     let clicks = 0;
     let refusal = '';
     let delivered = false;
 
     while (clicks < SUBMIT_CLICK_ATTEMPTS) {
+        const answer = submitAnswer(page, origin);
         refusal = await deliverClick(button);
         clicks++;
         delivered ||= refusal === '';
 
         if (await leftScreen(page, from, SUBMIT_LANDING_TIMEOUT)) {
             return;
+        }
+
+        const { sent, status } = await answer;
+        if (sent) {
+            if (isRedirect(status) && await leftScreen(page, from, SUBMIT_IN_FLIGHT_TIMEOUT)) {
+                return;
+            }
+            break;
         }
 
         if (refusal || !await isStillClickable(button)) {
@@ -113,6 +127,32 @@ export async function clickToLeaveScreen(page: Page, button: Locator): Promise<v
     );
 }
 
+
+interface SubmitAnswer {
+    sent: boolean;
+    status?: number;
+}
+
+async function submitAnswer(page: Page, origin: string): Promise<SubmitAnswer> {
+    const submit = await page.waitForRequest(
+        request => request.method() === 'POST' && new URL(request.url()).origin === origin,
+        { timeout: SUBMIT_LANDING_TIMEOUT }
+    ).catch(() => undefined);
+
+    if (!submit) {
+        return { sent: false };
+    }
+
+    const response = await page.waitForResponse(
+        candidate => candidate.request() === submit,
+        { timeout: SUBMIT_IN_FLIGHT_TIMEOUT }
+    ).catch(() => undefined);
+
+    return { sent: true, status: response?.status() };
+}
+
+const isRedirect = (status: number | undefined): boolean =>
+    status !== undefined && status >= 300 && status < 400;
 
 async function deliverClick(button: Locator): Promise<string> {
     try {
@@ -287,6 +327,10 @@ export async function readFieldIfPresent(field: Locator): Promise<string> {
 // implementation and it went unnoticed for a long time, because the commodity screen
 // types a value the service also accepts as a bare query; the TGP screen, which needs
 // a real record, rejected it outright.
+//
+// The suggestion clicked is the one that shows the value, never simply the first: the
+// list is fetched while typing, so when typing ends it can still hold the answers to a
+// shorter prefix, led by another record that merely shares it.
 
 const AUTOCOMPLETE_ENHANCED_TIMEOUT = 10_000;
 const AUTOCOMPLETE_ENHANCED_RELOADED_TIMEOUT = 25_000;
@@ -331,24 +375,32 @@ async function typeIntoAutocomplete(input: Locator, value: string): Promise<void
 
 export async function selectAutocompleteValue(
     input: Locator,
-    firstOption: Locator,
+    suggestions: Locator,
     value: string
+): Promise<void> {
+    await selectAutocompleteOption(input, suggestions.filter({ hasText: value }).first(), value);
+}
+
+export async function selectAutocompleteOption(
+    input: Locator,
+    option: Locator,
+    typed: string
 ): Promise<void> {
     await waitForAutocomplete(input);
 
     for (let attempt = 1; attempt <= 3; attempt++) {
-        await typeIntoAutocomplete(input, value);
+        await typeIntoAutocomplete(input, typed);
 
         try {
-            await firstOption.waitFor({ state: 'visible', timeout: AUTOCOMPLETE_SUGGESTIONS_TIMEOUT });
-            await firstOption.click();
+            await option.waitFor({ state: 'visible', timeout: AUTOCOMPLETE_SUGGESTIONS_TIMEOUT });
+            await option.click();
             // The open list overlays whatever sits below it — the Continue button,
             // typically — and swallows the next click, so see it close before moving on.
-            await firstOption.waitFor({ state: 'hidden' });
+            await option.waitFor({ state: 'hidden' });
             return;
         } catch {
             if (attempt === 3) {
-                throw new Error(`Autocomplete suggestions never loaded for "${value}" after 3 attempts.`);
+                throw new Error(`No suggestion matching ${option} was offered for "${typed}" after 3 attempts.`);
             }
         }
     }

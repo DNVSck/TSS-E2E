@@ -1,5 +1,6 @@
 import { APIRequestContext } from '@playwright/test';
 import { BaseApiClient } from './base-api-client';
+import { ServerErrorSink } from '../core/report/service-error-recorder';
 import { BatchJob, buildAdhocBatchRequest } from '../test-data/payload/batch-job-payload';
 
 const ADHOC_BATCH_PATH = 'businessapplication/rest/api/admin/batch/instance/adhoc';
@@ -9,8 +10,8 @@ interface AdminEnvelope {
 }
 
 export class CaseManagementApiClient extends BaseApiClient {
-    constructor(request: APIRequestContext) {
-        super(request);
+    constructor(request: APIRequestContext, serverErrors?: ServerErrorSink) {
+        super(request, serverErrors);
     }
 
     async runBatchJob(job: BatchJob): Promise<void> {

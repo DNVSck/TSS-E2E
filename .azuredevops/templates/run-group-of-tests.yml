@@ -102,6 +102,8 @@ steps:
         normalise_optional_variable "AGENT_USER_NAME_${account_number}"
         normalise_optional_variable "AGENT_TOTP_SECRET_${account_number}"
         normalise_optional_variable "IMPORTER_TOTP_SECRET_${account_number}"
+        normalise_optional_variable "HAULIER_PASSWORD_${account_number}"
+        normalise_optional_variable "HAULIER_TOTP_SECRET_${account_number}"
       done
 
       normalise_optional_variable "IMPORTER_PASSWORD_1"
@@ -131,6 +133,8 @@ steps:
       require_variable "BASE_URL"
       require_variable "OTP_ENABLED"
       require_variable "HAULIER_COMPANY_NAME"
+      require_variable "HAULIER_COMP_ID"
+      require_variable "IMPORTER_COMP_ID"
       require_variable "AGENT_PASSWORD"
 
       for account_number in $(seq $(( ACCOUNT_OFFSET + 1 )) $(( ACCOUNT_OFFSET + WORKER_COUNT ))); do
@@ -227,7 +231,24 @@ steps:
 
       HAULIER_PASSWORD: $(HAULIER_PASSWORD)
       HAULIER_TOTP_SECRET: $(HAULIER_TOTP_SECRET)
+      HAULIER_PASSWORD_1: $(HAULIER_PASSWORD_1)
+      HAULIER_PASSWORD_2: $(HAULIER_PASSWORD_2)
+      HAULIER_PASSWORD_3: $(HAULIER_PASSWORD_3)
+      HAULIER_PASSWORD_4: $(HAULIER_PASSWORD_4)
+      HAULIER_PASSWORD_5: $(HAULIER_PASSWORD_5)
+      HAULIER_PASSWORD_6: $(HAULIER_PASSWORD_6)
+      HAULIER_PASSWORD_7: $(HAULIER_PASSWORD_7)
+      HAULIER_PASSWORD_8: $(HAULIER_PASSWORD_8)
+      HAULIER_TOTP_SECRET_1: $(HAULIER_TOTP_SECRET_1)
+      HAULIER_TOTP_SECRET_2: $(HAULIER_TOTP_SECRET_2)
+      HAULIER_TOTP_SECRET_3: $(HAULIER_TOTP_SECRET_3)
+      HAULIER_TOTP_SECRET_4: $(HAULIER_TOTP_SECRET_4)
+      HAULIER_TOTP_SECRET_5: $(HAULIER_TOTP_SECRET_5)
+      HAULIER_TOTP_SECRET_6: $(HAULIER_TOTP_SECRET_6)
+      HAULIER_TOTP_SECRET_7: $(HAULIER_TOTP_SECRET_7)
+      HAULIER_TOTP_SECRET_8: $(HAULIER_TOTP_SECRET_8)
       HAULIER_EORI: $(HAULIER_EORI)
+      HAULIER_COMP_ID: $(HAULIER_COMP_ID)
 
       IMPORTER_PASSWORD: $(IMPORTER_PASSWORD)
       IMPORTER_PASSWORD_1: $(IMPORTER_PASSWORD_1)
@@ -240,6 +261,7 @@ steps:
       IMPORTER_TOTP_SECRET_7: $(IMPORTER_TOTP_SECRET_7)
       IMPORTER_TOTP_SECRET_8: $(IMPORTER_TOTP_SECRET_8)
       IMPORTER_EORI: $(IMPORTER_EORI)
+      IMPORTER_COMP_ID: $(IMPORTER_COMP_ID)
       IMPORTER_IPO: $(IMPORTER_IPO)
       IMPORTER_UKIMS: $(IMPORTER_UKIMS)
       IMPORTER_NIRMS: $(IMPORTER_NIRMS)

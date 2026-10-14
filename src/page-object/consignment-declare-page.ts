@@ -103,9 +103,7 @@ export class ConsignmentDeclarePage extends BasePage {
 
     async selectConsignmentToLink(consignmentReference: string): Promise<void> {
         await selectAutocompleteValue(
-            this.linkedConsignmentInput,
-            this.linkedConsignmentOptions.filter({ hasText: consignmentReference }).first(),
-            consignmentReference
+            this.linkedConsignmentInput, this.linkedConsignmentOptions, consignmentReference
         );
         await clickToLeaveScreen(this.page, this.commonContinueButton);
     }

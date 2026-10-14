@@ -1,4 +1,5 @@
 ﻿import { expect, test } from '@playwright/test';
+import { stripVTControlCharacters } from 'node:util';
 import { COMPANY_PROFILE, CompanyProfile } from '../auth/credentials';
 import { CompanySession } from '../fixtures/company-session-fixture';
 import {
@@ -9,11 +10,14 @@ import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
 import { TFunction } from '../fixtures/locale-fixture';
 import { ReportLog } from '../core/report/report-log';
 import { attachScreenshotIfFailedSince } from '../helper/report-helper';
+import {
+    OfferedElement, PartyOutcome, SurfaceFacts, authorityDigest, partyReport,
+} from '../helper/authority-report-helper';
 import { RepresentTraderFlow } from './represent-trader-flow';
 import { ACCESS_LEVEL, AccessLevel } from '../constant/access-level-constant';
 import {
     PARTY, Party, authorityLabel, authorityStepTitle,
-    expectNoAccess, expectReadOnly, expectFullControl,
+    expectNoAccess, expectReadOnly, expectFullControl, expectSettledControl,
     expectReadOnlyAcrossTabs, expectFullControlAcrossTabs,
 } from '../helper/access-level-helper';
 
@@ -132,6 +136,7 @@ export interface AuthorityQuestion {
      * expects. Sweeping them would compare against a table that does not describe them.
      */
     surfaceOnly?: boolean;
+    settled?: boolean;
 }
 
 /**
@@ -173,6 +178,51 @@ function expectLevel(
     expectFullControl(access, label, requiredActions);
 }
 
+function surfaceFacts(surface: string, access: DeclarationAccess, parent?: SurfaceFacts): SurfaceFacts {
+    const inherited = new Set(parent?.offered.map(elementKey));
+    const offered = offeredOn(access);
+    const own = offered.filter(element => !inherited.has(elementKey(element)));
+
+    return {
+        surface,
+        url: access.url,
+        reachable: access.reachable,
+        refusalHeading: access.refusalHeading,
+        offered: own,
+        inheritedCount: offered.length - own.length,
+    };
+}
+
+const elementKey = (element: OfferedElement): string =>
+    `${element.kind}|${element.target}|${element.enabled}`;
+
+function offeredOn(access: DeclarationAccess): OfferedElement[] {
+    return [
+        ...access.changeLinks.map(link => ({
+            kind: 'change' as const, label: link.label, target: link.href, enabled: true,
+        })),
+        ...access.buttons.map(button => ({
+            kind: 'button' as const, label: button.label, target: button.value,
+            enabled: button.enabled, html: button.html,
+        })),
+        ...access.records.links.map(href => ({
+            kind: 'record' as const, label: href.split('/').pop() ?? href, target: href, enabled: true,
+        })),
+    ];
+}
+
+function failuresSince(errorsBefore: number, thrown?: unknown): string[] {
+    const soft = test.info().errors.slice(errorsBefore)
+        .map(error => firstLine(error.message ?? ''));
+    const fatal = thrown === undefined
+        ? []
+        : [`stopped: ${firstLine(String((thrown as Error).message ?? thrown))}`];
+    return [...soft, ...fatal].filter(Boolean);
+}
+
+const firstLine = (message: string): string =>
+    stripVTControlCharacters(message).split('\n')[0].replace(/^Error:\s*/, '').trim();
+
 /** The names of the tabs that failed - see the note on expectFullControlAcrossTabs. */
 function expectLevelAcrossTabs(
     level: AccessLevel,
@@ -189,27 +239,103 @@ function expectLevelAcrossTabs(
 }
 
 
-async function attachFailedTabs(
-    failed: string[],
-    tabs: TabAccess[],
-    label: string,
+interface FailedScreen {
+    label: string;
+    url: string;
+}
+
+function failedTabScreens(failed: string[], tabs: TabAccess[], label: string): FailedScreen[] {
+    return tabs
+        .filter(tab => failed.includes(tab.name))
+        .map(tab => ({ label: `${label} - "${tab.name}" tab`, url: tab.access.url }));
+}
+
+async function attachFailedScreens(
+    screens: FailedScreen[],
     declarations: DeclarationAccessFlow
 ): Promise<void> {
-    for (const name of failed) {
-        const tab = tabs.find(one => one.name === name);
-        if (!tab) {
-            continue;
-        }
-
+    for (const { label, url } of screens) {
         try {
-            await declarations.openRecord(tab.access.url);
-            ReportLog.addAttachment(
-                `FAILED - ${label} - "${name}" tab`,
-                await declarations.captureCompanyView(),
-                'image/png'
-            );
+            await declarations.openRecord(url);
+            ReportLog.addAttachment(`FAILED - ${label}`, await declarations.captureCompanyView(), 'image/png');
         } catch { /* the failure being illustrated matters more than the picture */ }
     }
+}
+
+interface PartyCheck {
+    kept?: CompanySession;
+    outcome: PartyOutcome;
+}
+
+type RecordExpectation = (access: DeclarationAccess, label: string, actions: readonly string[]) => void;
+
+interface RecordCheckContext {
+    declarations: DeclarationAccessFlow;
+    expectRecord: RecordExpectation;
+    tabLevel: AccessLevel;
+    deeperToAsk: boolean;
+    surfaces: SurfaceFacts[];
+    failedScreens: FailedScreen[];
+}
+
+interface RecordToCheck {
+    name: string;
+    label: string;
+    url: string;
+    actions: readonly string[];
+    expectedTabs: readonly RecordTab[];
+}
+
+interface SearchToCheck {
+    reference: string;
+    label: string;
+    level: AccessLevel;
+}
+
+function recordExpectation(question: AuthorityQuestion, level: AccessLevel, refusalHeading: string): RecordExpectation {
+    if (question.settled && level === ACCESS_LEVEL.FULL) {
+        return (access, label, actions) => expectSettledControl(access, label, actions);
+    }
+    return (access, label, actions) => expectLevel(level, access, label, refusalHeading, actions);
+}
+
+async function checkListedInSearch(declarations: DeclarationAccessFlow, search: SearchToCheck): Promise<void> {
+    const errorsBeforeSearch = test.info().errors.length;
+    const matches = await declarations.searchForDeclaration(search.reference);
+    const listed = expect.soft(matches, `${search.label} - listed in the declarations search`);
+    if (search.level === ACCESS_LEVEL.NONE) {
+        listed.toEqual([]);
+    } else {
+        listed.not.toEqual([]);
+    }
+    await attachScreenshotIfFailedSince(errorsBeforeSearch, `${search.label} - declarations search`,
+        () => declarations.captureCompanyView());
+}
+
+async function checkRecord(context: RecordCheckContext, record: RecordToCheck): Promise<void> {
+    const { declarations } = context;
+    const access = await declarations.readAccessAt(record.name, record.url);
+    const facts = surfaceFacts(record.name, access);
+    context.surfaces.push(facts);
+    const errorsBeforeRecord = test.info().errors.length;
+    context.expectRecord(access, record.label, record.actions);
+    if (test.info().errors.length > errorsBeforeRecord) {
+        context.failedScreens.push({ label: record.label, url: record.url });
+    }
+
+    if (!context.deeperToAsk) {
+        return;
+    }
+
+    const recordTabs = await declarations.readEveryTabAccess(record.name);
+    context.surfaces.push(...recordTabs.map(tab =>
+        surfaceFacts(`${record.name} - "${tab.name}" tab`, tab.access, facts)));
+    const failed = expectLevelAcrossTabs(context.tabLevel, recordTabs, record.label,
+        record.expectedTabs, record.actions, access);
+
+    await attachFailedScreens(failedTabScreens(failed, recordTabs, record.label), declarations);
+    // Back to the record, so whatever is checked next starts from where it expects to.
+    await declarations.openRecord(record.url);
 }
 
 /**
@@ -223,7 +349,7 @@ async function checkOneParty(
     level: AccessLevel,
     question: AuthorityQuestion,
     session: AuthoritySession
-): Promise<CompanySession | undefined> {
+): Promise<PartyCheck> {
     const {
         what, records,
         tabs = DECLARATION_TABS,
@@ -234,90 +360,103 @@ async function checkOneParty(
     const ownWindow = profile ? await session.openAs(profile) : undefined;
     const declarations = ownWindow?.declarations ?? session.agent;
 
-    const refusalHeading = session.t('accessDenied.heading');
     const consignmentLabel = authorityLabel(party, level, what);
-    const goodsLabel = authorityLabel(party, level, `${what} goods item`);
-
 
     let handBack = false;
+    let thrown: unknown;
+    const surfaces: SurfaceFacts[] = [];
 
     // Soft assertions do not throw, so "did this company fail?" cannot be caught - it
     // has to be counted. Playwright collects each soft failure on testInfo.errors, so
     // the difference across this block is exactly what THIS party got wrong.
     const errorsBefore = test.info().errors.length;
     let threw = false;
-    // Failures a tab screenshot has already illustrated. The record-level picture
-    // below is skipped when they are the only ones: a record that opened and read
-    // correctly is not what went wrong, and photographing it invites the reader to
-    // look for a fault that is on another screen.
-    let photographed = 0;
+    const failedScreens: FailedScreen[] = [];
+    const context: RecordCheckContext = {
+        declarations,
+        expectRecord: recordExpectation(question, level, session.t('accessDenied.heading')),
+        tabLevel: question.settled ? ACCESS_LEVEL.READ : level,
+        deeperToAsk: level !== ACCESS_LEVEL.NONE && !question.surfaceOnly,
+        surfaces,
+        failedScreens,
+    };
 
     try {
         // Searching first, because it navigates away from whatever is open.
         if (question.reference !== undefined) {
-            const matches = await declarations.searchForDeclaration(question.reference);
-            const listed = expect.soft(matches, `${consignmentLabel} - listed in the declarations search`);
-            if (level === ACCESS_LEVEL.NONE) {
-                listed.toEqual([]);
-            } else {
-                listed.not.toEqual([]);
-            }
+            await checkListedInSearch(declarations, { reference: question.reference, label: consignmentLabel, level });
         }
 
-        const consignment = await declarations.readAccessAt(what, records.consignment);
-        expectLevel(level, consignment, consignmentLabel, refusalHeading, recordActions);
-
-        const deeperToAsk = level !== ACCESS_LEVEL.NONE && !question.surfaceOnly;
-
-        if (deeperToAsk) {
-            const errorsBeforeTabs = test.info().errors.length;
-            const consignmentTabs = await declarations.readEveryTabAccess(what);
-            const failed = expectLevelAcrossTabs(level, consignmentTabs, consignmentLabel,
-                tabs.consignment, recordActions, consignment);
-
-            await attachFailedTabs(failed, consignmentTabs, consignmentLabel, declarations);
-            photographed += test.info().errors.length - errorsBeforeTabs;
-            // Back to the record, so the goods-item checks below and the party-level
-            // screenshot in the finally both start from where they expect to.
-            await declarations.openRecord(records.consignment);
-        }
+        await checkRecord(context, {
+            name: what,
+            label: consignmentLabel,
+            url: records.consignment,
+            actions: recordActions,
+            expectedTabs: tabs.consignment,
+        });
 
         if (records.goodsItem !== undefined) {
-            const goodsItem = await declarations.readAccessAt(`${what} goods item`, records.goodsItem);
             // No required actions: submit and cancel belong to the consignment, so a goods
             // item holds Full without them.
-            expectLevel(level, goodsItem, goodsLabel, refusalHeading, []);
-
-            if (deeperToAsk) {
-                const errorsBeforeTabs = test.info().errors.length;
-                const goodsTabs = await declarations.readEveryTabAccess(`${what} goods item`);
-                const failed = expectLevelAcrossTabs(
-                    level, goodsTabs, goodsLabel, tabs.goodsItem, [], goodsItem);
-
-                await attachFailedTabs(failed, goodsTabs, goodsLabel, declarations);
-                photographed += test.info().errors.length - errorsBeforeTabs;
-                await declarations.openRecord(records.goodsItem);
-            }
+            await checkRecord(context, {
+                name: `${what} goods item`,
+                label: authorityLabel(party, level, `${what} goods item`),
+                url: records.goodsItem,
+                actions: [],
+                expectedTabs: tabs.goodsItem,
+            });
         }
 
         handBack = Boolean(ownWindow) && Boolean(question.keepOpen?.includes(party));
-        return handBack ? ownWindow : undefined;
+        return {
+            kept: handBack ? ownWindow : undefined,
+            outcome: partyOutcome(party, level, what, failuresSince(errorsBefore), surfaces),
+        };
     } catch (error) {
         // Recorded, not handled - so the screenshot below knows to fire. A read that
         // TIMES OUT is the loudest failure a party can have and the one whose page most
         // needs photographing, yet a soft-error count cannot see it.
         threw = true;
+        thrown = error;
         throw error;
     } finally {
+        if (threw || test.info().errors.length > errorsBefore) {
+            ReportLog.addAttachment(
+                `FAILED - ${consignmentLabel} - what each screen offered`,
+                partyReport(partyOutcome(party, level, what, failuresSince(errorsBefore, thrown), surfaces)),
+                'text/plain'
+            );
+        }
+
         await attachScreenshotIfFailedSince(
-            errorsBefore + photographed, consignmentLabel,
+            test.info().errors.length, consignmentLabel,
             () => declarations.captureCompanyView(), threw
         );
+        await attachFailedScreens(failedScreens, declarations);
 
         if (ownWindow && !handBack) {
             await ownWindow.close();
         }
     }
+}
+
+function partyOutcome(
+    party: Party,
+    level: AccessLevel,
+    record: string,
+    failures: string[],
+    surfaces: SurfaceFacts[]
+): PartyOutcome {
+    const profile = OWN_LOGIN[party];
+
+    return {
+        party: PARTY[party],
+        view: profile ? `its own ${profile} login` : 'the test\'s AGENT browser',
+        record,
+        expected: level,
+        failures,
+        surfaces,
+    };
 }
 
 /**
@@ -339,6 +478,8 @@ export type AuthorityCheckerFlow = (
  * five identical lines in front of the two that differed.
  */
 export function authorityCheckerFlowFor(session: AuthoritySession): AuthorityCheckerFlow {
+    const outcomes: PartyOutcome[] = [];
+
     return async (situation, question) => {
         if (question.unfalsifiableBecause) {
             ReportLog.setParameter(
@@ -358,13 +499,21 @@ export function authorityCheckerFlowFor(session: AuthoritySession): AuthorityChe
                 );
             }
 
-            const stayedOpen = await ReportLog.step(authorityStepTitle(party, level, question.what),
-                () => checkOneParty(party, level, question, session));
-            if (stayedOpen) {
-                kept[party] = stayedOpen;
+            const errorsBefore = test.info().errors.length;
+            const check = await ReportLog.step(authorityStepTitle(party, level, question.what),
+                () => checkOneParty(party, level, question, session)
+                    .catch(async (error: unknown) => {
+                        outcomes.push(partyOutcome(party, level, question.what, failuresSince(errorsBefore, error), []));
+                        await ReportLog.setDescription(authorityDigest(outcomes));
+                        throw error;
+                    }));
+            outcomes.push(check.outcome);
+            if (check.kept) {
+                kept[party] = check.kept;
             }
         }
 
+        await ReportLog.setDescription(authorityDigest(outcomes));
         return kept;
     };
 }
@@ -372,10 +521,10 @@ export function authorityCheckerFlowFor(session: AuthoritySession): AuthorityChe
 /**
  * Give the representation up, then ask the same question of the same record again.
  *
- * The second half of every representation test, and the half that carries the claim:
- * a company shown a record while it acts for somebody is only interesting if the same
- * account is shown something DIFFERENT once it stops. It is also the half that needs
- * no lever to mean anything: nothing about the record changed, only who is asking.
+ * The second half of every representation test: nothing about the record changed, only
+ * who is asking, so it needs no lever to mean anything. What the account should hold
+ * once it stops is the agentNotRepresenting cell - since 2026-10-10 an Agent keeps what
+ * the trader it acts for holds, so on most rows that is the same level as before.
  *
  * Written out, the pair appeared eight times with three words of English between
  * them, and a step that is copied eight times is a step that gets updated seven.
@@ -384,7 +533,7 @@ export function authorityCheckerFlowFor(session: AuthoritySession): AuthorityChe
  * `subject` completes "check ..." - what this record is, in the sentence a reader of
  * the report meets it in.
  */
-export const checkRefusedOnceRepresentationEnds = (
+export const checkOnceRepresentationEnds = (
     representTraderFlow: RepresentTraderFlow,
     checkAuthorityFlow: AuthorityCheckerFlow,
     situation: AuthoritySituation,

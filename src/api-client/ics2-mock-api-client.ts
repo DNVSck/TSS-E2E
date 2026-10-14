@@ -1,5 +1,6 @@
 import { APIRequestContext } from '@playwright/test';
 import { BaseApiClient } from './base-api-client';
+import { ServerErrorSink } from '../core/report/service-error-recorder';
 
 /**
  * Where an ICS2 notification is published, and under what routing.
@@ -27,8 +28,8 @@ const PUBLISH_PATH = `api/exchanges/${DEFAULT_VHOST}/${ICS2_EXCHANGE}/publish`;
  * throwing; it does not build the message and does not decide when one is due.
  */
 export class Ics2MockApiClient extends BaseApiClient {
-    constructor(request: APIRequestContext) {
-        super(request);
+    constructor(request: APIRequestContext, serverErrors?: ServerErrorSink) {
+        super(request, serverErrors);
     }
 
     /**

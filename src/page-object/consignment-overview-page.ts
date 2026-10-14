@@ -15,12 +15,9 @@ import { StringUtil } from '../core/util/string-util';
 import { CONSIGNMENT_TAB_ROUTE } from '../constant/overview-tab-route-constant';
 import { CancellationScreen } from './components/cancellation-screen';
 import {
-    waitForOpenTabPanel, OPEN_TAB_RECORD, RECORD_LINK, RECORD_DELETE_BUTTON,
+    waitForOpenTabPanel, OPEN_TAB_RECORD, RECORD_LINK, deleteTabRecord,
 } from './components/record-tabs';
 
-
-/** Deleting a record re-renders the tab in place; no navigation to wait on. */
-const RECORD_DELETE_TIMEOUT = 20_000;
 
 /** After submit, the status flips to "Awaiting arrival" asynchronously. */
 const SUBMIT_STATUS_POLL_TIMEOUT = 60_000;
@@ -156,6 +153,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     }
 
     async confirmAndResubmit(): Promise<string[]> {
+        await this.confirmAndSubmitButton.waitFor();
         const previousVerdict = await readErrorSummary(this.page);
         const errors = await this.confirmAndSubmit();
 
@@ -306,11 +304,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     async deleteHolderOfAuthorisationRecord(typeCode: string): Promise<void> {
         // The bracketed label the service renders, not a bare substring: "EXW" alone
         // would also match an "EXWH" record, which is a different authorisation.
-        const record = this.openTabRecords.filter({ hasText: `[${typeCode}]` });
-
-        await record.locator(RECORD_DELETE_BUTTON).click();
-
-        await expect(record).toHaveCount(0, { timeout: RECORD_DELETE_TIMEOUT });
+        await deleteTabRecord(this.openTabRecords, `[${typeCode}]`);
     }
 
     /**

@@ -3,7 +3,7 @@ import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction } from '../fixtures/locale-fixture';
 import { switchToTabAndClickNew, readFieldWhenVisible, newRecordButton, clickLinkAndWaitForNavigation, switchToTab, textsOf } from '../helper/element-helper';
-import { waitForOpenTabPanel, OPEN_TAB_PANEL, OPEN_TAB_RECORD } from './components/record-tabs';
+import { waitForOpenTabPanel, OPEN_TAB_PANEL, OPEN_TAB_RECORD, deleteTabRecord } from './components/record-tabs';
 import { GOVUK } from './components/govuk-selectors';
 import { TgpRecordData } from "../test-data/tgp-record-data";
 import { COUNTRY_NAME } from "../constant/country-code-dropdown-constant";
@@ -162,6 +162,12 @@ export class GoodsOverviewPage extends BasePage {
                 reason: reason?.trim() ?? '',
             };
         }));
+    }
+
+    async deleteAdditionalProcedureCode(code: string): Promise<void> {
+        await switchToTab(this.page, this.additionalProcedureCodesTab);
+        await waitForOpenTabPanel(this.page, RENDER_TIMEOUT.TAB_PANEL);
+        await deleteTabRecord(this.openTabRecords, `${code}:`);
     }
 
     async listAdditionalProcedureCodes(): Promise<string[]> {

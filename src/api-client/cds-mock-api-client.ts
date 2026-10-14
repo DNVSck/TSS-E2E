@@ -1,5 +1,6 @@
 import { APIRequestContext } from '@playwright/test';
 import { BaseApiClient } from './base-api-client';
+import { ServerErrorSink } from '../core/report/service-error-recorder';
 
 /**
  * Where TSS listens for what CDS has to say about a declaration. Owned here for the
@@ -17,8 +18,8 @@ const HMRC_CALLBACK_PATH = 'hmrc-cds/hmrc-callback';
  * one callback; a second endpoint becomes a second method here, not a parameter.
  */
 export class CdsMockApiClient extends BaseApiClient {
-    constructor(request: APIRequestContext) {
-        super(request);
+    constructor(request: APIRequestContext, serverErrors?: ServerErrorSink) {
+        super(request, serverErrors);
     }
 
     /** Push one CDS response to the portal. Throws unless the callback accepts it. */

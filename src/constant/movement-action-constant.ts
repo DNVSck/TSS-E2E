@@ -1,3 +1,5 @@
+import { CANCELLATION_ROUTE } from './endpoints-constant';
+
 /**
  * The actions a movement overview posts, by the `value` its button carries.
  *
@@ -13,5 +15,5 @@ export const MOVEMENT_ACTION = {
     /** Attach a consignment that already exists. */
     ASSOCIATE_CONSIGNMENT: 'associate-consignment',
     /** Cancel the whole declaration, consignments included. */
-    CANCEL_DECLARATION: 'cancel-declaration',
+    CANCEL_DECLARATION: CANCELLATION_ROUTE.CANCEL_SEGMENT,
 } as const;

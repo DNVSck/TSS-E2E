@@ -5,6 +5,7 @@ import {
   GVMS_PUSH_SECRET,
 } from '../../config/environment';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
+import { ReportFixtureType } from './report-fixture';
 import { TraderApiClient } from '../api-client/trader-api-client';
 import { MovementService } from '../api-service/trader-api/movement-service';
 import { ConsignmentService } from '../api-service/trader-api/consignment-service';
@@ -110,7 +111,7 @@ export type APIFixtureType = {
   supplementaryDeclarationService: SupplementaryDeclarationService;
 }
 
-type ExtendParams = Parameters<typeof test.extend<APIFixtureType & WorkerAuthFixtureType>>;
+type ExtendParams = Parameters<typeof test.extend<APIFixtureType & WorkerAuthFixtureType & ReportFixtureType>>;
 
 export const apiFixture: ExtendParams[0] = {
   rmqApiRequest: async ({}, // NOSONAR typescript:S3799
@@ -145,8 +146,8 @@ export const apiFixture: ExtendParams[0] = {
     await ctx.dispose();
   },
 
-  cdsMockApiClient: async ({ cdsMockApiRequest }, use) => {
-    await use(new CdsMockApiClient(cdsMockApiRequest));
+  cdsMockApiClient: async ({ cdsMockApiRequest, serviceErrors }, use) => {
+    await use(new CdsMockApiClient(cdsMockApiRequest, serviceErrors));
   },
 
   gvmsMockApiRequest: async ({}, // NOSONAR typescript:S3799
@@ -160,12 +161,12 @@ export const apiFixture: ExtendParams[0] = {
     await ctx.dispose();
   },
 
-  gvmsMockApiClient: async ({ gvmsMockApiRequest }, use) => {
-    await use(new GvmsMockApiClient(gvmsMockApiRequest, GVMS_PUSH_SECRET));
+  gvmsMockApiClient: async ({ gvmsMockApiRequest, serviceErrors }, use) => {
+    await use(new GvmsMockApiClient(gvmsMockApiRequest, GVMS_PUSH_SECRET, serviceErrors));
   },
 
-  ics2MockApiClient: async ({ rmqApiRequest }, use) => {
-    await use(new Ics2MockApiClient(rmqApiRequest));
+  ics2MockApiClient: async ({ rmqApiRequest, serviceErrors }, use) => {
+    await use(new Ics2MockApiClient(rmqApiRequest, serviceErrors));
   },
 
 
@@ -185,8 +186,8 @@ export const apiFixture: ExtendParams[0] = {
     await ctx.dispose();
   },
 
-  caseManagementApiClient: async ({ caseManagementApiRequest }, use) => {
-    await use(new CaseManagementApiClient(caseManagementApiRequest));
+  caseManagementApiClient: async ({ caseManagementApiRequest, serviceErrors }, use) => {
+    await use(new CaseManagementApiClient(caseManagementApiRequest, serviceErrors));
   },
 
   portalAccessToken: async ({ authAccount }, use, testInfo) => {
@@ -235,8 +236,8 @@ export const apiFixture: ExtendParams[0] = {
     await ctx.dispose();
   },
 
-  portalApiClient: async ({ portalApiRequest }, use) => {
-    await use(new PortalApiClient(portalApiRequest));
+  portalApiClient: async ({ portalApiRequest, serviceErrors }, use) => {
+    await use(new PortalApiClient(portalApiRequest, serviceErrors));
   },
 
   gmrService: async ({ portalApiClient }, use) => {
@@ -259,8 +260,8 @@ export const apiFixture: ExtendParams[0] = {
     await use(new TraderGoodsProfileService(portalApiClient));
   },
 
-  traderApiClient: async ({ traderApiRequest }, use) => {
-    await use(new TraderApiClient(traderApiRequest));
+  traderApiClient: async ({ traderApiRequest, serviceErrors }, use) => {
+    await use(new TraderApiClient(traderApiRequest, serviceErrors));
   },
 
   movementService: async ({ traderApiClient }, use) => {

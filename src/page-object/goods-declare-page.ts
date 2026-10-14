@@ -1,6 +1,6 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, readErrorSummary, valuesOf } from '../helper/element-helper';
+import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, selectAutocompleteOption, readErrorSummary, valuesOf } from '../helper/element-helper';
 import { BOOLEAN } from '../constant/radio-value-constant';
 
 
@@ -36,7 +36,7 @@ export class GoodsDeclarePage extends BasePage {
 
     private readonly useTgpRadios: Locator;
     private readonly tgpNumberInput: Locator;
-    private readonly tgpNumberFirstOption: Locator;
+    private readonly tgpNumberOptions: Locator;
 
     private readonly controlledGoodsRadios: Locator;
 
@@ -44,7 +44,7 @@ export class GoodsDeclarePage extends BasePage {
     private readonly dangerousGoodsCodesInput: Locator;
 
     private readonly commodityCodeInput: Locator;
-    private readonly commodityCodeFirstOption: Locator;
+    private readonly commodityCodeOptions: Locator;
     private readonly goodsDescriptionTextArea: Locator;
     private readonly countryOfOriginDropdown: Locator;
     private readonly supplementaryUnitsInput: Locator;
@@ -93,7 +93,7 @@ export class GoodsDeclarePage extends BasePage {
         // "Enter your Trader Goods Profile number" — reached only after answering the
         // TGP question yes. Another accessible-autocomplete, like the commodity code.
         this.tgpNumberInput = page.locator("#tgpNumber");
-        this.tgpNumberFirstOption = page.locator("#tgpNumber__option--0");
+        this.tgpNumberOptions = page.locator("[id^='tgpNumber__option--']");
 
         // Goods domestic status and additional risk status have no goods-item screens
         // — the app carries them over from the consignment — so no locators here.
@@ -110,7 +110,7 @@ export class GoodsDeclarePage extends BasePage {
         // goods description is a single-line textbox (not a textarea), so both are
         // matched by id only rather than by tag.
         this.commodityCodeInput = page.locator("#commodityCode");
-        this.commodityCodeFirstOption = page.locator("#commodityCode__option--0");
+        this.commodityCodeOptions = page.locator("[id^='commodityCode__option--']");
         this.goodsDescriptionTextArea = page.locator("#goodsDescription");
         this.countryOfOriginDropdown = page.locator("#countryOfOrigin");
         this.supplementaryUnitsInput = page.locator("input#supplementaryUnits");
@@ -189,9 +189,15 @@ export class GoodsDeclarePage extends BasePage {
      * so the same type-then-commit dance as the commodity code applies (a plain
      * fill leaves the hidden value empty). The lookup matches the record id, the
      * trader reference or the commodity code, so the caller picks whichever it holds.
+     * The option is then chosen by its record id, which every option shows: the
+     * suggestions can still be those of a shorter prefix when typing ends.
      */
-    async selectTgpNumber(lookup: string): Promise<void> {
-        await selectAutocompleteValue(this.tgpNumberInput, this.tgpNumberFirstOption, lookup);
+    async selectTgpNumber(lookup: string, recordId: string): Promise<void> {
+        await selectAutocompleteOption(
+            this.tgpNumberInput,
+            this.tgpNumberOptions.filter({ hasText: recordId }).first(),
+            lookup
+        );
         await this.clickContinueButton();
     }
 
@@ -387,7 +393,7 @@ export class GoodsDeclarePage extends BasePage {
 
     /** The commodity code is a GOV.UK accessible-autocomplete (see selectAutocompleteValue). */
     async selectCommodityCode(commodityCode: string): Promise<void> {
-        await selectAutocompleteValue(this.commodityCodeInput, this.commodityCodeFirstOption, commodityCode);
+        await selectAutocompleteValue(this.commodityCodeInput, this.commodityCodeOptions, commodityCode);
     }
 
     /**

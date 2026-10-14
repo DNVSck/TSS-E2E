@@ -1,7 +1,7 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { ConsignmentSummaryPage } from './consignment-summary-page';
-import { RecordTabs } from './components/record-tabs';
+import { RecordTabs, OPEN_TAB_PANEL, RECORD_LINK } from './components/record-tabs';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
     readFieldWhenVisible, readFieldIfPresent, readErrorSummary,
@@ -58,6 +58,10 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
         this.localReferenceNumber = this.summaryList.valueOf(this.t!('common.localReferenceNumber'));
         this.movementReferenceNumber = this.summaryList.valueOf(this.t!('consignmentDetail.movementReferenceNumber'));
         this.status = this.summaryList.valueOf(this.t!('common.status'));
+    }
+
+    protected get offeredElements(): string[] {
+        return [...super.offeredElements, `${OPEN_TAB_PANEL} :is(${RECORD_LINK})`];
     }
 
     async getConsignmentLocalReferenceNumber(): Promise<string> {

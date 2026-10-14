@@ -1,12 +1,13 @@
 import { Page, Locator, TestInfo } from '@playwright/test';
 import {
-    readFieldIfPresent, hrefsOf, clickLinkAndWaitForRoute, submitAndReadErrors,
+    readFieldIfPresent, hrefsOf, clickLinkAndWaitForRoute, submitAndReadErrors, clickToLeaveScreen,
 } from '../helper/element-helper';
 import { TFunction, localeForProject } from '../fixtures/locale-fixture';
 import { LOCALES_CONSTANT } from '../constant/locales-constant';
 import { NavigationBanner } from './components/navigation-banner';
-import { SummaryList } from './components/summary-list';
+import { SummaryList, SUMMARY_ACTION_LINK } from './components/summary-list';
 import { GOVUK } from './components/govuk-selectors';
+import { CANCELLATION_ROUTE } from '../constant/endpoints-constant';
 
 /** Overview screens paint their list a beat after the route settles. */
 const CONTENT_TIMEOUT = 20_000;
@@ -23,7 +24,22 @@ export interface ActionButton {
     /** The posted value that names the action, e.g. "submit-consignment". */
     value: string;
     enabled: boolean;
+    label: string;
+    html: string;
 }
+
+export interface ActionLink {
+    href: string;
+    label: string;
+}
+
+const ACTION_BUTTON = 'button[name="action"]';
+
+const CANCEL_LINK_BUTTON = `main a${GOVUK.BUTTON.ROOT}[href$='/${CANCELLATION_ROUTE.CANCEL_SEGMENT}']`;
+
+const OFFERED_OUTLINE = '{ outline: 3px solid #d4351c !important; outline-offset: 2px; }';
+
+const ELEMENT_HTML_LIMIT = 300;
 export class BasePage {
     protected readonly commonContinueButton: Locator;
     protected readonly commonFinishButton: Locator;
@@ -78,6 +94,27 @@ export class BasePage {
     /** The pixels, not the Page - so a caller can name its own screenshot and no more. */
     async screenshotPng(): Promise<Buffer> {
         return this.page.screenshot();
+    }
+
+    async screenshotOutliningOffered(): Promise<Buffer> {
+        return this.page.screenshot({
+            fullPage: true,
+            style: `${this.offeredElements.join(', ')} ${OFFERED_OUTLINE}`,
+        });
+    }
+
+    protected get offeredElements(): string[] {
+        return [SUMMARY_ACTION_LINK, `${ACTION_BUTTON}:not([disabled])`, CANCEL_LINK_BUTTON];
+    }
+
+    async listActionLinks(): Promise<ActionLink[]> {
+        const links = await this.actionLinks.evaluateAll(elements =>
+            elements.map(link => ({
+                href: link.getAttribute('href') ?? '',
+                label: (link.textContent ?? '').replaceAll(/\s+/g, ' ').trim(),
+            }))
+        );
+        return links.filter(link => link.href !== '');
     }
 
 
@@ -152,7 +189,7 @@ export class BasePage {
      * looking for a screen that never opened and blames its own locator.
      */
     async clickFinishButton(): Promise<void> {
-        await this.commonFinishButton.click();
+        await clickToLeaveScreen(this.page, this.commonFinishButton);
     }
 
     protected async finishAndReadErrors(): Promise<string[]> {
@@ -217,7 +254,11 @@ export class BasePage {
      * page furniture (cookie banner, chat widget) that carries no name at all.
      */
     protected get actionButtons(): Locator {
-        return this.page.locator('button[name="action"]');
+        return this.page.locator(ACTION_BUTTON);
+    }
+
+    protected get actionLinkButtons(): Locator {
+        return this.page.locator(CANCEL_LINK_BUTTON);
     }
 
     /**
@@ -248,7 +289,7 @@ export class BasePage {
      * settles as soon as either arrives.
      */
     async waitForContentOrHeading(timeout = CONTENT_TIMEOUT): Promise<void> {
-        await this.contentRows.first().or(this.pageHeading.first())
+        await this.contentRows.first().or(this.pageHeading.first()).first()
             .waitFor({ state: 'visible', timeout });
     }
 
@@ -293,14 +334,29 @@ export class BasePage {
      *
      * So callers should ask what is ENABLED rather than what is present - see
      * enabledActions - which is the one question both mechanisms answer the same way.
+     *
+     * A Cancel rendered as a link to its own screen counts too, named by that route's last
+     * segment and always enabled: a withheld action is rendered as a disabled button.
      */
     async listActionButtons(): Promise<ActionButton[]> {
-        return this.actionButtons.evaluateAll(buttons =>
-            buttons.map(button => ({
+        const buttons = await this.actionButtons.evaluateAll((elements, limit) =>
+            elements.map(button => ({
                 value: button.getAttribute('value') ?? '',
                 enabled: !(button as HTMLButtonElement).disabled,
-            }))
+                label: (button.textContent ?? '').replaceAll(/\s+/g, ' ').trim(),
+                html: button.outerHTML.replaceAll(/\s+/g, ' ').slice(0, limit),
+            })), ELEMENT_HTML_LIMIT
         );
+        const links = await this.actionLinkButtons.evaluateAll((elements, limit) =>
+            elements.map(link => ({
+                value: (link.getAttribute('href') ?? '').split('/').pop() ?? '',
+                enabled: true,
+                label: (link.textContent ?? '').replaceAll(/\s+/g, ' ').trim(),
+                html: link.outerHTML.replaceAll(/\s+/g, ' ').slice(0, limit),
+            })), ELEMENT_HTML_LIMIT
+        );
+
+        return [...buttons, ...links];
     }
 
 }

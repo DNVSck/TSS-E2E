@@ -218,6 +218,23 @@ export function isProfileConfigured(profile: CompanyProfile): boolean {
     );
 }
 
+export const profileMissingReason = (profile: CompanyProfile): string =>
+    `No ${profile} login in this environment - see DEFAULT_AUTH_PROFILES and ON_DEMAND_PROFILES in src/auth/credentials.ts`;
+
+export function companyIdOf(profile: CompanyProfile): string {
+    const key = `${profile}_COMP_ID`;
+    const companyId = process.env[key]?.trim();
+
+    if (!companyId) {
+        throw new Error(
+            `No company id for ${profile}: set ${key} in .env.${process.env.ENV ?? '<env>'} `
+            + `and in the environment's variable group on CI.`
+        );
+    }
+
+    return companyId;
+}
+
 
 export function accountEnvKey(account: UserCredentials, field: string): string {
     const perAccount = envName(account.profile, field, account.accountNumber);
@@ -257,6 +274,9 @@ export function getCredentials(profile: CompanyProfile): UserCredentials {
     };
 }
 
+
+export const lockWhenSingleAccount = (profile: CompanyProfile): CompanyProfile | undefined =>
+    getCredentialsPool(profile).length > 1 ? undefined : profile;
 
 export function getCredentialsPool(profile: CompanyProfile): UserCredentials[] {
     const pool: UserCredentials[] = [];

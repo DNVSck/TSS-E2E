@@ -2,7 +2,7 @@ import { Page, Locator } from '@playwright/test';
 import { GOVUK } from './govuk-selectors';
 
 const { ROW, KEY, VALUE, ACTIONS } = GOVUK.SUMMARY_LIST;
-const ACTION_LINK = `${ACTIONS} a`;
+export const SUMMARY_ACTION_LINK = `${ACTIONS} a`;
 
 export class SummaryList {
     readonly rows: Locator;
@@ -12,7 +12,7 @@ export class SummaryList {
     constructor(private readonly page: Page) {
         this.rows = page.locator(ROW);
         this.values = page.locator(VALUE);
-        this.actionLinks = page.locator(ACTION_LINK);
+        this.actionLinks = page.locator(SUMMARY_ACTION_LINK);
     }
 
     // Locate a GOV.UK summary-list row's value by its label. The label is exact-matched
@@ -32,6 +32,6 @@ export class SummaryList {
     }
 
     changeLinkFor(field: string): Locator {
-        return this.page.locator(`${ACTION_LINK}[href$='field=${field}']`);
+        return this.page.locator(`${SUMMARY_ACTION_LINK}[href$='field=${field}']`);
     }
 }

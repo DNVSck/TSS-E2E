@@ -6,10 +6,11 @@ import {
     ConsignmentDetailPage, RESUBMIT_STATUS_POLL_TIMEOUT,
 } from '../page-object/consignment-detail-page';
 import { PortalPage } from '../page-object/portal-page';
-import { DeclarationSearchPage } from '../page-object/declaration-search-page';
+import { DeclarationOverviewPage } from '../page-object/declaration-overview-page';
 import { ConsignmentOverviewPage } from '../page-object/consignment-overview-page';
-import { ActionButton, BasePage } from '../page-object/base-page';
+import { ActionButton, ActionLink, BasePage } from '../page-object/base-page';
 import { RecordTabs } from '../page-object/components/record-tabs';
+import { SupplementaryDeclarationOverviewPage } from '../page-object/supplementary-declaration-overview-page';
 
 /** How long a record's summary list gets to paint before we call it unreachable. */
 const RECORD_RENDER_TIMEOUT = 20_000;
@@ -68,6 +69,7 @@ export interface DeclarationAccess {
     rowCount: number;
     /** Where each offered action leads. Empty means the screen is read-only. */
     actionHrefs: string[];
+    changeLinks: ActionLink[];
     /** Every action button rendered, and whether it can be used. */
     buttons: ActionButton[];
     /**
@@ -97,7 +99,7 @@ export interface DeclarationAccess {
 
 /** What a record the service would not show looks like. */
 const noAccess = (url: string): DeclarationAccess => ({
-    reachable: false, rowCount: 0, actionHrefs: [], buttons: [],
+    reachable: false, rowCount: 0, actionHrefs: [], changeLinks: [], buttons: [],
     records: { count: 0, links: [] }, url, refusalHeading: '',
 });
 
@@ -154,11 +156,12 @@ async function readRecordSurface(
         return { ...noAccess(url), refusalHeading };
     }
 
-    const actionHrefs = await record.listActionHrefs();
+    const changeLinks = await record.listActionLinks();
+    const actionHrefs = changeLinks.map(link => link.href);
     const buttons = await record.listActionButtons();
     const records = await record.tabs.readRecords();
 
-    return { reachable: true, rowCount, actionHrefs, buttons, records, url, refusalHeading: '' };
+    return { reachable: true, rowCount, actionHrefs, changeLinks, buttons, records, url, refusalHeading: '' };
 }
 
 /**
@@ -173,8 +176,9 @@ export class DeclarationAccessFlow {
         private readonly movementOverviewPage: MovementOverviewPage,
         private readonly consignmentDetailPage: ConsignmentDetailPage,
         private readonly portalPage: PortalPage,
-        private readonly declarationSearchPage: DeclarationSearchPage,
+        private readonly declarationOverviewPage: DeclarationOverviewPage,
         private readonly consignmentOverviewPage: ConsignmentOverviewPage,
+        private readonly supplementaryDeclarationOverviewPage: SupplementaryDeclarationOverviewPage,
         // Held for the same reason the other flows hold it: comparing a status is a
         // comparison against translated text, but deciding what that status MEANS for
         // the journey is this layer's job, not a page's.
@@ -246,6 +250,15 @@ export class DeclarationAccessFlow {
         });
     }
 
+    async locateSupplementaryDeclarationRecords(): Promise<RecordUrls> {
+        return ReportLog.step('Locate the supplementary declaration and its goods record', async () => {
+            const consignment = this.supplementaryDeclarationOverviewPage.getCurrentUrl();
+            await this.supplementaryDeclarationOverviewPage.openGoodsRecord();
+
+            return { consignment, goodsItem: this.supplementaryDeclarationOverviewPage.getCurrentUrl() };
+        });
+    }
+
     /** The same, for a consignment already known by URL - a draft found by searching. */
     async locateRecordsAt(consignmentUrl: string): Promise<RecordUrls> {
         return this.locateRecords('consignment', () =>
@@ -274,7 +287,7 @@ export class DeclarationAccessFlow {
 
     /** What the company THIS flow speaks for is looking at - the name is what it adds. */
     async captureCompanyView(): Promise<Buffer> {
-        return this.consignmentDetailPage.screenshotPng();
+        return this.consignmentDetailPage.screenshotOutliningOffered();
     }
 
     /**
@@ -415,7 +428,7 @@ export class DeclarationAccessFlow {
 
         return ReportLog.step(`Search the declarations overview for ${label}`, async () => {
             await this.portalPage.openDraftDeclarations();
-            const matches = await this.declarationSearchPage.findDeclarationsByReference(reference);
+            const matches = await this.declarationOverviewPage.findDeclarationsByReference(reference);
 
             ReportLog.setParameter(
                 `Search ${label}`,
@@ -442,11 +455,15 @@ export class DeclarationAccessFlow {
         });
     }
 
+    async locateDeclaration(url: string, testInfo: TestInfo, reference: string): Promise<RecordUrls> {
+        return this.locateRecordsAt(await this.openDeclarationInPortal(url, testInfo, reference));
+    }
+
     async openDeclarationFromSearch(reference: string): Promise<string> {
         return ReportLog.step(`Open declaration "${reference}" from the search results`, async () => {
             await this.portalPage.openDraftDeclarations();
-            await this.declarationSearchPage.findDeclarationsByReference(reference);
-            await this.declarationSearchPage.openDeclaration(reference);
+            await this.declarationOverviewPage.findDeclarationsByReference(reference);
+            await this.declarationOverviewPage.openDeclaration(reference);
             return this.consignmentOverviewPage.getCurrentUrl();
         });
     }

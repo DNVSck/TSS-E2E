@@ -7,7 +7,7 @@ import { initialFormData, InitialFormData } from '../../test-data/initial-form-d
 import { movement, MovementData } from '../../test-data/movements-data';
 import { AddNewEnsConsignmentFlow } from '../consignment/add-new-ens-consignment-flow';
 import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
-import { consignment, ConsignmentData } from '../../test-data/consignment-data';
+import { consignment, ConsignmentData, declaresControlledGoods } from '../../test-data/consignment-data';
 import { AddNewEnsGoodsItemFlow, GoodsJourneyContext } from '../goods-item/add-new-ens-goods-item-flow';
 import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
 import { goods, GoodsData } from '../../test-data/goods-data';
@@ -172,8 +172,7 @@ export class CreateDraftEnsDeclarationFlow {
             importerEORI: consignmentData.importerEORI,
             useIMMI: !consignmentData.isEnsOnly && consignmentData.useIMMI,
             isEnsOnly: consignmentData.isEnsOnly,
-            isControlledGoods: !consignmentData.isEnsOnly && !consignmentData.useIMMI
-                && consignmentData.isControlledGoods,
+            isControlledGoods: declaresControlledGoods(consignmentData),
             // The dangerous-goods question shows on ENS-only and on the controlled-goods
             // SFD journey - not on IMMI nor EIDR.
             hasDangerousGoods: consignmentData.isEnsOnly || (!consignmentData.useIMMI && consignmentData.isControlledGoods),

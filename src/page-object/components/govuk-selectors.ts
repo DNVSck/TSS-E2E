@@ -8,6 +8,7 @@ export const GOVUK = {
         START: '.govuk-button--start',
     },
     ERROR_MESSAGE: '.govuk-error-message',
+    INSET_TEXT: '.govuk-inset-text',
     ERROR_SUMMARY: {
         LIST: '.govuk-error-summary__list',
     },
@@ -19,6 +20,7 @@ export const GOVUK = {
         WRAPPER: '.govuk-service-navigation__wrapper',
     },
     SUMMARY_CARD: {
+        ROOT: '.govuk-summary-card',
         TITLE: '.govuk-summary-card__title',
     },
     SUMMARY_LIST: {

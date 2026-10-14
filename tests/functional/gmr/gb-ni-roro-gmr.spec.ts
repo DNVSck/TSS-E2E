@@ -114,7 +114,10 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
     const gmrReference = await ReportLog.step('Create and submit the GMR', () =>
       createAndSubmitGmrFlow.addNewGmrAndSubmit(
-        gmrData({ route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES })
+        gmrData({ 
+          route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES,
+          external_contacts_list: ['adam1.taylor@nifreight.co.uk', 'ledt1@nifreight.co.uk'], 
+        })
       )
     );
 

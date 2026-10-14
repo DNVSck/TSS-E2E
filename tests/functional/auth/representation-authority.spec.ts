@@ -1,13 +1,11 @@
-﻿import { COMPANY_PROFILE, isProfileConfigured } from '../../../src/auth/credentials';
+﻿import {
+    COMPANY_PROFILE, isProfileConfigured, companyIdOf, profileMissingReason, lockWhenSingleAccount,
+} from '../../../src/auth/credentials';
 import {
     BASE_URL, IMPORTER_COMPANY_NAME, HAULIER_COMPANY_NAME, IS_ISC2_MOCK,
 } from '../../../config/environment';
-import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
-import { ensSfdGoodsDocuments, importerUkimsDocument } from '../../../src/test-data/document-reference-data';
+import { importerUkimsDocument } from '../../../src/test-data/document-reference-data';
 import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
-import {
-    immiStandaloneGoodsItem, immiStandaloneTransportDocument,
-} from '../../../src/test-data/immi-standalone-goods-item-data';
 import { sfdStandaloneGoodsItem } from '../../../src/test-data/sfd-standalone-goods-item-data';
 import { ReportLog } from '../../../src/core/report/report-log';
 import { CONTAINER_SIZE } from '../../../src/constant/container-size-constant';
@@ -15,27 +13,35 @@ import { CONTAINER_PACKED_STATUS } from '../../../src/constant/container-packed-
 import { CONTAINER_SUPPLIER_TYPE } from '../../../src/constant/container-supplier-type-constant';
 import { generateRandomContainerIdentifierNumber } from '../../../src/helper/data-generate-helper';
 import {
-    ensOnlyDeclaration, ensSfdDeclaration, ensImmiDeclaration, ensEidrDeclaration,
+    ensOnlyDeclaration, ensSfdDeclaration, ensImmiDeclaration,
 } from '../../../src/test-data/ens-declaration-data';
 import {
     rejectedByIcs2, rejectedByCds, immiRejectedByCds,
-    immiStandaloneRejectedByCds, sfdStandaloneRejectedByCds,
+    IMMI_STANDALONE_REFUSED_PROCEDURE_CODE, rejectedImmiStandaloneForImporter, rejectedSfdStandaloneForImporter,
 } from '../../../src/test-data/rejection-lever-data';
 import {
     ENS_ONLY_AUTHORITY, GENERATED_DECLARATION_AUTHORITY, ENS_EIDR_AUTHORITY, STANDALONE_AUTHORITY,
-    MOVEMENT_GMR_AUTHORITY,
+    MOVEMENT_GMR_AUTHORITY, SUPPLEMENTARY_DECLARATION_AUTHORITY,
     REPRESENTED_HAULIER_AUTHORITY,
 } from '../../../src/test-data/authority-matrix';
 import {
-    IMMI_EIDR_DECLARATION_TABS, GMR_TABS, MOVEMENT_TABS,
+    IMMI_EIDR_DECLARATION_TABS, GMR_TABS, MOVEMENT_TABS, SUPPLEMENTARY_DECLARATION_TABS,
 } from '../../../src/constant/record-tab-constant';
 import { MOVEMENT_ACTION } from '../../../src/constant/movement-action-constant';
+import { CONSIGNMENT_ACTION } from '../../../src/constant/consignment-action-constant';
 import { ROUTE_ID_CONSTANT } from '../../../src/constant/routeId-constant';
 import { gmrData } from '../../../src/test-data/gmr-data';
-import { CONSIGNMENT_ACTION } from '../../../src/constant/consignment-action-constant';
+import {
+    GMR_MOVEMENT, eidrGmrJourney, sfdGmrJourney, withHaulierAsCarrier,
+} from '../../../src/test-data/gmr-journey-data';
+import { haulierAsCarrier } from '../../../src/test-data/movements-data';
 import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
 import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
-import { checkRefusedOnceRepresentationEnds } from '../../../src/flows/authority-check-flow';
+import { checkOnceRepresentationEnds } from '../../../src/flows/authority-check-flow';
+import { DECLARATION_STATUS } from '../../../src/constant/trader-api/declaration-status-constant';
+import {
+    declaredThroughTraderApi, traderDefermentSupplementaryDeclaration,
+} from '../../../src/test-data/supplementary-declaration-data';
 import { test } from '../../base-test';
 
 
@@ -55,28 +61,31 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * mocked environment took the half that can down with it - or worse, the test
      * returned early and reported green having measured half of what it names.
      */
-    test('Verify that the Agent and the Importer are offered the right actions on a draft ENS consignment', { tag: ['@auth', '@authorisation'] }, async ({
-        createDraftEnsDeclarationFlow, declarationAccessFlow, checkAuthorityFlow,
+    test('Verify that the Agent, the Importer and the Haulier named as carrier are offered the right actions on a draft ENS consignment', { tag: ['@regression', '@auth', '@authorisation'], lock: lockWhenSingleAccount(COMPANY_PROFILE.HAULIER) }, async ({
+        declareEnsThroughApiFlow, declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
+        test.skip(
+            !isProfileConfigured(COMPANY_PROFILE.HAULIER),
+            profileMissingReason(COMPANY_PROFILE.HAULIER)
+        );
         await ReportLog.setStory('Agent on its own account - what a draft offers');
 
-        const draft = await ReportLog.step('Agent declares an ENS consignment and leaves it in draft', () =>
-            createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensOnlyDeclaration(testInfo, rejectedByIcs2()))
+        const draft = await ReportLog.step('Agent declares an ENS consignment with the Haulier as carrier through the Trader API and leaves it in draft', () =>
+            declareEnsThroughApiFlow.declareDraft(haulierAsCarrier(ensOnlyDeclaration(testInfo, rejectedByIcs2())))
         );
 
-        await ReportLog.step('Agent and Importer on the draft consignment - check what each is offered', async () => {
+        await ReportLog.step('Agent, Importer and Haulier on the draft consignment - check what each is offered', async () => {
             // A draft asks less than a rejection does: the question is only whether a
             // company may submit it, cancel it, and add records to it.
             const draftUrl = await declarationAccessFlow
-                .openDeclarationFromSearch(draft.consignmentReference);
+                .openDeclarationInPortal(BASE_URL, testInfo, draft.consignmentReference);
             const draftRecords = await declarationAccessFlow.locateRecordsAt(draftUrl);
 
             await checkAuthorityFlow(ENS_ONLY_AUTHORITY.draftConsignment, {
                 what: 'the draft consignment',
                 records: draftRecords,
                 reference: draft.consignmentReference,
-                parties: ['agent', 'importer'],
+                parties: ['agent', 'importer', 'haulier'],
             });
 
             const draftMovement = await declarationAccessFlow.locateMovementHeader();
@@ -90,7 +99,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
 
     });
 
-    test('Verify that the Agent, on its own account, can correct and resubmit its rejected ENS consignment', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent, on its own account, can correct and resubmit its rejected ENS consignment', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
         createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -147,8 +156,8 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
         await ReportLog.step('The same account representing the Importer - check representing costs it the ENS', async () => {
             // Representation REPLACES the account it acts for rather than adding to it:
             // while acting for the Importer this browser sees what the Importer sees, and
-            // the Importer is shown nothing of an ENS - not even the one this very account
-            // submitted. Measured 2026-09-02, correcting the opposite guess.
+            // since 2026-10-11 the Importer only reads an ENS - even the one this very
+            // account submitted.
             await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
             await checkAuthorityFlow(ENS_ONLY_AUTHORITY.rejectedConsignment, {
                 what: 'the rejected consignment',
@@ -159,11 +168,8 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             // Handed back as itself, because the correction below is the submitter's.
             await representTraderFlow.stopRepresenting();
 
-            // And put back ON the record. The check above ends on "You are not authorised
-            // to access this", which carries no breadcrumb - so the correction below could
-            // not walk up to the consignment overview and spent 15s looking for a link that
-            // a refusal page never has. Giving the representation up restores the right,
-            // not the page.
+            // And put back ON the record, so the correction below starts from the
+            // consignment rather than wherever the check above left this browser.
             await declarationAccessFlow.openRecord(rejected!.consignment);
         });
 
@@ -202,27 +208,17 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * first, and the Agent corrects and resubmits as itself. Observing Full and using it
      * are different claims, and the second is the one a trader would notice.
      */
-    test('Verify that the Agent that submitted the ENS can correct and resubmit the rejected SFD on its own account', { tag: ['@auth', '@authorisation'] }, async ({
-        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
+    test('Verify that the Agent that submitted the ENS can correct and resubmit the rejected SFD on its own account', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        declareEnsThroughApiFlow, consignmentOverviewFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('The Agent that submitted the ENS corrects the rejected SFD as itself');
 
         await ReportLog.step('Agent declares an ENS-SFD and submits it - expect CDS to reject the SFD', async () => {
-            await createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensSfdDeclaration(testInfo, rejectedByCds()));
+            const { consignmentReference } = await declareEnsThroughApiFlow
+                .declareAndSubmitExpectingRefusal(ensSfdDeclaration(testInfo, rejectedByCds()), 'SFD');
 
-            // Building the declaration ends on the goods-item overview; submit lives a
-            // level up. The first test is already ON the consignment overview when it
-            // submits, which is why only this one walks back.
-            await consignmentOverviewFlow.goToConsignmentOverview();
-            await consignmentOverviewFlow.submitConsignment();
-            await movementOverviewFlow.waitForSubmittedMovementOverview();
-
-            // The spine. Not routed through verifySfdConsignmentDetail, which THROWS on
-            // this status - for a happy-path journey a rejected SFD is the failure, but
-            // here it is the precondition.
-            await movementOverviewFlow.verifySfdConsignmentTraderInputRequired();
+            await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
         });
 
         const sfd = await declarationAccessFlow.locateSfdConsignmentRecords();
@@ -281,20 +277,17 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * holder-of-authorisation RECORD on a tab, which has no Change link at all - opening
      * the record re-enters the wizard that created it.
      */
-    test('Verify that the Importer, on its own login, can correct and resubmit a rejected SFD the Agent declared', { tag: ['@auth', '@authorisation'] }, async ({
-        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
+    test('Verify that the Importer, on its own login, can correct and resubmit a rejected SFD the Agent declared', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        declareEnsThroughApiFlow,
         declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('Importer corrects the holder of authorisation and resubmits');
 
         await ReportLog.step('Agent declares an ENS-SFD and submits it - expect CDS to reject the SFD', async () => {
-            await createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensSfdDeclaration(testInfo, rejectedByCds()));
+            const { consignmentReference } = await declareEnsThroughApiFlow
+                .declareAndSubmitExpectingRefusal(ensSfdDeclaration(testInfo, rejectedByCds()), 'SFD');
 
-            await consignmentOverviewFlow.goToConsignmentOverview();
-            await consignmentOverviewFlow.submitConsignment();
-            await movementOverviewFlow.waitForSubmittedMovementOverview();
-            await movementOverviewFlow.verifySfdConsignmentTraderInputRequired();
+            await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
         });
 
         const sfd = await declarationAccessFlow.locateSfdConsignmentRecords();
@@ -346,20 +339,17 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * the table - so on this journey it is a prediction until this test runs green. That
      * is the whole reason both exist.
      */
-    test('Verify that the Agent that submitted the ENS can correct and resubmit the rejected IMMI on its own account', { tag: ['@auth', '@authorisation'] }, async ({
-        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
+    test('Verify that the Agent that submitted the ENS can correct and resubmit the rejected IMMI on its own account', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        declareEnsThroughApiFlow, consignmentOverviewFlow,
         declarationAccessFlow, representTraderFlow, goodsOverviewFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('The Agent that submitted the ENS corrects the rejected IMMI as itself');
 
         await ReportLog.step('Agent declares an ENS-IMMI and submits it - expect CDS to reject the IMMI', async () => {
-            await createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensImmiDeclaration(testInfo, immiRejectedByCds()));
+            const { consignmentReference } = await declareEnsThroughApiFlow
+                .declareAndSubmitExpectingRefusal(ensImmiDeclaration(testInfo, immiRejectedByCds()), 'IMMI');
 
-            await consignmentOverviewFlow.goToConsignmentOverview();
-            await consignmentOverviewFlow.submitConsignment();
-            await movementOverviewFlow.waitForSubmittedMovementOverview();
-            await movementOverviewFlow.verifyImmiConsignmentTraderInputRequired();
+            await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
         });
 
         const immi = await declarationAccessFlow.locateImmiConsignmentRecords();
@@ -420,20 +410,17 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * UKIMS number on its GOODS ITEM, so the second session has to reach the goods item's
      * tabs rather than the consignment's.
      */
-    test('Verify that the Importer, on its own login, can correct and resubmit a rejected IMMI the Agent declared', { tag: ['@auth', '@authorisation'] }, async ({
-        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
+    test('Verify that the Importer, on its own login, can correct and resubmit a rejected IMMI the Agent declared', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        declareEnsThroughApiFlow,
         declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('Importer corrects the UKIMS on a rejected IMMI and resubmits');
 
         await ReportLog.step('Agent declares an ENS-IMMI and submits it - expect CDS to reject the IMMI', async () => {
-            await createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensImmiDeclaration(testInfo, immiRejectedByCds()));
+            const { consignmentReference } = await declareEnsThroughApiFlow
+                .declareAndSubmitExpectingRefusal(ensImmiDeclaration(testInfo, immiRejectedByCds()), 'IMMI');
 
-            await consignmentOverviewFlow.goToConsignmentOverview();
-            await consignmentOverviewFlow.submitConsignment();
-            await movementOverviewFlow.waitForSubmittedMovementOverview();
-            await movementOverviewFlow.verifyImmiConsignmentTraderInputRequired();
+            await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
         });
 
         const immi = await declarationAccessFlow.locateImmiConsignmentRecords();
@@ -476,31 +463,25 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * privilege-escalation net: it fails if a company GAINS an action, which is the
      * direction that matters.
      *
-     * The half that measures something is the refusal: an agent representing nobody is
-     * shut out of the very record the represented parties are reading, same account,
-     * seconds apart. Being able to look it up is the whole of what they are promised.
+     * Since 2026-10-10 an agent representing nobody keeps reading it too, so nothing on
+     * this row is refused - it nets a company gaining an action and nothing else.
      *
      * No correction and no resubmission, because there is nothing anybody may correct.
      */
-    test('Verify that the Agent and the Importer can read but not edit a generated EIDR', { tag: ['@auth', '@authorisation'] }, async ({
-        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
-        declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
+    test('Verify that the Agent and the Importer can read but not edit a generated EIDR', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        raiseMovementForGmrThroughApiFlow, declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('Everybody reads the generated EIDR, nobody may change it');
 
-        await ReportLog.step('Agent declares an ENS-EIDR and submits it', async () => {
-            await createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensEidrDeclaration(testInfo));
+        await ReportLog.step('Agent declares an ENS-EIDR through the Trader API and opens it in the portal', async () => {
+            const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
+                .raiseEligibleMovementThroughTraderApi({ journey: eidrGmrJourney(GMR_MOVEMENT.ACCOMPANIED) });
 
-            await consignmentOverviewFlow.goToConsignmentOverview();
-            await consignmentOverviewFlow.submitConsignment();
-            await movementOverviewFlow.waitForSubmittedMovementOverview();
+            await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
         });
 
-        // No Trader Input Required gate here, unlike the tests above. A generated EIDR
-        // transitions asynchronously and has been seen both at "Trader Input Required"
-        // and at "Authorised" at this point, so pinning either would flake - and the
-        // questions below do not depend on which it reached.
+        // The Trader API flow authorises the movement through ICS2 and waits for the EIDR
+        // to be authorised, so the record is read in a settled state.
         const eidr = await declarationAccessFlow.locateEidrConsignmentRecords();
 
         const eidrCheck = {
@@ -536,25 +517,24 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
      * is asked about a GMR at all. Its own test for the same reason: a service that
      * refuses to create a GMR here should cost a GMR result, not a declaration one.
      */
-    test('Verify that the Agent that made the movement holds its GMR, and the Importer may only read it', { tag: ['@auth', '@authorisation'] }, async ({
-        createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow,
+    test('Verify that the Agent that made the movement holds its GMR, and the Importer and the Haulier named as carrier may only read it', { tag: ['@regression', '@auth', '@authorisation'], lock: lockWhenSingleAccount(COMPANY_PROFILE.HAULIER) }, async ({
+        raiseMovementForGmrThroughApiFlow, createAndSubmitGmrFlow,
         declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
+        test.skip(
+            !isProfileConfigured(COMPANY_PROFILE.HAULIER),
+            profileMissingReason(COMPANY_PROFILE.HAULIER)
+        );
         await ReportLog.setStory('The GMR belongs to the account that made the movement');
 
-        await ReportLog.step('Agent declares an ENS-SFD and gets it accepted', async () => {
-            // The journey flow, accepted rather than rejected - see the haulier GMR test
-            // for why a GMR needs an SFD at "Awaiting arrival".
-            await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-                testInfo,
-                url: BASE_URL,
-                movementOverrides: {
-                    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-                },
-                goodsItemOverrides: {
-                    documentReferences: ensSfdGoodsDocuments(),
-                },
-            });
+        const consignmentReference = await ReportLog.step('Agent declares an ENS-SFD with the Haulier as carrier through the Trader API, gets it accepted and opens it in the portal', async () => {
+            // Accepted rather than rejected - see the haulier GMR test for why a GMR needs
+            // an SFD at "Awaiting arrival".
+            const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
+                .raiseEligibleMovementThroughTraderApi({ journey: withHaulierAsCarrier(sfdGmrJourney(GMR_MOVEMENT.ACCOMPANIED)) });
+
+            await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
+            return consignmentReference;
         });
 
         await ReportLog.step('Agent creates and submits a GMR for that movement', () =>
@@ -572,9 +552,9 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             recordActions: [],
         };
 
-        await ReportLog.step('Agent on its own account and Importer on its own login - check what each is offered', () =>
+        await ReportLog.step('Agent on its own account, Importer and Haulier on their own logins - check what each is offered', () =>
             checkAuthorityFlow(MOVEMENT_GMR_AUTHORITY.gmr, {
-                ...gmrCheck, parties: ['agent', 'importer'],
+                ...gmrCheck, reference: consignmentReference, parties: ['agent', 'importer', 'haulier'],
             })
         );
 
@@ -616,27 +596,17 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
      * "this company may edit it" can only be told apart from "nobody may" while the
      * declaration is still waiting on the trader.
      */
-    test('Verify that the Agent representing the Importer can correct and resubmit a rejected standalone IMMI', { tag: ['@auth', '@authorisation'] }, async ({
-        createAndSubmitImmiStandaloneFlow, declarationAccessFlow, consignmentOverviewFlow,
+    test('Verify that the Agent representing the Importer can correct and resubmit a rejected standalone IMMI', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        declareStandaloneThroughApiFlow, declarationAccessFlow, consignmentOverviewFlow,
         goodsOverviewFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('Standalone IMMI - the creating agent corrects it and puts it back in');
 
         const immi = await ReportLog.step('Agent representing the Importer declares a standalone IMMI - expect CDS to reject it', async () => {
-            await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
-                testInfo,
-                url: BASE_URL,
-                consignmentOverrides: {
-                    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-                    representationType: REPRESENTATION_TYPE.DIRECT,
-                },
-                goodsItemOverrides: immiStandaloneGoodsItem(immiStandaloneRejectedByCds()),
-                expectedStatusKey: 'status.traderInputRequired',
-            });
+            const reference = await declareStandaloneThroughApiFlow
+                .declareAndSubmitImmiStandalone(rejectedImmiStandaloneForImporter(), DECLARATION_STATUS.TRADER_INPUT_REQUIRED);
 
-            // Submitting leaves the browser on the consignment overview, which is the
-            // record itself here - a standalone declaration has no movement above it.
-            return declarationAccessFlow.locateRecordsHere();
+            return declarationAccessFlow.locateDeclaration(BASE_URL, testInfo, reference);
         });
 
         const immiCheck = {
@@ -651,25 +621,23 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             })
         );
 
-        await checkRefusedOnceRepresentationEnds(
+        await checkOnceRepresentationEnds(
             representTraderFlow, checkAuthorityFlow, STANDALONE_AUTHORITY.createdByThisAgent, immiCheck,
-            'it is refused the record it just made',
+            'what it keeps of the record it just made',
         );
 
-        await ReportLog.step('Agent representing the Importer declares the missing transport document - expect CDS to accept it', async () => {
+        await ReportLog.step('Agent representing the Importer removes the extra additional procedure code - expect CDS to accept it', async () => {
             // Everything above only observed a screen. Full is a claim about the service
             // ACCEPTING a change, so the agent goes on to make one: the correction undoes
-            // the lever exactly, declaring the transport document it left out.
+            // the lever exactly, removing the extra additional procedure code it added.
             //
-            // Representing again first, because the refusal check above gave it up - and a
-            // company the service will not show the record to cannot correct it either.
+            // Representing again first, because the check above gave the representation up.
             await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
 
             await declarationAccessFlow.openRecord(immi.goodsItem!); // NOSONAR - strictNullChecks makes this required; Sonar analyses without our tsconfig.
-            await goodsOverviewFlow.declareDocumentReferences([immiStandaloneTransportDocument()]);
+            await goodsOverviewFlow.removeAdditionalProcedureCode(IMMI_STANDALONE_REFUSED_PROCEDURE_CODE);
 
-            await consignmentOverviewFlow.goToConsignmentOverview();
-            await consignmentOverviewFlow.submitConsignment();
+            await consignmentOverviewFlow.resubmitConsignment();
 
             // Status, not MRN: a rejected standalone already carries one, so an MRN here
             // would prove nothing. Leaving "Trader Input Required" says CDS took it.
@@ -691,24 +659,16 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
      * The Agent still CREATES it, because that is the situation the rule is about - a
      * standalone declaration made on the importer's behalf, not one the importer made.
      */
-    test('Verify that the Importer, on its own login, can correct and resubmit a rejected standalone IMMI the Agent created for it', { tag: ['@auth', '@authorisation'] }, async ({
-        createAndSubmitImmiStandaloneFlow, declarationAccessFlow, checkAuthorityFlow,
+    test('Verify that the Importer, on its own login, can correct and resubmit a rejected standalone IMMI the Agent created for it', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        declareStandaloneThroughApiFlow, declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('Standalone IMMI - the importer corrects it on its own login');
 
         const immi = await ReportLog.step('Agent representing the Importer declares a standalone IMMI - expect CDS to reject it', async () => {
-            await createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
-                testInfo,
-                url: BASE_URL,
-                consignmentOverrides: {
-                    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-                    representationType: REPRESENTATION_TYPE.DIRECT,
-                },
-                goodsItemOverrides: immiStandaloneGoodsItem(immiStandaloneRejectedByCds()),
-                expectedStatusKey: 'status.traderInputRequired',
-            });
+            const reference = await declareStandaloneThroughApiFlow
+                .declareAndSubmitImmiStandalone(rejectedImmiStandaloneForImporter(), DECLARATION_STATUS.TRADER_INPUT_REQUIRED);
 
-            return declarationAccessFlow.locateRecordsHere();
+            return declarationAccessFlow.locateDeclaration(BASE_URL, testInfo, reference);
         });
 
         // The window is kept: the Importer is about to use what it was just shown.
@@ -722,14 +682,13 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             })
         );
 
-        await ReportLog.step('Importer declares the missing transport document on its own login - expect CDS to accept it', async () => {
+        await ReportLog.step('Importer removes the extra additional procedure code on its own login - expect CDS to accept it', async () => {
             // A level deeper than a consignment correction: an IMMI is refused over its
             // GOODS ITEM documents, so the second session works in that item's tabs.
             await importer!.declarations.openRecord(immi.goodsItem!); // NOSONAR - strictNullChecks makes this required; Sonar analyses without our tsconfig.
-            await importer!.goods.declareDocumentReferences([immiStandaloneTransportDocument()]);
+            await importer!.goods.removeAdditionalProcedureCode(IMMI_STANDALONE_REFUSED_PROCEDURE_CODE);
 
-            await importer!.consignment.goToConsignmentOverview();
-            await importer!.consignment.submitConsignment();
+            await importer!.consignment.resubmitConsignment();
 
             await importer!.declarations
                 .verifyCorrectionAcceptedByCds(immi.consignment, 'status.awaitingArrival');
@@ -743,7 +702,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
      * is arranged on the consignment instead - a holder of authorisation naming a party
      * that does not hold it, which is the ENS-SFD lever and the same underlying rule.
      */
-    test('Verify that the Agent representing the Importer can correct and resubmit a rejected standalone SFD', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent representing the Importer can correct and resubmit a rejected standalone SFD', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
         createAndSubmitSfdStandaloneFlow, declarationAccessFlow, consignmentOverviewFlow,
         representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
@@ -751,18 +710,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
 
         const sfd = await ReportLog.step('Agent representing the Importer declares a standalone SFD - expect CDS to reject it', async () => {
             await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-                testInfo,
-                url: BASE_URL,
-                consignmentOverrides: {
-                    // The Agent is representing here, so the wizard asks how. Left
-                    // unanswered the journey stops on "Representation information"
-                    // before it ever reaches the goods item - the IMMI journeys in this
-                    // describe have always said it, these two had not.
-                    representationType: REPRESENTATION_TYPE.DIRECT,
-                    isControlledGoods: true,
-                    holdersOfAuthorisation: [sfdStandaloneRejectedByCds()],
-                },
-                goodsItemOverrides: sfdStandaloneGoodsItem(),
+                ...rejectedSfdStandaloneForImporter(testInfo),
                 expectedStatusKey: 'status.traderInputRequired',
             });
 
@@ -778,13 +726,13 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             })
         );
 
-        await checkRefusedOnceRepresentationEnds(
+        await checkOnceRepresentationEnds(
             representTraderFlow, checkAuthorityFlow, STANDALONE_AUTHORITY.createdByThisAgent, sfdCheck,
-            'it is refused the record it just made',
+            'what it keeps of the record it just made',
         );
 
         await ReportLog.step('Agent representing the Importer removes the authorisation - expect CDS to accept it', async () => {
-            // Representing again first, because the refusal check above gave it up.
+            // Representing again first, because the check above gave the representation up.
             await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
 
             // The Excise Warehouse authorisation is not a wrong value to edit - it is a
@@ -794,8 +742,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
                 AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW
             );
 
-            await consignmentOverviewFlow.goToConsignmentOverview();
-            await consignmentOverviewFlow.submitConsignment();
+            await consignmentOverviewFlow.resubmitConsignment();
 
             await declarationAccessFlow
                 .verifyCorrectionAcceptedByCds(sfd.consignment, 'status.awaitingArrival');
@@ -809,25 +756,14 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
      * A declaration of its own: a rejection can be corrected once, so the agent's route
      * and the company's route cannot share a record.
      */
-    test('Verify that the Importer, on its own login, can correct and resubmit a rejected standalone SFD the Agent created for it', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Importer, on its own login, can correct and resubmit a rejected standalone SFD the Agent created for it', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
         createAndSubmitSfdStandaloneFlow, declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('Standalone SFD - the importer corrects it on its own login');
 
         const sfd = await ReportLog.step('Agent representing the Importer declares a standalone SFD - expect CDS to reject it', async () => {
             await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
-                testInfo,
-                url: BASE_URL,
-                consignmentOverrides: {
-                    // The Agent is representing here, so the wizard asks how. Left
-                    // unanswered the journey stops on "Representation information"
-                    // before it ever reaches the goods item - the IMMI journeys in this
-                    // describe have always said it, these two had not.
-                    representationType: REPRESENTATION_TYPE.DIRECT,
-                    isControlledGoods: true,
-                    holdersOfAuthorisation: [sfdStandaloneRejectedByCds()],
-                },
-                goodsItemOverrides: sfdStandaloneGoodsItem(),
+                ...rejectedSfdStandaloneForImporter(testInfo),
                 expectedStatusKey: 'status.traderInputRequired',
             });
 
@@ -849,8 +785,7 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
                 AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW
             );
 
-            await importer!.consignment.goToConsignmentOverview();
-            await importer!.consignment.submitConsignment();
+            await importer!.consignment.resubmitConsignment();
 
             await importer!.declarations
                 .verifyCorrectionAcceptedByCds(sfd.consignment, 'status.awaitingArrival');
@@ -862,14 +797,14 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
      *
      * No lever, because there is nothing to arrange: an EIDR is authorised outright and
      * never waits on the trader, so it has no state in which the service offers anybody
-     * an action. What can still fail for the right reason is the refusal - the account
-     * that made it is shut out the moment it stops acting for the importer.
+     * a change. Since 2026-10-11 it does offer Cancel, to all three parties alike, so
+     * that action is what tells Full apart from a screen that rendered nothing.
      */
-    test('Verify that the Agent representing the Importer and the Importer can read but not edit an authorised standalone EIDR', { tag: ['@auth', '@authorisation'] }, async ({
+    test('Verify that the Agent representing the Importer and the Importer can cancel but not edit an authorised standalone EIDR', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
         createAndSubmitSfdStandaloneFlow, declarationAccessFlow,
         representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
-        await ReportLog.setStory('Standalone EIDR - everybody reads it, nobody may change it');
+        await ReportLog.setStory('Standalone EIDR - nobody may change it, everybody may cancel it');
 
         const eidr = await ReportLog.step('Agent representing the Importer declares uncontrolled goods - expect an EIDR back', async () => {
             await createAndSubmitSfdStandaloneFlow.completeSfdStandaloneFlow({
@@ -891,28 +826,29 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             what: 'the standalone EIDR',
             records: eidr,
             tabs: IMMI_EIDR_DECLARATION_TABS,
+            settled: true,
             recordActions: [CONSIGNMENT_ACTION.CANCEL],
         };
 
         await ReportLog.step('Agent representing the Importer and Importer on its own login - check what each is offered', () =>
-            checkAuthorityFlow(STANDALONE_AUTHORITY.createdByThisAgent, {
+            checkAuthorityFlow(STANDALONE_AUTHORITY.authorisedEidr, {
                 ...eidrCheck, parties: ['agentAsImporter', 'importer'],
             })
         );
 
-        await checkRefusedOnceRepresentationEnds(
-            representTraderFlow, checkAuthorityFlow, STANDALONE_AUTHORITY.createdByThisAgent, eidrCheck,
-            'it is refused the record it just made',
+        await checkOnceRepresentationEnds(
+            representTraderFlow, checkAuthorityFlow, STANDALONE_AUTHORITY.authorisedEidr, eidrCheck,
+            'what it keeps of the record it just made',
         );
     });
 
 
-    test('Verify that an Agent company cannot reach a draft standalone declaration created by a different Agent company', { tag: ['@auth', '@authorisation', '@single-account'] }, async ({
+    test('Verify that an Agent company cannot reach a draft standalone declaration created by a different Agent company', { tag: ['@regression', '@auth', '@authorisation', '@single-account'], lock: lockWhenSingleAccount(COMPANY_PROFILE.AGENT_B) }, async ({
         createDraftSfdStandaloneFlow, declarationAccessFlow, checkAuthorityFlow,
     }, testInfo) => {
         test.skip(
             !isProfileConfigured(COMPANY_PROFILE.AGENT_B),
-            'No AGENT_B login in this environment - see defaultAuthProfiles in src/auth/credentials.ts'
+            profileMissingReason(COMPANY_PROFILE.AGENT_B)
         );
         await ReportLog.setStory('Standalone draft - a second agent company reaches nothing of it');
 
@@ -920,7 +856,10 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
             const { consignmentReference } = await createDraftSfdStandaloneFlow.createDraftSfdStandalone({
                 testInfo,
                 url: BASE_URL,
-                consignmentOverrides: { isControlledGoods: true },
+                consignmentOverrides: {
+                    representationType: REPRESENTATION_TYPE.DIRECT,
+                    isControlledGoods: true,
+                },
                 goodsItemOverrides: sfdStandaloneGoodsItem(),
             });
 
@@ -950,29 +889,31 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
  * point, so splitting it would mean building three rejected declarations to compare
  * answers that must be seconds apart on the same record.
  */
-test.describe('ENS Integrated declaration authority - Agent represents the Haulier', () => {
+test.describe('ENS Integrated declaration authority - Agent represents the Haulier', { lock: lockWhenSingleAccount(COMPANY_PROFILE.HAULIER) }, () => {
     test.use({ authProfile: COMPANY_PROFILE.AGENT });
 
     test.skip(
         !isProfileConfigured(COMPANY_PROFILE.HAULIER),
-        'No HAULIER login in this environment - see ON_DEMAND_PROFILES in src/auth/credentials.ts'
+        profileMissingReason(COMPANY_PROFILE.HAULIER)
     );
 
     test.beforeEach(async () => {
         await ReportLog.setFeature('Representation authority');
     });
 
-    test('Verify that the Agent representing the Haulier holds the declaration it submitted, and is refused it once it stops representing', { tag: ['@auth', '@authorisation'] }, async ({
-        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
+    test('Verify that the Agent representing the Haulier holds the declaration it submitted, and keeps it once it stops representing', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        declareEnsThroughApiFlow, consignmentOverviewFlow, movementOverviewFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
-        await ReportLog.setStory('Agent represents the Haulier - full control while it does, nothing once it does not');
+        await ReportLog.setStory('Agent represents the Haulier - full control while it does, and still once it does not');
 
         const draft = await ReportLog.step('Agent representing the Haulier declares an ENS-SFD and leaves it in draft', async () => {
             await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
 
-            return createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensSfdDeclaration(testInfo, { ...rejectedByCds(), representationType: REPRESENTATION_TYPE.DIRECT }));
+            return declareEnsThroughApiFlow.declareDraft({
+                ...ensSfdDeclaration(testInfo, { ...rejectedByCds(), representationType: REPRESENTATION_TYPE.DIRECT }),
+                representingCompanyId: companyIdOf(COMPANY_PROFILE.HAULIER),
+            });
         });
 
         // The ENS is asked while it is still a DRAFT, and stopping here before submitting
@@ -982,9 +923,7 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
         // when the agent-as-haulier reached the accepted ENS and was offered nothing.
         const ensCheck = {
             what: 'the draft ENS consignment declared for the Haulier',
-            records: await declarationAccessFlow.locateRecordsAt(
-                await declarationAccessFlow.openDeclarationFromSearch(draft.consignmentReference)
-            ),
+            records: await declarationAccessFlow.locateDeclaration(BASE_URL, testInfo, draft.consignmentReference),
             reference: draft.consignmentReference,
         };
 
@@ -994,9 +933,9 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
             })
         );
 
-        await checkRefusedOnceRepresentationEnds(
+        await checkOnceRepresentationEnds(
             representTraderFlow, checkAuthorityFlow, REPRESENTED_HAULIER_AUTHORITY.ensConsignment, ensCheck,
-            'the draft is gone from it',
+            'what it keeps of the draft',
         );
 
         await ReportLog.step('Representing the Haulier again, submit it - expect CDS to reject the SFD', async () => {
@@ -1024,9 +963,9 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
             })
         );
 
-        await checkRefusedOnceRepresentationEnds(
+        await checkOnceRepresentationEnds(
             representTraderFlow, checkAuthorityFlow, REPRESENTED_HAULIER_AUTHORITY.rejectedGeneratedConsignment, sfdCheck,
-            'the SFD is gone from it too',
+            'what it keeps of the SFD',
         );
     });
 
@@ -1035,8 +974,8 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
      * the SFD above for the reason the Agent-as-itself pair gives: the two are generated
      * by different journeys, so the rule holding across both is a finding.
      */
-    test('Verify that the Agent representing the Haulier holds the IMMI it submitted, and is refused it once it stops representing', { tag: ['@auth', '@authorisation'] }, async ({
-        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
+    test('Verify that the Agent representing the Haulier holds the IMMI it submitted, and keeps it once it stops representing', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        declareEnsThroughApiFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('Agent represents the Haulier - the generated IMMI follows the same rule as the SFD');
@@ -1044,13 +983,12 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
         await ReportLog.step('Agent representing the Haulier declares an ENS-IMMI - expect CDS to reject the IMMI', async () => {
             await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
 
-            await createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensImmiDeclaration(testInfo, immiRejectedByCds(), { representationType: REPRESENTATION_TYPE.DIRECT }));
+            const { consignmentReference } = await declareEnsThroughApiFlow.declareAndSubmitExpectingRefusal({
+                ...ensImmiDeclaration(testInfo, immiRejectedByCds(), { representationType: REPRESENTATION_TYPE.DIRECT }),
+                representingCompanyId: companyIdOf(COMPANY_PROFILE.HAULIER),
+            }, 'IMMI');
 
-            await consignmentOverviewFlow.goToConsignmentOverview();
-            await consignmentOverviewFlow.submitConsignment();
-            await movementOverviewFlow.waitForSubmittedMovementOverview();
-            await movementOverviewFlow.verifyImmiConsignmentTraderInputRequired();
+            await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
         });
 
         const immi = await declarationAccessFlow.locateImmiConsignmentRecords();
@@ -1066,9 +1004,9 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
             })
         );
 
-        await checkRefusedOnceRepresentationEnds(
+        await checkOnceRepresentationEnds(
             representTraderFlow, checkAuthorityFlow, REPRESENTED_HAULIER_AUTHORITY.rejectedGeneratedConsignment, immiCheck,
-            'the IMMI is gone from it',
+            'what it keeps of the IMMI',
         );
     });
 
@@ -1076,39 +1014,36 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
      * The EIDR reached through a haulier - the one generated declaration nobody may edit.
      *
      * No rejection is arranged and no correction follows, because there is nothing anybody
-     * may correct. What is left is the half that still measures something: the account
-     * that gave its representation up is shut out of a record the other two are reading.
+     * may correct. Since 2026-10-10 the account that gave its representation up keeps
+     * reading it too, so the row nets a company gaining an action and nothing else.
      */
-    test('Verify that the Agent representing the Haulier can read the generated EIDR, and is refused it once it stops representing', { tag: ['@auth', '@authorisation'] }, async ({
-        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow,
-        declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
+    test('Verify that the Agent representing the Haulier can read the generated EIDR, and still reads it once it stops representing', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        raiseMovementForGmrThroughApiFlow, declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('Agent represents the Haulier - everybody reads the generated EIDR, nobody may change it');
 
-        await ReportLog.step('Agent representing the Haulier declares an ENS-EIDR and submits it', async () => {
+        await ReportLog.step('Agent representing the Haulier declares an ENS-EIDR through the Trader API and opens it in the portal', async () => {
             await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
 
-            await createDraftEnsDeclarationFlow
-                .createDraftEnsDeclaration(ensEidrDeclaration(testInfo, { representationType: REPRESENTATION_TYPE.DIRECT }));
+            const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
+                .raiseEligibleMovementThroughTraderApi({
+                    journey: eidrGmrJourney(GMR_MOVEMENT.ACCOMPANIED),
+                    representingCompanyId: companyIdOf(COMPANY_PROFILE.HAULIER),
+                });
 
-            await consignmentOverviewFlow.goToConsignmentOverview();
-            await consignmentOverviewFlow.submitConsignment();
-            await movementOverviewFlow.waitForSubmittedMovementOverview();
+            await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
         });
 
-        // No Trader Input Required gate, for the reason the Agent-as-itself EIDR test
-        // gives: a generated EIDR settles asynchronously and has been seen at both
-        // statuses here, and nothing below depends on which it reached.
+        // Settled before it is read, for the reason the Agent-as-itself EIDR test gives.
         const eidr = await declarationAccessFlow.locateEidrConsignmentRecords();
         const eidrCheck = {
             what: 'the EIDR generated for the Haulier',
             records: eidr,
             tabs: IMMI_EIDR_DECLARATION_TABS,
             unfalsifiableBecause:
-                'no company may edit a generated EIDR, so no party on this row holds Full. '
-                + 'The contrast it does carry is reach against refusal - the account '
-                + 'representing nobody is shut out of the record the other two read - which '
-                + 'assertFalsifiable does not count',
+                'no company may edit a generated EIDR, so no party on this row holds Full, '
+                + 'and since 2026-10-10 none is refused it either - what is left catches a '
+                + 'company gaining an action, not a screen that renders nothing',
         };
 
         await ReportLog.step('Agent still representing the Haulier, and the Haulier itself - check what each is offered', () =>
@@ -1117,9 +1052,9 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
             })
         );
 
-        await checkRefusedOnceRepresentationEnds(
+        await checkOnceRepresentationEnds(
             representTraderFlow, checkAuthorityFlow, REPRESENTED_HAULIER_AUTHORITY.generatedEidrConsignment, eidrCheck,
-            'the EIDR is gone from it',
+            'what it keeps of the EIDR',
         );
     });
 
@@ -1135,28 +1070,22 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
      * not offering the change links Full is read from. Read the step titles before
      * concluding which.
      */
-    test('Verify that the Agent representing the Haulier holds the GMR it created, and is refused it once it stops representing', { tag: ['@auth', '@authorisation'] }, async ({
-        createAndSubmitEnsDeclarationFlow, createAndSubmitGmrFlow,
+    test('Verify that the Agent representing the Haulier holds the GMR it created, and keeps it once it stops representing', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        raiseMovementForGmrThroughApiFlow, createAndSubmitGmrFlow,
         declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
     }, testInfo) => {
         await ReportLog.setStory('Agent represents the Haulier - the GMR follows the representation like the declaration does');
 
-        await ReportLog.step('Agent representing the Haulier declares an ENS-SFD and gets it accepted', async () => {
+        await ReportLog.step('Agent representing the Haulier declares an ENS-SFD through the Trader API, gets it accepted and opens it in the portal', async () => {
             await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
 
-            await createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
-                testInfo,
-                url: BASE_URL,
-                movementOverrides: {
-                    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-                },
-                consignmentOverrides: {
-                    representationType: REPRESENTATION_TYPE.DIRECT,
-                },
-                goodsItemOverrides: {
-                    documentReferences: ensSfdGoodsDocuments(),
-                },
-            });
+            const { consignmentReference } = await raiseMovementForGmrThroughApiFlow
+                .raiseEligibleMovementThroughTraderApi({
+                    journey: sfdGmrJourney(GMR_MOVEMENT.ACCOMPANIED),
+                    representingCompanyId: companyIdOf(COMPANY_PROFILE.HAULIER),
+                });
+
+            await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
         });
 
         // The GMR is about the vehicle rather than the goods, but it cannot exist before
@@ -1201,9 +1130,168 @@ test.describe('ENS Integrated declaration authority - Agent represents the Hauli
             );
         });
 
-        await checkRefusedOnceRepresentationEnds(
+        await checkOnceRepresentationEnds(
             representTraderFlow, checkAuthorityFlow, REPRESENTED_HAULIER_AUTHORITY.gmr, gmrCheck,
-            'the GMR is gone from it',
+            'what it keeps of the GMR',
         );
+    });
+});
+
+
+test.describe('Supplementary declaration authority - Agent declares the ENS-SFD as itself', () => {
+    test.use({ authProfile: COMPANY_PROFILE.AGENT });
+
+    test.describe.configure({ timeout: 1_200_000 });
+
+    test.beforeEach(async () => {
+        await ReportLog.setFeature('Representation authority');
+    });
+
+    test('Verify that the Agent, the Importer and the Agent representing the Importer hold a draft supplementary declaration, and the Haulier named as carrier is refused it', { tag: ['@regression', '@auth', '@authorisation'], lock: lockWhenSingleAccount(COMPANY_PROFILE.HAULIER) }, async ({
+        generateSdDraftThroughApiFlow, completeAndSubmitSupplementaryDeclarationFlow,
+        declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
+    }, testInfo) => {
+        await ReportLog.setStory('Supplementary declaration - who may change a draft');
+
+        const { reference, sd } = await ReportLog.step('Agent raises a supplementary declaration with the Haulier as carrier through the Trader API and opens it', async () => {
+            const source = await generateSdDraftThroughApiFlow.raiseSdDraft({ declaration: haulierAsCarrier({}) });
+            const sdReference = await completeAndSubmitSupplementaryDeclarationFlow
+                .openSupplementaryDeclaration({ testInfo, url: BASE_URL, ...source });
+
+            return { reference: sdReference, sd: await declarationAccessFlow.locateSupplementaryDeclarationRecords() };
+        });
+
+        const sdCheck = {
+            what: 'the draft supplementary declaration',
+            records: sd,
+            tabs: SUPPLEMENTARY_DECLARATION_TABS,
+            reference,
+        };
+
+        await ReportLog.step('Agent on its own account, Importer and Haulier on their own logins - check what each is offered', () =>
+            checkAuthorityFlow(SUPPLEMENTARY_DECLARATION_AUTHORITY.draft, {
+                ...sdCheck, parties: ['agent', 'importer', 'haulier'],
+            })
+        );
+
+        await ReportLog.step('The same account representing the Importer - check what a representation confers', async () => {
+            await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
+            await checkAuthorityFlow(SUPPLEMENTARY_DECLARATION_AUTHORITY.draft, {
+                ...sdCheck, parties: ['agentAsImporter'],
+            });
+        });
+
+        await checkOnceRepresentationEnds(
+            representTraderFlow, checkAuthorityFlow, SUPPLEMENTARY_DECLARATION_AUTHORITY.draft, sdCheck,
+            'what it keeps of the supplementary declaration',
+        );
+    });
+
+    test('Verify that the Agent representing the Importer can correct and resubmit a supplementary declaration handed back for input, and the Haulier named as carrier is refused it', { tag: ['@regression', '@auth', '@authorisation'], lock: lockWhenSingleAccount(COMPANY_PROFILE.HAULIER) }, async ({
+        generateSdDraftThroughApiFlow, completeAndSubmitSupplementaryDeclarationFlow,
+        declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
+    }, testInfo) => {
+        await ReportLog.setStory('Supplementary declaration - the Agent acting for the Importer corrects it');
+
+        const source = await generateSdDraftThroughApiFlow.raiseSdDraft({ declaration: haulierAsCarrier({}) });
+
+        const sd = await ReportLog.step('Agent submits the draft unanswered - expect it to be handed back', async () => {
+            await completeAndSubmitSupplementaryDeclarationFlow
+                .submitSupplementaryDeclarationExpectingRejection({ testInfo, url: BASE_URL, ...source });
+            return declarationAccessFlow.locateSupplementaryDeclarationRecords();
+        });
+
+        const sdCheck = {
+            what: 'the supplementary declaration handed back for input',
+            records: sd,
+            tabs: SUPPLEMENTARY_DECLARATION_TABS,
+        };
+
+        await ReportLog.step('Agent on its own account, Importer and Haulier on their own logins - check what each is offered', () =>
+            checkAuthorityFlow(SUPPLEMENTARY_DECLARATION_AUTHORITY.traderInputRequired, {
+                ...sdCheck, parties: ['agent', 'importer', 'haulier'],
+            })
+        );
+
+        await ReportLog.step('Agent representing the Importer answers what was missing and resubmits - expect it accepted', async () => {
+            await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
+            await checkAuthorityFlow(SUPPLEMENTARY_DECLARATION_AUTHORITY.traderInputRequired, {
+                ...sdCheck, parties: ['agentAsImporter'],
+            });
+            await completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
+                testInfo, url: BASE_URL, ...source,
+                overrides: declaredThroughTraderApi(traderDefermentSupplementaryDeclaration()),
+            });
+        });
+    });
+
+    test('Verify that the Importer, on its own login, can correct and resubmit a supplementary declaration the Agent raised', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        generateSdDraftThroughApiFlow, completeAndSubmitSupplementaryDeclarationFlow,
+        declarationAccessFlow, checkAuthorityFlow,
+    }, testInfo) => {
+        await ReportLog.setStory('Supplementary declaration - the Importer corrects it on its own login');
+
+        const source = await generateSdDraftThroughApiFlow.raiseSdDraft();
+
+        const sd = await ReportLog.step('Agent submits the draft unanswered - expect it to be handed back', async () => {
+            await completeAndSubmitSupplementaryDeclarationFlow
+                .submitSupplementaryDeclarationExpectingRejection({ testInfo, url: BASE_URL, ...source });
+            return declarationAccessFlow.locateSupplementaryDeclarationRecords();
+        });
+
+        const { importer } = await ReportLog.step('Importer on its own login - check what it is offered on the declaration the Agent raised', () =>
+            checkAuthorityFlow(SUPPLEMENTARY_DECLARATION_AUTHORITY.traderInputRequired, {
+                what: 'the supplementary declaration handed back for input',
+                records: sd,
+                tabs: SUPPLEMENTARY_DECLARATION_TABS,
+                parties: ['importer'],
+                keepOpen: ['importer'],
+            })
+        );
+
+        await ReportLog.step('Importer answers what was missing on its own login and resubmits - expect it accepted', async () => {
+            await importer!.supplementaryDeclaration.completeSupplementaryDeclaration({
+                testInfo, url: BASE_URL, ...source,
+                overrides: declaredThroughTraderApi(traderDefermentSupplementaryDeclaration()),
+            });
+            await importer!.close();
+        });
+    });
+
+    test('Verify that the Agent representing the Haulier and the Haulier are refused a supplementary declaration raised from an ENS-SFD declared for the Haulier', { tag: ['@regression', '@auth', '@authorisation'], lock: lockWhenSingleAccount(COMPANY_PROFILE.HAULIER) }, async ({
+        generateSdDraftThroughApiFlow, completeAndSubmitSupplementaryDeclarationFlow,
+        declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
+    }, testInfo) => {
+        await ReportLog.setStory('Supplementary declaration - the Haulier path gives the Haulier nothing');
+
+        const { reference, sd } = await ReportLog.step('Agent declares the ENS-SFD for the Haulier through the Trader API and opens the supplementary declaration', async () => {
+            const source = await generateSdDraftThroughApiFlow.raiseSdDraft({
+                declaration: { representingCompanyId: companyIdOf(COMPANY_PROFILE.HAULIER) },
+            });
+            const sdReference = await completeAndSubmitSupplementaryDeclarationFlow
+                .openSupplementaryDeclaration({ testInfo, url: BASE_URL, ...source });
+
+            return { reference: sdReference, sd: await declarationAccessFlow.locateSupplementaryDeclarationRecords() };
+        });
+
+        const sdCheck = {
+            what: 'the supplementary declaration raised for the Haulier',
+            records: sd,
+            tabs: SUPPLEMENTARY_DECLARATION_TABS,
+            reference,
+        };
+
+        await ReportLog.step('Agent representing nobody, Importer and Haulier on their own logins - check what each is offered', () =>
+            checkAuthorityFlow(SUPPLEMENTARY_DECLARATION_AUTHORITY.representedHaulier, {
+                ...sdCheck, parties: ['agentNotRepresenting', 'importer', 'haulier'],
+            })
+        );
+
+        await ReportLog.step('The same account representing the Haulier - check the representation takes the Haulier\'s identity', async () => {
+            await representTraderFlow.representTrader(HAULIER_COMPANY_NAME);
+            await checkAuthorityFlow(SUPPLEMENTARY_DECLARATION_AUTHORITY.representedHaulier, {
+                ...sdCheck, parties: ['agentAsHaulier'],
+            });
+        });
     });
 });

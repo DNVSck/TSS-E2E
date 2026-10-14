@@ -1,5 +1,6 @@
 import { APIRequestContext, APIResponse, errors } from '@playwright/test';
 import { StringUtil } from '../core/util/string-util';
+import { ServerErrorSink } from '../core/report/service-error-recorder';
 
 /** How much of a failing response body an error message quotes. */
 const ERROR_BODY_LIMIT = 500;
@@ -54,7 +55,10 @@ function relativeToBase(path: string): string {
  * directly rather than growing a wrapper here that adds nothing.
  */
 export abstract class BaseApiClient {
-    protected constructor(protected readonly request: APIRequestContext) { }
+    protected constructor(
+        protected readonly request: APIRequestContext,
+        private readonly serverErrors?: ServerErrorSink,
+    ) { }
 
     protected async post(
         path: string,
@@ -113,6 +117,11 @@ export abstract class BaseApiClient {
     private async assertSucceeded(method: string, path: string, response: APIResponse): Promise<void> {
         if (response.ok()) {
             return;
+        }
+        if (response.status() >= SERVER_ERROR_STATUS) {
+            this.serverErrors?.recordServerError({
+                who: this.constructor.name, method, status: response.status(), path,
+            });
         }
 
         throw new ApiResponseError(

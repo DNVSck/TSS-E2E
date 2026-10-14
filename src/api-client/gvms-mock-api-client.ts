@@ -1,6 +1,7 @@
 import { APIRequestContext } from '@playwright/test';
 import { createHmac } from 'node:crypto';
 import { BaseApiClient } from './base-api-client';
+import { ServerErrorSink } from '../core/report/service-error-recorder';
 
 /**
  * Where TSS listens for what GVMS has to say about a GMR. Owned here for the same
@@ -33,8 +34,12 @@ export class GvmsMockApiClient extends BaseApiClient {
      * environment cannot be pointed at another one, and this suite already keeps that
      * wiring in one place - see api-fixture.
      */
-    constructor(request: APIRequestContext, private readonly pushSecret: string) {
-        super(request);
+    constructor(
+        request: APIRequestContext,
+        private readonly pushSecret: string,
+        serverErrors?: ServerErrorSink,
+    ) {
+        super(request, serverErrors);
     }
 
     /**

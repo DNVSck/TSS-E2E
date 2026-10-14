@@ -9,6 +9,7 @@ import { IMPORTER_UKIMS } from '../../config/environment';
 import { documentReference, ensSfdGoodsDocuments } from './document-reference-data';
 import { holderOfAuthorisation } from './holder-of-authorisation-data';
 import { previousDocument } from './previous-document-data';
+import { haulierAsCarrier } from './movements-data';
 
 export type GmrDeclarationOverrides = Pick<
     EnsDeclarationOptions, 'movementOverrides' | 'consignmentOverrides' | 'goodsItemOverrides'
@@ -94,6 +95,11 @@ export const sfdGmrJourney = (movement: GmrMovement): GmrJourney => ({
     movement: movement.name,
     authorisesThroughIcs2: false,
     declaration: () => sfdDeclaration(movement.code),
+});
+
+export const withHaulierAsCarrier = (journey: GmrJourney): GmrJourney => ({
+    ...journey,
+    declaration: () => haulierAsCarrier(journey.declaration()),
 });
 
 export const immiGmrJourney = (movement: GmrMovement): GmrJourney => ({

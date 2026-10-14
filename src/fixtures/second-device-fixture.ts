@@ -5,6 +5,7 @@ import { SignInPage } from '../page-object/sign-in-page';
 import { SignInFlow } from '../flows/sign-in-flow';
 import { LocaleFixtureType, localeForProject } from './locale-fixture';
 import { NavigationBanner } from '../page-object/components/navigation-banner';
+import { ReportFixtureType } from './report-fixture';
 
 export type SecondDeviceFixtureType = {
     secondDevicePage: Page;
@@ -18,11 +19,11 @@ export type SecondDeviceFixtureType = {
 // LocaleFixtureType joins in so the second device's page objects can read the same
 // translated labels as the first device's - the sign-in screen is located by them.
 type ExtendParams = Parameters<
-    typeof test.extend<SecondDeviceFixtureType & LocaleFixtureType>
+    typeof test.extend<SecondDeviceFixtureType & LocaleFixtureType & ReportFixtureType>
 >;
 
 export const secondDeviceFixture: ExtendParams[0] = {
-    secondDevicePage: async ({ browser }, use, testInfo) => {
+    secondDevicePage: async ({ browser, serviceErrors }, use, testInfo) => {
         // Same rule as the other hand-built context: use.locale applies only to the one
         // the runner makes. Nothing this device reads is translated today - it asserts
         // on hrefs - but a second device browsing in a different language from the first
@@ -31,6 +32,7 @@ export const secondDeviceFixture: ExtendParams[0] = {
             storageState: { cookies: [], origins: [] },
             locale: localeForProject(testInfo.project),
         });
+        serviceErrors.watch(context, 'second device');
         const page = await context.newPage();
         await use(page);
         await context.close();

@@ -1,6 +1,8 @@
 import { APIRequestContext, APIResponse } from '@playwright/test';
 import { BaseApiClient } from './base-api-client';
+import { ServerErrorSink } from '../core/report/service-error-recorder';
 import { StringUtil } from '../core/util/string-util';
+import { ACT_AS_PARAM } from '../constant/trader-api/trader-api-request-constant';
 import {
     TRADER_API_SUCCESS_STATUS, TRADER_API_RESULT_ERROR,
 } from '../constant/trader-api/trader-api-response-constant';
@@ -27,8 +29,25 @@ export interface TraderApiResult {
  * no business touching.
  */
 export class TraderApiClient extends BaseApiClient {
-    constructor(request: APIRequestContext) {
-        super(request);
+    private representedCompanyId?: string;
+
+    constructor(request: APIRequestContext, serverErrors?: ServerErrorSink) {
+        super(request, serverErrors);
+    }
+
+    async whileRepresenting<T>(companyId: string | undefined, work: () => Promise<T>): Promise<T> {
+        if (!companyId) {
+            return work();
+        }
+
+        const previous = this.representedCompanyId;
+        this.representedCompanyId = companyId;
+
+        try {
+            return await work();
+        } finally {
+            this.representedCompanyId = previous;
+        }
     }
 
     async send<T extends TraderApiResult>(
@@ -36,11 +55,20 @@ export class TraderApiClient extends BaseApiClient {
         body: Record<string, unknown>,
         call: string
     ): Promise<T> {
-        return this.resultOf<T>(await this.post(path, body), call);
+        return this.resultOf<T>(await this.post(this.asRepresented(path), body), call);
     }
 
     async read<T extends TraderApiResult>(path: string, call: string): Promise<T> {
-        return this.resultOf<T>(await this.get(path), call);
+        return this.resultOf<T>(await this.get(this.asRepresented(path)), call);
+    }
+
+    private asRepresented(path: string): string {
+        if (!this.representedCompanyId) {
+            return path;
+        }
+
+        const separator = path.includes('?') ? '&' : '?';
+        return `${path}${separator}${ACT_AS_PARAM}=${encodeURIComponent(this.representedCompanyId)}`;
     }
 
     private async resultOf<T extends TraderApiResult>(

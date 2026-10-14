@@ -1,6 +1,7 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './base-page';
-import { clickLinkAndWaitForRoute } from '../helper/element-helper';
+import { clickLinkAndWaitForRoute, hrefsOf } from '../helper/element-helper';
+import { GOVUK } from './components/govuk-selectors';
 
 /** The list paints its results a beat after the route settles. */
 const RESULTS_TIMEOUT = 20_000;
@@ -34,11 +35,47 @@ function supplementaryReferenceFrom(href: string): string {
  */
 export class DeclarationOverviewPage extends BasePage {
     private readonly supplementaryDeclarationLinks: Locator;
+    private readonly searchAnswer: Locator;
+    private readonly resultLinks: Locator;
 
     constructor(page: Page) {
         super(page);
 
         this.supplementaryDeclarationLinks = page.locator("main a[href*='/supplementary-declaration/']");
+        this.searchAnswer = page.locator(`main ${GOVUK.SUMMARY_CARD.ROOT}, main ${GOVUK.INSET_TEXT}`);
+        // Each result card links to a declaration's own overview. Matched by route
+        // shape rather than the "View declaration" label, which is translated.
+        this.resultLinks = page.locator("main a[href$='/overview']");
+    }
+
+    /**
+     * Search for one declaration reference and return the routes of the results that
+     * carry it.
+     *
+     * Returns routes rather than a count so a caller can assert on WHICH declaration
+     * came back - and so an empty result is a list, not a zero that could equally
+     * mean the page never rendered.
+     */
+    async findDeclarationsByReference(reference: string): Promise<string[]> {
+        await this.searchByReference(reference);
+        await this.searchAnswer.first().waitFor({ state: 'visible', timeout: RESULTS_TIMEOUT });
+
+        const hrefs = await hrefsOf(this.resultLinks);
+        return hrefs.filter(href => href.includes(reference));
+    }
+
+    /**
+     * Open the searched-for declaration from its result card.
+     *
+     * The way back into a declaration once a test has navigated away to search for
+     * it - and the user's own route, which is the point: being able to open it from
+     * the list is part of what having access to it means.
+     */
+    async openDeclaration(reference: string): Promise<void> {
+        await clickLinkAndWaitForRoute(
+            this.page,
+            this.page.locator(`main a[href*='${reference}'][href$='/overview']`)
+        );
     }
 
     /**

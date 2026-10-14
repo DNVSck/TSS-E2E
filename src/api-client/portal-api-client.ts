@@ -1,5 +1,6 @@
 import { APIRequestContext } from '@playwright/test';
 import { BaseApiClient } from './base-api-client';
+import { ServerErrorSink } from '../core/report/service-error-recorder';
 
 /**
  * The Portal API's one client: it owns the connection, and nothing about any resource.
@@ -15,8 +16,8 @@ import { BaseApiClient } from './base-api-client';
  * is not a kind of HTTP client.
  */
 export class PortalApiClient extends BaseApiClient {
-    constructor(request: APIRequestContext) {
-        super(request);
+    constructor(request: APIRequestContext, serverErrors?: ServerErrorSink) {
+        super(request, serverErrors);
     }
 
     async read<T>(path: string): Promise<T> {

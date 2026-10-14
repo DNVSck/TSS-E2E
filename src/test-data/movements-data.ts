@@ -75,6 +75,11 @@ export const movement = (overrides?: Partial<MovementData>): MovementData => ({
     ...overrides,
 });
 
+export const haulierAsCarrier = <T extends { movementOverrides?: Partial<MovementData> }>(declaration: T): T => ({
+    ...declaration,
+    movementOverrides: { ...declaration.movementOverrides, carrierEori: HAULIER_EORI },
+});
+
 export const MOVEMENT_MAX_SCREEN_COVERAGE: Partial<MovementData> = {
     roleInThisMovement: ROLE_IN_MOVEMENT.NEITHER,
     isSamePlaceOfLoading: false,

@@ -284,6 +284,12 @@ export class GoodsOverviewFlow {
         });
     }
 
+    async removeAdditionalProcedureCode(code: string): Promise<void> {
+        await ReportLog.step(`Remove the "${code}" additional procedure code`, () =>
+            this.goodsOverviewPage.deleteAdditionalProcedureCode(code)
+        );
+    }
+
     async declareAdditionalProcedureCodes(codes: string[]): Promise<void> {
         if (codes.length === 0) {
             return;

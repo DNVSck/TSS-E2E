@@ -1,5 +1,4 @@
-import { GoodsData } from '../../goods-data';
-import { orNull, yesNo } from '../../../helper/api-payload-helper';
+import { PreviousDocumentPayload } from './consignment-payload';
 
 export type GoodsPayload = {
     consignment_number: string;
@@ -17,11 +16,11 @@ export type GoodsPayload = {
     controlled_goods: string;
     controlled_goods_type: string | null;
     commodity_code: string;
-    country_of_origin: string;
-    item_invoice_amount: number;
-    item_invoice_currency: string;
-    procedure_code: string;
-    additional_procedure_code: string;
+    country_of_origin: string | null;
+    item_invoice_amount: number | null;
+    item_invoice_currency: string | null;
+    procedure_code: string | null;
+    additional_procedure_code: string | null;
     taric_code: string | null;
     cus_code: string | null;
     national_additional_code: string | null;
@@ -29,37 +28,23 @@ export type GoodsPayload = {
     supplementary_units: string | null;
 };
 
-export function goodsPayload(
-    consignmentNumber: string,
-    goods: GoodsData,
-    overrides: Partial<GoodsPayload> = {}
-): GoodsPayload {
-    return {
-        consignment_number: consignmentNumber,
-        goods_id: null,
-        equipment_number: null,
-        un_dangerous_goods_code: null,
-        type_of_packages: goods.typeOfPackages,
-        number_of_packages: goods.numberOfPackages,
-        number_of_individual_pieces: orNull(goods.numberOfPieces),
-        package_marks: goods.shippingMarks,
-        gross_mass_kg: goods.grossMass,
-        net_mass_kg: orNull(goods.netMass),
-        goods_description: goods.goodsDescription,
-        invoice_number: orNull(goods.invoiceNumber),
-        controlled_goods: yesNo(goods.areGoodsControlled),
-        controlled_goods_type: null,
-        commodity_code: goods.commodityCode,
-        country_of_origin: goods.countryOfOrigin,
-        item_invoice_amount: Number(goods.itemPriceAmount),
-        item_invoice_currency: goods.itemCurrency,
-        procedure_code: goods.procedureCode,
-        additional_procedure_code: goods.additionalProcedureCode,
-        taric_code: orNull(goods.taricAdditionalCode),
-        cus_code: orNull(goods.cusCode),
-        national_additional_code: orNull(goods.nationalAdditionalCode),
-        ni_additional_information_codes: null,
-        supplementary_units: orNull(goods.supplementaryUnits),
-        ...overrides,
-    };
-}
+export type DocumentReferencePayload = {
+    op_type: string;
+    document_code: string;
+    document_status: string | null;
+    document_reference: string | null;
+};
+
+export type AdditionalProcedurePayload = {
+    op_type: string;
+    additional_procedure_code: string;
+};
+
+export type GoodsRecordsPayload = {
+    document_references: DocumentReferencePayload[];
+    detail_previous_document: PreviousDocumentPayload[];
+    additional_information: never[];
+    additional_procedures: AdditionalProcedurePayload[];
+};
+
+export type GoodsWithRecordsPayload = GoodsPayload & GoodsRecordsPayload;
