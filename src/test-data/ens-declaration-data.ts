@@ -14,6 +14,8 @@ import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { additionalInformation } from './additional-information-data';
 import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
+import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
+import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
 
 
 export const ensSfdDeclaration = (
@@ -147,5 +149,18 @@ export const ensEidrDeclaration = (
             previousDocument({ documentReference: '3XI352196303000-12345' })
         ],
         ...consignmentOverrides,
+    },
+});
+
+export const byMaritime = (declaration: EnsDeclarationOptions): EnsDeclarationOptions => ({
+    ...declaration,
+    movementOverrides: {
+        ...declaration.movementOverrides,
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.MARITIME,
+        portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+    },
+    consignmentOverrides: {
+        ...declaration.consignmentOverrides,
+        transportDocumentNumber: generateRandomTransportDocumentNumber('MARITIME'),
     },
 });
