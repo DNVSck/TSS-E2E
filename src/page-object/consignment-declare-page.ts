@@ -327,6 +327,10 @@ export class ConsignmentDeclarePage extends BasePage {
         await checkRadioByValue(this.sellerSameAsExporterRadios, BOOLEAN.NO);
     }
 
+    async enterSellerProfile(address: PartyAddress): Promise<void> {
+        await this.seller.enterAddress(address);
+    }
+
     async inputSellerDetails(sellerEORI: string, address: PartyAddress): Promise<void> {
         await this.enterPartyEoriAndAddress(this.seller, sellerEORI, address);
     }
