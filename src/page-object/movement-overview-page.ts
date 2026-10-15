@@ -41,7 +41,6 @@ export class MovementOverviewPage extends BasePage {
     private readonly eidrConsignmentsTab: Locator;
     private readonly gmrDetailsTab: Locator;
     private readonly newENSConsignmentBtn: Locator;
-    private readonly uploadCSVBtn: Locator;
     private readonly associateConsignmentBtn: Locator;
     private readonly cancelDeclarationLink: Locator;
     private readonly cancellationScreen: CancellationScreen;
@@ -83,7 +82,6 @@ export class MovementOverviewPage extends BasePage {
 
         // ENS Consignment actions
         this.newENSConsignmentBtn = newRecordButton(page, '?index');
-        this.uploadCSVBtn = page.locator("//form[contains(@action,'?index')]//button[@value='upload-csv']");
         this.associateConsignmentBtn = page.locator("//form[contains(@action,'?index')]//button[@value='associate-consignment']");
 
         this.cancelDeclarationLink = page.locator(
@@ -166,10 +164,6 @@ export class MovementOverviewPage extends BasePage {
                     + 'this no longer recognises.')
             );
         }
-    }
-
-    async clickUploadCSV(): Promise<void> {
-        await this.uploadCSVBtn.click();
     }
 
     async clickAssociateConsignment(): Promise<void> {

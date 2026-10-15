@@ -33,6 +33,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     private readonly holderOfAuthorisationTab: Locator;
     private readonly documentTab: Locator;
     private readonly newGoodsRecordBtn: Locator;
+    private readonly uploadGoodsCsvBtn: Locator;
     private readonly newPreviousDocumentBtn: Locator;
     private readonly newHolderOfAuthorisationBtn: Locator;
     private readonly confirmAndSubmitButton: Locator;
@@ -73,6 +74,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         // "?index" marker (named tabs post to "/<tab-name>"). Scoped by form action (a
         // URL, locale-independent) not the label — same convention as movement-overview.
         this.newGoodsRecordBtn = newRecordButton(page, '?index');
+        this.uploadGoodsCsvBtn = page.locator(`form[action*="?index"] button[value='${CONSIGNMENT_ACTION.UPLOAD_GOODS_CSV}']`);
         // Scoped to the "Header previous documents" tab panel so it is not confused
         // with the other tabs' own "new-record" buttons.
         this.newPreviousDocumentBtn = newRecordButton(page, RECORD_TAB.PREVIOUS_DOCUMENTS);
@@ -98,6 +100,10 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
 
     async openNewGoodsRecord(): Promise<void> {
         await switchToTabAndClickNew(this.page, this.goodsRecordTab, this.newGoodsRecordBtn);
+    }
+
+    async openGoodsCsvUpload(): Promise<void> {
+        await switchToTabAndClickNew(this.page, this.goodsRecordTab, this.uploadGoodsCsvBtn);
     }
 
     /**

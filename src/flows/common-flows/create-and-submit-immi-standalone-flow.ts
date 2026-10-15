@@ -1,6 +1,6 @@
 import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import {
-    CreateDraftImmiStandaloneFlow, ImmiStandaloneDeclarationOptions,
+    CreateDraftImmiStandaloneFlow, DraftImmiStandaloneDeclaration, ImmiStandaloneDeclarationOptions,
 } from './create-draft-immi-standalone-flow';
 import { ImmiStandaloneConsignmentData } from '../../test-data/immi-standalone-consignment-data';
 import { DeclarationIdentity } from '../../test-data/payload/cds-notification-payload';
@@ -41,11 +41,26 @@ export class CreateAndSubmitImmiStandaloneFlow {
          */
         expectedStatusKey?: TranslationKey;
     }): Promise<DeclarationIdentity> {
-        const { consignmentReference: lrn, consignmentData } =
-            await this.createDraftImmiStandaloneFlow.createDraftImmiStandalone(options);
+        const draft = await this.createDraftImmiStandaloneFlow.createDraftImmiStandalone(options);
 
+        return this.submitDraft(draft, options.expectedStatusKey);
+    }
+
+    async completeImmiStandaloneWithGoodsCsv(
+        options: ImmiStandaloneDeclarationOptions,
+        csvFile: string
+    ): Promise<DeclarationIdentity> {
+        const draft = await this.createDraftImmiStandaloneFlow.createDraftImmiStandaloneWithGoodsCsv(options, csvFile);
+
+        return this.submitDraft(draft);
+    }
+
+    private async submitDraft(
+        { consignmentReference: lrn, consignmentData }: DraftImmiStandaloneDeclaration,
+        expectedStatusKey?: TranslationKey
+    ): Promise<DeclarationIdentity> {
         await this.consignmentOverviewFlow.submitConsignment();
-        const mrn = await this.verifyPostSubmit(consignmentData, options.expectedStatusKey);
+        const mrn = await this.verifyPostSubmit(consignmentData, expectedStatusKey);
 
         return { lrn, mrn };
     }

@@ -15,6 +15,7 @@ import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
 import { AccessibilityAudit, AccessibilityCheckpoint, checkpointFor } from '../accessibility-audit-flow';
 import { RECORD_TAB } from '../../constant/record-tab-constant';
+import { UploadGoodsCsvFlow } from '../goods-item/upload-goods-csv-flow';
 
 /** What a caller supplies to build an ENS declaration, whatever it does with it next. */
 export interface EnsDeclarationOptions {
@@ -66,6 +67,7 @@ export class CreateDraftEnsDeclarationFlow {
         private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
         private readonly addNewEnsGoodsItemFlow: AddNewEnsGoodsItemFlow,
         private readonly goodsOverviewFlow: GoodsOverviewFlow,
+        private readonly uploadGoodsCsvFlow: UploadGoodsCsvFlow,
         // The account this worker was actually assigned by the auth fixture - the same
         // source of truth that picked the replayed session, so reporting can never
         // drift from the account the test really runs as.
@@ -114,14 +116,8 @@ export class CreateDraftEnsDeclarationFlow {
 
         reportDeclarationCodes(goodsData);
 
-        await openConsignmentWizard(consignmentData);
-        // Report the consignment reference (DEC...) as soon as its draft exists, so a
-        // run captures it even if a later step fails.
-        const consignmentReference = await this.consignmentOverviewFlow.verifyDraftConsignment();
-        await this.auditTabs(options, 'Consignment');
-        await this.consignmentOverviewFlow.auditRecordWizards(audit, testInfo);
-        await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
-        await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
+        const consignmentReference =
+            await this.declareConsignment(options, consignmentData, openConsignmentWizard);
         // Declaring those tabs leaves the overview on the tab's own route; return to
         // the consignment overview (Goods records tab) before adding the goods item.
         const usedTgp = await this.addNewEnsGoodsItemFlow.addNewGoodsItem(goodsData, goodsJourney, checkpoint);
@@ -154,6 +150,61 @@ export class CreateDraftEnsDeclarationFlow {
             useNirms: goodsData.useNirms,
             nirmsDocumentCodes: goodsData.nirmsDocumentCodes,
         };
+    }
+
+    async createDraftEnsDeclarationWithGoodsCsv(
+        options: EnsDeclarationOptions,
+        csvFile: string
+    ): Promise<DraftEnsDeclaration> {
+        const { movementLrn, consignmentReference, consignmentData } =
+            await this.createDraftEnsConsignmentWithoutGoods(options);
+        const [firstRow] = await this.uploadGoodsCsvFlow.uploadGoodsCsv(csvFile);
+
+        return {
+            consignmentReference,
+            movementLrn,
+            transportDocumentNumber: consignmentData.transportDocumentNumber,
+            goodsJourney: this.buildGoodsJourney(consignmentData),
+            procedureCode: firstRow.procedureCode,
+            useNirms: false,
+            nirmsDocumentCodes: [],
+        };
+    }
+
+    async createDraftEnsConsignmentWithoutGoods(
+        options: EnsDeclarationOptions
+    ): Promise<{ movementLrn: string; consignmentReference: string; consignmentData: ConsignmentData }> {
+        reportTestAccount(this.authAccount, 'createDraftEnsConsignmentWithoutGoods');
+
+        const checkpoint = checkpointFor(options.audit, options.testInfo);
+        const consignmentData = consignment(options.consignmentOverrides);
+        const movementLrn = await this.createDraftMovement(options, checkpoint);
+        const consignmentReference = await this.declareConsignment(
+            options,
+            consignmentData,
+            data => this.addNewEnsConsignmentFlow.addNewEnsConsignment(data, checkpoint)
+        );
+
+        return { movementLrn, consignmentReference, consignmentData };
+    }
+
+    private async declareConsignment(
+        options: EnsDeclarationOptions,
+        consignmentData: ConsignmentData,
+        openConsignmentWizard: (consignmentData: ConsignmentData) => Promise<void>
+    ): Promise<string> {
+        const { audit, testInfo } = options;
+
+        await openConsignmentWizard(consignmentData);
+        // Report the consignment reference (DEC...) as soon as its draft exists, so a
+        // run captures it even if a later step fails.
+        const consignmentReference = await this.consignmentOverviewFlow.verifyDraftConsignment();
+        await this.auditTabs(options, 'Consignment');
+        await this.consignmentOverviewFlow.auditRecordWizards(audit, testInfo);
+        await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
+        await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
+
+        return consignmentReference;
     }
 
     // A record's overview IS its first tab, so this walk is the only scan of it.

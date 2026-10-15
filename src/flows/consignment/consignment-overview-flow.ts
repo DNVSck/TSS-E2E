@@ -20,6 +20,8 @@ import { AccessibilityAudit } from '../accessibility-audit-flow';
  */
 const CONTAINER_IDENTIFIER_FIELD = 'containerIdentifierNumber';
 
+const WAREHOUSE_TYPE_FIELD = 'warehouseType';
+
 /**
  * Declares the consignment-overview tabs that each hold a list of records
  * (Header previous documents, Holder of authorisation, ...). Every method is a
@@ -321,6 +323,14 @@ export class ConsignmentOverviewFlow {
      * has to be completed again before it can be resubmitted, exactly as it was when
      * first built.
      */
+    async declareWarehouse(warehouseType: string, warehouseIdentifier: string): Promise<void> {
+        await ReportLog.step('Declare the warehouse', async () => {
+            await this.consignmentOverviewPage.changeField(WAREHOUSE_TYPE_FIELD);
+            await this.consignmentSteps.enterWarehouseIdentifier(warehouseType, warehouseIdentifier);
+            await this.consignmentSteps.finishConsignmentDeclaration();
+        });
+    }
+
     async correctContainerIdentification(
         containerIdentifierNumber: string,
         containerSize: string,

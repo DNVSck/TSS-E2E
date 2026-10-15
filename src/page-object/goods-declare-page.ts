@@ -2,6 +2,7 @@ import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, selectAutocompleteOption, readErrorSummary, valuesOf } from '../helper/element-helper';
 import { BOOLEAN } from '../constant/radio-value-constant';
+import { WarehouseScreen } from './components/warehouse-screen';
 
 
 const COMMODITY_SUBMIT_TIMEOUT = 180_000;
@@ -68,8 +69,7 @@ export class GoodsDeclarePage extends BasePage {
     private readonly additionalProcedureCodeDropdown: Locator;
     private readonly additionalProcedureCodeRadios: Locator;
     private readonly supervisingCustomsOfficeDropdown: Locator;
-    private readonly warehouseTypeDropdown: Locator;
-    private readonly warehouseIdentifierInput: Locator;
+    private readonly warehouseScreen: WarehouseScreen;
 
     private readonly natureOfGoodsDropdown: Locator;
     private readonly preferenceDropdown: Locator;
@@ -142,8 +142,7 @@ export class GoodsDeclarePage extends BasePage {
         // "Warehouse identifier" - inserted into the procedure journey only for the
         // procedure codes that declare warehoused goods (see requiresWarehouseIdentifier).
         this.supervisingCustomsOfficeDropdown = page.locator("select#supervisingCustomsOffice");
-        this.warehouseTypeDropdown = page.locator("select#warehouseType");
-        this.warehouseIdentifierInput = page.locator("input#warehouseIdentifier");
+        this.warehouseScreen = new WarehouseScreen(page);
 
         // "Enter invoice details"
         this.natureOfGoodsDropdown = page.locator("select#natureOfGoods");
@@ -373,9 +372,8 @@ export class GoodsDeclarePage extends BasePage {
      * one screen: the warehouse type, then its identifier.
      */
     async enterWarehouseIdentifier(warehouseType: string, warehouseIdentifier: string): Promise<void> {
-        await this.waitForScreenField(this.warehouseTypeDropdown, 'warehouse identifier', SCREEN_PAINT_TIMEOUT);
-        await selectDropdownValue(this.warehouseTypeDropdown, warehouseType);
-        await this.warehouseIdentifierInput.fill(warehouseIdentifier);
+        await this.waitForScreenField(this.warehouseScreen.typeDropdown, 'warehouse identifier', SCREEN_PAINT_TIMEOUT);
+        await this.warehouseScreen.fill(warehouseType, warehouseIdentifier);
         await this.clickContinueButton();
     }
 

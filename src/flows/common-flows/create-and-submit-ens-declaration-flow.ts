@@ -45,6 +45,17 @@ export class CreateAndSubmitEnsDeclarationFlow {
         return this.verifySubmittedDeclaration(draft);
     }
 
+    async completeEnsDeclarationWithGoodsCsv(
+        options: EnsDeclarationOptions,
+        csvFile: string
+    ): Promise<EnsDeclarationResult> {
+        const draft = await this.createDraftEnsDeclarationFlow.createDraftEnsDeclarationWithGoodsCsv(options, csvFile);
+
+        await this.consignmentOverviewFlow.submitConsignment();
+
+        return this.verifySubmittedDeclaration(draft);
+    }
+
     async completeConsignmentFirstFlow(options: EnsDeclarationOptions): Promise<EnsDeclarationResult> {
         const draft = await this.createDraftConsignmentFirstFlow.createDraftConsignmentFirstDeclaration(options);
 

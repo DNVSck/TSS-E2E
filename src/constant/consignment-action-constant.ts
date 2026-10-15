@@ -15,6 +15,7 @@
 export const CONSIGNMENT_ACTION = {
     SUBMIT: 'submit-consignment',
     CANCEL: 'cancel-with-confirmation',
+    UPLOAD_GOODS_CSV: 'upload-csv',
     /**
      * Removing a record is named differently on every tab ("delete:<id>",
      * "delete-document-reference:0"), so only the opening is common - which is all a

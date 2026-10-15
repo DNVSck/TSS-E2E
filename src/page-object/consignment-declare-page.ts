@@ -1,6 +1,7 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
 import { PartyBlock, PartyAddress, PartyType } from './components/party-block';
+import { WarehouseScreen } from './components/warehouse-screen';
 import {
     selectDropdownValue, checkRadioByValue, selectAutocompleteValue, typeAutocompleteValue,
     clickToLeaveScreen,
@@ -9,6 +10,7 @@ import { BOOLEAN } from '../constant/radio-value-constant';
 
 /** How long the app may take to leave the EORI screen after Continue. */
 const EORI_OUTCOME_TIMEOUT_MS = 15_000;
+const WAREHOUSE_SCREEN_TIMEOUT = 20_000;
 
 export class ConsignmentDeclarePage extends BasePage {
 
@@ -18,6 +20,7 @@ export class ConsignmentDeclarePage extends BasePage {
 
     // Trade parties — the repeated "EORI + address" screens live in PartyBlock.
     private readonly importer: PartyBlock;
+    private readonly warehouseScreen: WarehouseScreen;
     private readonly buyer: PartyBlock;
     private readonly consignor: PartyBlock;
     private readonly consignee: PartyBlock;
@@ -64,6 +67,7 @@ export class ConsignmentDeclarePage extends BasePage {
         this.linkedConsignmentOptions = page.locator("[id^='lrn__option--']");
 
         this.importer = new PartyBlock(page, 'importer');
+        this.warehouseScreen = new WarehouseScreen(page);
         this.buyer = new PartyBlock(page, 'buyer');
         this.consignor = new PartyBlock(page, 'consignor');
         this.consignee = new PartyBlock(page, 'consignee');
@@ -379,6 +383,12 @@ export class ConsignmentDeclarePage extends BasePage {
         await selectDropdownValue(this.containerSizeDropdown, containerSize);
         await checkRadioByValue(this.containerPackedStatusRadios, packedStatusCode);
         await checkRadioByValue(this.containerSupplierTypeRadios, supplierTypeCode);
+        await this.clickContinueButton();
+    }
+
+    async enterWarehouseIdentifier(warehouseType: string, warehouseIdentifier: string): Promise<void> {
+        await this.waitForScreenField(this.warehouseScreen.typeDropdown, 'warehouse identifier', WAREHOUSE_SCREEN_TIMEOUT);
+        await this.warehouseScreen.fill(warehouseType, warehouseIdentifier);
         await this.clickContinueButton();
     }
 

@@ -324,6 +324,12 @@ export class ConsignmentSteps {
         });
     }
 
+    async enterWarehouseIdentifier(warehouseType: string, warehouseIdentifier: string): Promise<void> {
+        await ReportLog.step('Enter the warehouse identifier', async () => {
+            await this.consignmentDeclarePage.enterWarehouseIdentifier(warehouseType, warehouseIdentifier);
+        });
+    }
+
     async selectInvoiceCurrency(invoiceCurrency: string): Promise<void> {
         await ReportLog.step('Select Invoice currency', async () => {
             await this.consignmentDeclarePage.selectInvoiceCurrency(invoiceCurrency);

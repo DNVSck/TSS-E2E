@@ -128,6 +128,14 @@ export async function clickToLeaveScreen(page: Page, button: Locator): Promise<v
 }
 
 
+export async function waitForHydration(element: Locator): Promise<void> {
+    await expect.poll(() => element.evaluate((node, marker) =>
+        Object.keys(node).some(key => key.startsWith(marker)), REACT_PROPS_MARKER
+    ), { message: 'The element should have been hydrated by React' }).toBe(true);
+}
+
+const REACT_PROPS_MARKER = '__reactProps';
+
 interface SubmitAnswer {
     sent: boolean;
     status?: number;

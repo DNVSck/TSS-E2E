@@ -5,12 +5,13 @@ import { AddNewSfdStandaloneConsignmentFlow } from '../consignment/add-new-sfd-s
 import { AddNewSfdStandaloneGoodsItemFlow } from '../goods-item/add-new-sfd-standalone-goods-item-flow';
 import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
+import { UploadGoodsCsvFlow } from '../goods-item/upload-goods-csv-flow';
 import {
     SfdStandaloneConsignmentData, sfdStandaloneConsignment,
 } from '../../test-data/sfd-standalone-consignment-data';
 import { GoodsData, goods } from '../../test-data/goods-data';
 import { AccessibilityAudit, checkpointFor } from '../accessibility-audit-flow';
-import { initialFormData } from '../../test-data/initial-form-data';
+import { initialFormData, InitialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount, reportDeclarationCodes } from '../../helper/report-helper';
@@ -54,6 +55,7 @@ export class CreateDraftSfdStandaloneFlow {
         private readonly addGoodsItemFlow: AddNewSfdStandaloneGoodsItemFlow,
         private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
         private readonly goodsOverviewFlow: GoodsOverviewFlow,
+        private readonly uploadGoodsCsvFlow: UploadGoodsCsvFlow,
         // The account this worker was assigned by the auth fixture - the same source
         // that picked the replayed session, so the report never names another account.
         private readonly authAccount: UserCredentials | null,
@@ -62,8 +64,7 @@ export class CreateDraftSfdStandaloneFlow {
     async createDraftSfdStandalone(
         options: SfdStandaloneDeclarationOptions
     ): Promise<DraftSfdStandaloneDeclaration> {
-        const { testInfo, url } = options;
-        const consignmentData = sfdStandaloneConsignment(options.consignmentOverrides);
+        const { testInfo } = options;
         const goodsData = goods(options.goodsItemOverrides);
 
         reportTestAccount(this.authAccount, 'createDraftSfdStandalone');
@@ -73,25 +74,12 @@ export class CreateDraftSfdStandaloneFlow {
         const auditTabs = (record: string) =>
             options.audit?.verifyEveryTab({ testInfo, record });
 
-        await this.accessFlow.openService({ baseUrl: url, testInfo });
-        const initialForm = initialFormData({
-            typeOfSubmission: INITIAL_FORM_DECLARATION.TYPE_OF_SUBMISSION.STANDALONE,
-            standaloneDeclarationType: INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.SIMPLIFIED_DECLARATION,
-            typeOfEnsSubmission: undefined,
-        });
-        await this.initialFormFlow.completeInitialFormDeclaration(initialForm, checkpoint);
-        await this.addConsignmentFlow.addNewSfdStandaloneConsignment(consignmentData, checkpoint);
-        // Report the LRN as soon as the draft exists, before anything that could fail.
-        const consignmentReference =
-            await this.consignmentOverviewFlow.verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.DEC_PREFIX);
-        await auditTabs('Consignment');
-        await this.consignmentOverviewFlow.auditRecordWizards(options.audit, testInfo);
-        await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
-        await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
+        const { consignmentReference, consignmentData, declaringForEori } =
+            await this.declareConsignment(options);
 
         await this.addGoodsItemFlow.addNewSfdStandaloneGoodsItem(goodsData, {
             isControlledConsignment: consignmentData.isControlledGoods,
-            declaringForEori: initialForm.declaringForEori,
+            declaringForEori,
         }, checkpoint);
         if (goodsData.useNirms) {
             await this.goodsOverviewFlow.verifyNirmsDocumentReferences(goodsData.nirmsDocumentCodes);
@@ -108,5 +96,43 @@ export class CreateDraftSfdStandaloneFlow {
         await this.consignmentOverviewFlow.goToConsignmentOverview();
 
         return { consignmentReference, consignmentData };
+    }
+
+    async createDraftSfdStandaloneWithGoodsCsv(
+        options: SfdStandaloneDeclarationOptions,
+        csvFile: string
+    ): Promise<DraftSfdStandaloneDeclaration> {
+        reportTestAccount(this.authAccount, 'createDraftSfdStandaloneWithGoodsCsv');
+
+        const { consignmentReference, consignmentData } = await this.declareConsignment(options);
+        await this.uploadGoodsCsvFlow.uploadGoodsCsv(csvFile);
+
+        return { consignmentReference, consignmentData };
+    }
+
+    private async declareConsignment(
+        options: SfdStandaloneDeclarationOptions
+    ): Promise<DraftSfdStandaloneDeclaration & Pick<InitialFormData, 'declaringForEori'>> {
+        const { testInfo, url, audit } = options;
+        const consignmentData = sfdStandaloneConsignment(options.consignmentOverrides);
+        const checkpoint = checkpointFor(audit, testInfo);
+
+        await this.accessFlow.openService({ baseUrl: url, testInfo });
+        const initialForm = initialFormData({
+            typeOfSubmission: INITIAL_FORM_DECLARATION.TYPE_OF_SUBMISSION.STANDALONE,
+            standaloneDeclarationType: INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.SIMPLIFIED_DECLARATION,
+            typeOfEnsSubmission: undefined,
+        });
+        await this.initialFormFlow.completeInitialFormDeclaration(initialForm, checkpoint);
+        await this.addConsignmentFlow.addNewSfdStandaloneConsignment(consignmentData, checkpoint);
+        // Report the LRN as soon as the draft exists, before anything that could fail.
+        const consignmentReference =
+            await this.consignmentOverviewFlow.verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.DEC_PREFIX);
+        await audit?.verifyEveryTab({ testInfo, record: 'Consignment' });
+        await this.consignmentOverviewFlow.auditRecordWizards(audit, testInfo);
+        await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
+        await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
+
+        return { consignmentReference, consignmentData, declaringForEori: initialForm.declaringForEori };
     }
 }

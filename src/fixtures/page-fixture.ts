@@ -21,6 +21,7 @@ import { GmrDeclarePage } from '../page-object/gmr-declare-page';
 import { PreviousDocumentDeclarePage } from '../page-object/header-previous-documents-declare-page';
 import { HolderOfAuthorisationDeclarePage } from '../page-object/holder-of-authorisation-declare-page';
 import { DocumentReferenceDeclarePage } from '../page-object/document-reference-declare-page';
+import { GoodsCsvUploadPage } from '../page-object/goods-csv-upload-page';
 import { AdditionalInformationDeclarePage } from '../page-object/additional-information-declare-page';
 import { AdditionalProcedureCodeDeclarePage } from '../page-object/additional-procedure-code-declare-page';
 import { ExternalContactDeclarePage } from '../page-object/external-contact-declare-page';
@@ -64,6 +65,7 @@ export type PageFixtureType = {
     previousDocumentDeclarePage: PreviousDocumentDeclarePage;
     holderOfAuthorisationDeclarePage: HolderOfAuthorisationDeclarePage;
     documentReferenceDeclarePage: DocumentReferenceDeclarePage;
+    goodsCsvUploadPage: GoodsCsvUploadPage;
     additionalInformationDeclarePage: AdditionalInformationDeclarePage;
     additionalProcedureCodeDeclarePage: AdditionalProcedureCodeDeclarePage;
     externalContactDeclarePage: ExternalContactDeclarePage;
@@ -180,6 +182,10 @@ export const pageFixture: ExtendParams[0] = {
 
     documentReferenceDeclarePage: async ({ page }, use) => {
         await use(new DocumentReferenceDeclarePage(page));
+    },
+
+    goodsCsvUploadPage: async ({ page }, use) => {
+        await use(new GoodsCsvUploadPage(page));
     },
 
     additionalInformationDeclarePage: async ({ page }, use) => {

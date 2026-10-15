@@ -5,12 +5,13 @@ import { AddNewImmiStandaloneConsignmentFlow } from '../consignment/add-new-immi
 import { AddNewImmiStandaloneGoodsItemFlow } from '../goods-item/add-new-immi-standalone-goods-item-flow';
 import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import { GoodsOverviewFlow } from '../goods-item/goods-overview-flow';
+import { UploadGoodsCsvFlow } from '../goods-item/upload-goods-csv-flow';
 import {
     ImmiStandaloneConsignmentData, immiStandaloneConsignment,
 } from '../../test-data/immi-standalone-consignment-data';
 import { GoodsData, goods } from '../../test-data/goods-data';
 import { AccessibilityAudit, checkpointFor } from '../accessibility-audit-flow';
-import { initialFormData } from '../../test-data/initial-form-data';
+import { initialFormData, InitialFormData } from '../../test-data/initial-form-data';
 import { INITIAL_FORM_DECLARATION } from '../../constant/initial-form-declaration-constants';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { UserCredentials } from '../../auth/credentials';
@@ -55,6 +56,7 @@ export class CreateDraftImmiStandaloneFlow {
         private readonly addGoodsItemFlow: AddNewImmiStandaloneGoodsItemFlow,
         private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
         private readonly goodsOverviewFlow: GoodsOverviewFlow,
+        private readonly uploadGoodsCsvFlow: UploadGoodsCsvFlow,
         // The account this worker was assigned by the auth fixture - the same source
         // that picked the replayed session, so the report never names another account.
         private readonly authAccount: UserCredentials | null,
@@ -63,8 +65,7 @@ export class CreateDraftImmiStandaloneFlow {
     async createDraftImmiStandalone(
         options: ImmiStandaloneDeclarationOptions
     ): Promise<DraftImmiStandaloneDeclaration> {
-        const { testInfo, url } = options;
-        const consignmentData = immiStandaloneConsignment(options.consignmentOverrides);
+        const { testInfo } = options;
         const goodsData = goods(options.goodsItemOverrides);
 
         reportTestAccount(this.authAccount, 'createDraftImmiStandalone');
@@ -74,33 +75,11 @@ export class CreateDraftImmiStandaloneFlow {
         const auditTabs = (record: string) =>
             options.audit?.verifyEveryTab({ testInfo, record });
 
-        // Held rather than passed inline: the company this journey declares for gates
-        // two screens at opposite ends of it - the standalone type here and the TGP
-        // question on the goods item - and reading both from one value is what stops
-        // them drifting apart.
-        const initialForm = initialFormData({
-            typeOfSubmission: INITIAL_FORM_DECLARATION.TYPE_OF_SUBMISSION.STANDALONE,
-            standaloneDeclarationType:
-                INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.INTERNAL_MARKET_MOVEMENT_INFORMATION,
-            typeOfEnsSubmission: undefined,
-        });
-
-        await this.accessFlow.openService({ baseUrl: url, testInfo });
-        await this.initialFormFlow.completeInitialFormDeclaration(initialForm, checkpoint);
-        await this.addConsignmentFlow.addNewImmiStandaloneConsignment(consignmentData, checkpoint);
-        // Report the LRN as soon as the draft exists, before anything that could fail.
-        // IMMI stamps a "GLR" reference, so asserting the prefix asserts the journey
-        // that actually ran rather than merely that some standalone draft exists.
-        const consignmentReference = await this.consignmentOverviewFlow
-            .verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.GLR_PREFIX);
-        await auditTabs('Consignment');
-        await this.consignmentOverviewFlow.auditRecordWizards(options.audit, testInfo);
-        // Consignment-overview tabs, declared before the goods item (no-op on empty lists).
-        await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
-        await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
+        const { consignmentReference, consignmentData, declaringForEori } =
+            await this.declareConsignment(options);
 
         const usedTgp = await this.addGoodsItemFlow
-            .addNewImmiStandaloneGoodsItem(goodsData, initialForm.declaringForEori, checkpoint);
+            .addNewImmiStandaloneGoodsItem(goodsData, declaringForEori, checkpoint);
         // A TGP item never typed its commodity code, description or country of origin -
         // the service copied them from the record - so the overview is the only place
         // that proves the record was applied. No-op when the item did not use TGP.
@@ -129,12 +108,69 @@ export class CreateDraftImmiStandaloneFlow {
         // own warehouse, so the service has already derived the office by the time the
         // goods item is finished - there is nothing to wait for and no reason to let a
         // wrong one through to submission.
-        if (requiresWarehouseIdentifier(goodsData.procedureCode)) {
+        await this.verifyWarehousedOffice(goodsData.procedureCode);
+
+        return { consignmentReference, consignmentData };
+    }
+
+    async createDraftImmiStandaloneWithGoodsCsv(
+        options: ImmiStandaloneDeclarationOptions,
+        csvFile: string
+    ): Promise<DraftImmiStandaloneDeclaration> {
+        reportTestAccount(this.authAccount, 'createDraftImmiStandaloneWithGoodsCsv');
+
+        const { consignmentReference, consignmentData } = await this.declareConsignment(options);
+        const [firstRow] = await this.uploadGoodsCsvFlow.uploadGoodsCsv(csvFile);
+
+        if (requiresWarehouseIdentifier(firstRow.procedureCode)) {
+            const goodsData = goods(options.goodsItemOverrides);
+            await this.consignmentOverviewFlow.declareWarehouse(goodsData.warehouseType, goodsData.warehouseIdentifier);
+        }
+        await this.verifyWarehousedOffice(firstRow.procedureCode);
+
+        return { consignmentReference, consignmentData };
+    }
+
+    private async verifyWarehousedOffice(procedureCode: string): Promise<void> {
+        if (requiresWarehouseIdentifier(procedureCode)) {
             await this.consignmentOverviewFlow.verifySupervisingCustomsOffice(
                 SUPERVISING_CUSTOMS_OFFICE.GBBEL004
             );
         }
+    }
 
-        return { consignmentReference, consignmentData };
+    private async declareConsignment(
+        options: ImmiStandaloneDeclarationOptions
+    ): Promise<DraftImmiStandaloneDeclaration & Pick<InitialFormData, 'declaringForEori'>> {
+        const { testInfo, url, audit } = options;
+        const consignmentData = immiStandaloneConsignment(options.consignmentOverrides);
+        const checkpoint = checkpointFor(audit, testInfo);
+
+        // Held rather than passed inline: the company this journey declares for gates
+        // two screens at opposite ends of it - the standalone type here and the TGP
+        // question on the goods item - and reading both from one value is what stops
+        // them drifting apart.
+        const initialForm = initialFormData({
+            typeOfSubmission: INITIAL_FORM_DECLARATION.TYPE_OF_SUBMISSION.STANDALONE,
+            standaloneDeclarationType:
+                INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.INTERNAL_MARKET_MOVEMENT_INFORMATION,
+            typeOfEnsSubmission: undefined,
+        });
+
+        await this.accessFlow.openService({ baseUrl: url, testInfo });
+        await this.initialFormFlow.completeInitialFormDeclaration(initialForm, checkpoint);
+        await this.addConsignmentFlow.addNewImmiStandaloneConsignment(consignmentData, checkpoint);
+        // Report the LRN as soon as the draft exists, before anything that could fail.
+        // IMMI stamps a "GLR" reference, so asserting the prefix asserts the journey
+        // that actually ran rather than merely that some standalone draft exists.
+        const consignmentReference = await this.consignmentOverviewFlow
+            .verifyStandaloneConsignmentLrn(LOCAL_REFERENCE.GLR_PREFIX);
+        await audit?.verifyEveryTab({ testInfo, record: 'Consignment' });
+        await this.consignmentOverviewFlow.auditRecordWizards(audit, testInfo);
+        // Consignment-overview tabs, declared before the goods item (no-op on empty lists).
+        await this.consignmentOverviewFlow.declareHeaderPreviousDocuments(consignmentData.headerPreviousDocuments);
+        await this.consignmentOverviewFlow.declareHoldersOfAuthorisation(consignmentData.holdersOfAuthorisation);
+
+        return { consignmentReference, consignmentData, declaringForEori: initialForm.declaringForEori };
     }
 }

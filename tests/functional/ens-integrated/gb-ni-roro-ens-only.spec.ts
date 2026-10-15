@@ -10,6 +10,8 @@ import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { IS_ISC2_MOCK, BASE_URL } from '../../../config/environment';
 import { rejectedByIcs2 } from '../../../src/test-data/rejection-lever-data';
 import { ensOnlyDeclaration } from '../../../src/test-data/ens-declaration-data';
+import { inRole } from '../../../src/test-data/movements-data';
+import { ROLE_IN_MOVEMENT } from '../../../src/constant/role-in-movement-constant';
 
 const ENS_ONLY_ACCO = '2268';
 const ENS_ONLY_UNACCO = '2269';
@@ -34,7 +36,7 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
   });
 
   test('Verify ENS Only - RoRo (Accompanied) is created and submitted successfully', { tag: ['@smoke', '@regression' , '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
-    await ReportLog.setStory('ENS-only - GB to NI RoRo Accompanied');
+    await ReportLog.setStory('ENS-only - GB to NI RoRo Accompanied - we are the haulier, dangerous goods');
     reportTestCaseLink(ENS_ONLY_ACCO);
     await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
@@ -42,18 +44,22 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
         url: BASE_URL,
         movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
         consignmentOverrides: ensOnlyConsignment(),
+        goodsItemOverrides: { isDangerousGoods: true },
       })
     );
   });
 
   test('Verify ENS Only - RoRo (Unaccompanied) is created and submitted successfully', { tag: ['@smoke', '@regression', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
-    await ReportLog.setStory('ENS-only - GB to NI RoRo Unaccompanied');
+    await ReportLog.setStory('ENS-only - GB to NI RoRo Unaccompanied - we are both carrier and haulier');
     reportTestCaseLink(ENS_ONLY_UNACCO);
     await ReportLog.step('Create and submit the ENS declaration', () =>
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
         url: BASE_URL,
-        movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED },
+        movementOverrides: {
+          typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
+          roleInThisMovement: ROLE_IN_MOVEMENT.CARRIER_AND_HAULIER,
+        },
         consignmentOverrides: ensOnlyConsignment({
           ensOnlyReason: ENS_ONLY_REASON.EMPTY_VEHICLE,
         }),
@@ -62,7 +68,7 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
   });
 
   test('Verify ENS Only - RoRo (Accompanied), goods item requires container details, is created and submitted successfully', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
-    await ReportLog.setStory('ENS-only - GB to NI RoRo Accompanied with a goods item declaring its own container');
+    await ReportLog.setStory('ENS-only - GB to NI RoRo Accompanied with a goods item declaring its own container - we are neither carrier nor haulier');
     reportTestCaseLink(ENS_ONLY_CONTAINER);
     // Crossing the EU border with goods in DIFFERENT containers makes each goods item
     // declare its own container details.
@@ -70,7 +76,10 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Agent Represents Tra
       createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow({
         testInfo,
         url: BASE_URL,
-        movementOverrides: { typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED },
+        movementOverrides: {
+          typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+          roleInThisMovement: ROLE_IN_MOVEMENT.NEITHER,
+        },
         consignmentOverrides: ensOnlyConsignment({
           ensOnlyReason: ENS_ONLY_REASON.EIDR_WITH_OWN_AUTHORISATION,
           isGoodsCrossEUBorder: true,
@@ -208,11 +217,11 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Resubmission after I
   test('Verify an ENS consignment in "Trader Input Required" by ICS2 can be corrected and resubmitted', { tag: ['@regression', '@resubmission'] }, async ({
     createAndSubmitEnsDeclarationFlow, resubmitDeclarationFlow
   }, testInfo) => {
-    await ReportLog.setStory('ENS-only - ICS2 hands it back, and the trader corrects the container and resubmits');
+    await ReportLog.setStory('ENS-only - ICS2 hands it back, and the trader corrects the container and resubmits - we are the carrier');
     reportTestCaseLink(ENS_ONLY_RESUBMIT_AFTER_ICS2);
 
     await createAndSubmitEnsDeclarationFlow.submitEnsDeclarationExpectingRejection(
-      ensOnlyDeclaration(testInfo, rejectedByIcs2())
+      inRole(ensOnlyDeclaration(testInfo, rejectedByIcs2()), ROLE_IN_MOVEMENT.CARRIER)
     );
     await resubmitDeclarationFlow.correctContainerAndResubmitEnsConsignment(containerIdentification());
   });

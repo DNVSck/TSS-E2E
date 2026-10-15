@@ -35,6 +35,7 @@ import { AddNewEnsConsignmentFlow } from '../flows/consignment/add-new-ens-consi
 import { ConsignmentOverviewFlow } from '../flows/consignment/consignment-overview-flow';
 import { AddNewEnsGoodsItemFlow } from '../flows/goods-item/add-new-ens-goods-item-flow';
 import { GoodsOverviewFlow } from '../flows/goods-item/goods-overview-flow';
+import { UploadGoodsCsvFlow } from '../flows/goods-item/upload-goods-csv-flow';
 import { AddNewGMRFlow } from '../flows/gmr/add-new-gmr-flow';
 import { GmrOverviewFlow } from '../flows/gmr/gmr-overview-flow';
 import { RepresentTraderFlow } from '../flows/represent-trader-flow';
@@ -113,6 +114,7 @@ export type FlowFixtureType = {
     goodsItemSteps: GoodsItemSteps;
     addNewEnsGoodsItemFlow: AddNewEnsGoodsItemFlow;
     goodsOverviewFlow: GoodsOverviewFlow;
+    uploadGoodsCsvFlow: UploadGoodsCsvFlow;
     gmrOverviewFlow: GmrOverviewFlow;
     createAndSubmitGmrFlow: AddNewGMRFlow; // This flow is added here as it relies on multiple other flows, and it will be used in multiple places, so it makes sense to have it as a common flow
     cancelGmrFlow: CancelGmrFlow;
@@ -220,6 +222,7 @@ export const flowFixture: ExtendParams[0] = {
         consignmentOverviewFlow,
         addNewEnsGoodsItemFlow,
         goodsOverviewFlow,
+        uploadGoodsCsvFlow,
         authAccount
     }, use) => {
         await use(new CreateDraftEnsDeclarationFlow(
@@ -231,6 +234,7 @@ export const flowFixture: ExtendParams[0] = {
             consignmentOverviewFlow,
             addNewEnsGoodsItemFlow,
             goodsOverviewFlow,
+            uploadGoodsCsvFlow,
             authAccount
         ));
     },
@@ -238,7 +242,7 @@ export const flowFixture: ExtendParams[0] = {
     createDraftSfdStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
         standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
-        consignmentOverviewFlow, goodsOverviewFlow, authAccount,
+        consignmentOverviewFlow, goodsOverviewFlow, uploadGoodsCsvFlow, authAccount,
         companyPermissionService, tariffService
     }, use) => {
         const addConsignment = new AddNewSfdStandaloneConsignmentFlow(
@@ -250,7 +254,7 @@ export const flowFixture: ExtendParams[0] = {
         );
         await use(new CreateDraftSfdStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,
-            addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+            addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, uploadGoodsCsvFlow, authAccount
         ));
     },
 
@@ -309,6 +313,10 @@ export const flowFixture: ExtendParams[0] = {
             new DeclareNirmsFlow(goodsItemSteps, companyPermissionService, tariffService),
             authAccount
         ));
+    },
+
+    uploadGoodsCsvFlow: async ({ consignmentOverviewPage, goodsCsvUploadPage }, use) => {
+        await use(new UploadGoodsCsvFlow(consignmentOverviewPage, goodsCsvUploadPage));
     },
 
     goodsOverviewFlow: async ({ goodsOverviewPage, documentReferenceDeclarePage, additionalInformationDeclarePage, previousDocumentDeclarePage, additionalProcedureCodeDeclarePage, taricAdditionalCodeDeclarePage, nationalAdditionalCodeDeclarePage, t }, use) => {
@@ -451,7 +459,7 @@ export const flowFixture: ExtendParams[0] = {
     createDraftImmiStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
         standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
-        consignmentOverviewFlow, goodsOverviewFlow, authAccount, traderGoodsProfileService,
+        consignmentOverviewFlow, goodsOverviewFlow, uploadGoodsCsvFlow, authAccount, traderGoodsProfileService,
         companyPermissionService, tariffService
     }, use) => {
         const addConsignment = new AddNewImmiStandaloneConsignmentFlow(
@@ -464,7 +472,7 @@ export const flowFixture: ExtendParams[0] = {
         );
         await use(new CreateDraftImmiStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,
-            addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+            addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, uploadGoodsCsvFlow, authAccount
         ));
     },
 

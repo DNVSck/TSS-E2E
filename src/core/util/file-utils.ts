@@ -337,33 +337,51 @@ export class FileUtil {
     /**
      * Read CSV file as array of objects
      */
-    static readCSV(filePath: string): any[] | null {
+    static readCSV(filePath: string): Record<string, string>[] | null {
         try {
             const content = this.readFile(filePath);
             if (!content) return null;
 
-            const lines = content.split('\n').filter(line => line.trim());
-            if (lines.length < 2) return [];
+            const [headers, ...rows] = this.parseCsvRecords(content.replace(/^\uFEFF/, ''))
+                .filter(record => record.some(field => field.trim()));
+            if (!headers) return [];
 
-            const headers = lines[0].split(',').map(h => h.trim());
-            const data: any[] = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].split(',').map(v => v.trim());
-                const obj: any = {};
-                
-                headers.forEach((header, index) => {
-                    obj[header] = values[index] || '';
-                });
-                
-                data.push(obj);
-            }
-
-            return data;
+            return rows.map(values => Object.fromEntries(
+                headers.map((header, index) => [header.trim(), (values[index] ?? '').trim()])
+            ));
         } catch (error) {
             console.error(`Error reading CSV file ${filePath}:`, error);
             return null;
         }
+    }
+
+    private static parseCsvRecords(content: string): string[][] {
+        const records: string[][] = [];
+        let record: string[] = [];
+        let field = '';
+        let quoted = false;
+        let index = 0;
+
+        while (index < content.length) {
+            const char = content[index++];
+            if (quoted && char === '"' && content[index] === '"') {
+                field += char;
+                index++;
+            } else if (char === '"' && (quoted || field === '')) {
+                quoted = !quoted;
+            } else if (quoted || !',\r\n'.includes(char)) {
+                field += char;
+            } else if (char === ',') {
+                record.push(field);
+                field = '';
+            } else if (char === '\n') {
+                records.push([...record, field]);
+                record = [];
+                field = '';
+            }
+        }
+        records.push([...record, field]);
+        return records;
     }
 
     /**

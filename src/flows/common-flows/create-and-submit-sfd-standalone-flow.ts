@@ -1,6 +1,6 @@
 import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import {
-    CreateDraftSfdStandaloneFlow, SfdStandaloneDeclarationOptions,
+    CreateDraftSfdStandaloneFlow, DraftSfdStandaloneDeclaration, SfdStandaloneDeclarationOptions,
 } from './create-draft-sfd-standalone-flow';
 import { SfdStandaloneConsignmentData } from '../../test-data/sfd-standalone-consignment-data';
 import { DeclarationIdentity } from '../../test-data/payload/cds-notification-payload';
@@ -65,11 +65,26 @@ export class CreateAndSubmitSfdStandaloneFlow {
          */
         expectedStatusKey?: TranslationKey;
     }): Promise<DeclarationIdentity | undefined> {
-        const { consignmentReference: lrn, consignmentData } =
-            await this.createDraftSfdStandaloneFlow.createDraftSfdStandalone(options);
+        const draft = await this.createDraftSfdStandaloneFlow.createDraftSfdStandalone(options);
 
+        return this.submitDraft(draft, options.expectedStatusKey);
+    }
+
+    async completeSfdStandaloneWithGoodsCsv(
+        options: SfdStandaloneDeclarationOptions,
+        csvFile: string
+    ): Promise<DeclarationIdentity | undefined> {
+        const draft = await this.createDraftSfdStandaloneFlow.createDraftSfdStandaloneWithGoodsCsv(options, csvFile);
+
+        return this.submitDraft(draft);
+    }
+
+    private async submitDraft(
+        { consignmentReference: lrn, consignmentData }: DraftSfdStandaloneDeclaration,
+        expectedStatusKey?: TranslationKey
+    ): Promise<DeclarationIdentity | undefined> {
         await this.consignmentOverviewFlow.submitConsignment();
-        const mrn = await this.verifyPostSubmit(consignmentData, options.expectedStatusKey);
+        const mrn = await this.verifyPostSubmit(consignmentData, expectedStatusKey);
 
         // Undefined on the EIDR route, which has no MRN and needs no CDS response.
         return mrn ? { lrn, mrn } : undefined;
