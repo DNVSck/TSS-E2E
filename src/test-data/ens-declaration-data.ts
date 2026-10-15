@@ -5,6 +5,7 @@ import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
 import { PREVIOUS_DOCUMENT_TYPE } from '../constant/previous-document-type-constant';
 import { ConsignmentData, ensOnlyConsignment } from './consignment-data';
+import { MovementData } from './movements-data';
 import { EnsDeclarationOptions } from '../flows/common-flows/create-draft-ens-declaration-flow';
 import { previousDocument } from './previous-document-data';
 import { documentReference, ensSfdGoodsDocuments } from './document-reference-data';
@@ -152,7 +153,10 @@ export const ensEidrDeclaration = (
     },
 });
 
-export const byMaritime = (declaration: EnsDeclarationOptions): EnsDeclarationOptions => ({
+export const byMaritime = <T extends {
+    movementOverrides?: Partial<MovementData>;
+    consignmentOverrides?: Partial<ConsignmentData>;
+}>(declaration: T): T => ({
     ...declaration,
     movementOverrides: {
         ...declaration.movementOverrides,
