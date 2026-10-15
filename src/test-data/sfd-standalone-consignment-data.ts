@@ -31,6 +31,8 @@ export interface SfdStandaloneConsignmentData {
 
     typeOfMovement: string;
     vehicleRegistration: string;
+    imoNumber: string;
+    nationalityOfMeansOfTransport: string;
     portOfArrival: string;
     /**
      * "When and where will the goods arrive?" - day, month, hour and minute, asked on
@@ -89,6 +91,8 @@ const defaults: SfdStandaloneConsignmentData = {
 
     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
     vehicleRegistration: 'GB12ABC',
+    imoNumber: '9198941',
+    nationalityOfMeansOfTransport: COUNTRY_CODE.UNITED_KINGDOM,
     portOfArrival: PORT_OF_ARRIVAL.BELFAST_GVMS_PORT,
     isControlledGoods: false,
 
@@ -155,3 +159,15 @@ export const SFD_STANDALONE_MAX_SCREEN_COVERAGE: Partial<SfdStandaloneConsignmen
     isTransportingInContainers: true,
     isSameContainer: true,
 };
+
+export const sfdStandaloneByMaritime = <T extends { consignmentOverrides?: Partial<SfdStandaloneConsignmentData> }>(
+    declaration: T
+): T => ({
+    ...declaration,
+    consignmentOverrides: {
+        ...declaration.consignmentOverrides,
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.MARITIME,
+        portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+        transportDocumentNumber: generateRandomTransportDocumentNumber('MARITIME'),
+    },
+});

@@ -5,6 +5,7 @@ import { MovementSteps } from '../movement/movement-steps';
 import { ConsignmentSteps } from './consignment-steps';
 import { StandaloneConsignmentSteps } from './standalone-consignment-steps';
 import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
+import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../constant/type-of-movement-code-constant';
 
 /**
  * The SFD standalone "Transport Details" task, from the task list through to Finish.
@@ -39,7 +40,7 @@ export class AddNewSfdStandaloneConsignmentFlow {
             }
 
             await this.movementSteps.chooseTypeOfMovement(input.typeOfMovement);
-            await this.movementSteps.inputVehicleRegistrationNumber(input.vehicleRegistration);
+            await this.identifyMeansOfTransport(input, checkpoint);
 
             // Asked on BOTH branches, like IMMI and unlike FFD: an arrived movement is
             // still asked when the goods arrived. Measured on sit 2026-08-12 - skipping
@@ -139,6 +140,19 @@ export class AddNewSfdStandaloneConsignmentFlow {
             input.containerPackedStatus,
             input.containerSupplierType
         );
+    }
+
+    private async identifyMeansOfTransport(
+        input: SfdStandaloneConsignmentData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<void> {
+        if (input.typeOfMovement === TYPE_OF_MOVEMENT_OPTION_CODE.MARITIME) {
+            await checkpoint?.('Movement - vessel details', { probeErrors: true });
+            await this.movementSteps.enterVesselDetails(input.imoNumber, input.nationalityOfMeansOfTransport);
+            return;
+        }
+
+        await this.movementSteps.inputVehicleRegistrationNumber(input.vehicleRegistration);
     }
 
     private async enterArrivalLocation(
