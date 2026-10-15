@@ -125,3 +125,14 @@ export const IMMI_STANDALONE_MAX_SCREEN_COVERAGE: Partial<ImmiStandaloneConsignm
     representationType: REPRESENTATION_TYPE.DIRECT,
     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
 };
+
+export const immiStandaloneByMaritime = <T extends { consignmentOverrides?: Partial<ImmiStandaloneConsignmentData> }>(
+    declaration: T
+): T => ({
+    ...declaration,
+    consignmentOverrides: {
+        ...declaration.consignmentOverrides,
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.MARITIME,
+        portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+    },
+});
