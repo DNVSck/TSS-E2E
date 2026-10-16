@@ -59,7 +59,11 @@ export class CreateAndSubmitImmiStandaloneFlow {
         { consignmentReference: lrn, consignmentData }: DraftImmiStandaloneDeclaration,
         expectedStatusKey?: TranslationKey
     ): Promise<DeclarationIdentity> {
-        await this.consignmentOverviewFlow.submitConsignment();
+        if (expectedStatusKey) {
+            await this.consignmentOverviewFlow.submitConsignmentExpectingCdsRefusal();
+        } else {
+            await this.consignmentOverviewFlow.submitConsignment();
+        }
         const mrn = await this.verifyPostSubmit(consignmentData, expectedStatusKey);
 
         return { lrn, mrn };

@@ -122,6 +122,12 @@ export function traderInputRequiredError(label: string, status: string): Error {
 }
 
 
+const CDS_VERDICT = /^CDS\d+:/;
+
+export function withoutCdsVerdicts(errors: string[]): string[] {
+    return errors.filter(error => !CDS_VERDICT.test(error.trim()));
+}
+
 export function verifySubmittedWithoutErrors(errors: string[], what: string): void {
     expect(errors, `${what} should submit without errors - errors the page showed after submitting (expects none)`)
         .toEqual([]);

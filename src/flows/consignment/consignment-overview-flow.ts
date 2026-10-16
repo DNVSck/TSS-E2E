@@ -9,7 +9,9 @@ import {
     HolderOfAuthorisationData, holderOfAuthorisation,
 } from "../../test-data/holder-of-authorisation-data";
 import { TranslationKey, TFunction } from '../../fixtures/locale-fixture';
-import { isTraderInputRequiredStatus, traderInputRequiredError, verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
+import {
+    isTraderInputRequiredStatus, traderInputRequiredError, verifySubmittedWithoutErrors, withoutCdsVerdicts,
+} from '../../helper/declaration-status-helper';
 import { MrnCountryCode, mrnPrefix, mrnOpening } from '../../constant/local-reference-constants';
 import { ConsignmentSteps } from './consignment-steps';
 import { AccessibilityAudit } from '../accessibility-audit-flow';
@@ -182,6 +184,12 @@ export class ConsignmentOverviewFlow {
     async submitConsignment(): Promise<void> {
         await ReportLog.step('Submit consignment', async () => {
             verifySubmittedWithoutErrors(await this.submitAndReadOutcome(), 'the consignment');
+        });
+    }
+
+    async submitConsignmentExpectingCdsRefusal(): Promise<void> {
+        await ReportLog.step('Submit consignment', async () => {
+            verifySubmittedWithoutErrors(withoutCdsVerdicts(await this.submitAndReadOutcome()), 'the consignment');
         });
     }
 
