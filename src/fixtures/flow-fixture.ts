@@ -48,6 +48,7 @@ import { SupplementaryDeclarationSteps } from '../flows/supplementary-declaratio
 import { CancelSupplementaryDeclarationFlow } from '../flows/common-flows/cancel-supplementary-declaration-flow';
 import { CompleteAndSubmitSupplementaryDeclarationFlow } from '../flows/common-flows/complete-and-submit-supplementary-declaration-flow';
 import { GenerateSdDraftFromEnsSfdFlow } from '../flows/common-flows/generate-sd-draft-from-ens-sfd-flow';
+import { GenerateSdDraftFromSfdStandaloneFlow } from '../flows/common-flows/generate-sd-draft-from-sfd-standalone-flow';
 import { DeclareEnsThroughApiFlow } from '../flows/common-flows/trader-api/declare-ens-through-api-flow';
 import { DeclareStandaloneThroughApiFlow } from '../flows/common-flows/trader-api/declare-standalone-through-api-flow';
 import { GenerateSdDraftThroughApiFlow } from '../flows/common-flows/trader-api/generate-sd-draft-through-api-flow';
@@ -145,6 +146,7 @@ export type FlowFixtureType = {
     // journey that produced it rather than instead of it.
     supplementaryDeclarationSteps: SupplementaryDeclarationSteps;
     generateSdDraftFromEnsSfdFlow: GenerateSdDraftFromEnsSfdFlow;
+    generateSdDraftFromSfdStandaloneFlow: GenerateSdDraftFromSfdStandaloneFlow;
     declareEnsThroughApiFlow: DeclareEnsThroughApiFlow;
     declareStandaloneThroughApiFlow: DeclareStandaloneThroughApiFlow;
     generateSdDraftThroughApiFlow: GenerateSdDraftThroughApiFlow;
@@ -508,6 +510,10 @@ export const flowFixture: ExtendParams[0] = {
         await use(new GenerateSdDraftFromEnsSfdFlow(
             createAndSubmitEnsDeclarationFlow, triggerFinalStatusThroughCdsFlow, representTraderFlow
         ));
+    },
+
+    generateSdDraftFromSfdStandaloneFlow: async ({ createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow }, use) => {
+        await use(new GenerateSdDraftFromSfdStandaloneFlow(createAndSubmitSfdStandaloneFlow, triggerFinalStatusThroughCdsFlow));
     },
 
     declareEnsThroughApiFlow: async ({
