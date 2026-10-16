@@ -1,11 +1,12 @@
 import { BasePage } from "./base-page";
 import { RENDER_TIMEOUT } from '../constant/timeout-constant';
-import { MOVEMENT_ROUTE, CANCELLATION_ROUTE } from '../constant/endpoints-constant';
+import { MOVEMENT_ROUTE, CANCELLATION_ROUTE, ROUTES } from '../constant/endpoints-constant';
 import { Page, Locator, expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 import {
     readFieldWhenVisible, readFieldIfPresent, newRecordButton, clickLinkAndWaitForRoute, textsOf,
+    clickLinkAndWaitForNavigation,
 } from '../helper/element-helper';
 import { StringUtil } from '../core/util/string-util';
 import { GOVUK } from './components/govuk-selectors';
@@ -48,6 +49,9 @@ export class MovementOverviewPage extends BasePage {
     private readonly cancellationScope: Locator;
 
     private readonly createGMRButton: Locator;
+
+    private readonly submitSuccessBanner: Locator;
+    private readonly feedbackLink: Locator;
 
     private readonly localReferenceNumber: Locator;
     private readonly declarationStatus: Locator;
@@ -94,6 +98,9 @@ export class MovementOverviewPage extends BasePage {
             `main a[href*='/${MOVEMENT_ROUTE.GOODS_MOVEMENT_SEGMENT}/'][href$='/${MOVEMENT_ROUTE.OVERVIEW_SEGMENT}']`
         );
         this.cancellationScope = page.locator('main .govuk-notification-banner__heading, main p.govuk-body');
+
+        this.submitSuccessBanner = page.locator(`main ${GOVUK.NOTIFICATION_BANNER.SUCCESS}`);
+        this.feedbackLink = this.submitSuccessBanner.locator(`a[href*='${ROUTES.PORTAL.FEEDBACK_END_OF_JOURNEY}']`);
 
         //GMR actions
         this.createGMRButton = newRecordButton(page, MOVEMENT_ROUTE.GMR_DETAILS_TAB_SEGMENT);
@@ -378,6 +385,13 @@ export class MovementOverviewPage extends BasePage {
     /** Any movement's overview - this runs before the number is known. */
     async waitForSubmittedMovementOverview(): Promise<void> {
         await this.page.waitForURL(this.movementOverviewPattern(String.raw`ENS\d+`));
+    }
+
+    async openFeedbackFromSubmitBanner(): Promise<void> {
+        await expect(this.submitSuccessBanner, 'Submit success banner').toBeVisible({
+            timeout: CONSIGNMENT_VIEW_TIMEOUT,
+        });
+        await clickLinkAndWaitForNavigation(this.page, this.feedbackLink);
     }
 
     /**

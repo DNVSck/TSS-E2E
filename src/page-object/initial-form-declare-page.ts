@@ -42,6 +42,10 @@ export class InitialFormDeclaraPage extends BasePage {
         );
     }
 
+    async waitForDirectionScreen(): Promise<void> {
+        await this.directionOfDeclarationRadios.first().waitFor({ state: 'visible' });
+    }
+
     async selectDirectionOfDeclaration(route: string): Promise<void> {
         await checkRadioByValue(this.directionOfDeclarationRadios, route);
         await this.clickContinueButton();

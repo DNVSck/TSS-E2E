@@ -13,6 +13,12 @@ export const GOVUK = {
         LIST: '.govuk-error-summary__list',
     },
     LINK: '.govuk-link',
+    NOTIFICATION_BANNER: {
+        SUCCESS: '.govuk-notification-banner--success',
+    },
+    PHASE_BANNER: {
+        ROOT: '.govuk-phase-banner',
+    },
     PASSWORD_INPUT: {
         TOGGLE: '.govuk-js-password-input-toggle',
     },

@@ -38,6 +38,9 @@ import { SupplementaryDeclarationOverviewPage } from '../page-object/supplementa
 import { SupplementaryDeclarationGoodsRecordPage } from '../page-object/supplementary-declaration-goods-record-page';
 import { Wizard } from '../page-object/components/wizard';
 import { SupplementaryDeclarationStep } from '../constant/supplementary-declaration-step-constant';
+import { PhaseBanner } from '../page-object/components/phase-banner';
+import { FeedbackPage } from '../page-object/feedback-page';
+import { FeedbackCheckAnswersPage } from '../page-object/feedback-check-answers-page';
 
 
 export type PageFixtureType = {
@@ -83,6 +86,9 @@ export type PageFixtureType = {
     supplementaryDeclarationOverviewPage: SupplementaryDeclarationOverviewPage;
     supplementaryDeclarationGoodsRecordPage: SupplementaryDeclarationGoodsRecordPage;
     supplementaryDeclarationWizard: Wizard<SupplementaryDeclarationStep>;
+    phaseBanner: PhaseBanner;
+    feedbackPage: FeedbackPage;
+    feedbackCheckAnswersPage: FeedbackCheckAnswersPage;
 }
 
 type ExtendParams = Parameters<typeof test.extend<PageFixtureType & LocaleFixtureType>>;
@@ -234,5 +240,17 @@ export const pageFixture: ExtendParams[0] = {
 
     supplementaryDeclarationWizard: async ({ page }, use) => {
         await use(new Wizard<SupplementaryDeclarationStep>(page));
+    },
+
+    phaseBanner: async ({ page }, use) => {
+        await use(new PhaseBanner(page));
+    },
+
+    feedbackPage: async ({ page }, use) => {
+        await use(new FeedbackPage(page));
+    },
+
+    feedbackCheckAnswersPage: async ({ page }, use) => {
+        await use(new FeedbackCheckAnswersPage(page));
     },
 };

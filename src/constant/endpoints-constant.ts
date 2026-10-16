@@ -17,6 +17,8 @@ export const ROUTES = {
         INVITE_USER: '/company-profile/invite-user',
         REQUEST_EORI_CHANGE: '/company-profile/company-information/request-eori-change',
         COMPANY_INFORMATION_CHECK_ANSWERS: '/company-profile/company-information/edit/check-your-answer!',
+        FEEDBACK_PER_PAGE_START: '/feedback/per-page/start',
+        FEEDBACK_END_OF_JOURNEY: '/feedback/end-of-journey/',
     }
 } as const;
 

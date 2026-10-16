@@ -31,6 +31,11 @@ export class MovementOverviewFlow {
         await this.movementOverviewPage.waitForSubmittedMovementOverview();
     }
 
+    async openFeedbackFromSubmitBanner(): Promise<void> {
+        await ReportLog.step('Open the feedback form from the submit banner', () =>
+            this.movementOverviewPage.openFeedbackFromSubmitBanner()
+        );
+    }
 
     async cancelMovementDeclaration(reason: string): Promise<void> {
         await ReportLog.step('Cancel the movement declaration', async () => {

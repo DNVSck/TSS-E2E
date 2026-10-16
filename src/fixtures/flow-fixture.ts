@@ -67,6 +67,8 @@ import { APIFixtureType } from './api-fixture';
 import { SecondDeviceFixtureType } from './second-device-fixture';
 import { AxeFixtureType } from './axe-fixture';
 import { AccessibilityAuditFlow } from '../flows/accessibility-audit-flow';
+import { EndOfJourneyFeedbackFlow } from '../flows/common-flows/end-of-journey-feedback-flow';
+import { FeedbackFlow } from '../flows/feedback-flow';
 
 export type FlowFixtureType = {
     // Business Flows
@@ -128,6 +130,9 @@ export type FlowFixtureType = {
 
     // Common Flows
     createAndSubmitEnsDeclarationFlow: CreateAndSubmitEnsDeclarationFlow;
+    endOfJourneyFeedbackFlow: EndOfJourneyFeedbackFlow;
+    // The per-page feedback
+    feedbackFlow: FeedbackFlow;
     cancelEnsDeclarationFlow: CancelEnsDeclarationFlow;
     resubmitDeclarationFlow: ResubmitDeclarationFlow;
     auditDeclarationFlow: AuditDeclarationFlow;
@@ -405,6 +410,18 @@ export const flowFixture: ExtendParams[0] = {
             createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow, goodsOverviewFlow,
             createDraftConsignmentFirstFlow
         ));
+    },
+
+    endOfJourneyFeedbackFlow: async ({
+        createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow, feedbackPage
+    }, use) => {
+        await use(new EndOfJourneyFeedbackFlow(
+            createDraftEnsDeclarationFlow, consignmentOverviewFlow, movementOverviewFlow, feedbackPage
+        ));
+    },
+
+    feedbackFlow: async ({ phaseBanner, feedbackPage, feedbackCheckAnswersPage }, use) => {
+        await use(new FeedbackFlow(phaseBanner, feedbackPage, feedbackCheckAnswersPage));
     },
 
     cancelConsignmentFlow: async ({ consignmentOverviewPage, consignmentOverviewFlow }, use) => {
