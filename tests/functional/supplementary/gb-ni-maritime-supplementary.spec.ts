@@ -1,10 +1,10 @@
-import { ReportLog } from '../../src/core/report/report-log';
-import { test } from '../base-test';
-import { BASE_URL } from '../../config/environment';
-import { COMPANY_PROFILE } from '../../src/auth/credentials';
-import { byMaritime } from '../../src/test-data/ens-declaration-data';
-import { supplementaryDeclarationMovement } from '../../src/test-data/supplementary-declaration-movement-data';
-import { traderDefermentSupplementaryDeclaration } from '../../src/test-data/supplementary-declaration-data';
+import { ReportLog } from '../../../src/core/report/report-log';
+import { test } from '../../base-test';
+import { BASE_URL } from '../../../config/environment';
+import { COMPANY_PROFILE } from '../../../src/auth/credentials';
+import { byMaritime } from '../../../src/test-data/ens-declaration-data';
+import { supplementaryDeclarationMovement } from '../../../src/test-data/supplementary-declaration-movement-data';
+import { traderDefermentSupplementaryDeclaration } from '../../../src/test-data/supplementary-declaration-data';
 
 test.describe('GB to NI Maritime Supplementary Declaration - from ENS-SFD', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });

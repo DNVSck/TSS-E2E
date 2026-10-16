@@ -1,16 +1,16 @@
-import { ReportLog } from '../../src/core/report/report-log';
-import { test } from '../base-test';
-import { COMPANY_PROFILE } from '../../src/auth/credentials';
-import { IMPORTER_COMPANY_NAME, BASE_URL } from '../../config/environment';
-import { REPRESENTATION_TYPE } from '../../src/constant/representation-type-constant';
-import { PROCEDURE_CODES } from '../../src/constant/procedure-codes-constant';
-import { ADDITIONAL_PROCEDURE_CODES } from '../../src/constant/additional-procedure-codes-constant';
-import { sfdStandaloneByMaritime } from '../../src/test-data/sfd-standalone-consignment-data';
-import { sfdStandaloneGoodsItem } from '../../src/test-data/sfd-standalone-goods-item-data';
-import { immiStandaloneByMaritime } from '../../src/test-data/immi-standalone-consignment-data';
+import { ReportLog } from '../../../src/core/report/report-log';
+import { test } from '../../base-test';
+import { COMPANY_PROFILE } from '../../../src/auth/credentials';
+import { IMPORTER_COMPANY_NAME, BASE_URL } from '../../../config/environment';
+import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
+import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
+import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
+import { sfdStandaloneByMaritime } from '../../../src/test-data/sfd-standalone-consignment-data';
+import { sfdStandaloneGoodsItem } from '../../../src/test-data/sfd-standalone-goods-item-data';
+import { immiStandaloneByMaritime } from '../../../src/test-data/immi-standalone-consignment-data';
 import {
   immiStandaloneGoodsItem, IMMI_STANDALONE_COMMODITY_CODE,
-} from '../../src/test-data/immi-standalone-goods-item-data';
+} from '../../../src/test-data/immi-standalone-goods-item-data';
 
 test.describe('GB to NI Maritime Standalone Declaration Process - Agent Represents Trader', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });

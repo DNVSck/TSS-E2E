@@ -1,9 +1,9 @@
-import { ReportLog } from '../../src/core/report/report-log';
-import { test } from '../base-test';
-import { COMPANY_PROFILE } from '../../src/auth/credentials';
+import { ReportLog } from '../../../src/core/report/report-log';
+import { test } from '../../base-test';
+import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import {
   byMaritime, ensEidrDeclaration, ensImmiDeclaration, ensOnlyDeclaration, ensSfdDeclaration,
-} from '../../src/test-data/ens-declaration-data';
+} from '../../../src/test-data/ens-declaration-data';
 
 test.describe('GB to NI Maritime ENS Declaration Process - Agent Represents Trader', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
