@@ -133,8 +133,8 @@ export function consignmentPayload(
     overrides: Partial<ConsignmentPayload> = {}
 ): ConsignmentPayload {
     const buyerIsImporter = consignment.isBuyerSameAsImporter;
-    const warehoused = requiresWarehouseIdentifier(goods.procedureCode);
     const sellerIsExporter = consignment.isSellerSameAsExporter;
+    const warehoused = requiresWarehouseIdentifier(goods.procedureCode);
 
     return {
         declaration_number: declarationNumber,
