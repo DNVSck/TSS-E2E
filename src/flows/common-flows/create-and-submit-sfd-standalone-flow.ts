@@ -83,11 +83,7 @@ export class CreateAndSubmitSfdStandaloneFlow {
         { consignmentReference: lrn, consignmentData }: DraftSfdStandaloneDeclaration,
         expectedStatusKey?: TranslationKey
     ): Promise<DeclarationIdentity | undefined> {
-        if (expectedStatusKey) {
-            await this.consignmentOverviewFlow.submitConsignmentExpectingCdsRefusal();
-        } else {
-            await this.consignmentOverviewFlow.submitConsignment();
-        }
+        await this.consignmentOverviewFlow.submitConsignment(expectedStatusKey);
         const mrn = await this.verifyPostSubmit(consignmentData, expectedStatusKey);
 
         // Undefined on the EIDR route, which has no MRN and needs no CDS response.

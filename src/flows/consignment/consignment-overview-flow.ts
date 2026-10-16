@@ -181,15 +181,12 @@ export class ConsignmentOverviewFlow {
 
     /** From the goods-item overview, return to the consignment overview via the
      *  breadcrumb and submit the consignment. */
-    async submitConsignment(): Promise<void> {
+    async submitConsignment(expectedStatusKey?: TranslationKey): Promise<void> {
         await ReportLog.step('Submit consignment', async () => {
-            verifySubmittedWithoutErrors(await this.submitAndReadOutcome(), 'the consignment');
-        });
-    }
-
-    async submitConsignmentExpectingCdsRefusal(): Promise<void> {
-        await ReportLog.step('Submit consignment', async () => {
-            verifySubmittedWithoutErrors(withoutCdsVerdicts(await this.submitAndReadOutcome()), 'the consignment');
+            const errors = await this.submitAndReadOutcome();
+            verifySubmittedWithoutErrors(
+                expectedStatusKey ? withoutCdsVerdicts(errors) : errors, 'the consignment'
+            );
         });
     }
 
