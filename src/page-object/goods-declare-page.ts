@@ -71,8 +71,9 @@ export class GoodsDeclarePage extends BasePage {
     private readonly supervisingCustomsOfficeDropdown: Locator;
     private readonly warehouseScreen: WarehouseScreen;
 
-    private readonly natureOfGoodsDropdown: Locator;
     private readonly additionalRiskStatusRadios: Locator;
+
+    private readonly natureOfGoodsDropdown: Locator;
     private readonly preferenceDropdown: Locator;
     private readonly countryOfPreferentialOriginDropdown: Locator;
     private readonly valuationMethodDropdown: Locator;
@@ -145,9 +146,10 @@ export class GoodsDeclarePage extends BasePage {
         this.supervisingCustomsOfficeDropdown = page.locator("select#supervisingCustomsOffice");
         this.warehouseScreen = new WarehouseScreen(page);
 
+        this.additionalRiskStatusRadios = page.locator("input[name='additionalRiskStatus']");
+
         // "Enter invoice details"
         this.natureOfGoodsDropdown = page.locator("select#natureOfGoods");
-        this.additionalRiskStatusRadios = page.locator("input[name='additionalRiskStatus']");
         this.preferenceDropdown = page.locator("select#preference");
         this.countryOfPreferentialOriginDropdown = page.locator("select#countryOfPreferentialOrigin");
         this.valuationMethodDropdown = page.locator("select#valuationMethod");
@@ -500,6 +502,11 @@ export class GoodsDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
+    async selectAdditionalRiskStatus(additionalRiskStatus: string): Promise<void> {
+        await checkRadioByValue(this.additionalRiskStatusRadios, additionalRiskStatus);
+        await this.clickContinueButton();
+    }
+
     // The three screens below are asked only on a supplementary declaration. A frontier
     // declaration never collects them, which is the point of an SD: they are what the
     // duty is calculated from.
@@ -511,11 +518,6 @@ export class GoodsDeclarePage extends BasePage {
      * keeps its own pair on FfdStandaloneConsignmentDeclarePage. This is the goods-item
      * screen of the same name - one item, one answer - and shares only the field id.
      */
-    async selectAdditionalRiskStatus(additionalRiskStatus: string): Promise<void> {
-        await checkRadioByValue(this.additionalRiskStatusRadios, additionalRiskStatus);
-        await this.clickContinueButton();
-    }
-
     async selectNatureOfGoods(natureOfGoods: string): Promise<void> {
         await selectDropdownValue(this.natureOfGoodsDropdown, natureOfGoods);
         await this.clickContinueButton();
