@@ -127,7 +127,7 @@ steps:
       export ACCOUNT_OFFSET=$(( (SHARD_INDEX - 1) * WORKER_COUNT ))
 
       if [ "$SHARD_INDEX" -gt 1 ]; then
-        export AUTH_PROFILES="AGENT,IMPORTER"
+        export AUTH_PROFILES="AGENT,IMPORTER,HAULIER"
       fi
 
       require_variable "BASE_URL"
