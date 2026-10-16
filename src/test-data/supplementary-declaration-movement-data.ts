@@ -228,28 +228,29 @@ export const inwardProcessingSfdSupplementaryDeclarationMovement = (
  *
  * This variant sets:
  * - RoRo Accompanied (transport mode)
- * - Free Circulation procedure code (4000)
- * - Additional risk status NIREM (At Risk classification)
- * - Excisable goods commodity code (tobacco)
- * - Excise goods grouping additional procedure code (1EB)
+ * - The ENS-SFD excise warehouse declaration (0700-F06) - see exciseWarehouseDeclaration
  */
 export const exciseGoodsRoRoAccompaniedSupplementaryDeclarationMovement = (
     overrides?: Partial<SupplementaryDeclarationMovementData>
-): SupplementaryDeclarationMovementData => ({
-    movementOverrides: {
-        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-        ...overrides?.movementOverrides,
-    },
-    consignmentOverrides: {
-        ...exciseWarehouseDeclaration().consignmentOverrides,
-        ...overrides?.consignmentOverrides,
-    },
-    goodsItemOverrides: {
-        ...exciseWarehouseDeclaration().goodsItemOverrides,
-        ...overrides?.goodsItemOverrides,
-    },
-    ...overrides,
-});
+): SupplementaryDeclarationMovementData => {
+    const exciseWarehouse = exciseWarehouseDeclaration();
+
+    return {
+        movementOverrides: {
+            typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+            ...overrides?.movementOverrides,
+        },
+        consignmentOverrides: {
+            ...exciseWarehouse.consignmentOverrides,
+            ...overrides?.consignmentOverrides,
+        },
+        goodsItemOverrides: {
+            ...exciseWarehouse.goodsItemOverrides,
+            ...overrides?.goodsItemOverrides,
+        },
+        ...overrides,
+    };
+};
 
 /**
  * Build the answers for an ENS-SFD movement that will generate a Supplementary
