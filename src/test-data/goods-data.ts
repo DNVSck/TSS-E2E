@@ -1,5 +1,3 @@
-import { ADDITIONAL_RISK_STATUS } from "../constant/additional-risk-status-constant";
-import { GOODS_DOMESTIC_STATUS } from "../constant/goods-domestic-status-constant";
 import {COUNTRY_CODE} from "../constant/country-code-dropdown-constant";
 import {TYPE_OF_PACKAGES} from "../constant/type-of-packages-constant";
 import { PROCEDURE_CODES } from "../constant/procedure-codes-constant";
@@ -48,8 +46,6 @@ export interface GoodsData {
      * number" screen, and the values the goods-item overview must afterwards show.
      */
     tgpRecord?: TgpRecordData;
-    goodsDomesticStatus: string;
-    additionalRiskStatus: string;
     areGoodsControlled: boolean;
     isDangerousGoods: boolean;
     /** A UN number - see UN_DANGEROUS_GOODS_CODE. Only read when isDangerousGoods. */
@@ -113,10 +109,6 @@ const defaults: Omit<GoodsData, 'containerIdentifierNumber' | 'warehouseIdentifi
     // the trader, so a default would let a test that forgot to name one run silently
     // against whichever record happened to sit here.
     tgpRecord: undefined,
-    // "Enter goods domestic status"
-    goodsDomesticStatus: GOODS_DOMESTIC_STATUS.NIDOM,
-    // "Additional risk status"
-    additionalRiskStatus: ADDITIONAL_RISK_STATUS.NO_ADDITIONAL_RISK_STATUS,
     // "Are these goods controlled?"
     areGoodsControlled: true,
     // "Dangerous goods"
