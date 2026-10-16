@@ -22,6 +22,7 @@ import {
     GoodsPayload, GoodsRecordsPayload, GoodsWithRecordsPayload, DocumentReferencePayload,
 } from '../test-data/payload/trader-api/goods-payload';
 import { ImmiStandalonePayload } from '../test-data/payload/trader-api/immi-standalone-payload';
+import { requiresWarehouseIdentifier } from './procedure-code-helper';
 
 /**
  * The API is not consistent about case: a header answers "YES" and a consignment
@@ -132,6 +133,7 @@ export function consignmentPayload(
     overrides: Partial<ConsignmentPayload> = {}
 ): ConsignmentPayload {
     const buyerIsImporter = consignment.isBuyerSameAsImporter;
+    const warehoused = requiresWarehouseIdentifier(goods.procedureCode);
     const sellerIsExporter = consignment.isSellerSameAsExporter;
 
     return {
@@ -144,8 +146,8 @@ export function consignmentPayload(
         controlled_goods: yesNo(declaresControlledGoods(consignment)),
         goods_domestic_status: consignment.isEnsOnly || consignment.useIMMI ? null : consignment.goodsDomesticStatus,
         destination_country: consignment.destinationCountryCode,
-        supervising_customs_office: null,
-        customs_warehouse_identifier: null,
+        supervising_customs_office: warehoused ? goods.supervisingCustomsOffice : null,
+        customs_warehouse_identifier: warehoused ? goods.warehouseIdentifier : null,
         ducr: null,
         consignor_eori: consignment.consignorEORI,
         consignor_name: consignment.consignorName,
@@ -307,7 +309,11 @@ function goodsRecordsPayload(goods: GoodsData): GoodsRecordsPayload {
     return {
         document_references: goods.documentReferences.map(documentReferencePayload),
         detail_previous_document: goods.previousDocuments.map(previousDocumentPayload),
-        additional_information: [],
+        additional_information: goods.additionalInformations.map(information => ({
+            op_type: OP_TYPE.CREATE,
+            additional_info_code: information.code,
+            additional_info_description: information.description,
+        })),
         additional_procedures: goods.additionalProcedureCodes.map(code => ({
             op_type: OP_TYPE.CREATE,
             additional_procedure_code: code,
@@ -326,7 +332,6 @@ function documentReferencePayload(document: DocumentReferenceData): DocumentRefe
 
 function assertRecordsMapped(goods: GoodsData): void {
     const unmapped = Object.entries({
-        additionalInformations: goods.additionalInformations,
         taricAdditionalCodes: goods.taricAdditionalCodes,
         nationalAdditionalCodes: goods.nationalAdditionalCodes,
     }).filter(([, records]) => records.length > 0).map(([name]) => name);

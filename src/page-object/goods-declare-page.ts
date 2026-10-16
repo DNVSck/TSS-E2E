@@ -72,6 +72,7 @@ export class GoodsDeclarePage extends BasePage {
     private readonly warehouseScreen: WarehouseScreen;
 
     private readonly natureOfGoodsDropdown: Locator;
+    private readonly additionalRiskStatusRadios: Locator;
     private readonly preferenceDropdown: Locator;
     private readonly countryOfPreferentialOriginDropdown: Locator;
     private readonly valuationMethodDropdown: Locator;
@@ -146,6 +147,7 @@ export class GoodsDeclarePage extends BasePage {
 
         // "Enter invoice details"
         this.natureOfGoodsDropdown = page.locator("select#natureOfGoods");
+        this.additionalRiskStatusRadios = page.locator("input[name='additionalRiskStatus']");
         this.preferenceDropdown = page.locator("select#preference");
         this.countryOfPreferentialOriginDropdown = page.locator("select#countryOfPreferentialOrigin");
         this.valuationMethodDropdown = page.locator("select#valuationMethod");
@@ -509,6 +511,11 @@ export class GoodsDeclarePage extends BasePage {
      * keeps its own pair on FfdStandaloneConsignmentDeclarePage. This is the goods-item
      * screen of the same name - one item, one answer - and shares only the field id.
      */
+    async selectAdditionalRiskStatus(additionalRiskStatus: string): Promise<void> {
+        await checkRadioByValue(this.additionalRiskStatusRadios, additionalRiskStatus);
+        await this.clickContinueButton();
+    }
+
     async selectNatureOfGoods(natureOfGoods: string): Promise<void> {
         await selectDropdownValue(this.natureOfGoodsDropdown, natureOfGoods);
         await this.clickContinueButton();

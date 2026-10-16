@@ -2,6 +2,7 @@ import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { INCOTERM } from '../constant/incoterm-constant';
 import { NATURE_OF_GOODS } from '../constant/nature-of-goods-constant';
+import { ADDITIONAL_RISK_STATUS } from '../constant/additional-risk-status-constant';
 import { METHOD_OF_PAYMENT, MethodOfPaymentCode } from '../constant/method-of-payment-constant';
 import { PREFERENCE_CODE, VALUATION_METHOD } from '../constant/preference-and-valuation-constant';
 import { UNLOCODE, UnlocodeCode } from '../constant/unlocode-constant';
@@ -32,8 +33,9 @@ import { VEHICLE_REGISTRATION_NUMBER } from './movements-data';
  *   header   vehicle or trailer details -> exporter profile -> delivery terms
  *            -> either the UN/LOCODE, or the delivery country then the delivery place
  *            -> invoice currency
- *   goods    country of origin -> commodity information -> weight -> nature of goods
- *            -> preference and valuation -> invoice details -> statistical value
+ *   goods    additional risk status -> country of origin -> commodity information
+ *            -> weight -> nature of goods -> preference and valuation -> invoice details
+ *            -> statistical value
  */
 export interface SupplementaryDeclarationData {
     // ---- header: means of transport --------------------------------------------------
@@ -123,6 +125,7 @@ export interface SupplementaryDeclarationData {
     documentReferencesToRemove: string[];
 
     // ---- goods item ----------------------------------------------------------------
+    additionalRiskStatus: string;
     countryOfOrigin: string;
     /**
      * "Supplementary units", asked on the commodity screen.
@@ -217,6 +220,7 @@ const defaults: SupplementaryDeclarationData = {
     holdersOfAuthorisationToRemove: [],
     documentReferencesToRemove: [],
 
+    additionalRiskStatus: ADDITIONAL_RISK_STATUS.NO_ADDITIONAL_RISK_STATUS,
     countryOfOrigin: COUNTRY_CODE.UNITED_KINGDOM,
     supplementaryUnits: '1',
     netMass: '10',
@@ -351,29 +355,23 @@ export const tempAdmissionSupplementaryDeclaration = (
  */
 export const inwardProcessingSfdSupplementaryDeclaration = (
     overrides?: Partial<SupplementaryDeclarationData>
-): SupplementaryDeclarationData => tssDefermentSupplementaryDeclaration(overrides);
+): SupplementaryDeclarationData => tssDefermentSupplementaryDeclaration({
+    additionalRiskStatus: ADDITIONAL_RISK_STATUS.NIREM,
+    ...overrides,
+});
 
 /**
- * A supplementary declaration for excisable goods (e.g., tobacco).
+ * A supplementary declaration for excisable goods (e.g., tobacco) moved from an excise
+ * warehouse (0700-F06) - see exciseGoodsRoRoAccompaniedSupplementaryDeclarationMovement.
  *
- * Excise goods are subject to excise duty and require standard tariff application.
- * This route uses TSS DDA for duty payment and removes trader deferment authorisations
- * that do not apply to the excise payment route. The goods carry a standard free
- * circulation procedure code (4000) and an excise goods grouping additional procedure
- * code (1EB) to indicate excise duty is applicable.
- *
- * The At Risk classification (NIREM) indicates enhanced inspection may be required.
+ * Paid from the trader's own deferment account: the importer this runs as offers no
+ * TSS DDA on an excise declaration. The At Risk classification (NIREM) is declared on
+ * the goods item.
  */
 export const exciseGoodsSupplementaryDeclaration = (
     overrides?: Partial<SupplementaryDeclarationData>
-): SupplementaryDeclarationData => supplementaryDeclaration({
+): SupplementaryDeclarationData => traderDefermentSupplementaryDeclaration({
+    additionalRiskStatus: ADDITIONAL_RISK_STATUS.NIREM,
     countryOfOrigin: COUNTRY_CODE.UNITED_KINGDOM,
-    methodOfPayment: METHOD_OF_PAYMENT.CARD_PAYMENT_THROUGH_TSS,
-    holdersOfAuthorisationToRemove: [
-        AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU,
-        AUTHORISATION_TYPE_CODE.DEFERMENT_OF_PAYMENT_DPO,
-    ],
-    documentReferencesToRemove: [DOCUMENT_CODE.C506, DOCUMENT_CODE.C505],
-    documentReferences: [],
     ...overrides,
 });

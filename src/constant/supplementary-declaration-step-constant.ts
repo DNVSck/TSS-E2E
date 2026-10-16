@@ -17,6 +17,7 @@ export const SUPPLEMENTARY_DECLARATION_STEP = {
     INVOICE_CURRENCY: 'invoice-currency',
 
     // ---- goods item ----------------------------------------------------------------
+    ADDITIONAL_RISK_STATUS: 'additional-risk-status',
     COUNTRY_OF_ORIGIN: 'country-of-origin',
     /** Code and description arrive filled; the supplementary units may not. */
     COMMODITY_INFORMATION: 'commodity-information',

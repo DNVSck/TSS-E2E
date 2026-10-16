@@ -3,10 +3,11 @@ import { test } from '../../base-test';
 import { IMPORTER_COMPANY_NAME, TSS_DDA_COMPANY_NAME, BASE_URL } from '../../../config/environment';
 import { COMPANY_PROFILE, isProfileConfigured } from '../../../src/auth/credentials';
 import {
-    declaredThroughTraderApi,
+    declaredThroughTraderApi, exciseGoodsSupplementaryDeclaration,
     traderDefermentSupplementaryDeclaration, tssDefermentSupplementaryDeclaration,
 } from '../../../src/test-data/supplementary-declaration-data';
 import {
+    exciseGoodsRoRoAccompaniedSupplementaryDeclarationMovement,
     scdpRoRoAccompaniedSupplementaryDeclarationMovement,
     tssDdaSupplementaryDeclarationMovement,
     tssDdaTraderApiSupplementaryDeclarationMovement,
@@ -23,6 +24,7 @@ const SD_IMPORTER_TSS_DDA = '4699';
 const SD_RESUBMIT = '7106';
 const SD_CANCEL_NEEDS_REASON = '7108';
 const SD_CANCEL_TIR = '7109';
+const SD_EXCISE = '5301';
 
 /**
  * The supplementary declaration that follows an ENS-SFD movement, once by each of the
@@ -166,6 +168,31 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
         }
     );
 
+    test(
+        'Verify the supplementary declaration raised by RoRo Accompanied At Risk ENS-SFD with Excise Goods is completed and submitted successfully',
+        { tag: ['@regression', '@happyPath'] },
+        async ({
+            generateSdDraftThroughApiFlow,
+            completeAndSubmitSupplementaryDeclarationFlow,
+        }, testInfo) => {
+            await ReportLog.setStory('Supplementary Declaration - from ENS-SFD declared through the Trader API - RoRo (Accompanied) - At Risk - Excise Goods (0700-F06) - Trader DDA');
+            reportTestCaseLink(SD_EXCISE);
+
+            const source = await generateSdDraftThroughApiFlow.raiseSdDraft({
+                declaration: exciseGoodsRoRoAccompaniedSupplementaryDeclarationMovement(),
+                representing: { companyName: IMPORTER_COMPANY_NAME, testInfo, url: BASE_URL },
+            });
+
+            await ReportLog.step('Complete and submit the supplementary declaration', () =>
+                completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
+                    testInfo,
+                    url: BASE_URL,
+                    ...source,
+                    overrides: exciseGoodsSupplementaryDeclaration(),
+                })
+            );
+        }
+    );
 });
 
 

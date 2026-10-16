@@ -1,5 +1,5 @@
 import { TestInfo } from '@playwright/test';
-import { BASE_URL, IMPORTER_UKIMS } from '../../config/environment';
+import { BASE_URL, IMPORTER_EXW, IMPORTER_UKIMS } from '../../config/environment';
 import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
 import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
@@ -12,6 +12,8 @@ import { holderOfAuthorisation } from './holder-of-authorisation-data';
 import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
+import { additionalInformation } from './additional-information-data';
+import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
 
 
 export const ensSfdDeclaration = (
@@ -31,6 +33,25 @@ export const ensSfdDeclaration = (
     },
     goodsItemOverrides: {
         documentReferences: ensSfdGoodsDocuments(),
+    },
+});
+
+export const exciseWarehouseDeclaration = (): Pick<EnsDeclarationOptions, 'consignmentOverrides' | 'goodsItemOverrides'> => ({
+    consignmentOverrides: {
+        holdersOfAuthorisation: [
+            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW }),
+        ],
+    },
+    goodsItemOverrides: {
+        procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
+        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
+        documentReferences: [
+            ...ensSfdGoodsDocuments(),
+            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined, documentReference: IMPORTER_EXW }),
+        ],
+        additionalInformations: [
+            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.ECONR, description: 'Reg No. 1234567890' }),
+        ],
     },
 });
 

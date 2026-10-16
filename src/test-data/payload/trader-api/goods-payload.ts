@@ -40,10 +40,16 @@ export type AdditionalProcedurePayload = {
     additional_procedure_code: string;
 };
 
+export type AdditionalInformationPayload = {
+    op_type: string;
+    additional_info_code: string;
+    additional_info_description: string;
+};
+
 export type GoodsRecordsPayload = {
     document_references: DocumentReferencePayload[];
     detail_previous_document: PreviousDocumentPayload[];
-    additional_information: never[];
+    additional_information: AdditionalInformationPayload[];
     additional_procedures: AdditionalProcedurePayload[];
 };
 

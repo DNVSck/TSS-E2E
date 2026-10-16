@@ -1,22 +1,17 @@
-﻿import { ADDITIONAL_INFORMATION_CODE } from '../../../src/constant/additional-information-constant';
-import { ReportLog } from '../../../src/core/report/report-log';
+﻿import { ReportLog } from '../../../src/core/report/report-log';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { test } from '../../base-test';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import {
-    documentReference, ensSfdGoodsDocuments,
+    ensSfdGoodsDocuments,
 } from '../../../src/test-data/document-reference-data';
-import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
-import { IMPORTER_EXW, BASE_URL } from '../../../config/environment';
-import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
+import { BASE_URL } from '../../../config/environment';
 import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
-import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
-import { additionalInformation } from '../../../src/test-data/additional-information-data';
 import { NIRMS_COMMODITY, nirmsGoodsItem } from '../../../src/test-data/nirms-data';
 import { rejectedByCds } from '../../../src/test-data/rejection-lever-data';
-import { ensSfdDeclaration } from '../../../src/test-data/ens-declaration-data';
+import { ensSfdDeclaration, exciseWarehouseDeclaration } from '../../../src/test-data/ens-declaration-data';
 import { CANCELLATION_REASON } from '../../../src/test-data/consignment-data';
 
 const ENS_SFD_ACCO = '2253';
@@ -91,22 +86,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Agent Repr
         movementOverrides: {
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         },
-        consignmentOverrides: {
-          holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })
-          ],
-        },
-        goodsItemOverrides: {
-          procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
-          additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
-          documentReferences: [
-            ...ensSfdGoodsDocuments(),
-            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined, documentReference: IMPORTER_EXW }),
-          ],
-          additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.ECONR, description: 'Reg No. 1234567890' }),
-          ],
-        },
+        ...exciseWarehouseDeclaration(),
       })
     );
 

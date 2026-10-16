@@ -311,6 +311,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
             await this.auditGoodsRecordWizards(options);
             await this.goodsRecordPage.startGoodsWizard();
 
+            await this.steps.selectAdditionalRiskStatusIfAsked(input, checkpoint);
             await this.steps.selectCountryOfOriginIfAsked(input, checkpoint);
             await this.steps.enterSupplementaryUnitsIfAsked(input, checkpoint);
             await this.steps.enterNetMassIfAsked(input, checkpoint);

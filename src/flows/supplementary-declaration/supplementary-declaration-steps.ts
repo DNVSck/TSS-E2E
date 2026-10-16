@@ -208,6 +208,18 @@ export class SupplementaryDeclarationSteps {
 
     // ===================== Goods item =====================
 
+    async selectAdditionalRiskStatusIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
+        return this.answerIfAsked(
+            STEP.ADDITIONAL_RISK_STATUS,
+            `Declare the additional risk status as "${input.additionalRiskStatus}"`,
+            () => this.goodsPage.selectAdditionalRiskStatus(input.additionalRiskStatus),
+            checkpoint
+        );
+    }
+
     /** "Country of origin" */
     async selectCountryOfOriginIfAsked(
         input: SupplementaryDeclarationData,

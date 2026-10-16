@@ -1,6 +1,7 @@
 import { MovementData } from './movements-data';
 import { ConsignmentData } from './consignment-data';
 import { GoodsData } from './goods-data';
+import { exciseWarehouseDeclaration } from './ens-declaration-data';
 import { previousDocument } from './previous-document-data';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { documentReference, ensSfdGoodsDocuments, goodsDocumentsWithoutSde } from './document-reference-data';
@@ -245,20 +246,11 @@ export const exciseGoodsRoRoAccompaniedSupplementaryDeclarationMovement = (
         ...overrides?.movementOverrides,
     },
     consignmentOverrides: {
-        headerPreviousDocuments: [
-            previousDocument({ documentReference: '3XI352196303000-12345' })
-        ],
+        ...exciseWarehouseDeclaration().consignmentOverrides,
         ...overrides?.consignmentOverrides,
     },
     goodsItemOverrides: {
-        countryOfOrigin: COUNTRY_CODE.UNITED_KINGDOM,
-        commodityCode: '2404199000',
-        goodsDescription: 'Smoking tobacco, whether or not containing tobacco substitutes in any proportion',
-        procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
-        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.NO_OTHER_ADDITIONAL_CODE_000,
-        additionalRiskStatus: ADDITIONAL_RISK_STATUS.NIREM,
-        supplementaryUnits: '100',
-        documentReferences: ensSfdGoodsDocuments(),
+        ...exciseWarehouseDeclaration().goodsItemOverrides,
         ...overrides?.goodsItemOverrides,
     },
     ...overrides,

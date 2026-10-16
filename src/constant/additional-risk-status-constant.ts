@@ -1,5 +1,6 @@
 export const ADDITIONAL_RISK_STATUS = {
-	NO_ADDITIONAL_RISK_STATUS: 'No additional risk status',
+	NO_ADDITIONAL_RISK_STATUS: 'no-additional-risk-status',
+	NIAID: 'NIAID',
 	NIPRO: 'NIPRO',
 	NIQUO: 'NIQUO',
 	NIREM: 'NIREM',

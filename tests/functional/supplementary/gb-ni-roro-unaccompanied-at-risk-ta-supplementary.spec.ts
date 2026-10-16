@@ -9,6 +9,7 @@ import {
     tempAdmissionSupplementaryDeclarationMovement,
 } from '../../../src/test-data/supplementary-declaration-movement-data';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
+import { ADDITIONAL_RISK_STATUS } from '../../../src/constant/additional-risk-status-constant';
 
 const SFD_SUPP_TEA = '4770';
 
@@ -40,7 +41,7 @@ test.describe('GB to NI RoRo Unaccompanied At Risk Temporary Admission - Supplem
                     url: BASE_URL,
                     movementLrn,
                     frontierLrn,
-                    overrides: tssDefermentSupplementaryDeclaration(),
+                    overrides: tssDefermentSupplementaryDeclaration({ additionalRiskStatus: ADDITIONAL_RISK_STATUS.NIREM }),
                 })
             );
         }
