@@ -40,7 +40,7 @@ export class AddNewSfdStandaloneConsignmentFlow {
             }
 
             await this.movementSteps.chooseTypeOfMovement(input.typeOfMovement);
-            await this.identifyMeansOfTransport(input, checkpoint);
+            await this.identifyMethodOfTransport(input, checkpoint);
 
             // Asked on BOTH branches, like IMMI and unlike FFD: an arrived movement is
             // still asked when the goods arrived. Measured on sit 2026-08-12 - skipping
@@ -142,7 +142,7 @@ export class AddNewSfdStandaloneConsignmentFlow {
         );
     }
 
-    private async identifyMeansOfTransport(
+    private async identifyMethodOfTransport(
         input: SfdStandaloneConsignmentData,
         checkpoint?: AccessibilityCheckpoint
     ): Promise<void> {
