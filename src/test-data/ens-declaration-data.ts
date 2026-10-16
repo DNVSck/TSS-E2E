@@ -6,6 +6,7 @@ import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-cod
 import { PREVIOUS_DOCUMENT_TYPE } from '../constant/previous-document-type-constant';
 import { ConsignmentData, ensOnlyConsignment } from './consignment-data';
 import { MovementData } from './movements-data';
+import { MARITIME_NON_ILP_PORT } from '../constant/maritime-non-ilp-port-constant';
 import { EnsDeclarationOptions } from '../flows/common-flows/create-draft-ens-declaration-flow';
 import { previousDocument } from './previous-document-data';
 import { documentReference, ensSfdGoodsDocuments } from './document-reference-data';
@@ -15,7 +16,6 @@ import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { additionalInformation } from './additional-information-data';
 import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
-import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
 
 
@@ -161,7 +161,7 @@ export const byMaritime = <T extends {
     movementOverrides: {
         ...declaration.movementOverrides,
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.MARITIME,
-        portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+        portOfArrival: MARITIME_NON_ILP_PORT.BELFAST_PORT,
     },
     consignmentOverrides: {
         ...declaration.consignmentOverrides,

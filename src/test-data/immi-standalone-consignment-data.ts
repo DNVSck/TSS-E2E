@@ -2,6 +2,7 @@ import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
+import { MARITIME_NON_ILP_PORT } from '../constant/maritime-non-ilp-port-constant';
 import { REPRESENTATION_TYPE } from '../constant/representation-type-constant';
 import { PreviousDocumentData, previousDocument } from './previous-document-data';
 import { generateValidArrivalDate, generatePastArrivalDate } from '../helper/data-generate-helper';
@@ -133,6 +134,6 @@ export const immiStandaloneByMaritime = <T extends { consignmentOverrides?: Part
     consignmentOverrides: {
         ...declaration.consignmentOverrides,
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.MARITIME,
-        portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+        portOfArrival: MARITIME_NON_ILP_PORT.BELFAST_PORT,
     },
 });

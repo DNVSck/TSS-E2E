@@ -3,6 +3,7 @@ import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { IMO_NUMBER } from './movements-data';
+import { MARITIME_NON_ILP_PORT } from '../constant/maritime-non-ilp-port-constant';
 import { PreviousDocumentData } from './previous-document-data';
 import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
 import { CONTAINER_SIZE } from '../constant/container-size-constant';
@@ -168,7 +169,7 @@ export const sfdStandaloneByMaritime = <T extends { consignmentOverrides?: Parti
     consignmentOverrides: {
         ...declaration.consignmentOverrides,
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.MARITIME,
-        portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+        portOfArrival: MARITIME_NON_ILP_PORT.BELFAST_PORT,
         transportDocumentNumber: generateRandomTransportDocumentNumber('MARITIME'),
     },
 });
