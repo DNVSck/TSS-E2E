@@ -2,6 +2,7 @@
 import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
+import { IMO_NUMBER } from './movements-data';
 import { PreviousDocumentData } from './previous-document-data';
 import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
 import { CONTAINER_SIZE } from '../constant/container-size-constant';
@@ -91,7 +92,7 @@ const defaults: SfdStandaloneConsignmentData = {
 
     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
     vehicleRegistration: 'GB12ABC',
-    imoNumber: '9198941',
+    imoNumber: IMO_NUMBER,
     nationalityOfMeansOfTransport: COUNTRY_CODE.UNITED_KINGDOM,
     portOfArrival: PORT_OF_ARRIVAL.BELFAST_GVMS_PORT,
     isControlledGoods: false,
