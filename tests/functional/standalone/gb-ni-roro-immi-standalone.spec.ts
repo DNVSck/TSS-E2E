@@ -123,7 +123,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
         consignmentOverrides: {
           isPreLodged: false,
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_GVMS_PORT,
           representationType: REPRESENTATION_TYPE.DIRECT,
         },
         goodsItemOverrides: immiStandaloneGoodsItem({
@@ -312,7 +312,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           isPreLodged: false,
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
           representationType: undefined,
-          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_GVMS_PORT,
         },
         goodsItemOverrides: immiStandaloneGoodsItem({
           useTGP: true,
@@ -501,7 +501,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           isPreLodged: false,
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
           representationType: undefined,
-          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_GVMS_PORT,
         },
   
         goodsItemOverrides: immiStandaloneGoodsItem({
@@ -529,7 +529,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           isPreLodged: false,
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
           representationType: undefined,
-          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_GVMS_PORT,
         },
   
         goodsItemOverrides: immiStandaloneGoodsItem({

@@ -74,7 +74,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
           representationType: REPRESENTATION_TYPE.DIRECT,
           isPreLodged: false,
           isControlledGoods: true,
-          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_GVMS_PORT,
         },
         goodsItemOverrides: sfdStandaloneGoodsItem(),
       })
@@ -117,7 +117,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Agent Represen
           representationType: REPRESENTATION_TYPE.DIRECT,
           isPreLodged: false,
           isControlledGoods: false,
-          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_GVMS_PORT,
         },
         goodsItemOverrides: sfdStandaloneGoodsItem(),
       })
@@ -191,7 +191,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
         consignmentOverrides: {
           isPreLodged: false,
           isControlledGoods: true,
-          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_GVMS_PORT,
         },
         goodsItemOverrides: sfdStandaloneGoodsItem(),
       })
@@ -228,7 +228,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
         consignmentOverrides: {
           isPreLodged: false,
           isControlledGoods: false,
-          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_HARBOUR,
+          portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_GVMS_PORT,
         },
         goodsItemOverrides: sfdStandaloneGoodsItem(),
       })
