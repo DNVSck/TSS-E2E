@@ -20,6 +20,8 @@ const DECLARANTS: MaritimeEnsCases[] = [
   { who: 'Trader (Haulier)', profile: COMPANY_PROFILE.HAULIER, ensOnly: '6560', ensSfd: '6555', ensImmi: '6557', ensEidr: '6559' },
 ];
 
+const MARITIME_BLOCKS_GMR = '6561';
+
 const linkCase = (id?: string) => {
   if (id) reportTestCaseLink(id);
 };
@@ -77,3 +79,21 @@ for (const declarant of DECLARANTS) {
     });
   });
 }
+
+test.describe('GB to NI Maritime ENS Declaration Process - GMR', () => {
+  test.use({ authProfile: COMPANY_PROFILE.AGENT });
+
+  test.beforeEach(async () => {
+    await ReportLog.setFeature('GB to NI Maritime ENS Declaration Process');
+  });
+
+  test('Verify a Maritime ENS movement does not offer Create GMR', { tag: ['@maritime', '@regression', '@gmr'] }, async ({ createAndSubmitEnsDeclarationFlow, gmrOverviewFlow }, testInfo) => {
+    await ReportLog.setStory('GMR - not offered on a GB to NI Maritime movement');
+    reportTestCaseLink(MARITIME_BLOCKS_GMR);
+    await ReportLog.step('Create and submit the ENS declaration', () =>
+      createAndSubmitEnsDeclarationFlow.completeEnsDeclarationFlow(byMaritime(ensOnlyDeclaration(testInfo, {})))
+    );
+
+    await gmrOverviewFlow.verifyCreateGmrIsOffered(false, 'on a submitted Maritime movement');
+  });
+});
