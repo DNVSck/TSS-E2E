@@ -1,4 +1,4 @@
-import { expect, Locator, Page } from '@playwright/test';
+import { expect, Locator, Page, Request } from '@playwright/test';
 import { StringUtil } from '../core/util/string-util';
 import { ReportLog } from '../core/report/report-log';
 import { GOVUK } from '../page-object/components/govuk-selectors';
@@ -93,24 +93,25 @@ export async function clickToLeaveScreen(page: Page, button: Locator): Promise<v
     let delivered = false;
 
     while (clicks < SUBMIT_CLICK_ATTEMPTS) {
-        const answer = submitAnswer(page, origin);
+        const watch = watchSubmit(page, origin);
         refusal = await deliverClick(button);
         clicks++;
         delivered ||= refusal === '';
 
-        if (await leftScreen(page, from, SUBMIT_LANDING_TIMEOUT)) {
+        const left = await leftScreen(page, from, SUBMIT_LANDING_TIMEOUT);
+        const submit = watch.stop();
+        if (left) {
             return;
         }
 
-        const { sent, status } = await answer;
-        if (sent) {
-            if (isRedirect(status) && await leftScreen(page, from, SUBMIT_IN_FLIGHT_TIMEOUT)) {
+        if (submit) {
+            if (isRedirect(await statusOf(page, submit)) && await leftScreen(page, from, SUBMIT_IN_FLIGHT_TIMEOUT)) {
                 return;
             }
             break;
         }
 
-        if (refusal || !await isStillClickable(button)) {
+        if (!await isStillClickable(button)) {
             if (delivered && await leftScreen(page, from, SUBMIT_IN_FLIGHT_TIMEOUT)) {
                 return;
             }
@@ -136,27 +137,36 @@ export async function waitForHydration(element: Locator): Promise<void> {
 
 const REACT_PROPS_MARKER = '__reactProps';
 
-interface SubmitAnswer {
-    sent: boolean;
-    status?: number;
+interface SubmitWatch {
+    stop(): Request | undefined;
 }
 
-async function submitAnswer(page: Page, origin: string): Promise<SubmitAnswer> {
-    const submit = await page.waitForRequest(
-        request => request.method() === 'POST' && new URL(request.url()).origin === origin,
-        { timeout: SUBMIT_LANDING_TIMEOUT }
-    ).catch(() => undefined);
+function watchSubmit(page: Page, origin: string): SubmitWatch {
+    let submit: Request | undefined;
+    const onRequest = (request: Request): void => {
+        if (!submit && request.method() === 'POST' && new URL(request.url()).origin === origin) {
+            submit = request;
+        }
+    };
+    page.on('request', onRequest);
 
-    if (!submit) {
-        return { sent: false };
-    }
+    return {
+        stop: () => {
+            page.off('request', onRequest);
+            return submit;
+        }
+    };
+}
 
-    const response = await page.waitForResponse(
-        candidate => candidate.request() === submit,
-        { timeout: SUBMIT_IN_FLIGHT_TIMEOUT }
-    ).catch(() => undefined);
-
-    return { sent: true, status: response?.status() };
+async function statusOf(page: Page, submit: Request): Promise<number | undefined> {
+    const response = await Promise.race([
+        submit.response(),
+        page.waitForResponse(
+            candidate => candidate.request() === submit,
+            { timeout: SUBMIT_IN_FLIGHT_TIMEOUT }
+        ).catch(() => null)
+    ]);
+    return response?.status();
 }
 
 const isRedirect = (status: number | undefined): boolean =>
@@ -176,17 +186,21 @@ async function describeButton(
     refusal: string,
     delivered: boolean
 ): Promise<string> {
-    if (await isStillClickable(button)) {
-        return 'is still clickable, so the clicks reached it and the screen simply stayed';
-    }
-
+    const clickable = await isStillClickable(button);
     const because = refusal ? ` (${refusal})` : '';
 
-    return delivered
-        ? `took a click and then stopped accepting them${because} - it is disabled or gone, `
-        + 'so the click WAS taken and the service never landed'
-        : `never accepted a click at all${because} - it was disabled or missing before this `
-        + 'ran, so look at what left the screen in that state rather than at the service';
+    if (!delivered) {
+        return clickable
+            ? `never took a click${because} although it is clickable now - the screen was busy `
+            + 'or reloading while it was clicked, and no submit reached the service'
+            : `never accepted a click at all${because} - it was disabled or missing before this `
+            + 'ran, so look at what left the screen in that state rather than at the service';
+    }
+
+    return clickable
+        ? 'is still clickable, so the clicks reached it and the screen simply stayed'
+        : `took a click and then stopped accepting them${because} - it is disabled or gone, `
+        + 'so the click WAS taken and the service never landed';
 }
 
 async function leftScreen(page: Page, from: string, timeout: number): Promise<boolean> {
