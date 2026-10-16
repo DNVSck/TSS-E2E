@@ -12,7 +12,8 @@ import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
 import { defermentAccountNumber } from '../helper/authorisation-helper';
 import { IMPORTER_DPO } from '../../config/environment';
-import { generateRandomInvoiceNumber } from '../helper/data-generate-helper';
+import { generateRandomInvoiceNumber, generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
+import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
 import { VEHICLE_REGISTRATION_NUMBER } from './movements-data';
 
 /**
@@ -30,7 +31,8 @@ import { VEHICLE_REGISTRATION_NUMBER } from './movements-data';
  * questions this declaration still has no answer to, so which screens appear depends
  * on what the frontier declaration already carried:
  *
- *   header   vehicle or trailer details -> buyer profile -> exporter profile
+ *   header   vehicle or trailer details -> buyer profile
+ *            -> transport and destination -> exporter profile
  *            -> seller profile -> delivery terms
  *            -> either the UN/LOCODE, or the delivery country then the delivery place
  *            -> invoice currency
@@ -72,6 +74,9 @@ export interface SupplementaryDeclarationData {
     buyerCity: string;
     buyerPostCode: string;
     buyerCountryCode: string;
+
+    transportDocumentNumber: string;
+    goodsDomesticStatus: string;
 
     // ---- header: exporter profile --------------------------------------------------
     // No EORI: the SD asks for the exporter's name and address directly.
@@ -208,6 +213,9 @@ const defaults: SupplementaryDeclarationData = {
     buyerPostCode: 'BT1 1AA',
     buyerCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
+    transportDocumentNumber: '',
+    goodsDomesticStatus: CONSIGNMENT_GOODS_DOMESTIC_STATUS.NIDOM,
+
     exporterName: 'AUTOMATION EXPORTER LTD',
     exporterStreetName: 'DONEGALL SQUARE',
     exporterStreetNumber: '1',
@@ -285,6 +293,7 @@ export const supplementaryDeclaration = (
 ): SupplementaryDeclarationData => ({
     ...defaults,
     invoiceNumber: generateRandomInvoiceNumber(),
+    transportDocumentNumber: generateRandomTransportDocumentNumber(),
     ...overrides,
 });
 

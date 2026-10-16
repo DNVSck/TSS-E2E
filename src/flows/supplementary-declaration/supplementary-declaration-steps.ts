@@ -136,6 +136,18 @@ export class SupplementaryDeclarationSteps {
         );
     }
 
+    async enterTransportAndDestinationIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
+        return this.answerIfAsked(
+            STEP.TRANSPORT_AND_DESTINATION,
+            `Declare transport document ${input.transportDocumentNumber} and goods domestic status ${input.goodsDomesticStatus}`,
+            () => this.consignmentPage.fillSfdTransportAndDestinationDetails(input.transportDocumentNumber, input.goodsDomesticStatus),
+            checkpoint
+        );
+    }
+
     /**
      * "Enter exporter profile" - name and address, with no EORI screen before it. Asked
      * only when the frontier declaration named no exporter.

@@ -8,6 +8,7 @@ export const SUPPLEMENTARY_DECLARATION_STEP = {
     /** RoRo unaccompanied: a trailer registration. The twin of the screen above. */
     TRAILER_DETAILS: 'supplementary-vehicle-details-roro-unaccompanied',
     BUYER_PROFILE: 'buyer-profile',
+    TRANSPORT_AND_DESTINATION: 'sfd-transport-and-destination-details',
     EXPORTER_PROFILE: 'exporter-profile',
     SELLER_PROFILE: 'seller-profile',
     DELIVERY_TERMS: 'delivery-terms',
