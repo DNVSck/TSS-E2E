@@ -355,10 +355,6 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Resubmission a
 
   test('Verify an SFD standalone consignment in "Trader Input Required" by CDS can be corrected and resubmitted', {
     tag: ['@regression', '@resubmission'],
-    annotation: {
-      type: 'defect',
-      description: 'Defect 1899 - EXPECTED RED. Deleting a record from a declaration tab does nothing: the Delete posts, the server answers 200 with no error, and the record stays. Removal is the only correction this journey has.',
-    },
   }, async ({ createAndSubmitSfdStandaloneFlow, resubmitDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('SFD Standalone - CDS refuses an authorisation the declaration should not carry, and the trader removes it and resubmits');
     reportTestCaseLink(SFD_STANDALONE_RESUBMIT);
