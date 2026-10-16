@@ -310,6 +310,13 @@ export class GoodsItemSteps {
         });
     }
 
+    async enterImmiStandalonePackagingDetails(input: GoodsData): Promise<void> {
+        await ReportLog.step('Fill Packaging Information', async () => {
+            await this.goodsDeclarePage.enterNumberOfPackagesOnly(input.numberOfPackages);
+            await this.goodsDeclarePage.clickContinueButton();
+        });
+    }
+
     /**
      * The NIRMS screen, when the service shows it. A no-op otherwise - see
      * GoodsDeclarePage.answerUseNirmsIfPresent for why this one cannot be decided from

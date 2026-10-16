@@ -70,7 +70,7 @@ export class AddNewImmiStandaloneGoodsItemFlow {
             }
 
             await checkpoint?.('Goods item - packaging', { probeErrors: true });
-            await this.steps.enterStandalonePackagingDetails(input);
+            await this.steps.enterImmiStandalonePackagingDetails(input);
 
             if (usesTgp) {
                 await this.declareNirmsFlow.answerNirms(input, { isEnsOnly: false, useIMMI: true, importerEORI: declaringForEori }, checkpoint);

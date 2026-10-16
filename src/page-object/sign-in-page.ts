@@ -14,6 +14,7 @@ import { GOVUK } from './components/govuk-selectors';
 const MAX_TOTP_ATTEMPTS = 8;
 
 const AUTH_SCREEN_TIMEOUT = 90_000;
+const PASSWORD_TOGGLE_TIMEOUT = 10_000;
 
 
 export class SignInPage extends BasePage {
@@ -326,7 +327,8 @@ export class SignInPage extends BasePage {
      */
     async isPasswordToggleButtonVisible(): Promise<boolean> {
         try {
-            return await this.passwordShowHideButton.isVisible({ timeout: 2000 });
+            await this.passwordShowHideButton.waitFor({ state: 'visible', timeout: PASSWORD_TOGGLE_TIMEOUT });
+            return true;
         } catch {
             return false;
         }

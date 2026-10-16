@@ -331,6 +331,11 @@ export class GoodsDeclarePage extends BasePage {
         await this.numberOfPackagesInput.fill(numberOfPackages);
     }
 
+    async enterNumberOfPackagesOnly(numberOfPackages: string): Promise<void> {
+        await this.waitForScreenField(this.numberOfPackagesInput, 'packaging details', SCREEN_PAINT_TIMEOUT);
+        await this.inputNumberOfPackages(numberOfPackages);
+    }
+
     async inputNumberOfPieces(numberOfPieces: string): Promise<void> {
         await this.numberOfPiecesInput.fill(numberOfPieces);
     }
