@@ -14,6 +14,7 @@ import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
 import { StringUtil } from '../core/util/string-util';
 import { CONSIGNMENT_TAB_ROUTE } from '../constant/overview-tab-route-constant';
 import { CancellationScreen } from './components/cancellation-screen';
+import { GOVUK } from './components/govuk-selectors';
 import {
     waitForOpenTabPanel, OPEN_TAB_RECORD, RECORD_LINK, deleteTabRecord,
 } from './components/record-tabs';
@@ -256,11 +257,13 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     private async openTab(tab: Locator, routeSuffix: string): Promise<void> {
         const route = this.tabRoute(routeSuffix);
 
-        if (StringUtil.stripTrailingSlashes(new URL(this.page.url()).pathname) === route) {
-            return;
+        if (StringUtil.stripTrailingSlashes(new URL(this.page.url()).pathname) !== route) {
+            await clickLinkAndWaitForRoute(this.page, tab);
         }
 
-        await clickLinkAndWaitForRoute(this.page, tab);
+        await this.page
+            .locator(`${GOVUK.TABS.SELECTED_ITEM} a[href^='${route}#'], ${GOVUK.TABS.SELECTED_ITEM} a[href^='${route}/#']`)
+            .waitFor({ state: 'visible', timeout: RENDER_TIMEOUT.TAB_PANEL });
     }
 
     /** Where a tab of THIS consignment is served, built from the route the page is on. */

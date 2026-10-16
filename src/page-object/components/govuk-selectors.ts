@@ -42,6 +42,7 @@ export const GOVUK = {
     },
     TABS: {
         LIST_ITEM: '.govuk-tabs__list-item',
+        SELECTED_ITEM: '.govuk-tabs__list-item--selected',
         PANEL: '.govuk-tabs__panel',
     },
     TAG: '.govuk-tag',
