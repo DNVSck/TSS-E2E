@@ -4,7 +4,7 @@ import { Page, Locator, expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
     readFieldWhenVisible, readFieldIfPresent, switchToTabAndClickNew, newRecordButton,
-    clickLinkAndEnterWizard,
+    clickLinkAndEnterWizard, clickLinkAndWaitForRoute,
 } from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 import { MOVEMENT_ROUTE } from '../constant/endpoints-constant';
@@ -134,7 +134,7 @@ export class GmrDetailsPage extends BasePage {
     }
 
     async clickExternalContactsTab(): Promise<void> {
-        await this.externalContactsTab.click();
+        await clickLinkAndWaitForRoute(this.page, this.externalContactsTab);
     }
 
     /** Open the "New external contact" wizard from the External Contacts tab. */

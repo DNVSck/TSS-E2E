@@ -1,7 +1,7 @@
 import { BasePage } from "./base-page";
 import { GOVUK } from './components/govuk-selectors';
 import { Page, Locator } from '@playwright/test';
-import { clickLinkAndWaitForRoute } from '../helper/element-helper';
+import { clickLinkAndWaitForNavigation, clickLinkAndWaitForRoute } from '../helper/element-helper';
 import { NavigationBanner } from './components/navigation-banner';
 import { ROUTES } from '../constant/endpoints-constant';
 
@@ -104,7 +104,7 @@ export class PortalPage extends BasePage {
             );
         }
 
-        await this.startNewDeclarationLink.click({ timeout: PORTAL_RENDER_TIMEOUT });
+        await clickLinkAndWaitForNavigation(this.page, this.startNewDeclarationLink);
     }
 
     // Landing-page shortcuts. Each assumes the browser is on the portal landing page.

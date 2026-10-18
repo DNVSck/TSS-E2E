@@ -8,7 +8,6 @@ import {
     readFieldWhenVisible, readFieldIfPresent, newRecordButton, clickLinkAndWaitForRoute, textsOf,
     clickLinkAndWaitForNavigation,
 } from '../helper/element-helper';
-import { StringUtil } from '../core/util/string-util';
 import { GOVUK } from './components/govuk-selectors';
 import { CancellationScreen } from './components/cancellation-screen';
 import { waitForOpenTabPanel } from './components/record-tabs';
@@ -200,7 +199,7 @@ export class MovementOverviewPage extends BasePage {
     }
 
     async openCancelDeclaration(): Promise<void> {
-        await this.cancelDeclarationLink.click();
+        await clickLinkAndWaitForRoute(this.page, this.cancelDeclarationLink);
         await this.cancellationScreen.waitForReason(CANCEL_SETTLE_TIMEOUT);
     }
 
@@ -464,10 +463,10 @@ export class MovementOverviewPage extends BasePage {
             return;
         }
 
-        await this.page
-            .locator(`a${GOVUK.BREADCRUMBS.LINK}[href$="${this.movementOverviewPath(movement)}"]`)
-            .click();
-        await this.page.waitForURL(this.movementOverviewPattern(movement));
+        await clickLinkAndWaitForRoute(
+            this.page,
+            this.page.locator(`a${GOVUK.BREADCRUMBS.LINK}[href$="${this.movementOverviewPath(movement)}"]`)
+        );
     }
 
     /**
@@ -531,21 +530,13 @@ export class MovementOverviewPage extends BasePage {
      */
     private async clickViewLink(viewLink: Locator): Promise<boolean> {
         const link = viewLink.first();
-        const href = await link.getAttribute('href');
 
-        if (!href) {
+        if (!await link.getAttribute('href')) {
             return false;
         }
 
-        // Resolved against the current URL so a relative href and an absolute one both
-        // reduce to the pathname the browser will actually be on.
-        const route = StringUtil.stripTrailingSlashes(new URL(href, this.page.url()).pathname);
-
         try {
-            await link.click();
-            await this.page.waitForURL(
-                url => StringUtil.stripTrailingSlashes(url.pathname) === route
-            );
+            await clickLinkAndWaitForRoute(this.page, link);
         } catch {
             return false;
         }
@@ -559,7 +550,7 @@ export class MovementOverviewPage extends BasePage {
      * after the tab click so the click never races the panel render.
      */
     async navigateToGmrTabAndClickOnCreateGMR(): Promise<void> {
-        await this.gmrDetailsTab.click();
+        await clickLinkAndWaitForRoute(this.page, this.gmrDetailsTab);
         await this.createGMRButton.waitFor({ state: 'visible' });
         await this.createGMRButton.click();
     }
