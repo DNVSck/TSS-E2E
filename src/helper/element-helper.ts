@@ -357,6 +357,7 @@ export async function readFieldIfPresent(field: Locator): Promise<string> {
 const AUTOCOMPLETE_ENHANCED_TIMEOUT = 10_000;
 const AUTOCOMPLETE_ENHANCED_RELOADED_TIMEOUT = 25_000;
 const AUTOCOMPLETE_SUGGESTIONS_TIMEOUT = 8_000;
+const AUTOCOMPLETE_CHOICE_TIMEOUT = 10_000;
 
 async function isEnhanced(input: Locator, timeout: number): Promise<boolean> {
     return expect(input).toHaveAttribute('role', 'combobox', { timeout })
@@ -410,22 +411,47 @@ export async function selectAutocompleteOption(
 ): Promise<void> {
     await waitForAutocomplete(input);
 
+    let chosen = '';
+
     for (let attempt = 1; attempt <= 3; attempt++) {
         await typeIntoAutocomplete(input, typed);
 
-        try {
-            await option.waitFor({ state: 'visible', timeout: AUTOCOMPLETE_SUGGESTIONS_TIMEOUT });
-            await option.click();
-            // The open list overlays whatever sits below it — the Continue button,
-            // typically — and swallows the next click, so see it close before moving on.
-            await option.waitFor({ state: 'hidden' });
+        const offered = await option.waitFor({ state: 'visible', timeout: AUTOCOMPLETE_SUGGESTIONS_TIMEOUT })
+            .then(() => true, () => false);
+        if (!offered) {
+            continue;
+        }
+
+        chosen = (await option.innerText()).trim();
+        await option.click();
+        if (await closeSuggestionsOnceChosen(input, option, chosen)) {
             return;
-        } catch {
-            if (attempt === 3) {
-                throw new Error(`No suggestion matching ${option} was offered for "${typed}" after 3 attempts.`);
-            }
         }
     }
+
+    throw new Error(chosen
+        ? `The suggestion "${chosen}" was clicked for "${typed}" but never taken after 3 attempts - `
+            + 'the list neither closed nor left it in the field.'
+        : `No suggestion matching ${option} was offered for "${typed}" after 3 attempts.`);
+}
+
+async function closeSuggestionsOnceChosen(input: Locator, option: Locator, chosen: string): Promise<boolean> {
+    const taken = await expect.poll(
+        async () => !(await option.isVisible()) || (await input.inputValue()).trim() === chosen,
+        { timeout: AUTOCOMPLETE_CHOICE_TIMEOUT }
+    ).toBe(true).then(() => true, () => false);
+
+    if (!taken) {
+        return false;
+    }
+
+    if (!(await option.isVisible())) {
+        return true;
+    }
+
+    await input.press('Escape');
+    return option.waitFor({ state: 'hidden', timeout: AUTOCOMPLETE_CHOICE_TIMEOUT })
+        .then(() => true, () => false);
 }
 
 
