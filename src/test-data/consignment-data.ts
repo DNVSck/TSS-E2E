@@ -226,7 +226,10 @@ const defaults: Omit<ConsignmentData, 'transportDocumentNumber' | 'containerIden
 export const declaresControlledGoods = (consignment: ConsignmentData): boolean =>
     !consignment.isEnsOnly && !consignment.useIMMI && consignment.isControlledGoods;
 
-export const declaresExporterAndCurrency = (consignment: ConsignmentData): boolean =>
+export const declaresExporter = (consignment: ConsignmentData): boolean =>
+    !consignment.isEnsOnly;
+
+export const declaresInvoiceCurrency = (consignment: ConsignmentData): boolean =>
     !consignment.isEnsOnly && (consignment.useIMMI || consignment.isControlledGoods);
 
 /** The full customs consignment journey. */

@@ -7,7 +7,7 @@ import { DateTimeUtil } from '../core/util/date-time-util';
 import { IMPORTER_EORI } from '../../config/environment';
 import { MovementData } from '../test-data/movements-data';
 import {
-    ConsignmentData, declaresControlledGoods, declaresExporterAndCurrency,
+    ConsignmentData, declaresControlledGoods, declaresExporter,
 } from '../test-data/consignment-data';
 import { GoodsData } from '../test-data/goods-data';
 import { PreviousDocumentData } from '../test-data/previous-document-data';
@@ -206,7 +206,7 @@ export function consignmentPayload(
 
 function exporterOf(consignment: ConsignmentData): Pick<ConsignmentPayload,
     'exporter_name' | 'exporter_street_number' | 'exporter_city' | 'exporter_postcode' | 'exporter_country'> {
-    if (!declaresExporterAndCurrency(consignment)) {
+    if (!declaresExporter(consignment)) {
         return {
             exporter_name: null, exporter_street_number: null, exporter_city: null,
             exporter_postcode: null, exporter_country: null,

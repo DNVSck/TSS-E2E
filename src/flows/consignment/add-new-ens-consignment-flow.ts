@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { toPartyAddress } from '../../page-object/components/party-block';
 import { ReportLog } from '../../core/report/report-log';
-import { ConsignmentData, declaresExporterAndCurrency } from '../../test-data/consignment-data';
+import { ConsignmentData, declaresExporter, declaresInvoiceCurrency } from '../../test-data/consignment-data';
 import { ConsignmentSteps } from './consignment-steps';
 import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 import {
@@ -72,12 +72,11 @@ export class AddNewEnsConsignmentFlow {
         input: ConsignmentData,
         checkpoint?: AccessibilityCheckpoint
     ): Promise<void> {
-        // The exporter (+ "seller same as exporter?") and the invoice-currency
-        // screen are one coupled pair: both appear on the IMMI and controlled-goods
-        // SFD journeys, and both are absent on the two reduced journeys — ENS-only
-        // and EIDR (SFD with controlled goods = No), which ask for the seller
-        // directly and never reach invoice currency.
-        const hasExporterAndCurrency = declaresExporterAndCurrency(input);
+        // The exporter (+ "seller same as exporter?") is asked on every journey but
+        // ENS-only, which asks for the seller directly. Invoice currency is narrower:
+        // only IMMI and controlled-goods SFD reach it, EIDR does not.
+        const hasExporter = declaresExporter(input);
+        const hasInvoiceCurrency = declaresInvoiceCurrency(input);
 
         await checkpoint?.('Consignment - importer EORI', { probeErrors: true });
         await this.consignmentSteps.fillImporterEori(input.importerEORI);
@@ -110,14 +109,14 @@ export class AddNewEnsConsignmentFlow {
         await this.consignmentSteps.fillConsignorDetails(input.consignorEORI, toPartyAddress('consignor', input));
         await this.consignmentSteps.auditPartyScreens('consignee', checkpoint);
         await this.consignmentSteps.fillConsigneeDetails(input.consigneeEORI, toPartyAddress('consignee', input));
-        await this.fillExporterAndSeller(input, hasExporterAndCurrency, checkpoint);
+        await this.fillExporterAndSeller(input, hasExporter, checkpoint);
         // No probe: the trader reference is the one optional field in the wizard, so
         // an empty submit is accepted by design and would report a false finding.
         await checkpoint?.('Consignment - trader reference');
         await this.consignmentSteps.fillTraderReference(input.traderReference ?? '');
         await this.fillBorderAndContainerInformation(input, checkpoint);
 
-        if (hasExporterAndCurrency) {
+        if (hasInvoiceCurrency) {
             await checkpoint?.('Consignment - invoice currency', { probeErrors: true });
             await this.consignmentSteps.selectInvoiceCurrency(input.invoiceCurrency);
         }
@@ -209,9 +208,8 @@ export class AddNewEnsConsignmentFlow {
     }
 
     /**
-     * The exporter and the "seller same as exporter?" question appear only when the
-     * journey has them (IMMI or controlled-goods SFD). The two reduced journeys —
-     * ENS-only and EIDR — skip the exporter and ask for the seller directly.
+     * The exporter and the "seller same as exporter?" question appear on every journey
+     * but ENS-only, which skips the exporter and asks for the seller directly.
      */
     private async fillExporterAndSeller(
         input: ConsignmentData,

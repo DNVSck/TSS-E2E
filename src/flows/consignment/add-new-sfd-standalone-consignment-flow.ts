@@ -91,16 +91,17 @@ export class AddNewSfdStandaloneConsignmentFlow {
     }
 
     /**
-     * Controlled goods = No (`eidr-journey~`). Two screens and nothing else: it asks
-     * for the transport document and the goods domestic status together, then the
-     * container question, then goes straight to "Check your answers". Being the reduced
-     * journey it skips what the controlled-goods route asks for either side of them -
-     * the exporter, the trader reference and the invoice currency.
+     * Controlled goods = No (`eidr-journey~`). The exporter, then the transport
+     * document and the goods domestic status together, then the container question,
+     * then straight to "Check your answers". Being the reduced journey it skips the
+     * trader reference and the invoice currency the controlled-goods route asks for.
      */
     private async declareEidrRoute(
         input: SfdStandaloneConsignmentData,
         checkpoint?: AccessibilityCheckpoint
     ): Promise<void> {
+        await this.consignmentSteps.auditPartyScreens('exporter', checkpoint);
+        await this.consignmentSteps.fillExporterDetails(input.exporterEORI, toPartyAddress('exporter', input));
         await checkpoint?.('Consignment - transport and destination', { probeErrors: true });
         await this.consignmentSteps.fillSfdTransportAndDestination(
             input.transportDocumentNumber, input.goodsDomesticStatus
