@@ -38,6 +38,7 @@ import { haulierAsCarrier } from '../../../src/test-data/movements-data';
 import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
 import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
 import { checkOnceRepresentationEnds } from '../../../src/flows/authority-check-flow';
+import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { DECLARATION_STATUS } from '../../../src/constant/trader-api/declaration-status-constant';
 import {
     declaredThroughTraderApi, traderDefermentSupplementaryDeclaration,
@@ -874,6 +875,62 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
                 parties: ['agentAsImporter', 'anotherAgent'],
             })
         );
+    });
+});
+
+test.describe('Converted IMMI declaration authority - Agent represents the Importer', () => {
+    test.use({ authProfile: COMPANY_PROFILE.AGENT });
+
+    test.describe.configure({ timeout: 1_200_000 });
+
+    test.beforeEach(async () => {
+        await ReportLog.setFeature('Representation authority');
+    });
+
+    test('Verify that the Agent representing the Importer and the Importer hold a draft IMMI converted from a supplementary declaration, as on a standalone IMMI', { tag: ['@regression', '@auth', '@authorisation'] }, async ({
+        generateSdDraftThroughApiFlow, completeAndSubmitSupplementaryDeclarationFlow,
+        convertSupplementaryDeclarationFlow, declarationAccessFlow, representTraderFlow, checkAuthorityFlow,
+    }, testInfo) => {
+        await ReportLog.setStory('Converted IMMI - who may change the draft the Agent converted');
+
+        const { immiLrn, immi } = await ReportLog.step('Agent representing the Importer converts a draft supplementary declaration to an IMMI declaration', async () => {
+            const source = await generateSdDraftThroughApiFlow.raiseSdDraft({
+                representing: { companyName: IMPORTER_COMPANY_NAME, testInfo, url: BASE_URL },
+            });
+            await completeAndSubmitSupplementaryDeclarationFlow.openSupplementaryDeclaration({
+                testInfo, url: BASE_URL, ...source,
+            });
+
+            const lrn = await convertSupplementaryDeclarationFlow.convertToImmi();
+            return { immiLrn: lrn, immi: await declarationAccessFlow.locateRecordsHere() };
+        });
+
+        const immiCheck = {
+            what: 'the draft converted IMMI',
+            records: immi,
+            tabs: IMMI_EIDR_DECLARATION_TABS,
+            reference: immiLrn,
+        };
+
+        await ReportLog.step('Agent representing the Importer and Importer on its own login - check what each is offered', () =>
+            checkAuthorityFlow(STANDALONE_AUTHORITY.createdByThisAgent, {
+                ...immiCheck, parties: ['agentAsImporter', 'importer'],
+            })
+        );
+
+        await checkOnceRepresentationEnds(
+            representTraderFlow, checkAuthorityFlow, STANDALONE_AUTHORITY.createdByThisAgent, immiCheck,
+            'what it keeps of the IMMI it converted',
+        );
+
+        await ReportLog.step('Agent representing the Importer completes and submits the converted IMMI - expect it accepted', async () => {
+            await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
+            await declarationAccessFlow.openRecord(immi.consignment);
+            await convertSupplementaryDeclarationFlow.completeConvertedImmi(immiLrn, {
+                additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
+                representationType: REPRESENTATION_TYPE.DIRECT,
+            });
+        });
     });
 });
 

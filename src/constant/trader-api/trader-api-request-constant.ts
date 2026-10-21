@@ -27,6 +27,17 @@ export const CONTAINER_INDICATOR = {
 
 export const CONTROLLED_GOODS_TYPE = {
     EXCISE_GOODS: 'excise_goods',
+    PLANT_BASED: 'plant_based',
+} as const;
+
+export const RECLASSIFICATION_TYPE = {
+    SUPPLEMENTARY_TO_IMMI: 'h1_to_h8',
+    IMMI_TO_SUPPLEMENTARY: 'h8_to_h1',
+} as const;
+
+export const ADDITIONAL_PARTY_ROLE = {
+    IMPORTER_VAT_FR1: 'FR1',
+    CUSTOMER_VAT_FR2: 'FR2',
 } as const;
 
 export const IMMI_DECLARATION_CATEGORY = {

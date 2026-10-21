@@ -2,7 +2,7 @@ import { Page, Locator, expect } from '@playwright/test';
 import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 import { BasePage } from './base-page';
 import { TFunction } from '../fixtures/locale-fixture';
-import { readFieldWhenVisible, clickLinkAndWaitForNavigation } from '../helper/element-helper';
+import { readFieldWhenVisible, readErrorSummary } from '../helper/element-helper';
 
 /** The summary list paints a beat after these pages load. */
 
@@ -46,22 +46,7 @@ export class ConsignmentSummaryPage extends BasePage {
         return office;
     }
 
-    /**
-     * Follow the summary list's "Change" action for one named field.
-     *
-     * Addressed by the field name in the href ("?field=containerIdentifierNumber"), not
-     * by the row's label, which is translated - and the service names the field in the
-     * URL exactly as it names the input on the screen it opens, so a caller says the
-     * field once.
-     *
-     * Ends-with rather than contains: the field is the last query parameter, and a
-     * contains match would let "field=exporter" also select "field=exporterName".
-     *
-     * The href is not the destination. It ends "/edit/_edit_?field=x" - a placeholder the
-     * server resolves - and the click lands on the wizard screen that field lives on,
-     * which is why this waits for a navigation rather than for a known route.
-     */
-    async changeField(field: string): Promise<void> {
-        await clickLinkAndWaitForNavigation(this.page, this.summaryList.changeLinkFor(field));
+    async readValidationErrors(): Promise<string[]> {
+        return readErrorSummary(this.page);
     }
 }

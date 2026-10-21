@@ -1,8 +1,9 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, selectAutocompleteOption, readErrorSummary, valuesOf } from '../helper/element-helper';
+import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, selectAutocompleteOption, readErrorSummary, valuesOf, currentWizardStep } from '../helper/element-helper';
 import { BOOLEAN } from '../constant/radio-value-constant';
 import { WarehouseScreen } from './components/warehouse-screen';
+import { WIZARD_ROUTE } from '../constant/endpoints-constant';
 
 
 const COMMODITY_SUBMIT_TIMEOUT = 180_000;
@@ -185,6 +186,20 @@ export class GoodsDeclarePage extends BasePage {
     async answerUseTgp(useTGP: boolean): Promise<void> {
         await checkRadioByValue(this.useTgpRadios, useTGP ? BOOLEAN.YES : BOOLEAN.NO);
         await this.clickContinueButton();
+    }
+
+    async continueToCheckYourAnswers(): Promise<string[]> {
+        while (currentWizardStep(this.page) !== WIZARD_ROUTE.CHECK_YOUR_ANSWERS_STEP) {
+            const from = currentWizardStep(this.page);
+            const errors = await this.continueAndReadErrors();
+            if (errors.length > 0) {
+                return errors;
+            }
+            if (currentWizardStep(this.page) === from) {
+                throw new Error(`Continue on the "${from}" screen did not leave it, and no error was shown`);
+            }
+        }
+        return [];
     }
 
     /**

@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { SERVICE_UNAVAILABLE } from './service-error-recorder';
 
 const ALLURE_RESULTS_DIR = path.resolve(process.cwd(), 'allure-results');
 
@@ -18,7 +19,7 @@ const CATEGORIES = [
     {
         name: 'Broken environment',
         matchedStatuses: ['broken', 'failed'],
-        messageRegex: '.*(ECONNREFUSED|ENOTFOUND|net::ERR_|503|502).*',
+        messageRegex: `.*(ECONNREFUSED|ENOTFOUND|net::ERR_|502|503|504|${SERVICE_UNAVAILABLE}).*`,
     },
     {
         name: 'Authentication problem',

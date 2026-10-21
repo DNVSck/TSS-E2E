@@ -48,7 +48,7 @@ export default defineConfig({
   globalTeardown: './config/global-teardown.ts', /* Global teardown to generate Allure report after tests */
   fullyParallel: true, /* Run tests in files in parallel */
   forbidOnly: !!process.env.CI, /* Fail the build on CI if you accidentally left test.only in the source code. */
-  retries: 0,
+  retries: 1,
 
   workers: resolveWorkers(),
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */

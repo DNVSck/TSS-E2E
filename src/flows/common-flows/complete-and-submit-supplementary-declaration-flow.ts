@@ -14,9 +14,10 @@ import { AccessibilityAudit, AccessibilityCheckpoint, checkpointFor } from '../a
 import { documentReference } from '../../test-data/document-reference-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../constant/additional-procedure-codes-constant';
 import {
-    isDeclarationStatus, submittedSupplementaryStatusKeys, verifySubmittedWithoutErrors,
+    isDeclarationStatus, submittedSupplementaryStatusKeys, verifySubmittedWithoutErrors, describeRefusal,
 } from '../../helper/declaration-status-helper';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
+import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 import { UserCredentials } from '../../auth/credentials';
 import { reportTestAccount } from '../../helper/report-helper';
@@ -69,6 +70,7 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
         private readonly documentReferencePage: DocumentReferenceDeclarePage,
         private readonly additionalProcedureCodePage: AdditionalProcedureCodeDeclarePage,
         private readonly steps: SupplementaryDeclarationSteps,
+        private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
         // Comparing a status means comparing translated text. The keys arrive from the
         // caller and the page reads what the screen shows, so the verdict here is the
         // one place both have to meet.
@@ -109,13 +111,15 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
     async submitSupplementaryDeclarationExpectingRejection(
         options: CompleteSupplementaryDeclarationOptions
     ): Promise<string> {
-        const reference = await this.openSupplementaryDeclarationFor(options);
+        return ReportLog.step('Submit the draft unanswered - expect it to be handed back', async () => {
+            const reference = await this.openSupplementaryDeclarationFor(options);
 
-        await this.submitAndSettle(
-            supplementaryDeclaration(options.overrides), reference, ['status.traderInputRequired']
-        );
+            await this.submitAndSettle(
+                supplementaryDeclaration(options.overrides), reference, ['status.traderInputRequired']
+            );
 
-        return reference;
+            return reference;
+        });
     }
 
     async submitSupplementaryDeclaration(checkpoint?: AccessibilityCheckpoint): Promise<void> {
@@ -528,11 +532,14 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
                         + `of ${allowed.join(', ')} (the service went ${path.join(' -> ')})`)
                         .toBe(true);
                 } catch (error) {
-                    const problem = await this.overviewPage.readSubmissionProblem();
-                    if (problem) {
-                        ReportLog.setParameter('Rejected by', problem);
+                    const reasons = await this.overviewPage.readValidationErrors();
+                    if (reasons.length > 0) {
+                        const refusal = await this.consignmentOverviewFlow.attachRefusal(
+                            'Supplementary declaration', { by: 'CDS', reasons }, this.overviewPage
+                        );
+                        ReportLog.setParameter('Rejected by', refusal.reasons.join(' | '));
                         throw new Error(
-                            `The supplementary declaration did not settle. The service says: ${problem}`,
+                            `The supplementary declaration did not settle${describeRefusal(refusal)}`,
                             { cause: error }
                         );
                     }

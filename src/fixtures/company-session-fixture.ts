@@ -134,15 +134,17 @@ function buildCompanySession(
     const additionalProcedureCodeDeclarePage = new AdditionalProcedureCodeDeclarePage(page);
     const portal = new PortalPage(page);
 
+    const consignment = new ConsignmentOverviewFlow(
+        overview,
+        previousDocumentDeclarePage,
+        new HolderOfAuthorisationDeclarePage(page),
+        record,
+        new ConsignmentSteps(movement, new ConsignmentDeclarePage(page)),
+        t
+    );
+
     return {
-        consignment: new ConsignmentOverviewFlow(
-            overview,
-            previousDocumentDeclarePage,
-            new HolderOfAuthorisationDeclarePage(page),
-            record,
-            new ConsignmentSteps(movement, new ConsignmentDeclarePage(page)),
-            t
-        ),
+        consignment,
         declarations: new DeclarationAccessFlow(
             movement, record, portal, declarationOverview, overview, supplementaryOverview, t, profile
         ),
@@ -161,7 +163,7 @@ function buildCompanySession(
                 new Wizard<SupplementaryDeclarationStep>(page), new MovementDeclarePage(page),
                 new ConsignmentDeclarePage(page), new CommercialTermsDeclarePage(page), new GoodsDeclarePage(page)
             ),
-            t, account, supplementaryDeclarationService
+            consignment, t, account, supplementaryDeclarationService
         ),
         goods: new GoodsOverviewFlow(
             new GoodsOverviewPage(page, t),

@@ -69,7 +69,8 @@
     "pendingCancellation": "Yn disgwyl cael ei ganslo",
     "processing": "Wrthi'n prosesu",
     "paymentPending": "Taliad yn yr arfaeth",
-    "taxCalculation": "Cyfrifiad treth"
+    "taxCalculation": "Cyfrifiad treth",
+    "converted": "Wedi'i drawsnewid"
   },
   "accessDenied": {
     "heading": "Nid oes gennych awdurdod i gael mynediad at hyn"

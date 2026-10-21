@@ -2,10 +2,11 @@
 import { ReportLog } from '../../core/report/report-log';
 import { MovementOverviewPage } from "../../page-object/movement-overview-page";
 import { ConsignmentDetailPage } from "../../page-object/consignment-detail-page";
+import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import { MRN_COUNTRY_CODE, MrnCountryCode, mrnPrefix, mrnOpening } from '../../constant/local-reference-constants';
 import {
     isTraderInputRequiredStatus, traderInputRequiredError, verifySubmittedWithoutErrors,
-    verifyRefusedWithErrors,
+    verifyRefusedWithErrors, verifyNotRefusedByIcs2,
 } from '../../helper/declaration-status-helper';
 import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 
@@ -21,6 +22,7 @@ export class MovementOverviewFlow {
     constructor(
         private readonly movementOverviewPage: MovementOverviewPage,
         private readonly consignmentDetailPage: ConsignmentDetailPage,
+        private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
         // Held for the same reason as in ConsignmentOverviewFlow: the comparison is
         // against translated text, but deciding what a terminal status means for the
         // journey belongs to this layer, not to a page.
@@ -146,8 +148,16 @@ export class MovementOverviewFlow {
             ReportLog.setParameter('ENS MRN', ensMrn);
             ReportLog.setParameter('Submitted ENS status', status);
 
+            if (isTraderInputRequiredStatus(status, this.t)) {
+                verifyNotRefusedByIcs2(
+                    status, this.t, await this.consignmentOverviewFlow.captureIcs2Refusal('ENS consignment')
+                );
+                return ensMrn;
+            }
+
             expect.soft(ensMrn,
-                `ENS MRN after submission (expected to open ${mrnOpening(MRN_COUNTRY_CODE.ENS)})`)
+                `ENS MRN after submission (expected to open ${mrnOpening(MRN_COUNTRY_CODE.ENS)}; `
+                + `consignment status "${status}")`)
                 .toMatch(mrnPrefix(MRN_COUNTRY_CODE.ENS));
             return ensMrn;
         });
@@ -276,7 +286,7 @@ export class MovementOverviewFlow {
             ReportLog.setParameter(`${label} status`, status);
 
             expect.soft(mrn,
-                `${label} MRN (expected to open ${mrnOpening(mrnCode)})`)
+                `${label} MRN (expected to open ${mrnOpening(mrnCode)}; consignment status "${status}")`)
                 .toMatch(mrnPrefix(mrnCode));
 
             // The auto-generated consignment is the FIRST place this can be checked on
@@ -295,7 +305,10 @@ export class MovementOverviewFlow {
             // on would only add their consequences. The EIDR check is deliberately not
             // routed through here - that journey ends in this state legitimately.
             if (isTraderInputRequiredStatus(status, this.t)) {
-                throw traderInputRequiredError(`The auto-generated ${label} consignment`, status);
+                throw traderInputRequiredError(
+                    `The auto-generated ${label} consignment`, status,
+                    await this.consignmentOverviewFlow.captureCdsRefusal(`${label} consignment`)
+                );
             }
 
             return { lrn, mrn };

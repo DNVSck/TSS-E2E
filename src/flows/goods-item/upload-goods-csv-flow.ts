@@ -18,12 +18,16 @@ export class UploadGoodsCsvFlow {
             throw new Error(`Goods CSV ${fileName} should hold at least one goods row - none read`);
         }
 
+        const declared = (await this.consignmentOverviewPage.listGoodsItemRoutes()).length;
+
         await ReportLog.step(`Upload ${fileName} as goods records`, async () => {
             const errors = await this.openAndUpload(csvFile);
             expect(errors, `Upload of ${fileName} should have been accepted - errors shown (none expected)`).toEqual([]);
 
             const staged = await this.goodsCsvUploadPage.readStagedRows();
-            expect.soft(staged, `Upload of ${fileName} should have staged every CSV row - rows staged (description, commodity code, in file order)`)
+            expect.soft(staged.slice(declared),
+                `Upload of ${fileName} should have staged every CSV row after the ${declared} goods record(s) already declared `
+                + '- rows staged (description, commodity code, in file order)')
                 .toEqual(rows.map(({ description, commodityCode }) => ({ description, commodityCode })));
         });
 
@@ -31,8 +35,11 @@ export class UploadGoodsCsvFlow {
             await this.goodsCsvUploadPage.confirmRecords();
             await expect.poll(
                 async () => (await this.consignmentOverviewPage.listGoodsItemRoutes()).length,
-                { message: `Consignment should list one goods record per row of ${fileName} (${rows.length} row(s))` }
-            ).toBe(rows.length);
+                {
+                    message: `Consignment should list one goods record per row of ${fileName} (${rows.length} row(s)) `
+                        + `beside the ${declared} already declared`,
+                }
+            ).toBe(declared + rows.length);
         });
 
         return rows;

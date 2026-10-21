@@ -31,6 +31,10 @@ export const MOVEMENT_ROUTE = {
     GMR_RECORD_PATH: /\/goods-movement-records\/GMR\d+/,
 } as const;
 
+export const WIZARD_ROUTE = {
+    CHECK_YOUR_ANSWERS_STEP: 'check-your-answer!',
+} as const;
+
 export const CANCELLATION_ROUTE = {
     CANCEL_SEGMENT: 'cancel',
     CONFIRMATION_SEGMENT: 'cancel-confirmation',
@@ -38,4 +42,10 @@ export const CANCELLATION_ROUTE = {
 
 export const SUPPLEMENTARY_DECLARATION_ROUTE = {
     UNAUTHORISED_PARTIES_SEGMENT: 'unauthorised-parties',
+} as const;
+
+export const RECLASSIFICATION_ROUTE = {
+    CONFIRM_SEGMENT: 'reclassification-confirm',
+    IMMI_POST_MOVEMENT_SEGMENT: 'immi-post-movement',
+    SUPPLEMENTARY_DECLARATION_SEGMENT: 'supplementary-declaration',
 } as const;

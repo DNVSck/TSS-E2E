@@ -21,6 +21,8 @@ import { ADDITIONAL_PROCEDURE_CODES } from '../../constant/additional-procedure-
 import { NATIONAL_ADDITIONAL_CODE } from '../../constant/national-additional-code-constant';
 import { AccessibilityAudit } from '../accessibility-audit-flow';
 import { verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
+import { DOCUMENT_CODE } from '../../constant/document-code-constant';
+import { IMPORTER_NIRMS } from '../../../config/environment';
 
 const DESCRIPTION_ATTEMPTS = 3;
 
@@ -282,6 +284,17 @@ export class GoodsOverviewFlow {
                 });
             }
         });
+    }
+
+    async verifyImmiNirmsDocumentReference(): Promise<void> {
+        await this.verifyDocumentReferences([
+            documentReference({
+                documentCode: DOCUMENT_CODE['1RMS'],
+                documentReference: IMPORTER_NIRMS,
+                documentStatus: undefined,
+                documentReason: undefined,
+            }),
+        ], 'IMMI');
     }
 
     async removeAdditionalProcedureCode(code: string): Promise<void> {

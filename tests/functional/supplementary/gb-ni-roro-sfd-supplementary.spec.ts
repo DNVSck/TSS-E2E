@@ -291,11 +291,9 @@ test.describe('GB to NI RoRo Supplementary Declaration - resubmission after CDS 
 
             const source = await generateSdDraftThroughApiFlow.raiseSdDraft();
 
-            await ReportLog.step('Submit the draft unanswered - expect it to be handed back', () =>
-                completeAndSubmitSupplementaryDeclarationFlow.submitSupplementaryDeclarationExpectingRejection({
-                    testInfo, url: BASE_URL, ...source,
-                })
-            );
+            await completeAndSubmitSupplementaryDeclarationFlow.submitSupplementaryDeclarationExpectingRejection({
+                testInfo, url: BASE_URL, ...source,
+            });
 
             await ReportLog.step('Answer what it was missing and resubmit', () =>
                 completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
@@ -397,11 +395,9 @@ test.describe('GB to NI RoRo Supplementary Declaration - cancellation', () => {
 
             const source = await generateSdDraftThroughApiFlow.raiseSdDraft();
 
-            const reference = await ReportLog.step('Submit the draft unanswered - expect it to be handed back', () =>
-                completeAndSubmitSupplementaryDeclarationFlow.submitSupplementaryDeclarationExpectingRejection({
-                    testInfo, url: BASE_URL, ...source,
-                })
-            );
+            const reference = await completeAndSubmitSupplementaryDeclarationFlow.submitSupplementaryDeclarationExpectingRejection({
+                testInfo, url: BASE_URL, ...source,
+            });
 
             await cancelSupplementaryDeclarationFlow
                 .cancelSupplementaryDeclarationAndVerifyItIsPendingCancellation(CANCELLATION_REASON, source.frontierLrn);

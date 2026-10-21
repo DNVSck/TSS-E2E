@@ -33,6 +33,13 @@ export type DocumentReferencePayload = {
     document_code: string;
     document_status: string | null;
     document_reference: string | null;
+    document_reason: string | null;
+};
+
+export type AdditionalPartyPayload = {
+    op_type: string;
+    auth_role_id: string;
+    auth_role_code: string;
 };
 
 export type AdditionalProcedurePayload = {
@@ -51,6 +58,7 @@ export type GoodsRecordsPayload = {
     detail_previous_document: PreviousDocumentPayload[];
     additional_information: AdditionalInformationPayload[];
     additional_procedures: AdditionalProcedurePayload[];
+    additional_parties?: AdditionalPartyPayload[];
 };
 
 export type GoodsWithRecordsPayload = GoodsPayload & GoodsRecordsPayload;

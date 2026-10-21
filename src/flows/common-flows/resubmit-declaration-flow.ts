@@ -6,6 +6,8 @@ import { ContainerIdentification } from '../../test-data/consignment-data';
 import { HolderOfAuthorisationData } from '../../test-data/holder-of-authorisation-data';
 import { DocumentReferenceData } from '../../test-data/document-reference-data';
 import { ReportLog } from '../../core/report/report-log';
+import { TranslationKey } from '../../fixtures/locale-fixture';
+import { standaloneSubmittedStatusKey } from '../../helper/declaration-status-helper';
 
 const CORRECTION_ACCEPTED = 'status.awaitingArrival';
 
@@ -16,6 +18,7 @@ interface Correction {
     locate: () => Promise<RecordUrls>;
     on: CorrectionTarget;
     apply: () => Promise<void>;
+    acceptedStatusKey?: TranslationKey;
 }
 
 export class ResubmitDeclarationFlow {
@@ -64,6 +67,16 @@ export class ResubmitDeclarationFlow {
         });
     }
 
+    async declareAdditionalProcedureCodesAndResubmitArrivedImmi(codes: string[]): Promise<void> {
+        await this.correctAndResubmit({
+            step: 'Declare the additional procedure codes CDS refused the IMMI for and resubmit it',
+            locate: () => this.declarationAccessFlow.locateRecordsHere(),
+            on: 'goodsItem',
+            apply: () => this.goodsOverviewFlow.declareAdditionalProcedureCodes(codes),
+            acceptedStatusKey: standaloneSubmittedStatusKey(false),
+        });
+    }
+
     private async correctAndResubmit(correction: Correction): Promise<void> {
         await ReportLog.step(correction.step, async () => {
             const records = await correction.locate();
@@ -83,7 +96,7 @@ export class ResubmitDeclarationFlow {
             await this.consignmentOverviewFlow.resubmitConsignment();
 
             await this.declarationAccessFlow
-                .verifyCorrectionAcceptedByCds(records.consignment, CORRECTION_ACCEPTED);
+                .verifyCorrectionAcceptedByCds(records.consignment, correction.acceptedStatusKey ?? CORRECTION_ACCEPTED);
         });
     }
 

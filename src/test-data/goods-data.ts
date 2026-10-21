@@ -14,6 +14,7 @@ import { AdditionalInformationData } from "./additional-information-data";
 import { PreviousDocumentData } from "./previous-document-data";
 import { TgpRecordData } from "./tgp-record-data";
 import { generateRandomContainerIdentifierNumber, generateRandomWarehouseIdentifier } from "../helper/data-generate-helper";
+import { CONTROLLED_GOODS_TYPE } from "../constant/trader-api/trader-api-request-constant";
 
 
 export interface GoodsData {
@@ -94,6 +95,13 @@ export interface GoodsData {
     // Extra codes declared via the "National additional codes" tab, on top of the
     // primary `nationalAdditionalCode` chosen during the goods declaration.
     nationalAdditionalCodes: string[];
+    additionalParties: AdditionalPartyData[];
+    controlledGoodsType: string;
+}
+
+export interface AdditionalPartyData {
+    roleId: string;
+    roleCode: string;
 }
 
 // `containerIdentifierNumber` is deliberately absent: generating it here would freeze
@@ -171,6 +179,8 @@ const defaults: Omit<GoodsData, 'containerIdentifierNumber' | 'warehouseIdentifi
     additionalProcedureCodes: [],
     taricAdditionalCodes: [],
     nationalAdditionalCodes: [],
+    additionalParties: [],
+    controlledGoodsType: CONTROLLED_GOODS_TYPE.EXCISE_GOODS,
 };
 
 export const goods = (overrides?: Partial<GoodsData>): GoodsData => {

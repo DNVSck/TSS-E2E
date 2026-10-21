@@ -1,6 +1,7 @@
 import { Page, Locator, TestInfo } from '@playwright/test';
 import {
     readFieldIfPresent, hrefsOf, clickLinkAndWaitForRoute, submitAndReadErrors, clickToLeaveScreen,
+    clickLinkAndWaitForNavigation,
 } from '../helper/element-helper';
 import { TFunction, localeForProject } from '../fixtures/locale-fixture';
 import { LOCALES_CONSTANT } from '../constant/locales-constant';
@@ -237,6 +238,10 @@ export class BasePage {
      */
     getCurrentUrl(): string {
         return this.page.url();
+    }
+
+    async changeField(field: string): Promise<void> {
+        await clickLinkAndWaitForNavigation(this.page, this.summaryList.changeLinkFor(field));
     }
 
     /**

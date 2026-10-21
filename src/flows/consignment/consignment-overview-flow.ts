@@ -11,6 +11,7 @@ import {
 import { TranslationKey, TFunction } from '../../fixtures/locale-fixture';
 import {
     isTraderInputRequiredStatus, traderInputRequiredError, verifySubmittedWithoutErrors, withoutCdsVerdicts,
+    Refusal, RefusalScreen, RefusingSystem,
 } from '../../helper/declaration-status-helper';
 import { MrnCountryCode, mrnPrefix, mrnOpening } from '../../constant/local-reference-constants';
 import { ConsignmentSteps } from './consignment-steps';
@@ -23,6 +24,8 @@ import { AccessibilityAudit } from '../accessibility-audit-flow';
 const CONTAINER_IDENTIFIER_FIELD = 'containerIdentifierNumber';
 
 const WAREHOUSE_TYPE_FIELD = 'warehouseType';
+
+const REPRESENTATION_TYPE_FIELD = 'representationType';
 
 /**
  * Declares the consignment-overview tabs that each hold a list of records
@@ -125,11 +128,36 @@ export class ConsignmentOverviewFlow {
             // state (as the ENS EIDR one does) would pass rather than fail here.
             const expectedIt = expectedStatusKey === 'status.traderInputRequired';
             if (!expectedIt && isTraderInputRequiredStatus(status, this.t)) {
-                throw traderInputRequiredError('The standalone consignment', status);
+                throw traderInputRequiredError(
+                    'The standalone consignment', status,
+                    await this.captureCdsRefusal('Standalone consignment', this.consignmentOverviewPage)
+                );
             }
+
+            const expected = this.t(expectedStatusKey);
+            expect(status || 'not shown',
+                `Standalone consignment status once submitted (expects "${expected}")`)
+                .toBe(expected);
         });
     }
 
+
+    async captureIcs2Refusal(label: string): Promise<Refusal> {
+        return this.captureRefusal(label, 'ICS2', this.consignmentDetailPage);
+    }
+
+    async captureCdsRefusal(label: string, screen: RefusalScreen = this.consignmentDetailPage): Promise<Refusal> {
+        return this.captureRefusal(label, 'CDS', screen);
+    }
+
+    async attachRefusal(label: string, refusal: Refusal, screen: RefusalScreen): Promise<Refusal> {
+        ReportLog.addAttachment(`${label} - refused by ${refusal.by}`, await screen.screenshotPng(), 'image/png');
+        return refusal;
+    }
+
+    private async captureRefusal(label: string, by: RefusingSystem, screen: RefusalScreen): Promise<Refusal> {
+        return this.attachRefusal(label, { by, reasons: await screen.readValidationErrors() }, screen);
+    }
 
     /**
      * Check the supervising customs office the service derived for a WAREHOUSED
@@ -332,6 +360,14 @@ export class ConsignmentOverviewFlow {
         await ReportLog.step('Declare the warehouse', async () => {
             await this.consignmentOverviewPage.changeField(WAREHOUSE_TYPE_FIELD);
             await this.consignmentSteps.enterWarehouseIdentifier(warehouseType, warehouseIdentifier);
+            await this.consignmentSteps.finishConsignmentDeclaration();
+        });
+    }
+
+    async declareRepresentationType(representationType: string): Promise<void> {
+        await ReportLog.step('Declare the representation type', async () => {
+            await this.consignmentOverviewPage.changeField(REPRESENTATION_TYPE_FIELD);
+            await this.consignmentSteps.selectRepresentationType(representationType);
             await this.consignmentSteps.finishConsignmentDeclaration();
         });
     }

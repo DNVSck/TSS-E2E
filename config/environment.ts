@@ -141,6 +141,7 @@ export const IMPORTER_TEA = required('IMPORTER_TEA');
  * two forms, and CDS wants both — see {@link defermentAccountNumber}.
  */
 export const IMPORTER_DPO = required('IMPORTER_DPO');
+export const IMPORTER_VAT = required('IMPORTER_VAT');
 
 /**
  * The counterparties a declaration names. One key per ROLE even where one company

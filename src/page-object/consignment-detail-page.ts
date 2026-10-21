@@ -4,7 +4,7 @@ import { ConsignmentSummaryPage } from './consignment-summary-page';
 import { RecordTabs, OPEN_TAB_PANEL, RECORD_LINK } from './components/record-tabs';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
-    readFieldWhenVisible, readFieldIfPresent, readErrorSummary,
+    readFieldWhenVisible, readFieldIfPresent,
 } from '../helper/element-helper';
 import {
     isTraderInputRequiredStatus, isDeclarationStatus, declarationStatusPattern,
@@ -185,9 +185,5 @@ export class ConsignmentDetailPage extends ConsignmentSummaryPage {
         const raw = await readFieldIfPresent(this.movementReferenceNumber);
         expect.soft(alphanumericOnly(raw), 'EIDR MRN (should be absent)').toBe('');
         return raw;
-    }
-
-    async readValidationErrors(): Promise<string[]> {
-        return readErrorSummary(this.page);
     }
 }

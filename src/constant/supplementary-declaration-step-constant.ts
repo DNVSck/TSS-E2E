@@ -1,3 +1,5 @@
+import { WIZARD_ROUTE } from './endpoints-constant';
+
 export const SUPPLEMENTARY_DECLARATION_STEP = {
     /** Reached from the overview's "Change" link, ahead of the header wizard proper. */
     METHOD_OF_PAYMENT: 'method-of-payment',
@@ -35,7 +37,7 @@ export const SUPPLEMENTARY_DECLARATION_STEP = {
      * Where both wizards end. The button on it reads "Complete and submit" but carries
      * value="finish", so the shared finish button drives it.
      */
-    CHECK_YOUR_ANSWERS: 'check-your-answer!',
+    CHECK_YOUR_ANSWERS: WIZARD_ROUTE.CHECK_YOUR_ANSWERS_STEP,
 } as const;
 
 export type SupplementaryDeclarationStep =

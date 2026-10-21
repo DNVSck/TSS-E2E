@@ -54,7 +54,7 @@ export class ReportLog {
     }
 
     public static setParameter(name: string, value: string): void {
-        parameter(name, value);
+        parameter(name, value, { excluded: true });
     }
 
     /** For real artefacts (payloads, generated files) — not for log lines. */

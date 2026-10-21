@@ -1,5 +1,5 @@
 import {
-    TRADER_API_YES, TRADER_API_NO, INTERNAL_MARKET, OP_TYPE, CONTAINER_INDICATOR, CONTROLLED_GOODS_TYPE,
+    TRADER_API_YES, TRADER_API_NO, INTERNAL_MARKET, OP_TYPE, CONTAINER_INDICATOR,
     IMMI_MODE_OF_TRANSPORT, IMMI_DECLARATION_CATEGORY,
 } from '../constant/trader-api/trader-api-request-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
@@ -289,7 +289,7 @@ export function ensGoodsPayload(
         ...goodsPayload(consignmentNumber, goods),
         equipment_number: equipmentNumberOf(consignment, goods),
         controlled_goods: yesNo(controlled),
-        controlled_goods_type: controlled ? CONTROLLED_GOODS_TYPE.EXCISE_GOODS : null,
+        controlled_goods_type: controlled ? goods.controlledGoodsType : null,
         ...(consignment.isEnsOnly ? ENS_ONLY_UNASKED_GOODS_FIELDS : {}),
         ...(consignment.useIMMI ? { net_mass_kg: null, supplementary_units: null } : {}),
         ...goodsRecordsPayload(goods),
@@ -318,6 +318,13 @@ function goodsRecordsPayload(goods: GoodsData): GoodsRecordsPayload {
             op_type: OP_TYPE.CREATE,
             additional_procedure_code: code,
         })),
+        ...(goods.additionalParties.length > 0 ? {
+            additional_parties: goods.additionalParties.map(party => ({
+                op_type: OP_TYPE.CREATE,
+                auth_role_id: party.roleId,
+                auth_role_code: party.roleCode,
+            })),
+        } : {}),
     };
 }
 
@@ -327,6 +334,7 @@ function documentReferencePayload(document: DocumentReferenceData): DocumentRefe
         document_code: document.documentCode,
         document_status: orNull(document.documentStatus),
         document_reference: orNull(document.documentReference),
+        document_reason: orNull(document.documentReason),
     };
 }
 

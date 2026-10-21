@@ -1,4 +1,3 @@
-import { expect } from '@playwright/test';
 import {
     SupplementaryDeclarationOverviewPage,
 } from '../../page-object/supplementary-declaration-overview-page';
@@ -7,7 +6,7 @@ import { DeclarationAccessFlow } from '../declaration-access-flow';
 import { ReportLog } from '../../core/report/report-log';
 import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 import {
-    declarationStatusPattern, verifySubmittedWithoutErrors, verifyRefusedWithErrors,
+    verifyDeclarationStatus, verifySubmittedWithoutErrors, verifyRefusedWithErrors,
 } from '../../helper/declaration-status-helper';
 
 export interface LinkedSupplementaryDeclaration {
@@ -80,9 +79,7 @@ export class CancelSupplementaryDeclarationFlow {
         const shown = await this.overviewPage.waitForStatus(statusKey);
         ReportLog.setParameter(`SD status (${after})`, shown || 'not shown');
 
-        expect(shown,
-            `Supplementary declaration status once ${after} (expects "${expected}")`)
-            .toMatch(declarationStatusPattern(expected));
+        verifyDeclarationStatus(shown, expected, `Supplementary declaration status once ${after}`);
     }
 
     private async verifyLinkedSfdStatus(
@@ -96,8 +93,6 @@ export class CancelSupplementaryDeclarationFlow {
         const shown = await this.consignmentDetailPage.waitForStatus(statusKey);
         ReportLog.setParameter(`Linked SFD status (${after})`, shown || 'not shown');
 
-        expect(shown,
-            `Linked SFD ${frontierLrn} status once ${after} (expects "${expected}")`)
-            .toMatch(declarationStatusPattern(expected));
+        verifyDeclarationStatus(shown, expected, `Linked SFD ${frontierLrn} status once ${after}`);
     }
 }

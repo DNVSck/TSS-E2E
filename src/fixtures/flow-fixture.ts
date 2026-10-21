@@ -46,6 +46,9 @@ import { TriggerFinalStatusThroughCdsFlow } from '../flows/common-flows/trigger-
 import { TriggerGmrStatusThroughGvmsFlow } from '../flows/gmr/trigger-gmr-status-through-gvms-flow';
 import { SupplementaryDeclarationSteps } from '../flows/supplementary-declaration/supplementary-declaration-steps';
 import { CancelSupplementaryDeclarationFlow } from '../flows/common-flows/cancel-supplementary-declaration-flow';
+import { ConvertSupplementaryDeclarationFlow } from '../flows/common-flows/convert-supplementary-declaration-flow';
+import { RevertImmiDeclarationFlow } from '../flows/common-flows/revert-immi-declaration-flow';
+import { ReclassifyThroughApiFlow } from '../flows/common-flows/trader-api/reclassify-through-api-flow';
 import { CompleteAndSubmitSupplementaryDeclarationFlow } from '../flows/common-flows/complete-and-submit-supplementary-declaration-flow';
 import { GenerateSdDraftFromEnsSfdFlow } from '../flows/common-flows/generate-sd-draft-from-ens-sfd-flow';
 import { GenerateSdDraftFromSfdStandaloneFlow } from '../flows/common-flows/generate-sd-draft-from-sfd-standalone-flow';
@@ -100,6 +103,7 @@ export type FlowFixtureType = {
     // to the end; the authority specs take it somewhere else.
     createDraftEnsDeclarationFlow: CreateDraftEnsDeclarationFlow;
     createDraftConsignmentFirstFlow: CreateDraftConsignmentFirstFlow;
+    addNewImmiStandaloneGoodsItemFlow: AddNewImmiStandaloneGoodsItemFlow;
     createDraftImmiStandaloneFlow: CreateDraftImmiStandaloneFlow;
     createDraftSfdStandaloneFlow: CreateDraftSfdStandaloneFlow;
     initialFormDeclarationFlow: InitialFormDeclarationFlow;
@@ -156,6 +160,9 @@ export type FlowFixtureType = {
     declareStandaloneThroughApiFlow: DeclareStandaloneThroughApiFlow;
     generateSdDraftThroughApiFlow: GenerateSdDraftThroughApiFlow;
     cancelSupplementaryDeclarationFlow: CancelSupplementaryDeclarationFlow;
+    convertSupplementaryDeclarationFlow: ConvertSupplementaryDeclarationFlow;
+    revertImmiDeclarationFlow: RevertImmiDeclarationFlow;
+    reclassifyThroughApiFlow: ReclassifyThroughApiFlow;
     completeAndSubmitSupplementaryDeclarationFlow: CompleteAndSubmitSupplementaryDeclarationFlow;
     concurrentLoginFlow: ConcurrentLoginFlow;
 }
@@ -289,8 +296,8 @@ export const flowFixture: ExtendParams[0] = {
         await use(new MovementHeaderDeclarationFlow(movementSteps));
     },
 
-    movementOverviewFlow: async ({ movementOverviewPage, consignmentDetailPage, t }, use) => {
-        await use(new MovementOverviewFlow(movementOverviewPage, consignmentDetailPage, t));
+    movementOverviewFlow: async ({ movementOverviewPage, consignmentDetailPage, consignmentOverviewFlow, t }, use) => {
+        await use(new MovementOverviewFlow(movementOverviewPage, consignmentDetailPage, consignmentOverviewFlow, t));
     },
 
     addNewEnsConsignmentFlow: async ({ consignmentSteps, companyPermissionService, t }, use) => {
@@ -449,13 +456,14 @@ export const flowFixture: ExtendParams[0] = {
     auditDeclarationFlow: async ({
         createDraftEnsDeclarationFlow, createDraftSfdStandaloneFlow, createDraftImmiStandaloneFlow,
         consignmentOverviewFlow, movementOverviewFlow, completeAndSubmitSupplementaryDeclarationFlow,
-        createAndSubmitGmrFlow, gmrDetailsPage, gmrOverviewFlow
+        createAndSubmitGmrFlow, gmrDetailsPage, gmrOverviewFlow,
+        convertSupplementaryDeclarationFlow, revertImmiDeclarationFlow,
     }, use) => {
         await use(new AuditDeclarationFlow(
             createDraftEnsDeclarationFlow, createDraftSfdStandaloneFlow,
             createDraftImmiStandaloneFlow, consignmentOverviewFlow, movementOverviewFlow,
             completeAndSubmitSupplementaryDeclarationFlow, createAndSubmitGmrFlow, gmrDetailsPage,
-            gmrOverviewFlow
+            gmrOverviewFlow, convertSupplementaryDeclarationFlow, revertImmiDeclarationFlow
         ));
     },
 
@@ -475,23 +483,27 @@ export const flowFixture: ExtendParams[0] = {
         ));
     },
 
+    addNewImmiStandaloneGoodsItemFlow: async ({
+        goodsItemSteps, traderGoodsProfileService, companyPermissionService, tariffService, authAccount
+    }, use) => {
+        await use(new AddNewImmiStandaloneGoodsItemFlow(
+            goodsItemSteps,
+            new DeclareNirmsFlow(goodsItemSteps, companyPermissionService, tariffService),
+            traderGoodsProfileService, authAccount
+        ));
+    },
+
     createDraftImmiStandaloneFlow: async ({
         portalAccessFlow, initialFormDeclarationFlow,
-        standaloneConsignmentSteps, movementSteps, consignmentSteps, goodsItemSteps,
-        consignmentOverviewFlow, goodsOverviewFlow, uploadGoodsCsvFlow, authAccount, traderGoodsProfileService,
-        companyPermissionService, tariffService
+        standaloneConsignmentSteps, movementSteps, consignmentSteps, addNewImmiStandaloneGoodsItemFlow,
+        consignmentOverviewFlow, goodsOverviewFlow, uploadGoodsCsvFlow, authAccount,
     }, use) => {
         const addConsignment = new AddNewImmiStandaloneConsignmentFlow(
             standaloneConsignmentSteps, movementSteps, consignmentSteps
         );
-        const addGoodsItem = new AddNewImmiStandaloneGoodsItemFlow(
-            goodsItemSteps,
-            new DeclareNirmsFlow(goodsItemSteps, companyPermissionService, tariffService),
-            traderGoodsProfileService, authAccount
-        );
         await use(new CreateDraftImmiStandaloneFlow(
             portalAccessFlow, initialFormDeclarationFlow, addConsignment,
-            addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, uploadGoodsCsvFlow, authAccount
+            addNewImmiStandaloneGoodsItemFlow, consignmentOverviewFlow, goodsOverviewFlow, uploadGoodsCsvFlow, authAccount
         ));
     },
 
@@ -567,16 +579,38 @@ export const flowFixture: ExtendParams[0] = {
         ));
     },
 
+    convertSupplementaryDeclarationFlow: async ({
+        supplementaryDeclarationOverviewPage, consignmentDetailPage, consignmentOverviewFlow,
+        addNewImmiStandaloneGoodsItemFlow, goodsOverviewFlow, declarationAccessFlow, t,
+    }, use) => {
+        await use(new ConvertSupplementaryDeclarationFlow(
+            supplementaryDeclarationOverviewPage, consignmentDetailPage, consignmentOverviewFlow,
+            addNewImmiStandaloneGoodsItemFlow, goodsOverviewFlow, declarationAccessFlow, t
+        ));
+    },
+
+    revertImmiDeclarationFlow: async ({
+        supplementaryDeclarationOverviewPage, consignmentOverviewPage, declarationAccessFlow, t,
+    }, use) => {
+        await use(new RevertImmiDeclarationFlow(
+            supplementaryDeclarationOverviewPage, consignmentOverviewPage, declarationAccessFlow, t
+        ));
+    },
+
+    reclassifyThroughApiFlow: async ({ supplementaryDeclarationService, internalMarketMovementService }, use) => {
+        await use(new ReclassifyThroughApiFlow(supplementaryDeclarationService, internalMarketMovementService));
+    },
+
     completeAndSubmitSupplementaryDeclarationFlow: async ({
         basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
         supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
-        additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, authAccount, t,
+        additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, consignmentOverviewFlow, authAccount, t,
         supplementaryDeclarationService
     }, use) => {
         await use(new CompleteAndSubmitSupplementaryDeclarationFlow(
             basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
             supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
-            additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, t, authAccount,
+            additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, consignmentOverviewFlow, t, authAccount,
             supplementaryDeclarationService
         ));
     },

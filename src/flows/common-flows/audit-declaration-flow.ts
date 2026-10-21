@@ -15,11 +15,22 @@ import { GmrOverviewFlow } from '../gmr/gmr-overview-flow';
 import { GmrDetailsPage } from '../../page-object/gmr-details-page';
 import { gmrData } from '../../test-data/gmr-data';
 import { AccessibilityAudit, checkpointFor } from '../accessibility-audit-flow';
+import { ConvertSupplementaryDeclarationFlow } from './convert-supplementary-declaration-flow';
+import { RevertImmiDeclarationFlow } from './revert-immi-declaration-flow';
+import { SupplementaryDeclarationSource } from './generate-sd-draft-from-ens-sfd-flow';
+import { ADDITIONAL_PROCEDURE_CODES } from '../../constant/additional-procedure-codes-constant';
 import { TestInfo } from '@playwright/test';
 
 export interface GmrAuditOptions {
     testInfo: TestInfo;
     routeId: string;
+    audit?: AccessibilityAudit;
+}
+
+export interface ReclassificationAuditOptions {
+    testInfo: TestInfo;
+    url: string;
+    source: SupplementaryDeclarationSource;
     audit?: AccessibilityAudit;
 }
 
@@ -34,6 +45,8 @@ export class AuditDeclarationFlow {
         private readonly addNewGmrFlow: AddNewGMRFlow,
         private readonly gmrDetailsPage: GmrDetailsPage,
         private readonly gmrOverviewFlow: GmrOverviewFlow,
+        private readonly convertSupplementaryDeclarationFlow: ConvertSupplementaryDeclarationFlow,
+        private readonly revertImmiDeclarationFlow: RevertImmiDeclarationFlow,
     ) { }
 
     async auditEnsDeclaration(options: EnsDeclarationOptions): Promise<void> {
@@ -70,6 +83,35 @@ export class AuditDeclarationFlow {
         await this.supplementaryDeclarationFlow.submitSupplementaryDeclaration(checkpoint);
         await checkpoint?.('Supplementary declaration - overview (submitted)');
     }
+
+    async auditConversion(options: ReclassificationAuditOptions): Promise<void> {
+        const { testInfo, url, source, audit } = options;
+        const checkpoint = checkpointFor(audit, testInfo);
+
+        await this.supplementaryDeclarationFlow.openSupplementaryDeclaration({ testInfo, url, ...source });
+        await this.convertSupplementaryDeclarationFlow.convertToImmi(checkpoint);
+        await audit?.verifyEveryTab({ testInfo, record: 'Converted IMMI' });
+
+        await this.convertSupplementaryDeclarationFlow.updateConvertedGoodsItem(
+            { additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG }, checkpoint
+        );
+    }
+
+    async auditReversal(options: ReclassificationAuditOptions): Promise<void> {
+        const { testInfo, url, source, audit } = options;
+        const checkpoint = checkpointFor(audit, testInfo);
+
+        const reference = await this.supplementaryDeclarationFlow.openSupplementaryDeclaration({
+            testInfo, url, ...source,
+        });
+        await this.convertSupplementaryDeclarationFlow.convertToImmi();
+        await this.revertImmiDeclarationFlow.revertToSupplementaryDeclaration({
+            declaration: { reference, frontierLrn: source.frontierLrn },
+            originalStatusKey: 'status.draft',
+            checkpoint,
+        });
+    }
+
     async auditGmr(options: GmrAuditOptions): Promise<void> {
         const checkpoint = checkpointFor(options.audit, options.testInfo);
 

@@ -2,7 +2,7 @@ import { ReportLog } from '../../core/report/report-log';
 import { GoodsData } from '../../test-data/goods-data';
 import { GoodsItemSteps } from './goods-item-steps';
 import { hidesSupplementaryUnit } from '../../helper/procedure-code-helper';
-import { DeclareNirmsFlow } from './declare-nirms-flow';
+import { DeclareNirmsFlow, NirmsJourney } from './declare-nirms-flow';
 import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 import {
     TraderGoodsProfileService, describeTgpGap,
@@ -10,12 +10,21 @@ import {
 import { COMPANY_PROFILE, UserCredentials } from '../../auth/credentials';
 import { ENV } from '../../../config/environment';
 
+const ADDITIONAL_PROCEDURE_CODE_FIELD = 'additionalProcedureCode';
+
+const USE_TGP_FIELD = 'useTgp';
+
+const USE_NIRMS_FIELD = 'useNirms';
+
 /**
  * One goods item on the IMMI standalone journey.
  *
  * IMMI is the standalone journey that asks about TGP at goods level, and answering
  * yes puts the app on its own route: the record supplies the commodity code, the
  * goods description and the country of origin, so both of those screens are skipped.
+ *
+ * It also changes an item already declared - the one an IMMI converted from a
+ * supplementary declaration inherits - through the same screens.
  */
 export class AddNewImmiStandaloneGoodsItemFlow {
     constructor(
@@ -66,14 +75,14 @@ export class AddNewImmiStandaloneGoodsItemFlow {
             }
 
             if (!usesTgp) {
-                await this.declareNirmsFlow.answerNirms(input, { isEnsOnly: false, useIMMI: true, importerEORI: declaringForEori }, checkpoint);
+                await this.declareNirmsFlow.answerNirms(input, this.nirmsJourney(declaringForEori), checkpoint);
             }
 
             await checkpoint?.('Goods item - packaging', { probeErrors: true });
             await this.steps.enterImmiStandalonePackagingDetails(input);
 
             if (usesTgp) {
-                await this.declareNirmsFlow.answerNirms(input, { isEnsOnly: false, useIMMI: true, importerEORI: declaringForEori }, checkpoint);
+                await this.declareNirmsFlow.answerNirms(input, this.nirmsJourney(declaringForEori), checkpoint);
             }
 
             await this.steps.enterWeightInformation(input);
@@ -87,6 +96,47 @@ export class AddNewImmiStandaloneGoodsItemFlow {
             await this.steps.finishGoodsItemDeclaration();
             return usesTgp;
         });
+    }
+
+    async changeGoodsItem(
+        input: GoodsData,
+        declaringForEori: string,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
+        return ReportLog.step('Change the IMMI goods item', async () => {
+            await this.steps.changeAnswer(ADDITIONAL_PROCEDURE_CODE_FIELD);
+            await checkpoint?.('Goods item - change additional procedure code', { probeErrors: true });
+            await this.steps.selectImmiAdditionalProcedureCode(input);
+            await checkpoint?.('Goods item - check your answers (changed)');
+
+            const usesTgp = input.useTGP && await this.redeclareFromTgp(input, declaringForEori, checkpoint);
+
+            if (input.useNirms) {
+                await this.steps.changeAnswer(USE_NIRMS_FIELD);
+                await this.declareNirmsFlow.answerNirms(input, this.nirmsJourney(declaringForEori), checkpoint);
+            }
+
+            await this.steps.finishGoodsItemDeclaration();
+            return usesTgp;
+        });
+    }
+
+    private async redeclareFromTgp(
+        input: GoodsData,
+        declaringForEori: string,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
+        await this.steps.changeAnswer(USE_TGP_FIELD);
+        const usesTgp = await this.declareTgp(input, declaringForEori, checkpoint);
+
+        await this.steps.selectGoodsProcedureCode(input);
+        await this.steps.selectImmiAdditionalProcedureCode(input);
+        await this.steps.keepAnswersUntilCheckYourAnswers();
+        return usesTgp;
+    }
+
+    private nirmsJourney(importerEORI: string): NirmsJourney {
+        return { isEnsOnly: false, useIMMI: true, importerEORI };
     }
 
     /**

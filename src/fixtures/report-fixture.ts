@@ -1,17 +1,26 @@
 import { test } from '@playwright/test';
 import { AllureTestManager } from '../core/report/allure-test-manager';
-import { ServiceErrorRecorder } from '../core/report/service-error-recorder';
+import {
+    ServiceErrorRecorder, explainPageLoadError, recordFailedAttempt, refuseRetryUnlessServiceOutage,
+} from '../core/report/service-error-recorder';
 import { BASE_URL } from '../../config/environment';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
 
 export type ReportFixtureType = {
     reportTestLifecycle: void;
+    retryOnlyAfterServiceOutage: void;
     serviceErrors: ServiceErrorRecorder;
 };
 
 type ExtendParams = Parameters<typeof test.extend<ReportFixtureType & WorkerAuthFixtureType>>;
 
 export const reportFixture: ExtendParams[0] = {
+    retryOnlyAfterServiceOutage: [async ({}, // NOSONAR typescript:S3799
+        use, testInfo) => {
+        refuseRetryUnlessServiceOutage(testInfo);
+        await use();
+    }, { auto: true }],
+
     reportTestLifecycle: [async ({}, // NOSONAR typescript:S3799
         use) => {
         const startedAt = new Date();
@@ -28,6 +37,8 @@ export const reportFixture: ExtendParams[0] = {
 
         if (testInfo.status !== testInfo.expectedStatus) {
             await recorder.attachTo(testInfo);
+            recordFailedAttempt(testInfo, recorder);
+            explainPageLoadError(testInfo, recorder);
         }
     },
 

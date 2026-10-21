@@ -103,6 +103,18 @@ export function isTraderInputRequiredStatus(status: string, t: TFunction): boole
     return status === t('status.traderInputRequired');
 }
 
+export type RefusingSystem = 'ICS2' | 'CDS';
+
+export interface Refusal {
+    by: RefusingSystem;
+    reasons: string[];
+}
+
+export interface RefusalScreen {
+    readValidationErrors(): Promise<string[]>;
+    screenshotPng(): Promise<Buffer>;
+}
+
 /**
  * The error a happy-path journey fails with when its declaration is handed back to the
  * trader. Built here so every caller words it the same way.
@@ -113,12 +125,27 @@ export function isTraderInputRequiredStatus(status: string, t: TFunction): boole
  * Allure keeps parameters set on a failing test, but only the ones set before it
  * stopped.
  */
-export function traderInputRequiredError(label: string, status: string): Error {
+export function traderInputRequiredError(label: string, status: string, refusal?: Refusal): Error {
     return new Error(
-        `${label} came back as "${status}". The service rejected this submission back ` +
+        `${label} came back as "${status}"${describeRefusal(refusal)}. The service rejected this submission back ` +
         `to the trader, so it is never authorised and never assigned an MRN. Stopping ` +
         `here: the consignment overview carries the validation errors that say why.`
     );
+}
+
+export function verifyNotRefusedByIcs2(status: string, t: TFunction, refusal: Refusal): void {
+    expect.soft(status,
+        `The ENS consignment came back as "${status}"${describeRefusal(refusal)} (expects it accepted)`)
+        .not.toBe(t('status.traderInputRequired'));
+}
+
+export function describeRefusal(refusal?: Refusal): string {
+    if (!refusal) {
+        return '';
+    }
+
+    const reasons = refusal.reasons.length > 0 ? ` for: ${refusal.reasons.join(' | ')}` : '';
+    return ` - refused by ${refusal.by}${reasons}`;
 }
 
 
@@ -148,6 +175,10 @@ const REGEXP_SPECIAL_CHARACTERS = /[.*+?^${}()|[\]\\]/g;
 export function declarationStatusPattern(expected: string): RegExp {
     const escaped = expected.replaceAll(REGEXP_SPECIAL_CHARACTERS, String.raw`\$&`);
     return new RegExp(String.raw`^\s*${escaped}\s*$`, 'i');
+}
+
+export function verifyDeclarationStatus(shown: string, expected: string, what: string): void {
+    expect(shown, `${what} (expects "${expected}")`).toMatch(declarationStatusPattern(expected));
 }
 
 const IMMI_SETTLES_TIMEOUT = 180_000;

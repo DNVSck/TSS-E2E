@@ -25,6 +25,7 @@ export const TRADER_API_PATH = {
         `${SIMPLIFIED_FRONTIER_DECLARATIONS}?consignment_number={consignmentNumber}`,
     SfdByReference: `${SIMPLIFIED_FRONTIER_DECLARATIONS}?reference={reference}`,
 
+    SupplementaryDeclarations: SUPPLEMENTARY_DECLARATIONS,
     SupplementaryDeclarationBySfdNumber:
         `${SUPPLEMENTARY_DECLARATIONS}?sfd_number={sfdNumber}`,
     SupplementaryDeclarationByReference: `${SUPPLEMENTARY_DECLARATIONS}?reference={reference}`,

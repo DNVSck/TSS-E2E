@@ -14,11 +14,12 @@ import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-con
 import { additionalInformation } from './additional-information-data';
 import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
 import {
-    IMPORTER_CGU, IMPORTER_IPO, IMPORTER_SDE, IMPORTER_TEA,
+    HAULIER_EORI, IMPORTER_CGU, IMPORTER_IPO, IMPORTER_SDE, IMPORTER_TEA, IMPORTER_VAT,
     TSS_DDA_COMPANY_NAME, TSS_DDA_EORI, assertEnvSet,
 } from '../../config/environment';
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
+import { ADDITIONAL_PARTY_ROLE, CONTROLLED_GOODS_TYPE } from '../constant/trader-api/trader-api-request-constant';
 
 /**
  * The frontier movement a supplementary declaration is raised FROM.
@@ -82,6 +83,45 @@ export const tssDdaSupplementaryDeclarationMovement = (): SupplementaryDeclarati
         goodsItemOverrides: { documentReferences: goodsDocumentsWithoutSde() },
     });
 };
+
+export const importerWithoutUkimsSupplementaryDeclarationMovement = (): SupplementaryDeclarationMovementData => ({
+    movementOverrides: {},
+    consignmentOverrides: { importerEORI: HAULIER_EORI, useImporterSde: false },
+    goodsItemOverrides: { documentReferences: goodsDocumentsWithoutSde() },
+});
+
+const WAIVER_REASON = 'Reason for waiver';
+
+export const onwardSupplyReliefSupplementaryDeclarationMovement = (): SupplementaryDeclarationMovementData => ({
+    movementOverrides: {},
+    consignmentOverrides: {
+        goodsDomesticStatus: CONSIGNMENT_GOODS_DOMESTIC_STATUS.NIIMP,
+        destinationCountryCode: COUNTRY_CODE.IRELAND,
+    },
+    goodsItemOverrides: {
+        procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_ONWARD_SUPPLY_4200,
+        additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.NO_OTHER_ADDITIONAL_CODE_000,
+        commodityCode: '6203423500',
+        goodsDescription: "200 pairs of Men's brown trousers, made of cotton, in various sizes and lengths",
+        countryOfOrigin: COUNTRY_CODE.UNITED_STATE_AMERICA,
+        supplementaryUnits: '200',
+        controlledGoodsType: CONTROLLED_GOODS_TYPE.PLANT_BASED,
+        documentReferences: [
+            documentReference({ documentCode: DOCUMENT_CODE.C679, documentStatus: DOCUMENT_STATUS.XB, documentReference: '0054037-0054047' }),
+            documentReference({ documentCode: DOCUMENT_CODE.Y922, documentStatus: undefined, documentReference: 'No cat or dog fur', documentReason: WAIVER_REASON }),
+            documentReference({ documentCode: DOCUMENT_CODE.N760, documentStatus: DOCUMENT_STATUS.AC, documentReference: '056789/202 21.01.2025' }),
+            documentReference({ documentCode: DOCUMENT_CODE['9120'], documentStatus: DOCUMENT_STATUS.XX, documentReference: 'GBAHC1234', documentReason: WAIVER_REASON }),
+        ],
+        additionalInformations: [
+            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.NIIMP, description: '' }),
+            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.OSR42, description: 'French Clothing Co, 1 Rue de Vetements, Paris P12 345-FR' }),
+        ],
+        additionalParties: [
+            { roleId: `${COUNTRY_CODE.UNITED_KINGDOM}${IMPORTER_VAT}`, roleCode: ADDITIONAL_PARTY_ROLE.IMPORTER_VAT_FR1 },
+            { roleId: 'FR123457845', roleCode: ADDITIONAL_PARTY_ROLE.CUSTOMER_VAT_FR2 },
+        ],
+    },
+});
 
 export const tssDdaTraderApiSupplementaryDeclarationMovement = (): SupplementaryDeclarationMovementData => {
     assertTssDdaConfigured();

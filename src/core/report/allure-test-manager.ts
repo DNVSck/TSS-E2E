@@ -80,12 +80,12 @@ export class AllureTestManager {
 
 
     private static addMetadata(testInfo: TestInfo): void {
-        parameter('Environment', process.env.ENV ?? 'default');
-        parameter('Base URL', process.env.BASE_URL ?? 'N/A');
-        parameter('Browser', testInfo.project.use?.browserName ?? 'unknown');
+        parameter('Environment', process.env.ENV ?? 'default', { excluded: true });
+        parameter('Base URL', process.env.BASE_URL ?? 'N/A', { excluded: true });
+        parameter('Browser', testInfo.project.use?.browserName ?? 'unknown', { excluded: true });
     }
 
     public static addParameter(name: string, value: string): void {
-        parameter(name, value);
+        parameter(name, value, { excluded: true });
     }
 }

@@ -6,6 +6,7 @@ import {
     requiresSupervisingCustomsOffice, requiresWarehouseIdentifier,
 } from '../../helper/procedure-code-helper';
 import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
+import { verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
 
 /**
  * One method per goods-item wizard screen: binds the test data to the page object
@@ -375,6 +376,20 @@ export class GoodsItemSteps {
     async enterCountryOfOrigin(input: GoodsData): Promise<void> {
         await ReportLog.step('Select Country of Origin', async () => {
             await this.goodsDeclarePage.enterCountryOfOrigin(input.countryOfOrigin);
+        });
+    }
+
+    async changeAnswer(field: string): Promise<void> {
+        await ReportLog.step(`Change the "${field}" answer`, async () => {
+            await this.goodsDeclarePage.changeField(field);
+        });
+    }
+
+    async keepAnswersUntilCheckYourAnswers(): Promise<void> {
+        await ReportLog.step('Keep the answers already given, up to check your answers', async () => {
+            verifySubmittedWithoutErrors(
+                await this.goodsDeclarePage.continueToCheckYourAnswers(), 'the screens already answered'
+            );
         });
     }
 

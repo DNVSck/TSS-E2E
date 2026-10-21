@@ -1,7 +1,7 @@
 import { TraderApiClient, TraderApiResult, requiredField } from '../../api-client/trader-api-client';
 import { TRADER_API_PATH } from '../../constant/trader-api/trader-api-path-constant';
 import { buildPath } from '../../helper/api-path-helper';
-import { OP_TYPE } from '../../constant/trader-api/trader-api-request-constant';
+import { OP_TYPE, RECLASSIFICATION_TYPE } from '../../constant/trader-api/trader-api-request-constant';
 import { ImmiStandalonePayload } from '../../test-data/payload/trader-api/immi-standalone-payload';
 
 interface InternalMarketMovementResult extends TraderApiResult {
@@ -36,6 +36,18 @@ export class InternalMarketMovementService {
             buildPath(TRADER_API_PATH.InternalMarketMovement),
             { op_type: OP_TYPE.SUBMIT, glr_number: glrNumber },
             `Submit IMMI ${glrNumber}`
+        );
+    }
+
+    async reclassifyToSupplementaryDeclaration(glrNumber: string): Promise<void> {
+        await this.api.send(
+            buildPath(TRADER_API_PATH.InternalMarketMovement),
+            {
+                op_type: OP_TYPE.RECLASSIFY,
+                glr_number: glrNumber,
+                reclassification_type: RECLASSIFICATION_TYPE.IMMI_TO_SUPPLEMENTARY,
+            },
+            `Revert IMMI ${glrNumber} to its supplementary declaration`
         );
     }
 

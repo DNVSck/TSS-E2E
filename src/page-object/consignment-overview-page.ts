@@ -14,6 +14,8 @@ import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
 import { StringUtil } from '../core/util/string-util';
 import { CONSIGNMENT_TAB_ROUTE } from '../constant/overview-tab-route-constant';
 import { CancellationScreen } from './components/cancellation-screen';
+import { ReclassificationScreen } from './components/reclassification-screen';
+import { RECLASSIFICATION_ROUTE } from '../constant/endpoints-constant';
 import { GOVUK } from './components/govuk-selectors';
 import {
     waitForOpenTabPanel, OPEN_TAB_RECORD, RECORD_LINK, deleteTabRecord,
@@ -40,6 +42,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     private readonly confirmAndSubmitButton: Locator;
     private readonly cancelButton: Locator;
     private readonly cancellationScreen: CancellationScreen;
+    private readonly reclassificationScreen: ReclassificationScreen;
     private readonly recordOverviewLink: Locator;
     private readonly consignmentBreadcrumbLink: Locator;
     private readonly openTabRecords: Locator;
@@ -85,7 +88,21 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         this.confirmAndSubmitButton = page.locator(`button[value='${CONSIGNMENT_ACTION.SUBMIT}']`);
         this.cancelButton = page.locator(`button[value='${CONSIGNMENT_ACTION.CANCEL}']`);
         this.cancellationScreen = new CancellationScreen(page);
+        this.reclassificationScreen = new ReclassificationScreen(page);
         this.recordOverviewLink = page.locator("main a[href$='/overview']");
+    }
+
+    async isReversalOffered(): Promise<boolean> {
+        await this.contentRows.first().waitFor({ state: 'visible', timeout: RENDER_TIMEOUT.SUMMARY_LIST });
+        return this.reclassificationScreen.isOffered();
+    }
+
+    async openReversal(): Promise<void> {
+        await this.reclassificationScreen.open();
+    }
+
+    async confirmReversal(): Promise<string> {
+        return this.reclassificationScreen.confirm(RECLASSIFICATION_ROUTE.SUPPLEMENTARY_DECLARATION_SEGMENT);
     }
 
 

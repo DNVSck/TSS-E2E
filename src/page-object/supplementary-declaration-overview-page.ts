@@ -2,13 +2,14 @@ import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './base-page';
 import { GOVUK } from './components/govuk-selectors';
 import { CancellationScreen } from './components/cancellation-screen';
+import { ReclassificationScreen } from './components/reclassification-screen';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { declarationStatusPattern } from '../helper/declaration-status-helper';
 import {
     readFieldWhenVisible, readFieldIfPresent,
     clickLinkAndWaitForRoute, clickLinkAndEnterWizard, removeTaskListRecord,
 } from '../helper/element-helper';
-import { SUPPLEMENTARY_DECLARATION_ROUTE } from '../constant/endpoints-constant';
+import { SUPPLEMENTARY_DECLARATION_ROUTE, RECLASSIFICATION_ROUTE } from '../constant/endpoints-constant';
 import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
 
 /** This overview paints its summary card a beat after load. */
@@ -37,7 +38,6 @@ const STATUS_POLL_INTERVAL = 2_000;
  * details every other check needs are hidden behind a toggle until expanded.
  */
 export class SupplementaryDeclarationOverviewPage extends BasePage {
-    private readonly declarationReference: Locator;
     private readonly status: Locator;
     private readonly fullDetailsToggle: Locator;
     private readonly fullDetails: Locator;
@@ -49,11 +49,11 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
     private readonly cancelButton: Locator;
     private readonly cancellationScreen: CancellationScreen;
     private readonly recordOverviewLink: Locator;
+    private readonly reclassificationScreen: ReclassificationScreen;
 
     constructor(page: Page, t: TFunction) {
         super(page, t);
 
-        this.declarationReference = page.locator(`${GOVUK.SUMMARY_CARD.TITLE} strong`);
         // The plain GOV.UK tag, scoped to <main>. It no longer carries a class naming the
         // status - only a colour that changes with it - and govuk-tag is reused by the
         // phase banner above for "Beta" and "Representing: <company>". Inside main it is
@@ -74,13 +74,10 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
         this.cancelButton = page.locator(`button[value='${CONSIGNMENT_ACTION.CANCEL}']`);
         this.cancellationScreen = new CancellationScreen(page);
         this.recordOverviewLink = page.locator("main a[href*='/supplementary-declaration/'][href$='/overview']");
+        this.reclassificationScreen = new ReclassificationScreen(page);
         this.simplifiedDeclarationReference = this.summaryList.valueOf(
             this.t!('supplementaryDeclaration.simplifiedDeclarationReference')
         );
-    }
-
-    async getDeclarationReference(): Promise<string> {
-        return readFieldWhenVisible(this.declarationReference, OVERVIEW_READ_TIMEOUT);
     }
 
     async getStatus(): Promise<string> {
@@ -235,6 +232,19 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
         await clickLinkAndWaitForRoute(this.page, this.recordOverviewLink);
     }
 
+    async isConversionOffered(): Promise<boolean> {
+        await this.fullDetailsToggle.waitFor({ state: 'visible', timeout: OVERVIEW_READ_TIMEOUT });
+        return this.reclassificationScreen.isOffered();
+    }
+
+    async openConversion(): Promise<void> {
+        await this.reclassificationScreen.open();
+    }
+
+    async confirmConversion(): Promise<string> {
+        return this.reclassificationScreen.confirm(RECLASSIFICATION_ROUTE.IMMI_POST_MOVEMENT_SEGMENT);
+    }
+
     /**
      * A rejected supplementary declaration says why in a "There is a problem" panel
      * INSIDE the collapsed details - which is how CDS12125 (an unusable deferment
@@ -242,6 +252,11 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
      * exists to explain a failure: a diagnostic that can itself fail replaces the real
      * error with its own.
      */
+    async readValidationErrors(): Promise<string[]> {
+        const problem = await this.readSubmissionProblem();
+        return problem.split('\n').map(line => line.trim()).filter(Boolean);
+    }
+
     async readSubmissionProblem(): Promise<string> {
         try {
             await this.expandFullConsignmentDetails();

@@ -69,7 +69,8 @@
     "pendingCancellation": "Pending Cancellation",
     "processing": "Processing",
     "paymentPending": "Pending payment",
-    "taxCalculation": "Tax calculation"
+    "taxCalculation": "Tax calculation",
+    "converted": "Converted"
   },
   "accessDenied": {
     "heading": "You are not authorised to access this"
