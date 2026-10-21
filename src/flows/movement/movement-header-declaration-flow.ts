@@ -23,8 +23,6 @@ export class MovementHeaderDeclarationFlow {
         await ReportLog.step('Complete movement header declaration', async () => {
             await checkpoint?.('Movement - type of movement', { probeErrors: true });
             await this.steps.chooseTypeOfMovement(input.typeOfMovement);
-            await checkpoint?.('Movement - means of transport', { probeErrors: true });
-            await this.steps.inputMeansOfTransport(input.imoNumber, input.nationalityOfMeanOfTransport);
             await this.identifyMethodOfTransport(input, checkpoint);
 
             await checkpoint?.('Movement - role in this movement', { probeErrors: true });
@@ -93,12 +91,22 @@ export class MovementHeaderDeclarationFlow {
 
     /**
      * Unaccompanied RoRo identifies the trailer on one screen; accompanied RoRo first
-     * asks what is being towed, then identifies the towing vehicle.
+     * asks what is being towed, then identifies the towing vehicle. ILP Maritime asks
+     * the IMO number and nationality on one vessel screen and nothing after it.
      */
     private async identifyMethodOfTransport(
         input: MovementData,
         checkpoint?: AccessibilityCheckpoint
     ): Promise<void> {
+        if (input.typeOfMovement === TYPE_OF_MOVEMENT_OPTION_CODE.MARITIME) {
+            await checkpoint?.('Movement - vessel details', { probeErrors: true });
+            await this.steps.enterVesselDetails(input.imoNumber, input.nationalityOfMeanOfTransport);
+            return;
+        }
+
+        await checkpoint?.('Movement - means of transport', { probeErrors: true });
+        await this.steps.inputMeansOfTransport(input.imoNumber, input.nationalityOfMeanOfTransport);
+
         switch (input.typeOfMovement) {
             case TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED:
                 await checkpoint?.('Movement - trailer registration', { probeErrors: true });

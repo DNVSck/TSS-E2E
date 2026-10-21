@@ -21,6 +21,8 @@ export const VEHICLE_REGISTRATION_NUMBER = 'AB12CDE';
 /** The unaccompanied twin: a trailer instead of a vehicle. */
 export const TRAILER_REGISTRATION_NUMBER = 'TR12LER';
 
+export const IMO_NUMBER = '9198941';
+
 export interface MovementData {
     typeOfMovement: string;
     roleInThisMovement: RoleInMovementValue;
@@ -49,7 +51,7 @@ export interface MovementData {
 const defaults: Omit<MovementData, 'arrivalDateTime'> = {
     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
     roleInThisMovement: ROLE_IN_MOVEMENT.HAULIER,
-    imoNumber: '9198941',
+    imoNumber: IMO_NUMBER,
     vehicleRegistrationNumber: VEHICLE_REGISTRATION_NUMBER,
     conveyanceReferenceNumber: '',
     nationalityOfMeanOfTransport: COUNTRY_CODE.UNITED_KINGDOM,

@@ -12,7 +12,8 @@ import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
 import { defermentAccountNumber } from '../helper/authorisation-helper';
 import { IMPORTER_DPO } from '../../config/environment';
-import { generateRandomInvoiceNumber } from '../helper/data-generate-helper';
+import { generateRandomInvoiceNumber, generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
+import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
 import { VEHICLE_REGISTRATION_NUMBER } from './movements-data';
 
 /**
@@ -30,7 +31,9 @@ import { VEHICLE_REGISTRATION_NUMBER } from './movements-data';
  * questions this declaration still has no answer to, so which screens appear depends
  * on what the frontier declaration already carried:
  *
- *   header   vehicle or trailer details -> exporter profile -> delivery terms
+ *   header   vehicle or trailer details -> buyer profile
+ *            -> transport and destination -> exporter profile
+ *            -> seller profile -> delivery terms
  *            -> either the UN/LOCODE, or the delivery country then the delivery place
  *            -> invoice currency
  *   goods    additional risk status -> country of origin -> commodity information
@@ -65,6 +68,16 @@ export interface SupplementaryDeclarationData {
      */
     nationalityMeansOfTransport: string;
 
+    buyerName: string;
+    buyerStreetName: string;
+    buyerStreetNumber: string;
+    buyerCity: string;
+    buyerPostCode: string;
+    buyerCountryCode: string;
+
+    transportDocumentNumber: string;
+    goodsDomesticStatus: string;
+
     // ---- header: exporter profile --------------------------------------------------
     // No EORI: the SD asks for the exporter's name and address directly.
     exporterName: string;
@@ -73,6 +86,13 @@ export interface SupplementaryDeclarationData {
     exporterCity: string;
     exporterPostCode: string;
     exporterCountryCode: string;
+
+    sellerName: string;
+    sellerStreetName: string;
+    sellerStreetNumber: string;
+    sellerCity: string;
+    sellerPostCode: string;
+    sellerCountryCode: string;
 
     // ---- header: delivery terms ----------------------------------------------------
     incoterm: string;
@@ -186,12 +206,29 @@ const defaults: SupplementaryDeclarationData = {
     meansOfTransportRegistration: VEHICLE_REGISTRATION_NUMBER,
     nationalityMeansOfTransport: COUNTRY_CODE.UNITED_KINGDOM,
 
+    buyerName: 'AUTOMATION BUYER LTD',
+    buyerStreetName: 'DONEGALL SQUARE',
+    buyerStreetNumber: '2',
+    buyerCity: 'BELFAST',
+    buyerPostCode: 'BT1 1AA',
+    buyerCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
+
+    transportDocumentNumber: '',
+    goodsDomesticStatus: CONSIGNMENT_GOODS_DOMESTIC_STATUS.NIDOM,
+
     exporterName: 'AUTOMATION EXPORTER LTD',
     exporterStreetName: 'DONEGALL SQUARE',
     exporterStreetNumber: '1',
     exporterCity: 'BELFAST',
     exporterPostCode: 'BT1 1AA',
     exporterCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
+
+    sellerName: 'AUTOMATION SELLER LTD',
+    sellerStreetName: 'DONEGALL SQUARE',
+    sellerStreetNumber: '3',
+    sellerCity: 'BELFAST',
+    sellerPostCode: 'BT1 1AA',
+    sellerCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
     incoterm: INCOTERM.COST_INSURANCE_AND_FREIGHT,
     /**
@@ -256,6 +293,7 @@ export const supplementaryDeclaration = (
 ): SupplementaryDeclarationData => ({
     ...defaults,
     invoiceNumber: generateRandomInvoiceNumber(),
+    transportDocumentNumber: generateRandomTransportDocumentNumber(),
     ...overrides,
 });
 

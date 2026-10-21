@@ -7,7 +7,6 @@ import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-
 import { documentReference, ensSfdGoodsDocuments, goodsDocumentsWithoutSde } from './document-reference-data';
 import { holderOfAuthorisation } from './holder-of-authorisation-data';
 import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
-import { ADDITIONAL_RISK_STATUS } from '../constant/additional-risk-status-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
 import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
@@ -101,7 +100,6 @@ export const tssDdaTraderApiSupplementaryDeclarationMovement = (): Supplementary
  * This variant sets:
  * - RoRo Unaccompanied (not accompanied)
  * - Procedure code 5300 (Entry to Temporary Admission)
- * - Additional risk status NIREM (At Risk classification)
  * - C672 document reference with AC status
  */
 export const tempAdmissionSupplementaryDeclarationMovement = (
@@ -126,7 +124,6 @@ export const tempAdmissionSupplementaryDeclarationMovement = (
         goodsDescription: 'Professional equipment - portable computers',
         procedureCode: PROCEDURE_CODES.ENTRY_TO_TA_5300,
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.PROFESSIONAL_EQUIPMENT_D12,
-        additionalRiskStatus: ADDITIONAL_RISK_STATUS.NIREM,
         supplementaryUnits: '12',
         documentReferences: [
             documentReference({
@@ -157,7 +154,6 @@ export const tempAdmissionSupplementaryDeclarationMovement = (
  * This variant sets:
  * - RoRo Unaccompanied (not accompanied)
  * - Entry to Inward Processing procedure (5100)
- * - Additional risk status NIREM (At Risk classification)
  * - Inward Processing authorisation and associated documents
  */
 export const inwardProcessingSfdSupplementaryDeclarationMovement = (
@@ -184,7 +180,6 @@ export const inwardProcessingSfdSupplementaryDeclarationMovement = (
     goodsItemOverrides: {
         procedureCode: PROCEDURE_CODES.ENTRY_TO_IP_5100,
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.INWARD_PROCESSING_VAT_ONLY_A04,
-        additionalRiskStatus: ADDITIONAL_RISK_STATUS.NIREM,
         commodityCode: '7209169000',
         goodsDescription: 'Cold-rolled steel sheets for manufacturing',
         documentReferences: [
@@ -233,28 +228,29 @@ export const inwardProcessingSfdSupplementaryDeclarationMovement = (
  *
  * This variant sets:
  * - RoRo Accompanied (transport mode)
- * - Free Circulation procedure code (4000)
- * - Additional risk status NIREM (At Risk classification)
- * - Excisable goods commodity code (tobacco)
- * - Excise goods grouping additional procedure code (1EB)
+ * - The ENS-SFD excise warehouse declaration (0700-F06) - see exciseWarehouseDeclaration
  */
 export const exciseGoodsRoRoAccompaniedSupplementaryDeclarationMovement = (
     overrides?: Partial<SupplementaryDeclarationMovementData>
-): SupplementaryDeclarationMovementData => ({
-    movementOverrides: {
-        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-        ...overrides?.movementOverrides,
-    },
-    consignmentOverrides: {
-        ...exciseWarehouseDeclaration().consignmentOverrides,
-        ...overrides?.consignmentOverrides,
-    },
-    goodsItemOverrides: {
-        ...exciseWarehouseDeclaration().goodsItemOverrides,
-        ...overrides?.goodsItemOverrides,
-    },
-    ...overrides,
-});
+): SupplementaryDeclarationMovementData => {
+    const exciseWarehouse = exciseWarehouseDeclaration();
+
+    return {
+        movementOverrides: {
+            typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+            ...overrides?.movementOverrides,
+        },
+        consignmentOverrides: {
+            ...exciseWarehouse.consignmentOverrides,
+            ...overrides?.consignmentOverrides,
+        },
+        goodsItemOverrides: {
+            ...exciseWarehouse.goodsItemOverrides,
+            ...overrides?.goodsItemOverrides,
+        },
+        ...overrides,
+    };
+};
 
 /**
  * Build the answers for an ENS-SFD movement that will generate a Supplementary
@@ -263,7 +259,6 @@ export const exciseGoodsRoRoAccompaniedSupplementaryDeclarationMovement = (
  * This variant sets:
  * - RoRo Accompanied (transport mode)
  * - Free Circulation procedure code (4000)
- * - Additional risk status NIREM (At Risk classification)
  * - SCDP/SDE (Simplified Declaration Procedure) authorization holder
  * - Standard commodity code (non-excise goods)
  * - No special additional procedure code (000)
@@ -290,7 +285,6 @@ export const scdpRoRoAccompaniedSupplementaryDeclarationMovement = (
         goodsDescription: 'General goods for free circulation',
         procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000,
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.NO_OTHER_ADDITIONAL_CODE_000,
-        additionalRiskStatus: ADDITIONAL_RISK_STATUS.NIREM,
         supplementaryUnits: '1',
         documentReferences: ensSfdGoodsDocuments(),
         ...overrides?.goodsItemOverrides,

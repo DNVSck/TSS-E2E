@@ -124,6 +124,30 @@ export class SupplementaryDeclarationSteps {
         );
     }
 
+    async enterBuyerProfileIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
+        return this.answerIfAsked(
+            STEP.BUYER_PROFILE,
+            `Name the buyer as "${input.buyerName}"`,
+            () => this.consignmentPage.inputBuyerAddress(toPartyAddress('buyer', input)),
+            checkpoint
+        );
+    }
+
+    async enterTransportAndDestinationIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
+        return this.answerIfAsked(
+            STEP.TRANSPORT_AND_DESTINATION,
+            `Declare transport document ${input.transportDocumentNumber} and goods domestic status ${input.goodsDomesticStatus}`,
+            () => this.consignmentPage.fillSfdTransportAndDestinationDetails(input.transportDocumentNumber, input.goodsDomesticStatus),
+            checkpoint
+        );
+    }
+
     /**
      * "Enter exporter profile" - name and address, with no EORI screen before it. Asked
      * only when the frontier declaration named no exporter.
@@ -136,6 +160,18 @@ export class SupplementaryDeclarationSteps {
             STEP.EXPORTER_PROFILE,
             `Name the exporter as "${input.exporterName}"`,
             () => this.consignmentPage.enterExporterProfile(toPartyAddress('exporter', input)),
+            checkpoint
+        );
+    }
+
+    async enterSellerProfileIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
+        return this.answerIfAsked(
+            STEP.SELLER_PROFILE,
+            `Name the seller as "${input.sellerName}"`,
+            () => this.consignmentPage.enterSellerProfile(toPartyAddress('seller', input)),
             checkpoint
         );
     }

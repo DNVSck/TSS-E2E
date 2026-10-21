@@ -8,7 +8,6 @@ import {
 } from '../../../src/test-data/supplementary-declaration-data';
 import {
     exciseGoodsRoRoAccompaniedSupplementaryDeclarationMovement,
-    scdpRoRoAccompaniedSupplementaryDeclarationMovement,
     tssDdaSupplementaryDeclarationMovement,
     tssDdaTraderApiSupplementaryDeclarationMovement,
 } from '../../../src/test-data/supplementary-declaration-movement-data';

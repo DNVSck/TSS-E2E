@@ -5,6 +5,8 @@ import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
 import { PREVIOUS_DOCUMENT_TYPE } from '../constant/previous-document-type-constant';
 import { ConsignmentData, ensOnlyConsignment } from './consignment-data';
+import { MovementData } from './movements-data';
+import { MARITIME_NON_ILP_PORT } from '../constant/maritime-non-ilp-port-constant';
 import { EnsDeclarationOptions } from '../flows/common-flows/create-draft-ens-declaration-flow';
 import { previousDocument } from './previous-document-data';
 import { documentReference, ensSfdGoodsDocuments } from './document-reference-data';
@@ -14,6 +16,7 @@ import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { additionalInformation } from './additional-information-data';
 import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
+import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
 
 
 export const ensSfdDeclaration = (
@@ -147,5 +150,21 @@ export const ensEidrDeclaration = (
             previousDocument({ documentReference: '3XI352196303000-12345' })
         ],
         ...consignmentOverrides,
+    },
+});
+
+export const byMaritime = <T extends {
+    movementOverrides?: Partial<MovementData>;
+    consignmentOverrides?: Partial<ConsignmentData>;
+}>(declaration: T): T => ({
+    ...declaration,
+    movementOverrides: {
+        ...declaration.movementOverrides,
+        typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.MARITIME,
+        portOfArrival: MARITIME_NON_ILP_PORT.BELFAST_PORT,
+    },
+    consignmentOverrides: {
+        ...declaration.consignmentOverrides,
+        transportDocumentNumber: generateRandomTransportDocumentNumber('MARITIME'),
     },
 });
