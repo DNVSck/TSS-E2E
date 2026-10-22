@@ -97,6 +97,19 @@ export class MovementOverviewFlow {
         });
     }
 
+    async readMovementStatus(): Promise<string> {
+        return this.movementOverviewPage.getMovementDeclarationStatus();
+    }
+
+    async verifyMovementStatusKept(before: string): Promise<void> {
+        await ReportLog.step(`Verify the movement still reads ${before}`, async () => {
+            expect(
+                await this.movementOverviewPage.getMovementDeclarationStatus(),
+                `Movement declaration status after its consignment was cancelled (must stay ${before})`
+            ).toBe(before);
+        });
+    }
+
     async verifyConsignmentListed(consignmentReference: string): Promise<void> {
         await ReportLog.step('Verify the linked consignment is listed on the movement', async () => {
             expect(

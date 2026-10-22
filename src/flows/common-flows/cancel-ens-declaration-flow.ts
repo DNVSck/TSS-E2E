@@ -13,14 +13,17 @@ export class CancelEnsDeclarationFlow {
         private readonly declarationAccessFlow: DeclarationAccessFlow,
     ) { }
 
-    async cancelConsignmentAndVerifyDeclarationIsCancelled(reason: string): Promise<void> {
-        await ReportLog.step('Cancel the ENS consignment and verify the declaration is cancelled', async () => {
-            await this.openEnsConsignment();
+    async cancelConsignmentAndVerifyMovementIsKept(reason: string): Promise<void> {
+        await ReportLog.step('Cancel the ENS consignment and verify the movement keeps its status', async () => {
+            await this.declarationAccessFlow.locateMovementHeader();
+            const movementStatus = await this.movementOverviewFlow.readMovementStatus();
+
+            await this.declarationAccessFlow.locateEnsConsignmentRecords();
             await this.cancelConsignmentFlow.cancelConsignment(reason);
             await this.cancelConsignmentFlow.verifyConsignmentIsCancelled();
 
             await this.declarationAccessFlow.locateMovementHeader();
-            await this.movementOverviewFlow.verifyMovementStatus('status.cancelled');
+            await this.movementOverviewFlow.verifyMovementStatusKept(movementStatus);
         });
     }
 

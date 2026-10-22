@@ -98,14 +98,14 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Cancellation from dr
     await ReportLog.setFeature('GB to NI RoRo ENS-only Declaration Process');
   });
 
-  test('Verify a "Draft" ENS consignment can be cancelled, and takes its movement with it', { tag: ['@regression', '@cancellation'] }, async ({
+  test('Verify a "Draft" ENS consignment can be cancelled, and leaves its movement as it was', { tag: ['@regression', '@cancellation'] }, async ({
     createDraftEnsDeclarationFlow, cancelEnsDeclarationFlow
   }, testInfo) => {
     await ReportLog.setStory('ENS-only - cancel the consignment while it is still a draft');
     reportTestCaseLink(ENS_ONLY_CANCEL_CONSIGNMENT_DRAFT);
 
     await createDraftEnsDeclarationFlow.createDraftEnsDeclaration(ensOnlyDeclaration(testInfo, {}));
-    await cancelEnsDeclarationFlow.cancelConsignmentAndVerifyDeclarationIsCancelled(CANCELLATION_REASON);
+    await cancelEnsDeclarationFlow.cancelConsignmentAndVerifyMovementIsKept(CANCELLATION_REASON);
   });
 
   test('Verify a "Draft" movement can be cancelled, and takes its ENS consignment with it', { tag: ['@regression', '@cancellation'] }, async ({
@@ -188,7 +188,7 @@ test.describe('GB to NI RoRo ENS-only Declaration Process - Cancellation "Trader
     await createAndSubmitEnsDeclarationFlow.submitEnsDeclarationExpectingRejection(
       ensOnlyDeclaration(testInfo, rejectedByIcs2())
     );
-    await cancelEnsDeclarationFlow.cancelConsignmentAndVerifyDeclarationIsCancelled(CANCELLATION_REASON);
+    await cancelEnsDeclarationFlow.cancelConsignmentAndVerifyMovementIsKept(CANCELLATION_REASON);
   });
 
   test('Verify a movement whose ENS consignment was in "Trader Input Required" by ICS2 can be cancelled', { tag: ['@regression', '@cancellation'] }, async ({

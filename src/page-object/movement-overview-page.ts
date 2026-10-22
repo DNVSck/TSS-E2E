@@ -138,7 +138,7 @@ export class MovementOverviewPage extends BasePage {
         // matched it. The exact detail URL is still read from the link's own href at
         // click time (see openGmrDetailFromTab).
         this.gmrViewLink = page.locator(
-            `a${GOVUK.BUTTON.ROOT}[href*='/goods-movement-records/'][href$='/overview']`
+            `a${GOVUK.BUTTON.ROOT}[href*='/goods-movement-records/'][href*='/overview']`
         );
     }
 
