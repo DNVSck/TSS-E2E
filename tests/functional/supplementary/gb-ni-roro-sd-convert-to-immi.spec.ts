@@ -1,6 +1,6 @@
 import { ReportLog } from '../../../src/core/report/report-log';
 import { test } from '../../base-test';
-import { BASE_URL, HAULIER_COMPANY_NAME, IMPORTER_COMPANY_NAME } from '../../../config/environment';
+import { BASE_URL, HAULIER_COMPANY_NAME, IMPORTER_COMPANY_NAME, IS_CDS_TDR } from '../../../config/environment';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
@@ -29,6 +29,8 @@ const CONVERSION_BLOCKED_BY_GOODS = '4882';
 const CONVERT_WITH_TGP = '4909';
 
 const EXCISE_DUTY_SUSPENSION = ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06;
+
+const UKIMS_LESS_IMPORTER_NEEDS_CDS_TDR = 'The importer without UKIMS is a mock EORI, which only CDS TDR accepts; the CDS here takes HMRC test EORIs only (CDS12005). Set CDS_TDR=true where CDS TDR runs.';
 
 test.describe('GB to NI RoRo Supplementary Declaration - converted to an IMMI declaration by the importer', () => {
     test.use({ authProfile: COMPANY_PROFILE.IMPORTER });
@@ -290,6 +292,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - conversion blocked for 
             completeAndSubmitSupplementaryDeclarationFlow,
             convertSupplementaryDeclarationFlow,
         }, testInfo) => {
+            test.skip(!IS_CDS_TDR, UKIMS_LESS_IMPORTER_NEEDS_CDS_TDR);
             await ReportLog.setStory('Supplementary Declaration - no conversion to IMMI for an importer that holds no UKIMS, opened by the importer');
             reportTestCaseLink(CONVERSION_BLOCKED_WITHOUT_UKIMS);
 
@@ -415,6 +418,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - converted to an IMMI de
             completeAndSubmitSupplementaryDeclarationFlow,
             convertSupplementaryDeclarationFlow,
         }, testInfo) => {
+            test.skip(!IS_CDS_TDR, UKIMS_LESS_IMPORTER_NEEDS_CDS_TDR);
             await ReportLog.setStory('Supplementary Declaration - no conversion to IMMI for an importer that holds no UKIMS, opened by an agent representing it');
             reportTestCaseLink(CONVERSION_BLOCKED_WITHOUT_UKIMS);
 

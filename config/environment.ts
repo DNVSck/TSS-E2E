@@ -173,6 +173,8 @@ reportMissingEnv();
  */
 export const IS_ISC2_MOCK = boolOrDefault(process.env.ISC2_MOCK_SERVER);
 
+export const IS_CDS_TDR = boolOrDefault(process.env.CDS_TDR);
+
 /** RabbitMQ management API — only populated and used in SIT. */
 export const RMQ_HOST     = process.env.RMQ_HOST     ?? '';
 export const RMQ_USERNAME = process.env.RMQ_USERNAME ?? '';

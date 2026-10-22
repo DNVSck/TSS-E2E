@@ -120,7 +120,7 @@ export abstract class BaseApiClient {
         }
         if (response.status() >= SERVER_ERROR_STATUS) {
             this.serverErrors?.recordServerError({
-                who: this.constructor.name, method, status: response.status(), path,
+                who: this.constructor.name, method, status: response.status(), path, apiCall: true,
             });
         }
 

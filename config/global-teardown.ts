@@ -2,12 +2,18 @@ import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import { dropRefusedRetries } from '../src/core/report/allure-report-manager';
 
 async function globalTeardown(): Promise<void> {
   const allureResultsPath = path.resolve('allure-results');
 
   if (!fs.existsSync(allureResultsPath)) {
     return;
+  }
+
+  const dropped = dropRefusedRetries();
+  if (dropped > 0) {
+    console.log(`Dropped ${dropped} refused retry result(s) so the report shows the attempt that failed.`);
   }
 
   if (process.env.CI) {

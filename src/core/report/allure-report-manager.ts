@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { SERVICE_UNAVAILABLE } from './service-error-recorder';
+import { SERVICE_UNAVAILABLE, isRefusedRetry } from './service-error-recorder';
 
 const ALLURE_RESULTS_DIR = path.resolve(process.cwd(), 'allure-results');
 
@@ -120,6 +120,50 @@ export function initAllureResults(): void {
 
 export function getAllureResultsDir(): string {
     return ALLURE_RESULTS_DIR;
+}
+
+interface AllureNode {
+    statusDetails?: { message?: string };
+    attachments?: { source?: string }[];
+    steps?: AllureNode[];
+}
+
+export function dropRefusedRetries(): number {
+    if (!fs.existsSync(ALLURE_RESULTS_DIR)) {
+        return 0;
+    }
+
+    let dropped = 0;
+    for (const file of fs.readdirSync(ALLURE_RESULTS_DIR).filter(name => name.endsWith('-result.json'))) {
+        const resultPath = path.join(ALLURE_RESULTS_DIR, file);
+        const result = readAllureResult(resultPath);
+
+        if (!result || !isRefusedRetry(result.statusDetails?.message)) {
+            continue;
+        }
+
+        for (const source of attachmentSources(result)) {
+            fs.rmSync(path.join(ALLURE_RESULTS_DIR, source), { force: true });
+        }
+        fs.rmSync(resultPath, { force: true });
+        dropped++;
+    }
+    return dropped;
+}
+
+function readAllureResult(resultPath: string): AllureNode | undefined {
+    try {
+        return JSON.parse(fs.readFileSync(resultPath, 'utf8')) as AllureNode;
+    } catch {
+        return undefined;
+    }
+}
+
+function attachmentSources(node: AllureNode): string[] {
+    return [
+        ...(node.attachments ?? []).flatMap(attachment => attachment.source ? [attachment.source] : []),
+        ...(node.steps ?? []).flatMap(attachmentSources),
+    ];
 }
 
 export interface SetupFailure {

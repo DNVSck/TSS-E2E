@@ -10,6 +10,14 @@ export const SERVICE_UNAVAILABLE = 'Service unavailable';
 
 const SERVER_ERROR = 'Server error';
 
+const NOT_RETRIED = 'Not retried - attempt';
+
+const REFUSED_RETRY = new RegExp(`^(Error: )?${NOT_RETRIED} `);
+
+export function isRefusedRetry(message: string | undefined): boolean {
+    return REFUSED_RETRY.test(message ?? '');
+}
+
 const UNAVAILABLE_MARKER = 'data-service-unavailable';
 
 const ROUTE_DATA_SUFFIX = '.data';
@@ -34,6 +42,7 @@ export interface ServiceError {
     path: string;
     servedBy?: string;
     pageLoad?: boolean;
+    apiCall?: boolean;
 }
 
 interface FailedAttempt {
@@ -82,7 +91,7 @@ export function refuseRetryUnlessServiceOutage(testInfo: TestInfo): void {
 
     if (!previous?.serviceOutage) {
         throw new Error(
-            `Not retried - attempt ${testInfo.retry} did not fail on a service outage: `
+            `${NOT_RETRIED} ${testInfo.retry} did not fail on a service outage: `
             + (previous?.message || 'no failure recorded')
         );
     }
@@ -116,7 +125,7 @@ export class ServiceErrorRecorder implements ServerErrorSink {
     }
 
     get sawServiceOutage(): boolean {
-        return this.seen.some(error => error.pageLoad && isOutage(error));
+        return this.seen.some(error => (error.pageLoad || error.apiCall) && isOutage(error));
     }
 
     get firstPageLoadError(): ServiceError | undefined {
@@ -141,7 +150,7 @@ export class ServiceErrorRecorder implements ServerErrorSink {
 
         testInfo.annotations.push({
             type: 'Service error',
-            description: `${this.seen.length} service error(s) while the test ran - first: ${lines[0]}`,
+            description: `${this.seen.length} service error(s) in attempt ${testInfo.retry + 1} - first: ${lines[0]}`,
         });
         await testInfo.attach('service-errors.txt', {
             body: [
