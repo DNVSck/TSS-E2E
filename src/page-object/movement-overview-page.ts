@@ -6,11 +6,12 @@ import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 import {
     readFieldWhenVisible, readFieldIfPresent, newRecordButton, clickLinkAndWaitForRoute, textsOf,
-    clickLinkAndWaitForNavigation,
+    clickLinkAndWaitForNavigation, movementTab,
 } from '../helper/element-helper';
 import { GOVUK } from './components/govuk-selectors';
 import { CancellationScreen } from './components/cancellation-screen';
 import { waitForOpenTabPanel } from './components/record-tabs';
+import { RECORD_TAB } from '../constant/record-tab-constant';
 
 
 
@@ -75,13 +76,11 @@ export class MovementOverviewPage extends BasePage {
         const declarationStatusLabel = this.t!('movementHeaderOverview.declarationStatus');
         
         //Tab list
-        this.ensConsignmentsTab = page.locator("//a[contains(@href, '/overview/#overview-tab')]");
-        this.sfdConsignmentsTab = page.locator("//a[contains(@href, '/overview/sfd-consignments#overview-tab')]");
-        this.immiConsignmentsTab = page.locator("//a[contains(@href, '/overview/immi-consignments#overview-tab')]");
-        this.eidrConsignmentsTab = page.locator("//a[contains(@href, '/overview/eidr-consignments#overview-tab')]");
-        this.gmrDetailsTab = page.locator(
-            `//a[contains(@href, '/overview/${MOVEMENT_ROUTE.GMR_DETAILS_TAB_SEGMENT}#overview-tab')]`
-        );
+        this.ensConsignmentsTab = movementTab(page);
+        this.sfdConsignmentsTab = movementTab(page, RECORD_TAB.SFD_CONSIGNMENTS);
+        this.immiConsignmentsTab = movementTab(page, RECORD_TAB.IMMI_CONSIGNMENTS);
+        this.eidrConsignmentsTab = movementTab(page, RECORD_TAB.EIDR_CONSIGNMENTS);
+        this.gmrDetailsTab = movementTab(page, MOVEMENT_ROUTE.GMR_DETAILS_TAB_SEGMENT);
 
         // ENS Consignment actions
         this.newENSConsignmentBtn = newRecordButton(page, '?index');

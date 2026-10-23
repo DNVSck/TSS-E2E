@@ -2,6 +2,7 @@ import { expect, Locator, Page, Request } from '@playwright/test';
 import { StringUtil } from '../core/util/string-util';
 import { ReportLog } from '../core/report/report-log';
 import { GOVUK } from '../page-object/components/govuk-selectors';
+import { MOVEMENT_ROUTE } from '../constant/endpoints-constant';
 
 // This class provides utility functions for interacting with web elements in a consistent way across the test suite. 
 // It can be imported and used in any page object or test file to perform common actions on web elements, such as clicking, filling forms, 
@@ -556,12 +557,13 @@ export async function openNewRecordWizard(
     newButton: Locator,
     reachTab: () => Promise<void>
 ): Promise<void> {
+    let tabRoute: string | undefined;
     for (let attempt = 1; attempt <= TAB_SWITCH_ATTEMPTS; attempt++) {
         try {
             await reachTab();
             await newButton.waitFor({ state: 'visible', timeout: NEW_RECORD_BUTTON_TIMEOUT });
 
-            const tabRoute = StringUtil.stripTrailingSlashes(new URL(page.url()).pathname);
+            tabRoute = StringUtil.stripTrailingSlashes(new URL(page.url()).pathname);
             await newButton.click({ timeout: NEW_RECORD_BUTTON_TIMEOUT });
 
             // The wizard lives on its own route, so still being on the tab means the
@@ -577,6 +579,9 @@ export async function openNewRecordWizard(
             );
             return;
         } catch (error) {
+            if (tabRoute && StringUtil.stripTrailingSlashes(new URL(page.url()).pathname) !== tabRoute) {
+                return;
+            }
             // Carry the last underlying failure. A tab that never opened, a panel that
             // never painted, a button that is genuinely absent and a click the app
             // ignored all end up here, and only the original message tells the reader
@@ -617,6 +622,15 @@ export async function checkRadioByValue(group: Locator, value: string): Promise<
  */
 export function newRecordButton(page: Page, formAction: string): Locator {
     return page.locator(`form[action*="${formAction}"] button[value^="new-"]`);
+}
+
+export function movementTab(page: Page, tabRoute = ''): Locator {
+    const afterMovement = `substring-after(@href, '/${MOVEMENT_ROUTE.GOODS_MOVEMENT_SEGMENT}/')`;
+    const movementRef = `substring-before(${afterMovement}, '/${MOVEMENT_ROUTE.OVERVIEW_SEGMENT}/')`;
+    return page.locator(
+        `//a[contains(@href, '/${MOVEMENT_ROUTE.OVERVIEW_SEGMENT}/${tabRoute}#overview-tab')`
+        + ` and ${movementRef} != '' and not(contains(${movementRef}, '/'))]`
+    );
 }
 
 /** How long a wizard gets to hand over from one step to the next. */
