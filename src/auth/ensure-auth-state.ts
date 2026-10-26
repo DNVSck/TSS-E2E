@@ -1,4 +1,4 @@
-import { chromium, expect } from '@playwright/test';
+import { BrowserContext, chromium, expect, Page } from '@playwright/test';
 import { OTP_ENABLED, ENV, BASE_URL } from '../../config/environment';
 import { PortalPage } from '../page-object/portal-page';
 import { SignInPage } from '../page-object/sign-in-page';
@@ -15,7 +15,7 @@ const SIGN_IN_TIMEOUT_MS = 60_000;
 /**
  * How long the portal gets to answer when this file opens it.
  *
- * Set explicitly because nothing else sets it: playwright.config's
+ * Set explicitly, above the context's SIGN_IN_TIMEOUT_MS default: playwright.config's
  * navigationTimeout lives under `use`, which reaches pages the test runner builds -
  * and globalSetup launches its own browser, so that navigation silently ran on the
  * library default of 30s, the only one in the suite that did.
@@ -29,6 +29,8 @@ const PORTAL_OPEN_TIMEOUT_MS = 90_000;
 
 const PORTAL_OPEN_RETRY_TIMEOUT_MS = PORTAL_OPEN_TIMEOUT_MS * 2 + 5_000;
 
+const SIGN_IN_ATTEMPTS = 2;
+
 export interface SignInFailure {
     account: string;
     message: string;
@@ -38,10 +40,21 @@ export interface SignInFailure {
 
 export const SIGN_IN_FAILURE_ATTACHMENT = 'sign-in failure';
 
+export interface SignInErrorDetails {
+    screenshot?: Buffer;
+    cause?: unknown;
+    credentialRejected?: boolean;
+}
+
 export class SignInScreenshotError extends Error {
-    constructor(message: string, readonly screenshot?: Buffer, cause?: unknown) {
-        super(message, { cause });
+    readonly screenshot?: Buffer;
+    readonly credentialRejected: boolean;
+
+    constructor(message: string, details: SignInErrorDetails = {}) {
+        super(message, { cause: details.cause });
         this.name = 'SignInScreenshotError';
+        this.screenshot = details.screenshot;
+        this.credentialRejected = details.credentialRejected ?? false;
     }
 }
 
@@ -159,21 +172,43 @@ async function signInAndSaveState(
     const label = accountLabel(credentials);
     assertTotpSecretPresent(credentials, label);
 
+    for (let attempt = 1; attempt <= SIGN_IN_ATTEMPTS; attempt++) {
+        try {
+            await attemptSignIn(browser, credentials, label);
+            return;
+        } catch (error) {
+            const retryable = error instanceof SignInScreenshotError && !error.credentialRejected;
+
+            if (!retryable || attempt === SIGN_IN_ATTEMPTS) {
+                throw error;
+            }
+            console.log(
+                `Auth: sign-in of ${label} failed on attempt ${attempt} of ${SIGN_IN_ATTEMPTS} ` +
+                'for a reason other than its credentials; signing in again.'
+            );
+        }
+    }
+}
+
+async function attemptSignIn(
+    browser: Awaited<ReturnType<typeof chromium.launch>>,
+    credentials: UserCredentials,
+    label: string
+): Promise<void> {
     const context = await browser.newContext();
+    context.setDefaultTimeout(SIGN_IN_TIMEOUT_MS);
     const page = await context.newPage();
+    const portalPage = new PortalPage(page);
     let reachedSignInForm = false;
 
     try {
-        const portalPage = new PortalPage(page);
         // English: globalSetup launches a context with no locale override, so the
         // identity provider serves its default. A spec signing in under the Welsh
         // project gets its own translator from the fixture.
         const signInPage = new SignInPage(page, createTranslator(LOCALES_CONSTANT.EN_GB));
 
         await expect(async () => {
-            await page.goto(BASE_URL, {
-                waitUntil: 'domcontentloaded', timeout: PORTAL_OPEN_TIMEOUT_MS,
-            });
+            await openPortal(page);
         }).toPass({ timeout: PORTAL_OPEN_RETRY_TIMEOUT_MS, intervals: [0] });
         await portalPage.clickSignIn();
         reachedSignInForm = true;
@@ -185,19 +220,48 @@ async function signInAndSaveState(
         }
 
         await portalPage.waitUntilSignedIn(SIGN_IN_TIMEOUT_MS);
-        await context.storageState({ path: authStatePath(credentials.profile, credentials.accountNumber) });
-
-        console.log(`Auth: signed in as ${credentials.username} (${label}) on "${ENV}".`);
+        await saveSignedInState(context, credentials, label);
     } catch (error) {
+        const url = page.url();
         const screenshot = await page.screenshot().catch(() => undefined);
+        const credentialRejected = reachedSignInForm && isOnIdentityProvider(url);
+
+        if (reachedSignInForm && !credentialRejected && await reopenPortalSignedIn(page, portalPage)) {
+            console.log(`Auth: ${label} reached the portal after its sign-in wait ran out; session kept.`);
+            await saveSignedInState(context, credentials, label);
+            return;
+        }
+
         throw new SignInScreenshotError(
-            signInErrorMessage({ credentials, label, url: page.url(), error, reachedSignInForm }),
-            screenshot,
-            error
+            signInErrorMessage({ credentials, label, url, error, reachedSignInForm }),
+            { screenshot, cause: error, credentialRejected }
         );
     } finally {
         await context.close();
     }
+}
+
+async function openPortal(page: Page): Promise<void> {
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: PORTAL_OPEN_TIMEOUT_MS });
+}
+
+async function reopenPortalSignedIn(page: Page, portalPage: PortalPage): Promise<boolean> {
+    try {
+        await openPortal(page);
+        await portalPage.waitUntilSignedIn(SIGN_IN_TIMEOUT_MS);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function saveSignedInState(
+    context: BrowserContext,
+    credentials: UserCredentials,
+    label: string
+): Promise<void> {
+    await context.storageState({ path: authStatePath(credentials.profile, credentials.accountNumber) });
+    console.log(`Auth: signed in as ${credentials.username} (${label}) on "${ENV}".`);
 }
 
 /** OTP_ENABLED requires a TOTP secret per account — fail early with the env-var hint. */
@@ -218,6 +282,10 @@ interface SignInAttempt {
     reachedSignInForm: boolean;
 }
 
+function isOnIdentityProvider(url: string): boolean {
+    return url.includes('/realms/');
+}
+
 /** The diagnostic message for a failed sign-in — points at the exact env vars to check. */
 function signInErrorMessage(failure: SignInAttempt): string {
     const { credentials, label, url, error, reachedSignInForm } = failure;
@@ -231,13 +299,18 @@ function signInErrorMessage(failure: SignInAttempt): string {
             `Underlying error: ${reason}`;
     }
 
-    const stuckOnAuthServer = url.includes('/realms/');
+    if (!isOnIdentityProvider(url)) {
+        return `Auth: failed to sign in as ${label} on "${ENV}" (${url}).\n` +
+            'The identity provider accepted the credentials and sent the browser back to the ' +
+            'portal, which did not finish signing in - this is not a credential problem. ' +
+            `Check that the portal on "${ENV}" is up, not the values in the .env file.\n` +
+            `Underlying error: ${reason}`;
+    }
+
     const totpHint = OTP_ENABLED ? ` / ${accountEnvKey(credentials, 'TOTP_SECRET')}` : '';
 
     return `Auth: failed to sign in as ${label} on "${ENV}" (${url}).\n` +
-        (stuckOnAuthServer
-            ? 'The browser never left the identity provider, so a credential was rejected. '
-            : '') +
+        'The browser never left the identity provider, so a credential was rejected. ' +
         `Check ${accountEnvKey(credentials, 'USER_NAME')} / ${accountEnvKey(credentials, 'PASSWORD')}` +
         `${totpHint} in .env.${ENV}.\n` +
         `Underlying error: ${reason}`;

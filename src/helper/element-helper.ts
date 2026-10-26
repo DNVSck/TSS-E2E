@@ -3,6 +3,7 @@ import { StringUtil } from '../core/util/string-util';
 import { ReportLog } from '../core/report/report-log';
 import { GOVUK } from '../page-object/components/govuk-selectors';
 import { MOVEMENT_ROUTE } from '../constant/endpoints-constant';
+import { RENDER_TIMEOUT } from '../constant/timeout-constant';
 
 // This class provides utility functions for interacting with web elements in a consistent way across the test suite. 
 // It can be imported and used in any page object or test file to perform common actions on web elements, such as clicking, filling forms, 
@@ -249,10 +250,31 @@ export async function textsOf(elements: Locator): Promise<string[]> {
 }
 
 export async function switchToTab(page: Page, tab: Locator): Promise<void> {
+    await waitForTabsOfCurrentRoute(page);
+
     if (await tab.count() === 0) {
         return;
     }
     await clickLinkAndWaitForRoute(page, tab);
+}
+
+async function waitForTabsOfCurrentRoute(page: Page): Promise<void> {
+    try {
+        await page.waitForFunction(
+            selector => {
+                const selected = document.querySelector<HTMLAnchorElement>(selector);
+                const trim = (path: string) => (path.endsWith('/') ? path.slice(0, -1) : path);
+                return selected !== null && trim(selected.pathname) === trim(location.pathname);
+            },
+            `${GOVUK.TABS.SELECTED_ITEM} a`,
+            { timeout: RENDER_TIMEOUT.TAB_PANEL }
+        );
+    } catch (error) {
+        throw new Error(
+            `The tabs shown never belonged to "${new URL(page.url()).pathname}" - the selected ` +
+            `tab should link to the route the page is on. Last failure: ${(error as Error).message}`
+        );
+    }
 }
 
 
