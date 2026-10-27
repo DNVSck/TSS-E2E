@@ -31,6 +31,8 @@ const MODULE_RESOURCE = 'script';
 
 const PAGE_RESOURCES = new Set(['document', 'fetch', 'xhr', 'script', 'stylesheet']);
 
+const DATA_RESOURCES = new Set(['fetch', 'xhr']);
+
 const ABORTED_BY_THE_PAGE = 'net::ERR_ABORTED';
 
 export interface ServiceError {
@@ -43,6 +45,7 @@ export interface ServiceError {
     servedBy?: string;
     pageLoad?: boolean;
     apiCall?: boolean;
+    dataCall?: boolean;
 }
 
 interface FailedAttempt {
@@ -125,7 +128,7 @@ export class ServiceErrorRecorder implements ServerErrorSink {
     }
 
     get sawServiceOutage(): boolean {
-        return this.seen.some(error => (error.pageLoad || error.apiCall) && isOutage(error));
+        return this.seen.some(error => (error.pageLoad || error.apiCall || error.dataCall) && isOutage(error));
     }
 
     get firstPageLoadError(): ServiceError | undefined {
@@ -200,6 +203,7 @@ export class ServiceErrorRecorder implements ServerErrorSink {
             path: new URL(response.url()).pathname,
             servedBy: headers['x-cache']?.startsWith('Error') ? headers['x-cache'] : headers['server'],
             pageLoad: Boolean(load),
+            dataCall: DATA_RESOURCES.has(request.resourceType()),
         };
         this.seen.push(error);
 
