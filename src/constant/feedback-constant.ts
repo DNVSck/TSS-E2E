@@ -16,7 +16,7 @@ export const SATISFACTION_SCORE = {
 } as const;
 
 export const FEEDBACK = {
-    /** The names the check-your-answers "Change" links carry in `?field=`. */
+    /** The names the per-page feedback form gives its fields. */
     FIELD: {
         IS_PAGE_USEFUL: 'isPageUseful',
         COMMENT: 'comment',
