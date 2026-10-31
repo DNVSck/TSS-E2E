@@ -16,7 +16,7 @@ import {
 export interface CompanyProfileInput {
     id: string;
     value: string;
-    shownAsOptionText?: boolean;
+    shownAsLabel?: boolean;
     shownOnSameLine?: boolean;
 }
 
@@ -97,6 +97,6 @@ export const preferredPaymentMethodEdits = (method: MethodOfPaymentCode): Compan
     inputs: [{
         id: COMPANY_PROFILE_ACTION.PREFERRED_METHOD_OF_PAYMENT,
         value: method,
-        shownAsOptionText: true,
+        shownAsLabel: true,
     }],
 }];

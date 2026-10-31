@@ -429,8 +429,8 @@ export const flowFixture: ExtendParams[0] = {
         ));
     },
 
-    feedbackFlow: async ({ phaseBanner, feedbackPage, feedbackCheckAnswersPage }, use) => {
-        await use(new FeedbackFlow(phaseBanner, feedbackPage, feedbackCheckAnswersPage));
+    feedbackFlow: async ({ phaseBanner, feedbackPage }, use) => {
+        await use(new FeedbackFlow(phaseBanner, feedbackPage));
     },
 
     cancelConsignmentFlow: async ({ consignmentOverviewPage, consignmentOverviewFlow }, use) => {

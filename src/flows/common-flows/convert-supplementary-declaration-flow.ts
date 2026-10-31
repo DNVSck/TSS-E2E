@@ -18,7 +18,7 @@ import { IMPORTER_EORI } from '../../../config/environment';
 
 export interface ConvertedGoodsItemUpdate {
     additionalProcedureCode: string;
-    tgp?: { record: TgpRecordData; procedureCode: string };
+    tgp?: { record: TgpRecordData };
     useNirms?: boolean;
 }
 
@@ -84,7 +84,7 @@ export class ConvertSupplementaryDeclarationFlow {
             additionalProcedureCode: update.additionalProcedureCode,
             useNirms: update.useNirms ?? false,
             ...(update.tgp && {
-                useTGP: true, tgpRecord: update.tgp.record, procedureCode: update.tgp.procedureCode,
+                useTGP: true, tgpRecord: update.tgp.record,
             }),
         });
 

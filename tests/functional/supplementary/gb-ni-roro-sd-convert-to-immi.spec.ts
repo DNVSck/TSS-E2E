@@ -14,7 +14,6 @@ import { CANCELLATION_REASON } from '../../../src/test-data/consignment-data';
 import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
 import { GOODS_CSV } from '../../../src/test-data/goods-csv-data';
 import { TGP_RECORD } from '../../../src/test-data/tgp-record-data';
-import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
 
 const CONVERT_DRAFT_BY_IMPORTER = '4877';
 const CONVERT_DRAFT_BY_AGENT = '4878';
@@ -89,7 +88,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - converted to an IMMI de
             const immiLrn = await convertSupplementaryDeclarationFlow.convertToImmi();
             const immi = await convertSupplementaryDeclarationFlow.completeConvertedImmi(immiLrn, {
                 additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
-                tgp: { record: TGP_RECORD.MACHINERY_TGP456, procedureCode: PROCEDURE_CODES.FREE_CIRCULATION_4000 },
+                tgp: { record: TGP_RECORD.MACHINERY_TGP456 },
             });
             await triggerFinalStatusThroughCdsFlow.closeStandaloneImmi(immi);
             await convertSupplementaryDeclarationFlow.verifySourceAfterConversion({

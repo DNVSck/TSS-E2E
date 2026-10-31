@@ -127,12 +127,7 @@ export class AddNewImmiStandaloneGoodsItemFlow {
         checkpoint?: AccessibilityCheckpoint
     ): Promise<boolean> {
         await this.steps.changeAnswer(USE_TGP_FIELD);
-        const usesTgp = await this.declareTgp(input, declaringForEori, checkpoint);
-
-        await this.steps.selectGoodsProcedureCode(input);
-        await this.steps.selectImmiAdditionalProcedureCode(input);
-        await this.steps.keepAnswersUntilCheckYourAnswers();
-        return usesTgp;
+        return this.declareTgp(input, declaringForEori, checkpoint);
     }
 
     private nirmsJourney(importerEORI: string): NirmsJourney {

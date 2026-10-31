@@ -1,9 +1,8 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, selectAutocompleteOption, readErrorSummary, valuesOf, currentWizardStep } from '../helper/element-helper';
+import { selectDropdownValue, checkRadioByValue, selectAutocompleteValue, selectAutocompleteOption, readErrorSummary, valuesOf } from '../helper/element-helper';
 import { BOOLEAN } from '../constant/radio-value-constant';
 import { WarehouseScreen } from './components/warehouse-screen';
-import { WIZARD_ROUTE } from '../constant/endpoints-constant';
 
 
 const COMMODITY_SUBMIT_TIMEOUT = 180_000;
@@ -39,8 +38,6 @@ export class GoodsDeclarePage extends BasePage {
     private readonly useTgpRadios: Locator;
     private readonly tgpNumberInput: Locator;
     private readonly tgpNumberOptions: Locator;
-
-    private readonly controlledGoodsRadios: Locator;
 
     private readonly dangerousGoodsRadios: Locator;
     private readonly dangerousGoodsCodesInput: Locator;
@@ -100,10 +97,6 @@ export class GoodsDeclarePage extends BasePage {
 
         // Goods domestic status and additional risk status have no goods-item screens
         // — the app carries them over from the consignment — so no locators here.
-
-        // "Are these goods controlled?"
-        // "Do these goods require licences, certificates or other forms of control?"
-        this.controlledGoodsRadios = page.locator("input[name='isControlledGoods']");
 
         // "Dangerous goods"
         this.dangerousGoodsRadios = page.locator("input[name='isDangerousGoods']");
@@ -188,20 +181,6 @@ export class GoodsDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
-    async continueToCheckYourAnswers(): Promise<string[]> {
-        while (currentWizardStep(this.page) !== WIZARD_ROUTE.CHECK_YOUR_ANSWERS_STEP) {
-            const from = currentWizardStep(this.page);
-            const errors = await this.continueAndReadErrors();
-            if (errors.length > 0) {
-                return errors;
-            }
-            if (currentWizardStep(this.page) === from) {
-                throw new Error(`Continue on the "${from}" screen did not leave it, and no error was shown`);
-            }
-        }
-        return [];
-    }
-
     /**
      * "Enter your Trader Goods Profile number" — a GOV.UK accessible-autocomplete,
      * so the same type-then-commit dance as the commodity code applies (a plain
@@ -216,16 +195,6 @@ export class GoodsDeclarePage extends BasePage {
             this.tgpNumberOptions.filter({ hasText: recordId }).first(),
             lookup
         );
-        await this.clickContinueButton();
-    }
-
-    async selectGoodsControlledYes(): Promise<void> {
-        await checkRadioByValue(this.controlledGoodsRadios, BOOLEAN.YES);
-        await this.clickContinueButton();
-    }
-
-    async selectGoodsControlledNo(): Promise<void> {
-        await checkRadioByValue(this.controlledGoodsRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 

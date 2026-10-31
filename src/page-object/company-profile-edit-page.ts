@@ -1,6 +1,6 @@
 import { Locator } from '@playwright/test';
 import { BasePage } from './base-page';
-import { fillInputValue, readErrorSummary, selectDropdownValue } from '../helper/element-helper';
+import { checkRadioByValue, fillInputValue, readErrorSummary, selectDropdownValue } from '../helper/element-helper';
 import { ROUTES } from '../constant/endpoints-constant';
 
 const SUBMIT_ATTEMPTS = 3;
@@ -12,8 +12,20 @@ export class CompanyProfileEditPage extends BasePage {
         return this.page.locator(`main #${id}`);
     }
 
+    private radioGroup(name: string): Locator {
+        return this.page.locator(`main input[type='radio'][name='${name}']`);
+    }
+
     async enterValue(id: string, value: string): Promise<void> {
         const field = this.formField(id);
+        const radios = this.radioGroup(id);
+        await field.or(radios).first().waitFor();
+
+        if (await radios.count() > 0) {
+            await checkRadioByValue(radios, value);
+            return;
+        }
+
         const tag = await field.evaluate(element => element.tagName);
 
         if (tag === 'SELECT') {
@@ -24,8 +36,9 @@ export class CompanyProfileEditPage extends BasePage {
         await fillInputValue(field, value);
     }
 
-    async readSelectedOption(id: string): Promise<string> {
-        return (await this.formField(id).locator('option:checked').innerText()).trim();
+    async readCheckedLabel(name: string): Promise<string> {
+        const radioId = await this.radioGroup(name).and(this.page.locator(':checked')).getAttribute('id');
+        return (await this.page.locator(`main label[for="${radioId}"]`).innerText()).trim();
     }
 
     async continueToCheckAnswers(): Promise<void> {

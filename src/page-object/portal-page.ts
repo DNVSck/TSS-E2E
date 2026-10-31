@@ -6,6 +6,7 @@ import { NavigationBanner } from './components/navigation-banner';
 import { ROUTES } from '../constant/endpoints-constant';
 
 const PORTAL_RENDER_TIMEOUT = 90_000;
+const HOME_STALL_TIMEOUT = 30_000;
 
 
 export class PortalPage extends BasePage {
@@ -143,6 +144,15 @@ export class PortalPage extends BasePage {
 
     private async returnHome(): Promise<void> {
         await this.banner.goToHomepage();
+
+        const rendered = await this.startNewDeclarationLink
+            .waitFor({ state: 'visible', timeout: HOME_STALL_TIMEOUT })
+            .then(() => true, () => false);
+
+        if (!rendered) {
+            await this.page.reload({ waitUntil: 'domcontentloaded' });
+        }
+
         await this.startNewDeclarationLink.waitFor({
             state: 'visible', timeout: PORTAL_RENDER_TIMEOUT,
         });

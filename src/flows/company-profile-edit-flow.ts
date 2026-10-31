@@ -146,8 +146,8 @@ export class CompanyProfileEditFlow {
     }
 
     private async textShownFor(input: CompanyProfileInput): Promise<string> {
-        return input.shownAsOptionText
-            ? this.companyProfileEditPage.readSelectedOption(input.id)
+        return input.shownAsLabel
+            ? this.companyProfileEditPage.readCheckedLabel(input.id)
             : input.value;
     }
 }

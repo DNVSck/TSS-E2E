@@ -6,7 +6,6 @@ import {
     requiresSupervisingCustomsOffice, requiresWarehouseIdentifier,
 } from '../../helper/procedure-code-helper';
 import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
-import { verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
 
 /**
  * One method per goods-item wizard screen: binds the test data to the page object
@@ -190,17 +189,6 @@ export class GoodsItemSteps {
 
     // ===================== Controls =====================
 
-    /** The goods-level "are these goods controlled?" question, on its own screen. */
-    async declareControlledGoods(input: GoodsData): Promise<void> {
-        await ReportLog.step('Define if the goods are controlled', async () => {
-            if (input.areGoodsControlled) {
-                await this.goodsDeclarePage.selectGoodsControlledYes();
-            } else {
-                await this.goodsDeclarePage.selectGoodsControlledNo();
-            }
-        });
-    }
-
     /** Answering yes adds the UN codes screen — see declareDangerousGoodsCodes. */
     async declareDangerousGoods(input: GoodsData): Promise<void> {
         await ReportLog.step('Define if the goods are dangerous', async () => {
@@ -236,30 +224,6 @@ export class GoodsItemSteps {
             await checkpoint?.('Goods item - dangerous goods codes', { probeErrors: true });
             await this.declareDangerousGoodsCodes(input);
         }
-    }
-
-    /**
-     * The goods-level control questions in the order the service asks them: are the
-     * goods controlled, and - only when that was answered Yes - are they dangerous.
-     * Answering No sends the wizard straight on to the country of origin.
-     *
-     * For the journeys where the two questions are NOT that chain, see
-     * AddNewEnsGoodsItemFlow: on ENS-only the dangerous question is asked with no
-     * controlled question before it, and IMMI is asked neither. Those call the halves
-     * directly.
-     */
-    async declareControlledAndDangerousGoods(
-        input: GoodsData,
-        checkpoint?: AccessibilityCheckpoint
-    ): Promise<void> {
-        await checkpoint?.('Goods item - controlled goods', { probeErrors: true });
-        await this.declareControlledGoods(input);
-
-        if (!input.areGoodsControlled) {
-            return;
-        }
-
-        await this.declareDangerousGoodsWithCodes(input, checkpoint);
     }
 
     // ===================== The goods themselves =====================
@@ -382,14 +346,6 @@ export class GoodsItemSteps {
     async changeAnswer(field: string): Promise<void> {
         await ReportLog.step(`Change the "${field}" answer`, async () => {
             await this.goodsDeclarePage.changeField(field);
-        });
-    }
-
-    async keepAnswersUntilCheckYourAnswers(): Promise<void> {
-        await ReportLog.step('Keep the answers already given, up to check your answers', async () => {
-            verifySubmittedWithoutErrors(
-                await this.goodsDeclarePage.continueToCheckYourAnswers(), 'the screens already answered'
-            );
         });
     }
 
