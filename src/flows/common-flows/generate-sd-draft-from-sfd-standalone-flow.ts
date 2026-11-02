@@ -25,4 +25,21 @@ export class GenerateSdDraftFromSfdStandaloneFlow {
         await this.triggerFinalStatusThroughCdsFlow.arriveStandaloneSfd(sfd);
         return { movementLrn: sfd.lrn, frontierLrn: sfd.lrn };
     }
+
+    async generateSdDraftWithGoodsCsv(options: SfdStandaloneDeclarationOptions, csvFile: string): Promise<SupplementaryDeclarationSource> {
+        const sfd = await this.createAndSubmitSfdStandaloneFlow.completeSfdStandaloneWithGoodsCsv({
+            ...options,
+            consignmentOverrides: { ...options.consignmentOverrides, isControlledGoods: true },
+        }, csvFile);
+
+        if (!sfd) {
+            throw new Error(
+                'The SFD standalone returned no LRN and MRN, so no supplementary declaration will be '
+                + 'raised from it. Only the controlled goods route is authorised with an MRN.'
+            );
+        }
+
+        await this.triggerFinalStatusThroughCdsFlow.arriveStandaloneSfd(sfd);
+        return { movementLrn: sfd.lrn, frontierLrn: sfd.lrn };
+    }
 }

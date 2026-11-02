@@ -9,8 +9,8 @@ import {
     readFieldWhenVisible, readFieldIfPresent,
     clickLinkAndWaitForRoute, clickLinkAndEnterWizard, removeTaskListRecord,
 } from '../helper/element-helper';
-import { SUPPLEMENTARY_DECLARATION_ROUTE, RECLASSIFICATION_ROUTE } from '../constant/endpoints-constant';
-import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
+import { SUPPLEMENTARY_DECLARATION_ROUTE, RECLASSIFICATION_ROUTE, PAYMENT_ROUTE } from '../constant/endpoints-constant';
+import { CONSIGNMENT_ACTION, PAYMENT_INTENT } from '../constant/consignment-action-constant';
 
 /** This overview paints its summary card a beat after load. */
 const OVERVIEW_READ_TIMEOUT = 15_000;
@@ -50,6 +50,9 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
     private readonly cancellationScreen: CancellationScreen;
     private readonly recordOverviewLink: Locator;
     private readonly reclassificationScreen: ReclassificationScreen;
+    private readonly uploadCsvLink: Locator;
+    private readonly startPaymentButton: Locator;
+    private readonly recallToDraftButton: Locator;
 
     constructor(page: Page, t: TFunction) {
         super(page, t);
@@ -75,6 +78,9 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
         this.cancellationScreen = new CancellationScreen(page);
         this.recordOverviewLink = page.locator("main a[href*='/supplementary-declaration/'][href$='/overview']");
         this.reclassificationScreen = new ReclassificationScreen(page);
+        this.uploadCsvLink = page.locator("main a[href$='/upload-goods-csv']");
+        this.startPaymentButton = page.locator(`main button[name='intent'][value='${PAYMENT_INTENT.PAY}']`);
+        this.recallToDraftButton = page.locator(`main button[name='intent'][value='${PAYMENT_INTENT.RECALL}']`);
         this.simplifiedDeclarationReference = this.summaryList.valueOf(
             this.t!('supplementaryDeclaration.simplifiedDeclarationReference')
         );
@@ -226,6 +232,22 @@ export class SupplementaryDeclarationOverviewPage extends BasePage {
 
     async confirmCancellation(reason: string): Promise<string[]> {
         return this.cancellationScreen.confirm(reason, CANCEL_SETTLE_TIMEOUT);
+    }
+
+    async startPayment(): Promise<void> {
+        await this.startPaymentButton.waitFor({ state: 'visible', timeout: OVERVIEW_READ_TIMEOUT });
+        await this.startPaymentButton.click();
+        await this.page.waitForURL(url => url.pathname.endsWith(PAYMENT_ROUTE.PENDING));
+    }
+
+    async recallToDraft(): Promise<void> {
+        await this.recallToDraftButton.waitFor({ state: 'visible', timeout: OVERVIEW_READ_TIMEOUT });
+        await this.recallToDraftButton.click();
+        await this.recallToDraftButton.waitFor({ state: 'detached', timeout: SUBMISSION_LANDING_TIMEOUT });
+    }
+
+    async openGoodsCsvUpload(): Promise<void> {
+        await clickLinkAndWaitForRoute(this.page, this.uploadCsvLink);
     }
 
     async returnToRecordOverview(): Promise<void> {

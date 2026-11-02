@@ -21,7 +21,8 @@
     "no": "No",
     "notProvided": "Not provided",
     "declarationType": "Declaration type",
-    "supervisingCustomsOffice": "Supervising customs office"
+    "supervisingCustomsOffice": "Supervising customs office",
+    "search": "Search"
   },
   "declarationType": {
     "eidr": "Entry in the Declarant's Records (EIDR)"
@@ -52,7 +53,8 @@
     "isTrailerUnaccompanied": "Is trailer unaccompanied?",
     "inspectionRequired": "Inspection required",
     "reportToLocations": "Report to locations",
-    "hmrcGvmsLastUpdate": "HMRC GVMS last update"
+    "hmrcGvmsLastUpdate": "HMRC GVMS last update",
+    "plannedRoute": "Planned route"
   },
   "status": {
     "draft": "Draft",
@@ -69,8 +71,11 @@
     "pendingCancellation": "Pending Cancellation",
     "processing": "Processing",
     "paymentPending": "Pending payment",
+    "awaitingImmediatePayment": "Awaiting Immediate payment",
     "taxCalculation": "Tax calculation",
-    "converted": "Converted"
+    "converted": "Converted",
+    "pendingConfirmation": "Pending confirmation",
+    "fiscalHold": "Fiscal hold"
   },
   "accessDenied": {
     "heading": "You are not authorised to access this"
@@ -81,6 +86,19 @@
   "linkConsignment": {
     "lrnNotFound": "Enter a valid LRN. The consignment was not found.",
     "alreadyLinked": "This consignment is already linked to a movement."
+  },
+  "scp": {
+    "paymentSuccessful": "Payment successful",
+    "returnToPendingPayments": "Return to pending payments",
+    "tssReferenceHeader": "TSS Reference",
+    "amountDueHeader": "Amount due"
+  },
+  "completedPayments": {
+    "duty": "Duty",
+    "vat": "VAT",
+    "excise": "Excise",
+    "total": "Total",
+    "mrn": "MRN"
   },
   "consignmentConfirmation": {
     "title": "Consignment confirmed",

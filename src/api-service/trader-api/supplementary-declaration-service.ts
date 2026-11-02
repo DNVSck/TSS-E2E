@@ -3,8 +3,31 @@ import { TRADER_API_PATH } from '../../constant/trader-api/trader-api-path-const
 import { OP_TYPE, RECLASSIFICATION_TYPE, TRADER_API_YES } from '../../constant/trader-api/trader-api-request-constant';
 import { buildPath } from '../../helper/api-path-helper';
 
+export interface SupplementaryDeclarationSummary {
+    reference: string;
+    status: string;
+    movementReferenceNumber: string;
+}
+
+interface SupplementaryDeclarationResult extends TraderApiResult {
+    movement_reference_number?: string;
+}
+
 export class SupplementaryDeclarationService {
     constructor(private readonly api: TraderApiClient) { }
+
+    async readByReference(reference: string): Promise<SupplementaryDeclarationSummary> {
+        const call = `Read supplementary declaration ${reference}`;
+        const result = await this.api.read<SupplementaryDeclarationResult>(
+            buildPath(TRADER_API_PATH.SupplementaryDeclarationByReference, { reference }), call
+        );
+
+        return {
+            reference: result.reference ?? reference,
+            status: requiredField(result, 'status', call),
+            movementReferenceNumber: result.movement_reference_number ?? '',
+        };
+    }
 
     async readStatus(reference: string): Promise<string> {
         const call = `Read the status of supplementary declaration ${reference}`;

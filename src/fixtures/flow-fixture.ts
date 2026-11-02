@@ -22,7 +22,10 @@ import {
 } from '../flows/common-flows/trader-api/raise-movement-for-gmr-through-api-flow';
 import { CreateAndSubmitImmiStandaloneFlow } from '../flows/common-flows/create-and-submit-immi-standalone-flow';
 import { CreateAndSubmitSfdStandaloneFlow } from '../flows/common-flows/create-and-submit-sfd-standalone-flow';
-import { CreateAndSubmitFfdStandaloneFlow } from '../flows/common-flows/create-and-submit-ffd-standalone-flow';
+import { CreateAndSubmitFfdH1StandaloneFlow } from '../flows/common-flows/create-and-submit-ffd-h1-standalone-flow';
+import { CreateAndSubmitFfdH2StandaloneFlow } from '../flows/common-flows/create-and-submit-ffd-h2-standalone-flow';
+import { CreateAndSubmitFfdH3StandaloneFlow } from '../flows/common-flows/create-and-submit-ffd-h3-standalone-flow';
+import { CreateAndSubmitFfdH4StandaloneFlow } from '../flows/common-flows/create-and-submit-ffd-h4-standalone-flow';
 import { AddNewImmiStandaloneConsignmentFlow } from '../flows/consignment/add-new-immi-standalone-consignment-flow';
 import { AddNewSfdStandaloneConsignmentFlow } from '../flows/consignment/add-new-sfd-standalone-consignment-flow';
 import { AddNewFfdStandaloneConsignmentFlow } from '../flows/consignment/add-new-ffd-standalone-consignment-flow';
@@ -56,6 +59,10 @@ import { DeclareEnsThroughApiFlow } from '../flows/common-flows/trader-api/decla
 import { DeclareStandaloneThroughApiFlow } from '../flows/common-flows/trader-api/declare-standalone-through-api-flow';
 import { GenerateSdDraftThroughApiFlow } from '../flows/common-flows/trader-api/generate-sd-draft-through-api-flow';
 import { ConcurrentLoginFlow } from '../flows/concurrent-login-flow';
+import { CompletePaymentFlow } from '../flows/payment/complete-payment-flow';
+import { ConfirmDutyByTraderFlow } from '../flows/common-flows/confirm-duty-by-trader-flow';
+import { ConsignmentOverviewPage } from '../page-object/consignment-overview-page';
+import { accountFor, COMPANY_PROFILE } from '../auth/credentials';
 import { LocaleFixtureType } from './locale-fixture';
 import { CreateDraftEnsDeclarationFlow } from '../flows/common-flows/create-draft-ens-declaration-flow';
 import { CreateDraftConsignmentFirstFlow } from '../flows/common-flows/create-draft-consignment-first-flow';
@@ -63,6 +70,10 @@ import { CreateDraftSfdStandaloneFlow } from '../flows/common-flows/create-draft
 import {
     CreateDraftImmiStandaloneFlow,
 } from '../flows/common-flows/create-draft-immi-standalone-flow';
+import { CreateDraftFfdH1StandaloneFlow } from '../flows/common-flows/create-draft-ffd-h1-standalone-flow';
+import { CreateDraftFfdH2StandaloneFlow } from '../flows/common-flows/create-draft-ffd-h2-standalone-flow';
+import { CreateDraftFfdH3StandaloneFlow } from '../flows/common-flows/create-draft-ffd-h3-standalone-flow';
+import { CreateDraftFfdH4StandaloneFlow } from '../flows/common-flows/create-draft-ffd-h4-standalone-flow';
 import { DeclarationAccessFlow } from '../flows/declaration-access-flow';
 import { AuthorityCheckerFlow, authorityCheckerFlowFor } from '../flows/authority-check-flow';
 import { CompanySessionFixtureType } from './company-session-fixture';
@@ -144,11 +155,23 @@ export type FlowFixtureType = {
     raiseMovementForGmrFlow: RaiseMovementForGmrFlow;
     raiseMovementForGmrThroughApiFlow: RaiseMovementForGmrThroughApiFlow;
     // One flow per standalone journey: each owns its consignment wizard AND its goods
-    // wizard, so a spec asks for the journey it tests by name. Those two wizards are
-    // assembled inside the common flow below, which is their only consumer.
+    // wizard, so a spec asks for the journey it tests by name. The two FFD sub-flows
+    // (consignment wizard, goods wizard) are shared across all H-types and assembled
+    // once here, rather than inside each H-type factory.
     createAndSubmitImmiStandaloneFlow: CreateAndSubmitImmiStandaloneFlow;
     createAndSubmitSfdStandaloneFlow: CreateAndSubmitSfdStandaloneFlow;
-    createAndSubmitFfdStandaloneFlow: CreateAndSubmitFfdStandaloneFlow;
+    addFfdStandaloneConsignmentFlow: AddNewFfdStandaloneConsignmentFlow;
+    addFfdStandaloneGoodsItemFlow: AddNewFfdStandaloneGoodsItemFlow;
+    createDraftFfdH1StandaloneFlow: CreateDraftFfdH1StandaloneFlow;
+    createDraftFfdH2StandaloneFlow: CreateDraftFfdH2StandaloneFlow;
+    createDraftFfdH3StandaloneFlow: CreateDraftFfdH3StandaloneFlow;
+    createDraftFfdH4StandaloneFlow: CreateDraftFfdH4StandaloneFlow;
+    completePaymentFlow: CompletePaymentFlow;
+    createAndSubmitFfdH1StandaloneFlow: CreateAndSubmitFfdH1StandaloneFlow;
+    createAndSubmitFfdH2StandaloneFlow: CreateAndSubmitFfdH2StandaloneFlow;
+    createAndSubmitFfdH3StandaloneFlow: CreateAndSubmitFfdH3StandaloneFlow;
+    createAndSubmitFfdH4StandaloneFlow: CreateAndSubmitFfdH4StandaloneFlow;
+    confirmDutyByTraderFlow: ConfirmDutyByTraderFlow;
 
     // The supplementary declaration, which no journey CREATES: the service raises it
     // once a frontier declaration clears, so this one is asked for alongside the
@@ -338,10 +361,10 @@ export const flowFixture: ExtendParams[0] = {
     },
 
     gmrOverviewFlow: async ({
-        movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage, t
+        movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage, gmrBarcodePage, t
     }, use) => {
         await use(new GmrOverviewFlow(
-            movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage, t
+            movementOverviewPage, gmrDeclarePage, gmrDetailsPage, externalContactDeclarePage, gmrBarcodePage, t
         ));
     },
 
@@ -367,11 +390,13 @@ export const flowFixture: ExtendParams[0] = {
 
     triggerFinalStatusThroughCdsFlow: async ({
         cdsNotificationFlow, movementOverviewFlow, consignmentOverviewFlow,
-        cancelSupplementaryDeclarationFlow, simplifiedFrontierDeclarationService,
+        cancelSupplementaryDeclarationFlow, simplifiedFrontierDeclarationService, arrivalNotificationService,
+        supplementaryDeclarationOverviewPage, declarationAccessFlow, t,
     }, use) => {
         await use(new TriggerFinalStatusThroughCdsFlow(
             cdsNotificationFlow, movementOverviewFlow, consignmentOverviewFlow,
-            cancelSupplementaryDeclarationFlow, simplifiedFrontierDeclarationService
+            cancelSupplementaryDeclarationFlow, simplifiedFrontierDeclarationService, arrivalNotificationService,
+            supplementaryDeclarationOverviewPage, declarationAccessFlow, t
         ));
     },
 
@@ -607,30 +632,108 @@ export const flowFixture: ExtendParams[0] = {
         basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
         supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
         additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, consignmentOverviewFlow, authAccount, t,
-        supplementaryDeclarationService
+        supplementaryDeclarationService, goodsCsvUploadPage, completePaymentFlow
     }, use) => {
         await use(new CompleteAndSubmitSupplementaryDeclarationFlow(
             basePage, portalPage, declarationOverviewPage, supplementaryDeclarationOverviewPage,
             supplementaryDeclarationGoodsRecordPage, documentReferenceDeclarePage,
             additionalProcedureCodeDeclarePage, supplementaryDeclarationSteps, consignmentOverviewFlow, t, authAccount,
-            supplementaryDeclarationService
+            supplementaryDeclarationService, goodsCsvUploadPage, completePaymentFlow
         ));
     },
 
-    createAndSubmitFfdStandaloneFlow: async ({
-        portalAccessFlow, initialFormDeclarationFlow,
+    addFfdStandaloneConsignmentFlow: async ({
         standaloneConsignmentSteps, movementSteps, consignmentSteps,
-        ffdStandaloneConsignmentDeclarePage, commercialTermsDeclarePage, goodsItemSteps,
-        consignmentOverviewFlow, goodsOverviewFlow, authAccount
+        ffdStandaloneConsignmentDeclarePage, commercialTermsDeclarePage
     }, use) => {
-        const addConsignment = new AddNewFfdStandaloneConsignmentFlow(
+        await use(new AddNewFfdStandaloneConsignmentFlow(
             standaloneConsignmentSteps, movementSteps, consignmentSteps,
             ffdStandaloneConsignmentDeclarePage, commercialTermsDeclarePage
-        );
-        const addGoodsItem = new AddNewFfdStandaloneGoodsItemFlow(goodsItemSteps);
-        await use(new CreateAndSubmitFfdStandaloneFlow(
-            portalAccessFlow, initialFormDeclarationFlow, addConsignment,
-            addGoodsItem, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+        ));
+    },
+
+    addFfdStandaloneGoodsItemFlow: async ({ goodsItemSteps, ottService }, use) => {
+        await use(new AddNewFfdStandaloneGoodsItemFlow(goodsItemSteps, ottService));
+    },
+
+    createDraftFfdH1StandaloneFlow: async ({
+        portalAccessFlow, initialFormDeclarationFlow,
+        addFfdStandaloneConsignmentFlow, addFfdStandaloneGoodsItemFlow,
+        consignmentOverviewFlow, goodsOverviewFlow, authAccount, uploadGoodsCsvFlow
+    }, use) => {
+        await use(new CreateDraftFfdH1StandaloneFlow(
+            portalAccessFlow, initialFormDeclarationFlow, addFfdStandaloneConsignmentFlow,
+            addFfdStandaloneGoodsItemFlow, consignmentOverviewFlow, goodsOverviewFlow, authAccount,
+            uploadGoodsCsvFlow
+        ));
+    },
+
+    createDraftFfdH2StandaloneFlow: async ({
+        portalAccessFlow, initialFormDeclarationFlow,
+        addFfdStandaloneConsignmentFlow, addFfdStandaloneGoodsItemFlow,
+        consignmentOverviewFlow, goodsOverviewFlow, authAccount
+    }, use) => {
+        await use(new CreateDraftFfdH2StandaloneFlow(
+            portalAccessFlow, initialFormDeclarationFlow, addFfdStandaloneConsignmentFlow,
+            addFfdStandaloneGoodsItemFlow, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+        ));
+    },
+
+    createDraftFfdH3StandaloneFlow: async ({
+        portalAccessFlow, initialFormDeclarationFlow,
+        addFfdStandaloneConsignmentFlow, addFfdStandaloneGoodsItemFlow,
+        consignmentOverviewFlow, goodsOverviewFlow, authAccount
+    }, use) => {
+        await use(new CreateDraftFfdH3StandaloneFlow(
+            portalAccessFlow, initialFormDeclarationFlow, addFfdStandaloneConsignmentFlow,
+            addFfdStandaloneGoodsItemFlow, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+        ));
+    },
+
+    createDraftFfdH4StandaloneFlow: async ({
+        portalAccessFlow, initialFormDeclarationFlow,
+        addFfdStandaloneConsignmentFlow, addFfdStandaloneGoodsItemFlow,
+        consignmentOverviewFlow, goodsOverviewFlow, authAccount
+    }, use) => {
+        await use(new CreateDraftFfdH4StandaloneFlow(
+            portalAccessFlow, initialFormDeclarationFlow, addFfdStandaloneConsignmentFlow,
+            addFfdStandaloneGoodsItemFlow, consignmentOverviewFlow, goodsOverviewFlow, authAccount
+        ));
+    },
+
+    completePaymentFlow: async ({ scpPaymentPage, paymentsPage }, use) => {
+        await use(new CompletePaymentFlow(scpPaymentPage, paymentsPage));
+    },
+
+    createAndSubmitFfdH1StandaloneFlow: async ({
+        createDraftFfdH1StandaloneFlow, triggerFinalStatusThroughCdsFlow, consignmentOverviewFlow, completePaymentFlow
+    }, use) => {
+        await use(new CreateAndSubmitFfdH1StandaloneFlow(
+            createDraftFfdH1StandaloneFlow, triggerFinalStatusThroughCdsFlow, consignmentOverviewFlow, completePaymentFlow
+        ));
+    },
+
+    createAndSubmitFfdH2StandaloneFlow: async ({
+        createDraftFfdH2StandaloneFlow, triggerFinalStatusThroughCdsFlow, consignmentOverviewFlow
+    }, use) => {
+        await use(new CreateAndSubmitFfdH2StandaloneFlow(
+            createDraftFfdH2StandaloneFlow, triggerFinalStatusThroughCdsFlow, consignmentOverviewFlow
+        ));
+    },
+
+    createAndSubmitFfdH3StandaloneFlow: async ({
+        createDraftFfdH3StandaloneFlow, triggerFinalStatusThroughCdsFlow, consignmentOverviewFlow
+    }, use) => {
+        await use(new CreateAndSubmitFfdH3StandaloneFlow(
+            createDraftFfdH3StandaloneFlow, triggerFinalStatusThroughCdsFlow, consignmentOverviewFlow
+        ));
+    },
+
+    createAndSubmitFfdH4StandaloneFlow: async ({
+        createDraftFfdH4StandaloneFlow, triggerFinalStatusThroughCdsFlow, consignmentOverviewFlow
+    }, use) => {
+        await use(new CreateAndSubmitFfdH4StandaloneFlow(
+            createDraftFfdH4StandaloneFlow, triggerFinalStatusThroughCdsFlow, consignmentOverviewFlow
         ));
     },
 
@@ -639,6 +742,15 @@ export const flowFixture: ExtendParams[0] = {
     }, use) => {
         await use(new ConcurrentLoginFlow(
             signInFlow, navigationBanner, secondDeviceSignInFlow, secondDeviceNavigationBanner
+        ));
+    },
+
+    confirmDutyByTraderFlow: async ({ secondDeviceSignInFlow, secondDevicePage, t }, use, testInfo) => {
+        const credentials = accountFor(COMPANY_PROFILE.IMPORTER, testInfo.parallelIndex);
+        await use(new ConfirmDutyByTraderFlow(
+            secondDeviceSignInFlow,
+            new ConsignmentOverviewPage(secondDevicePage, t),
+            credentials,
         ));
     },
 };

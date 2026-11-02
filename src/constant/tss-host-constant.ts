@@ -23,4 +23,6 @@ export const TRADER_API_BASE_PATH = '/api/v1/trader_api/transition';
 
 export const PORTAL_API_BASE_PATH = '/api/portal_api/v1';
 
+export const OTT_API_BASE_PATH = '/ott/api';
+
 export const KEYCLOAK_TOKEN_PATH = `/realms/${PORTAL_REALM}/protocol/openid-connect/token`;

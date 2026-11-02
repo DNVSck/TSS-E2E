@@ -9,7 +9,9 @@ import { IMPORTER_UKIMS } from '../../config/environment';
 import { documentReference, ensSfdGoodsDocuments } from './document-reference-data';
 import { holderOfAuthorisation } from './holder-of-authorisation-data';
 import { previousDocument } from './previous-document-data';
-import { haulierAsCarrier } from './movements-data';
+import {
+    haulierAsCarrier, VEHICLE_REGISTRATION_NUMBER, TRAILER_REGISTRATION_NUMBER,
+} from './movements-data';
 
 export type GmrDeclarationOverrides = Pick<
     EnsDeclarationOptions, 'movementOverrides' | 'consignmentOverrides' | 'goodsItemOverrides'
@@ -19,6 +21,7 @@ export interface GmrMovement {
     name: string;
     code: string;
     isTrailerUnaccompanied: boolean;
+    registrationNumber: string;
 }
 
 export type GmrDeclarationType = 'SFD' | 'IMMI' | 'EIDR';
@@ -35,11 +38,13 @@ export const GMR_MOVEMENT = {
         name: 'Accompanied',
         code: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
         isTrailerUnaccompanied: false,
+        registrationNumber: VEHICLE_REGISTRATION_NUMBER,
     },
     UNACCOMPANIED: {
         name: 'Unaccompanied',
         code: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
         isTrailerUnaccompanied: true,
+        registrationNumber: TRAILER_REGISTRATION_NUMBER,
     },
 } as const;
 

@@ -5,6 +5,7 @@ import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { IMPORTER_COMPANY_NAME, IMPORTER_IPO, IMPORTER_CWP, IMPORTER_EXW, IMPORTER_UKIMS, BASE_URL } from '../../../config/environment';
 import {
   immiStandaloneGoodsItem, immiStandaloneTransportDocument, IMMI_STANDALONE_COMMODITY_CODE,
+  immiStandaloneInwardProcessingGoodsItem, immiStandaloneInwardProcessingAbdGoodsItem,
 } from '../../../src/test-data/immi-standalone-goods-item-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
@@ -23,7 +24,8 @@ import { PREVIOUS_DOCUMENT_TYPE } from '../../../src/constant/previous-document-
 import { CANCELLATION_REASON } from '../../../src/test-data/consignment-data';
 import { immiStandaloneRejectedByCds } from '../../../src/test-data/rejection-lever-data';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
-import { locationOfGoodsOfOther, inwardProcessingLocationOfGoods } from '../../../src/helper/location-of-goods-helper';
+import { locationOfGoodsOfOther } from '../../../src/helper/location-of-goods-helper';
+import { inwardProcessingConsignmentOverrides } from '../../../src/test-data/immi-standalone-consignment-data';
 import { PORT_OF_ARRIVAL } from '../../../src/constant/port-of-arrival-constant';
 import { WAREHOUSE_TYPE } from '../../../src/constant/warehouse-type-constant';
 
@@ -398,41 +400,25 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
       createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
         testInfo,
         url: BASE_URL,
-        consignmentOverrides: {
-          isPreLodged: false,
-          typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-          representationType: undefined,
-          locationOfGoods: inwardProcessingLocationOfGoods(IMPORTER_IPO),
-          holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
-          ],
-        },
-  
-        goodsItemOverrides: immiStandaloneGoodsItem({
-          procedureCode: PROCEDURE_CODES.FREE_CIRC_AFTER_IP_4051,
-          additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EN,
-          commodityCode: IMMI_STANDALONE_COMMODITY_CODE.EIGHT_DIGIT,
-  
-          documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE.N730, documentStatus: DOCUMENT_STATUS.AC,   documentReference: '0054039' }),
-            documentReference({ documentCode: DOCUMENT_CODE.C601, documentStatus: undefined,            documentReference: IMPORTER_IPO }),
-            documentReference({ documentCode: DOCUMENT_CODE.C669, documentStatus: DOCUMENT_STATUS.AC,   documentReference: '0054037' }),
-            documentReference({ documentCode: DOCUMENT_CODE.C670, documentStatus: DOCUMENT_STATUS.AC,   documentReference: 'GBIWP12345' }),
-          ],
-  
-          additionalInformations: [
-            // 10200 restates the IP authorisation from the C601 above, prefixed with "IP".
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.INWARD_PROCESSING_AUTHORISATION_10200, description: `IP${IMPORTER_IPO}` }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN45, description: '12345' }),
-          ],
-  
-          // Declared on the "Additional procedure codes" tab, on TOP of the 1EN chosen
-          // during the goods declaration above.
-          additionalProcedureCodes: [
-            ADDITIONAL_PROCEDURE_CODES.SPIMM_SPECIAL_PROCEDURE_1SP,
-            ADDITIONAL_PROCEDURE_CODES.SPIMM_SPECIAL_PROCEDURE_1NR,
-          ],
-        })
+        consignmentOverrides: inwardProcessingConsignmentOverrides(IMPORTER_IPO),
+        goodsItemOverrides: immiStandaloneInwardProcessingGoodsItem(IMPORTER_IPO),
+      })
+    );
+
+    await ReportLog.step('Close the standalone IMMI through CDS', () =>
+      triggerFinalStatusThroughCdsFlow.closeStandaloneImmi(immi)
+    );
+  });
+
+  test('Verify IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself with Inward Processing by AbD is created and submitted successfully (4051-1EN)', { tag: ['@regression', '@happyPath'] }, async ({ createAndSubmitImmiStandaloneFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+    await ReportLog.setStory('IMMI Standalone - Arrived - RoRo (Accompanied) - Importer Declare by themself with Inward Processing by AbD - 4051 - 1EN');
+    const immi = await ReportLog.step('Create and submit the IMMI standalone declaration', () =>
+      createAndSubmitImmiStandaloneFlow.completeImmiStandaloneFlow({
+        testInfo,
+        url: BASE_URL,
+        consignmentOverrides: inwardProcessingConsignmentOverrides(IMPORTER_IPO),
+        goodsItemOverrides: immiStandaloneInwardProcessingAbdGoodsItem(IMPORTER_IPO),
+        changeRepresentationTypeAfterGoods: REPRESENTATION_TYPE.DIRECT,
       })
     );
 
@@ -471,7 +457,6 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           warehouseType: WAREHOUSE_TYPE.PRIVATE_CUSTOMS_WAREHOUSE,
           documentReferences: [
             documentReference({ documentCode: DOCUMENT_CODE.N760, documentStatus: DOCUMENT_STATUS.AC,   documentReference: '0054039' }),
-            //documentReference({ documentCode: DOCUMENT_CODE.C601, documentStatus: undefined,            documentReference: IMPORTER_IPO }),
             documentReference({ documentCode: DOCUMENT_CODE.C517, documentStatus: undefined,            documentReference: IMPORTER_CWP }),
           ],
   

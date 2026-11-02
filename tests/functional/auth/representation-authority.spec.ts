@@ -18,6 +18,7 @@ import {
 import {
     rejectedByIcs2, rejectedByCds, immiRejectedByCds,
     IMMI_STANDALONE_REFUSED_PROCEDURE_CODE, rejectedImmiStandaloneForImporter, rejectedSfdStandaloneForImporter,
+    rejectedFfdH1StandaloneForImporter,
 } from '../../../src/test-data/rejection-lever-data';
 import {
     ENS_ONLY_AUTHORITY, GENERATED_DECLARATION_AUTHORITY, ENS_EIDR_AUTHORITY, STANDALONE_AUTHORITY,
@@ -25,7 +26,7 @@ import {
     REPRESENTED_HAULIER_AUTHORITY,
 } from '../../../src/test-data/authority-matrix';
 import {
-    IMMI_EIDR_DECLARATION_TABS, GMR_TABS, MOVEMENT_TABS, SUPPLEMENTARY_DECLARATION_TABS,
+    IMMI_EIDR_DECLARATION_TABS, GMR_TABS, MOVEMENT_TABS, SUPPLEMENTARY_DECLARATION_TABS, FFD_DECLARATION_TABS,
 } from '../../../src/constant/record-tab-constant';
 import { MOVEMENT_ACTION } from '../../../src/constant/movement-action-constant';
 import { CONSIGNMENT_ACTION } from '../../../src/constant/consignment-action-constant';
@@ -790,6 +791,81 @@ test.describe('Standalone declaration authority - Agent represents the Importer'
 
             await importer!.declarations
                 .verifyCorrectionAcceptedByCds(sfd.consignment, 'status.awaitingArrival');
+        });
+    });
+
+    test('Verify that the Agent representing the Importer can correct and resubmit a rejected standalone FFD H1', { tag: ['@regression', '@auth', '@authorisation', '@ffd'] }, async ({
+        createAndSubmitFfdH1StandaloneFlow, declarationAccessFlow, resubmitDeclarationFlow,
+        representTraderFlow, checkAuthorityFlow,
+    }, testInfo) => {
+        await ReportLog.setStory('Standalone FFD H1 - the creating agent corrects it and puts it back in');
+
+        const ffd = await ReportLog.step('Agent representing the Importer declares a standalone FFD H1 - expect CDS to reject it', async () => {
+            await createAndSubmitFfdH1StandaloneFlow.completeFfdH1StandaloneFlow({
+                ...rejectedFfdH1StandaloneForImporter(testInfo),
+                expectedStatusKey: 'status.traderInputRequired',
+                expectsTir: true,
+            });
+
+            return declarationAccessFlow.locateRecordsHere();
+        });
+
+        const ffdCheck = { what: 'the rejected standalone FFD H1', records: ffd, tabs: FFD_DECLARATION_TABS };
+
+        await ReportLog.step('Agent representing the Importer and Importer on its own login - check what each is offered', () =>
+            checkAuthorityFlow(STANDALONE_AUTHORITY.createdByThisAgent, {
+                ...ffdCheck, parties: ['agentAsImporter', 'importer'],
+            })
+        );
+
+        await checkOnceRepresentationEnds(
+            representTraderFlow, checkAuthorityFlow, STANDALONE_AUTHORITY.createdByThisAgent, ffdCheck,
+            'what it keeps of the record it just made',
+        );
+
+        await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
+        await declarationAccessFlow.openRecord(ffd.consignment);
+        await resubmitDeclarationFlow.removeAuthorisationAndResubmitStandaloneFfdH1(
+            AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW
+        );
+    });
+
+    test('Verify that the Importer, on its own login, can correct and resubmit a rejected standalone FFD H1 the Agent created for it', { tag: ['@regression', '@auth', '@authorisation', '@ffd'] }, async ({
+        createAndSubmitFfdH1StandaloneFlow, declarationAccessFlow, checkAuthorityFlow,
+    }, testInfo) => {
+        await ReportLog.setStory('Standalone FFD H1 - the importer corrects it on its own login');
+
+        const ffd = await ReportLog.step('Agent representing the Importer declares a standalone FFD H1 - expect CDS to reject it', async () => {
+            await createAndSubmitFfdH1StandaloneFlow.completeFfdH1StandaloneFlow({
+                ...rejectedFfdH1StandaloneForImporter(testInfo),
+                expectedStatusKey: 'status.traderInputRequired',
+                expectsTir: true,
+            });
+
+            return declarationAccessFlow.locateRecordsHere();
+        });
+
+        const { importer } = await ReportLog.step('Importer on its own login - check what it is offered on the record the Agent declared', () =>
+            checkAuthorityFlow(STANDALONE_AUTHORITY.createdByThisAgent, {
+                what: 'the rejected standalone FFD H1',
+                records: ffd,
+                tabs: FFD_DECLARATION_TABS,
+                parties: ['importer'],
+                keepOpen: ['importer'],
+            })
+        );
+
+        await ReportLog.step('Importer removes the authorisation on its own login - expect CDS to accept it', async () => {
+            await importer!.declarations.openRecord(ffd.consignment);
+            await importer!.consignment.removeHolderOfAuthorisation(
+                AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW
+            );
+
+            await importer!.consignment.resubmitConsignment();
+            await importer!.consignment.confirmDutyCalculation();
+
+            await importer!.declarations
+                .verifyCorrectionAcceptedByCds(ffd.consignment, 'status.awaitingArrival');
         });
     });
 

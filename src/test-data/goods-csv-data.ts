@@ -13,6 +13,8 @@ export const GOODS_CSV = {
     SFD_STANDALONE: csvFile('sfd-standalone.csv'),
     EIDR_STANDALONE: csvFile('eidr-standalone.csv'),
     IMMI_STANDALONE: csvFile('immi-standalone.csv'),
+    FFD_STANDALONE: csvFile('ffd-standalone.csv'),
+    SD: csvFile('sd.csv'),
     // Header row only, no goods rows: refused with ERROR 100136.
     HEADERS_ONLY: csvFile('headers-only.csv'),
     // Old header set, refused with ERROR 100137. It lacks the required

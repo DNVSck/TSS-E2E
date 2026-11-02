@@ -104,11 +104,25 @@ steps:
         normalise_optional_variable "IMPORTER_TOTP_SECRET_${account_number}"
         normalise_optional_variable "HAULIER_PASSWORD_${account_number}"
         normalise_optional_variable "HAULIER_TOTP_SECRET_${account_number}"
+        normalise_optional_variable "TSS_DDA_USER_NAME_${account_number}"
+        normalise_optional_variable "TSS_DDA_TOTP_SECRET_${account_number}"
+        normalise_optional_variable "FISCAL_HOLD_USER_NAME_${account_number}"
+        normalise_optional_variable "FISCAL_HOLD_TOTP_SECRET_${account_number}"
       done
 
       normalise_optional_variable "IMPORTER_PASSWORD_1"
       normalise_optional_variable "TSS_DDA_PASSWORD"
-      normalise_optional_variable "TSS_DDA_TOTP_SECRET"
+      normalise_optional_variable "TSS_DDA_PASSWORD_1"
+      normalise_optional_variable "FISCAL_HOLD_PASSWORD"
+      normalise_optional_variable "FISCAL_HOLD_PASSWORD_1"
+      normalise_optional_variable "FISCAL_HOLD_EORI"
+      normalise_optional_variable "FISCAL_HOLD_TEA"
+      normalise_optional_variable "FISCAL_HOLD_IPO"
+      normalise_optional_variable "FISCAL_HOLD_COMP_ID"
+      normalise_optional_variable "HMRC_CLIENT_ID"
+      normalise_optional_variable "HMRC_CLIENT_SECRET"
+      normalise_optional_variable "HMRC_TEST_USER_ID"
+      normalise_optional_variable "HMRC_TEST_USER_PASSWORD"
 
       require_variable() {
         local name="$1"
@@ -267,15 +281,40 @@ steps:
       IMPORTER_NIRMS: $(IMPORTER_NIRMS)
       IMPORTER_SDE: $(IMPORTER_SDE)
       IMPORTER_CWP: $(IMPORTER_CWP)
+      IMPORTER_OPO: $(IMPORTER_OPO)
       IMPORTER_EXW: $(IMPORTER_EXW)
       IMPORTER_DPO: $(IMPORTER_DPO)
       IMPORTER_CGU: $(IMPORTER_CGU)
       IMPORTER_TEA: $(IMPORTER_TEA)
       IMPORTER_VAT: $(IMPORTER_VAT)
 
-      TSS_DDA_PASSWORD: $(TSS_DDA_PASSWORD)
-      TSS_DDA_TOTP_SECRET: $(TSS_DDA_TOTP_SECRET)
       TSS_DDA_EORI: $(TSS_DDA_EORI)
+      TSS_DDA_COMP_ID: $(TSS_DDA_COMP_ID)
+      TSS_DDA_PASSWORD: $(TSS_DDA_PASSWORD)
+      TSS_DDA_PASSWORD_1: $(TSS_DDA_PASSWORD_1)
+      TSS_DDA_TOTP_SECRET_1: $(TSS_DDA_TOTP_SECRET_1)
+      TSS_DDA_TOTP_SECRET_2: $(TSS_DDA_TOTP_SECRET_2)
+      TSS_DDA_TOTP_SECRET_3: $(TSS_DDA_TOTP_SECRET_3)
+      TSS_DDA_TOTP_SECRET_4: $(TSS_DDA_TOTP_SECRET_4)
+      TSS_DDA_TOTP_SECRET_5: $(TSS_DDA_TOTP_SECRET_5)
+      TSS_DDA_TOTP_SECRET_6: $(TSS_DDA_TOTP_SECRET_6)
+      TSS_DDA_TOTP_SECRET_7: $(TSS_DDA_TOTP_SECRET_7)
+      TSS_DDA_TOTP_SECRET_8: $(TSS_DDA_TOTP_SECRET_8)
+
+      FISCAL_HOLD_EORI: $(FISCAL_HOLD_EORI)
+      FISCAL_HOLD_TEA: $(FISCAL_HOLD_TEA)
+      FISCAL_HOLD_IPO: $(FISCAL_HOLD_IPO)
+      FISCAL_HOLD_COMP_ID: $(FISCAL_HOLD_COMP_ID)
+      FISCAL_HOLD_PASSWORD: $(FISCAL_HOLD_PASSWORD)
+      FISCAL_HOLD_PASSWORD_1: $(FISCAL_HOLD_PASSWORD_1)
+      FISCAL_HOLD_TOTP_SECRET_1: $(FISCAL_HOLD_TOTP_SECRET_1)
+      FISCAL_HOLD_TOTP_SECRET_2: $(FISCAL_HOLD_TOTP_SECRET_2)
+      FISCAL_HOLD_TOTP_SECRET_3: $(FISCAL_HOLD_TOTP_SECRET_3)
+      FISCAL_HOLD_TOTP_SECRET_4: $(FISCAL_HOLD_TOTP_SECRET_4)
+      FISCAL_HOLD_TOTP_SECRET_5: $(FISCAL_HOLD_TOTP_SECRET_5)
+      FISCAL_HOLD_TOTP_SECRET_6: $(FISCAL_HOLD_TOTP_SECRET_6)
+      FISCAL_HOLD_TOTP_SECRET_7: $(FISCAL_HOLD_TOTP_SECRET_7)
+      FISCAL_HOLD_TOTP_SECRET_8: $(FISCAL_HOLD_TOTP_SECRET_8)
 
       PRIMARY_HOLDER_PASSWORD: $(PRIMARY_HOLDER_PASSWORD)
       PRIMARY_HOLDER_TOTP_SECRET: $(PRIMARY_HOLDER_TOTP_SECRET)
@@ -295,6 +334,11 @@ steps:
       CARRIER_PASSWORD: $(CARRIER_PASSWORD)
       CARRIER_TOTP_SECRET: $(CARRIER_TOTP_SECRET)
       CARRIER_EORI: $(CARRIER_EORI)
+
+      HMRC_CLIENT_ID: $(HMRC_CLIENT_ID)
+      HMRC_CLIENT_SECRET: $(HMRC_CLIENT_SECRET)
+      HMRC_TEST_USER_ID: $(HMRC_TEST_USER_ID)
+      HMRC_TEST_USER_PASSWORD: $(HMRC_TEST_USER_PASSWORD)
 
       BUYER_EORI: $(BUYER_EORI)
       CONSIGNOR_EORI: $(CONSIGNOR_EORI)

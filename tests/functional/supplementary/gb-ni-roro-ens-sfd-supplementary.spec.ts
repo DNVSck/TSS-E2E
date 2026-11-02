@@ -1,7 +1,7 @@
 import { ReportLog } from '../../../src/core/report/report-log';
 import { test } from '../../base-test';
 import { IMPORTER_COMPANY_NAME, TSS_DDA_COMPANY_NAME, BASE_URL } from '../../../config/environment';
-import { COMPANY_PROFILE, isProfileConfigured } from '../../../src/auth/credentials';
+import { COMPANY_PROFILE, isProfileConfigured, lockWhenSingleAccount } from '../../../src/auth/credentials';
 import {
     declaredThroughTraderApi, exciseGoodsSupplementaryDeclaration,
     traderDefermentSupplementaryDeclaration, tssDefermentSupplementaryDeclaration,
@@ -20,6 +20,7 @@ const SD_CANCELLED = '6115';
 const SD_CANCEL_DISMISSED = '6116';
 const SD_IMPORTER_TRADER_DDA = '4700';
 const SD_IMPORTER_TSS_DDA = '4699';
+const SD_IMPORTER_TSS_DDA_RECALL = '(4000-000)';
 const SD_RESUBMIT = '7106';
 const SD_CANCEL_NEEDS_REASON = '7108';
 const SD_CANCEL_TIR = '7109';
@@ -84,6 +85,8 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
         async ({
             generateSdDraftFromEnsSfdFlow,
             completeAndSubmitSupplementaryDeclarationFlow,
+            triggerFinalStatusThroughCdsFlow,
+            openAs,
         }, testInfo) => {
             reportTestCaseLink(SD_AGENT_REPRESENTS_TSS_DDA);
             
@@ -102,7 +105,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
             // this route takes it off both levels instead of adding to it: the CGU and
             // DPO authorisations at consignment level, and the C506 and C505 documents
             // that cite them on the goods item.
-            await ReportLog.step('Complete and submit the supplementary declaration', () =>
+            const reference = await ReportLog.step('Complete and submit the supplementary declaration', () =>
                 completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
                     testInfo,
                     url: BASE_URL,
@@ -110,6 +113,18 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
                     frontierLrn,
                     overrides: tssDefermentSupplementaryDeclaration(),
                 })
+            );
+
+            const tssDda = await ReportLog.step('Sign in as the TSS DDA Importer to pay', () =>
+                openAs(COMPANY_PROFILE.TSS_DDA)
+            );
+            const paid = await ReportLog.step('TSS DDA Trader pays the supplementary declaration through TSS', () =>
+                tssDda.supplementaryDeclaration.paySupplementaryDeclaration(reference)
+            );
+            await ReportLog.step('Close the TSS DDA Importer session', () => tssDda.close());
+
+            await ReportLog.step('Close the supplementary declaration through CDS', () =>
+                triggerFinalStatusThroughCdsFlow.closeSupplementaryDeclaration(paid)
             );
         }
     );
@@ -146,6 +161,8 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
         async ({
             generateSdDraftThroughApiFlow,
             completeAndSubmitSupplementaryDeclarationFlow,
+            triggerFinalStatusThroughCdsFlow,
+            openAs,
         }, testInfo) => {
             reportTestCaseLink(SD_AGENT_REPRESENTS_TSS_DDA);
 
@@ -156,13 +173,25 @@ test.describe('GB to NI RoRo Supplementary Declaration - from ENS-SFD', () => {
                 representing: { companyName: TSS_DDA_COMPANY_NAME, testInfo, url: BASE_URL },
             });
 
-            await ReportLog.step('Complete and submit the supplementary declaration', () =>
+            const reference = await ReportLog.step('Complete and submit the supplementary declaration', () =>
                 completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
                     testInfo,
                     url: BASE_URL,
                     ...source,
                     overrides: declaredThroughTraderApi(tssDefermentSupplementaryDeclaration()),
                 })
+            );
+
+            const tssDda = await ReportLog.step('Sign in as the TSS DDA Importer to pay', () =>
+                openAs(COMPANY_PROFILE.TSS_DDA)
+            );
+            const paid = await ReportLog.step('TSS DDA Trader pays the supplementary declaration through TSS', () =>
+                tssDda.supplementaryDeclaration.paySupplementaryDeclaration(reference)
+            );
+            await ReportLog.step('Close the TSS DDA Importer session', () => tssDda.close());
+
+            await ReportLog.step('Close the supplementary declaration through CDS', () =>
+                triggerFinalStatusThroughCdsFlow.closeSupplementaryDeclaration(paid)
             );
         }
     );
@@ -229,7 +258,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - completed by the import
 });
 
 
-test.describe('GB to NI RoRo Supplementary Declaration - completed by the importer itself - TSS DDA', { tag: '@single-account', lock: COMPANY_PROFILE.TSS_DDA }, () => {
+test.describe('GB to NI RoRo Supplementary Declaration - completed by the importer itself - TSS DDA', { lock: lockWhenSingleAccount(COMPANY_PROFILE.TSS_DDA) }, () => {
     test.use({ authProfile: COMPANY_PROFILE.TSS_DDA });
 
     test.describe.configure({ timeout: 1_200_000 });
@@ -249,6 +278,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - completed by the import
         async ({
             generateSdDraftThroughApiFlow,
             completeAndSubmitSupplementaryDeclarationFlow,
+            triggerFinalStatusThroughCdsFlow,
         }, testInfo) => {
             await ReportLog.setStory('Supplementary Declaration - from ENS-SFD declared through the Trader API - completed by the importer - TSS DDA');
             reportTestCaseLink(SD_IMPORTER_TSS_DDA);
@@ -257,13 +287,65 @@ test.describe('GB to NI RoRo Supplementary Declaration - completed by the import
                 declaration: tssDdaTraderApiSupplementaryDeclarationMovement(),
             });
 
-            await ReportLog.step('Complete and submit the supplementary declaration', () =>
+            const reference = await ReportLog.step('Complete and submit the supplementary declaration', () =>
                 completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
                     testInfo,
                     url: BASE_URL,
                     ...source,
                     overrides: declaredThroughTraderApi(tssDefermentSupplementaryDeclaration()),
                 })
+            );
+
+            const paid = await ReportLog.step('Pay the supplementary declaration through TSS', () =>
+                completeAndSubmitSupplementaryDeclarationFlow.paySupplementaryDeclaration(reference)
+            );
+
+            await ReportLog.step('Close the supplementary declaration through CDS', () =>
+                triggerFinalStatusThroughCdsFlow.closeSupplementaryDeclaration(paid)
+            );
+        }
+    );
+
+    test(
+        'Verify the supplementary declaration pending payment raised by an ENS-SFD movement is recalled to draft, resubmitted and paid successfully (4000-1SG) - TSS DDA - Importer Declare by themself',
+        { tag: ['@regression'] },
+        async ({
+            generateSdDraftThroughApiFlow,
+            completeAndSubmitSupplementaryDeclarationFlow,
+            triggerFinalStatusThroughCdsFlow,
+        }, testInfo) => {
+            await ReportLog.setStory('Supplementary Declaration - from ENS-SFD declared through the Trader API - completed by the importer - TSS DDA - Recall to draft');
+            reportTestCaseLink(SD_IMPORTER_TSS_DDA_RECALL);
+
+            const source = await generateSdDraftThroughApiFlow.raiseSdDraft({
+                declaration: tssDdaTraderApiSupplementaryDeclarationMovement(),
+            });
+
+            const reference = await ReportLog.step('Complete and submit the supplementary declaration', () =>
+                completeAndSubmitSupplementaryDeclarationFlow.completeSupplementaryDeclaration({
+                    testInfo,
+                    url: BASE_URL,
+                    ...source,
+                    overrides: declaredThroughTraderApi(tssDefermentSupplementaryDeclaration()),
+                })
+            );
+
+            await ReportLog.step('Recall the supplementary declaration to draft', () =>
+                completeAndSubmitSupplementaryDeclarationFlow.recallSupplementaryDeclarationToDraft(reference)
+            );
+
+            await ReportLog.step('Resubmit the recalled supplementary declaration', () =>
+                completeAndSubmitSupplementaryDeclarationFlow.resubmitSupplementaryDeclaration(
+                    reference, declaredThroughTraderApi(tssDefermentSupplementaryDeclaration())
+                )
+            );
+
+            const paid = await ReportLog.step('Pay the supplementary declaration through TSS', () =>
+                completeAndSubmitSupplementaryDeclarationFlow.paySupplementaryDeclaration(reference)
+            );
+
+            await ReportLog.step('Close the supplementary declaration through CDS', () =>
+                triggerFinalStatusThroughCdsFlow.closeSupplementaryDeclaration(paid)
             );
         }
     );

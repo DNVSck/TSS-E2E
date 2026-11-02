@@ -116,29 +116,35 @@ export class ConsignmentOverviewFlow {
      * After submit, verify the standalone consignment reached "Awaiting arrival" and
      * report the final status.
      */
-    async verifyStandaloneConsignmentSubmitted(expectedStatusKey: TranslationKey): Promise<void> {
+    async verifyStandaloneConsignmentSubmitted(expectedStatusKey: TranslationKey, timeout?: number): Promise<void> {
         await ReportLog.step('Verify standalone consignment submitted', async () => {
-            const status = await this.consignmentOverviewPage.waitForSubmittedStatus(expectedStatusKey);
+            const status = await this.consignmentOverviewPage.waitForSubmittedStatus(expectedStatusKey, timeout);
             ReportLog.setParameter('Submitted consignment status', status);
-
-            // Reported first, then thrown: a journey that expected an authorisation
-            // cannot do anything meaningful with a consignment the service handed back,
-            // so it stops here - but the report still carries the status that stopped it.
-            // Guarded on the expectation, so a journey that legitimately ends in this
-            // state (as the ENS EIDR one does) would pass rather than fail here.
-            const expectedIt = expectedStatusKey === 'status.traderInputRequired';
-            if (!expectedIt && isTraderInputRequiredStatus(status, this.t)) {
-                throw traderInputRequiredError(
-                    'The standalone consignment', status,
-                    await this.captureCdsRefusal('Standalone consignment', this.consignmentOverviewPage)
-                );
-            }
-
-            const expected = this.t(expectedStatusKey);
-            expect(status || 'not shown',
-                `Standalone consignment status once submitted (expects "${expected}")`)
-                .toBe(expected);
+            await this.verifyStandaloneStatus(status, expectedStatusKey, 'once submitted');
         });
+    }
+
+    async confirmDutyCalculation(): Promise<void> {
+        await ReportLog.step('Confirm the duty calculation', async () => {
+            const status = await this.consignmentOverviewPage.waitForDutyCalculation();
+            await this.verifyStandaloneStatus(status, 'status.pendingConfirmation', 'once the duty is calculated');
+            await this.consignmentOverviewPage.confirmDutyCalculation();
+        });
+    }
+
+    private async verifyStandaloneStatus(status: string, expectedStatusKey: TranslationKey, when: string): Promise<void> {
+        const expectedIt = expectedStatusKey === 'status.traderInputRequired';
+        if (!expectedIt && isTraderInputRequiredStatus(status, this.t)) {
+            throw traderInputRequiredError(
+                'The standalone consignment', status,
+                await this.captureCdsRefusal('Standalone consignment', this.consignmentOverviewPage)
+            );
+        }
+
+        const expected = this.t(expectedStatusKey);
+        expect(status || 'not shown',
+            `Standalone consignment status ${when} (expects "${expected}")`)
+            .toBe(expected);
     }
 
 

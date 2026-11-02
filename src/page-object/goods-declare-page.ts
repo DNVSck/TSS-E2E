@@ -455,6 +455,19 @@ export class GoodsDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
+    /** H2 invoice screen — only invoice number, no price or currency. */
+    async enterInvoiceNumber(invoiceNumber: string): Promise<void> {
+        await this.inputInvoiceNumber(invoiceNumber);
+        await this.clickContinueButton();
+    }
+
+
+    async enterCusCode(cusCode?: string): Promise<void> {
+        if (cusCode) {
+            await this.inputCusCode(cusCode);
+        }
+        await this.clickContinueButton();
+    }
 
     async enterAdditionalCommodityCodes(cusCode?: string, taricAdditionalCode?: string, nationalAdditionalCode?: string): Promise<void> {
         await this.inputCusCode(cusCode??'');
@@ -486,7 +499,9 @@ export class GoodsDeclarePage extends BasePage {
 
     async enterInvoiceDetails(itemPriceAmount: string, invoiceNumber?: string, itemCurrency?: string): Promise<void> {
         await this.inputInvoiceNumber(invoiceNumber??'');
-        await this.selectItemCurrency(itemCurrency??'');
+        if (itemCurrency) {
+            await this.selectItemCurrency(itemCurrency);
+        }
         await this.inputItemPriceAmount(itemPriceAmount);
         await this.clickContinueButton();
     }
@@ -496,16 +511,16 @@ export class GoodsDeclarePage extends BasePage {
         await this.clickContinueButton();
     }
 
-    // The three screens below are asked only on a supplementary declaration. A frontier
-    // declaration never collects them, which is the point of an SD: they are what the
-    // duty is calculated from.
+    // The screens below are what the duty is calculated from. A supplementary
+    // declaration asks them, and so does an FFD goods item; a simplified frontier
+    // declaration never collects them.
 
     /**
      * "What is the reason/nature of the goods?"
      *
-     * The FFD standalone journey asks this at CONSIGNMENT level, over two screens, and
-     * keeps its own pair on FfdStandaloneConsignmentDeclarePage. This is the goods-item
-     * screen of the same name - one item, one answer - and shares only the field id.
+     * The FFD standalone journey asks this at CONSIGNMENT level when every item shares
+     * one reason, and keeps that pair on FfdStandaloneConsignmentDeclarePage; otherwise
+     * it asks here, per item. Only the field id is shared.
      */
     async selectNatureOfGoods(natureOfGoods: string): Promise<void> {
         await selectDropdownValue(this.natureOfGoodsDropdown, natureOfGoods);
@@ -524,12 +539,26 @@ export class GoodsDeclarePage extends BasePage {
         valuationMethod: string,
         countryOfPreferentialOrigin?: string
     ): Promise<void> {
+        await this.fillPreference(preference, countryOfPreferentialOrigin);
+        await selectDropdownValue(this.valuationMethodDropdown, valuationMethod);
+        await this.clickContinueButton();
+    }
+
+    async enterPreference(preference: string, countryOfPreferentialOrigin?: string): Promise<void> {
+        await this.fillPreference(preference, countryOfPreferentialOrigin);
+        await this.clickContinueButton();
+    }
+
+    async selectValuationMethod(valuationMethod: string): Promise<void> {
+        await selectDropdownValue(this.valuationMethodDropdown, valuationMethod);
+        await this.clickContinueButton();
+    }
+
+    private async fillPreference(preference: string, countryOfPreferentialOrigin?: string): Promise<void> {
         await selectDropdownValue(this.preferenceDropdown, preference);
         if (countryOfPreferentialOrigin) {
             await selectDropdownValue(this.countryOfPreferentialOriginDropdown, countryOfPreferentialOrigin);
         }
-        await selectDropdownValue(this.valuationMethodDropdown, valuationMethod);
-        await this.clickContinueButton();
     }
 
     /**

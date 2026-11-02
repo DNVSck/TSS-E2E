@@ -21,7 +21,8 @@
     "no": "Na",
     "notProvided": "Heb ei ddarparu",
     "declarationType": "Math y datganiad",
-    "supervisingCustomsOffice": "Swyddfa dollau oruchwylio"
+    "supervisingCustomsOffice": "Swyddfa dollau oruchwylio",
+    "search": "Chwilio"
   },
   "declarationType": {
     "eidr": "Cofnod yn Cofnodion y Datganwr (EIDR)"
@@ -52,7 +53,8 @@
     "isTrailerUnaccompanied": "A yw'r trelar heb oruchwyliaeth?",
     "inspectionRequired": "Angen archwiliad",
     "reportToLocations": "Adrodd i'r lleoliadau",
-    "hmrcGvmsLastUpdate": "Diweddariad diwethaf HMRC GVMS"
+    "hmrcGvmsLastUpdate": "Diweddariad diwethaf HMRC GVMS",
+    "plannedRoute": "Llwybr arfaethedig"
   },
   "status": {
     "draft": "Drafft",
@@ -69,8 +71,11 @@
     "pendingCancellation": "Yn disgwyl cael ei ganslo",
     "processing": "Wrthi'n prosesu",
     "paymentPending": "Taliad yn yr arfaeth",
+    "awaitingImmediatePayment": "Yn aros am daliad ar unwaith",
     "taxCalculation": "Cyfrifiad treth",
-    "converted": "Wedi'i drawsnewid"
+    "converted": "Wedi'i drawsnewid",
+    "pendingConfirmation": "Yn disgwyl cadarnhad",
+    "fiscalHold": "Ataliad cyllidol"
   },
   "accessDenied": {
     "heading": "Nid oes gennych awdurdod i gael mynediad at hyn"
@@ -81,6 +86,19 @@
   "linkConsignment": {
     "lrnNotFound": "Rhowch LRN dilys. Ni chanfuwyd y llwyth.",
     "alreadyLinked": "Mae'r llwyth hwn eisoes wedi'i gysylltu â symudiad."
+  },
+  "scp": {
+    "paymentSuccessful": "Taliad yn llwyddiannus",
+    "returnToPendingPayments": "Dychwelyd i daliadau sydd ar y gweill",
+    "tssReferenceHeader": "TSS Reference",
+    "amountDueHeader": "Amount due"
+  },
+  "completedPayments": {
+    "duty": "Tollau",
+    "vat": "TAW",
+    "excise": "Ecseis",
+    "total": "Cyfanswm",
+    "mrn": "MRN"
   },
   "consignmentConfirmation": {
     "title": "Llwyth wedi'i gadarnhau",

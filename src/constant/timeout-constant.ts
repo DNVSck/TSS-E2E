@@ -18,6 +18,9 @@ export const RENDER_TIMEOUT = {
     RECORD_DETAIL: 15_000,
     /** A tab panel paints a beat after the tab's route settles. */
     TAB_PANEL: 30_000,
+    /** H3 (temporary admission) and H4 (inward processing) settle slower than H1/H2
+     * because authorised-procedure declarations go through an extra CDS processing step. */
+    AUTHORISED_PROCEDURE_SETTLE: 300_000,
 } as const;
 
 export const ACCESSIBILITY_JOURNEY_TIMEOUT = 2_400_000;

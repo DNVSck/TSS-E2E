@@ -23,6 +23,7 @@ export const NATURE_OF_GOODS = {
     FOLLOWING_PROCESSING_NOT_RETURNED: '52',
     GENERAL_CONSTRUCTION: '80',
     HIRE_LOAN_LEASE_OVER_24_MONTHS: '91',
+    OTHER_TRANSACTIONS_NOT_CLASSIFIED: '99',
 } as const;
 
 export type NatureOfGoodsCode = (typeof NATURE_OF_GOODS)[keyof typeof NATURE_OF_GOODS];

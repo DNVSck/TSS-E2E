@@ -237,7 +237,7 @@ export const inwardProcessingSfdSupplementaryDeclarationMovement = (
             }),
             documentReference({
                 documentCode: DOCUMENT_CODE.C601,
-                documentStatus: DOCUMENT_STATUS.AC,
+                documentStatus: '',
                 documentReference: IMPORTER_IPO,
             }),
             documentReference({

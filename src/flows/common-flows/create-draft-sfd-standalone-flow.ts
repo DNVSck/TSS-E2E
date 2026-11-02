@@ -24,6 +24,7 @@ export interface SfdStandaloneDeclarationOptions {
     consignmentOverrides?: Partial<SfdStandaloneConsignmentData>;
     goodsItemOverrides?: Partial<GoodsData>;
     audit?: AccessibilityAudit;
+    declaringForEori?: string;
 }
 
 /** An SFD standalone declaration built and left in Draft. */
@@ -87,6 +88,7 @@ export class CreateDraftSfdStandaloneFlow {
 
         // Goods-item-overview tabs, declared while on the goods item's overview.
         await this.goodsOverviewFlow.declareDocumentReferences(goodsData.documentReferences);
+        await this.goodsOverviewFlow.declareAdditionalInformations(goodsData.additionalInformations);
         await this.goodsOverviewFlow.declarePreviousDocuments(goodsData.previousDocuments);
         await auditTabs('Goods item');
         await this.goodsOverviewFlow.auditRecordWizards(options.audit, testInfo);
@@ -122,6 +124,7 @@ export class CreateDraftSfdStandaloneFlow {
             typeOfSubmission: INITIAL_FORM_DECLARATION.TYPE_OF_SUBMISSION.STANDALONE,
             standaloneDeclarationType: INITIAL_FORM_DECLARATION.STANDALONE_DECLARATION_TYPE.SIMPLIFIED_DECLARATION,
             typeOfEnsSubmission: undefined,
+            ...(options.declaringForEori === undefined ? {} : { declaringForEori: options.declaringForEori }),
         });
         await this.initialFormFlow.completeInitialFormDeclaration(initialForm, checkpoint);
         await this.addConsignmentFlow.addNewSfdStandaloneConsignment(consignmentData, checkpoint);

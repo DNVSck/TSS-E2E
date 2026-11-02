@@ -6,28 +6,31 @@ import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { IMO_NUMBER } from './movements-data';
 import { REPRESENTATION_TYPE } from '../constant/representation-type-constant';
 import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
-import { INLAND_MODE_OF_TRANSPORT } from '../constant/inland-mode-of-transport-constant';
 import { INCOTERM } from '../constant/incoterm-constant';
+import { INLAND_MODE_OF_TRANSPORT } from '../constant/inland-mode-of-transport-constant';
 import { METHOD_OF_PAYMENT } from '../constant/method-of-payment-constant';
-import { WAREHOUSE_TYPE, WarehouseTypeCode } from '../constant/warehouse-type-constant';
 import { DECLARATION_PROCEDURE } from '../constant/declaration-procedure-constant';
 import { NATURE_OF_GOODS } from '../constant/nature-of-goods-constant';
-import { BUYER_EORI, EXPORTER_EORI } from '../../config/environment';
+import { WAREHOUSE_TYPE } from '../constant/warehouse-type-constant';
+import { SUPERVISING_CUSTOMS_OFFICE } from '../constant/supervising-customs-office-constant';
+import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
+import { BUYER_EORI, EXPORTER_EORI, SELLER_EORI, FISCAL_HOLD_EORI } from '../../config/environment';
 import {
-    generateRandomTransportDocumentNumber, generateRandomWarehouseIdentifier,
+    generateRandomTransportDocumentNumber, generateValidArrivalDate, generatePastArrivalDate,
+    generateRandomWarehouseIdentifier,
 } from '../helper/data-generate-helper';
-import { PreviousDocumentData } from './previous-document-data';
-import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
+import { PreviousDocumentData, previousDocument } from './previous-document-data';
+import { PREVIOUS_DOCUMENT_TYPE } from '../constant/previous-document-type-constant';
+import { PREVIOUS_DOCUMENT_CATEGORY } from '../constant/previous-document-category-constant';
+import { locationOfGoodsOfOther } from '../helper/location-of-goods-helper';
+import { holderOfAuthorisation, HolderOfAuthorisationData } from './holder-of-authorisation-data';
 
 /**
  * The FFD standalone consignment (the app's "Standard Declaration").
  *
  * The widest of the three standalone journeys — its wizard is about twenty screens.
- * The field list below is the screen list, in the order the app asks for them; three
- * answers reshape the rest of the wizard and are called out where they appear.
- *
- * It asks for the BUYER, not the exporter: unlike IMMI and SFD standalone there is no
- * exporter screen on this journey at all.
+ * The field list below is the screen list, in the order the app asks for them; the
+ * answers that reshape the rest of the wizard are called out where they appear.
  */
 export interface FfdStandaloneConsignmentData {
     /**
@@ -66,8 +69,7 @@ export interface FfdStandaloneConsignmentData {
     imoNumber: string;
     nationalityOfMeansOfTransport: string;
 
-    inlandModeOfTransport: string;
-    /** Left undefined so the flow generates a valid (within 14 days) date/time. */
+    /** Left undefined so the factory derives one that matches isPreLodged. */
     arrivalDateTime?: string;
     /**
      * The transport branch ends differently: ILP Air asks where the goods are LOADED,
@@ -75,10 +77,13 @@ export interface FfdStandaloneConsignmentData {
      * as the identifiers above.
      */
     portOfArrival: string;
+    locationOfGoods?: string;
     placeOfLoading: string;
 
+    declarationProcedure: string;
+
     /**
-     * "Is the buyer the same as the importer?" — answering no opens the buyer's EORI
+     * H1. "Is the buyer the same as the importer?" — answering no opens the buyer's EORI
      * screen. The address is carried for the same reason the ENS journeys carry it:
      * PartyBlock decides at runtime whether the app asks for it, and a blank or
      * unregistered EORI is what makes it ask.
@@ -92,33 +97,14 @@ export interface FfdStandaloneConsignmentData {
     buyerPostCode: string;
     buyerCountryCode: string;
 
-    /**
-     * FORK, and the biggest one. "Which type of declaration do you intend to make?"
-     * picks one of two different tails:
-     *
-     *   customs warehousing -> warehouse type + identifier, NO exporter or seller
-     *   anything else       -> exporter + seller, NO warehouse
-     *
-     * See DECLARATION_PROCEDURE.
-     */
-    declarationProcedure: string;
-
     // "Enter transport and destination details" - one screen carrying both.
     transportDocumentNumber: string;
     goodsDomesticStatus: string;
-
-    // Customs-warehousing tail only.
-    warehouseType?: WarehouseTypeCode;
-    warehouseIdentifier?: string;
+    inlandModeOfTransport: string;
 
     /**
-     * Every other tail. Same shape as the buyer above: the EORI opens the screen and
-     * PartyBlock supplies the address only if the app asks for it.
-     *
-     * There is NO seller on this journey. The app currently shows "Seller is the same
-     * as exporter" and a seller EORI screen after the exporter - that is a defect
-     * not a screen FFD is meant to have, so no seller fields
-     * are modelled here.
+     * H1. Same shape as the buyer above: the EORI opens the screen and PartyBlock
+     * supplies the address only if the app asks for it.
      */
     exporterEORI: string;
     exporterName: string;
@@ -128,13 +114,23 @@ export interface FfdStandaloneConsignmentData {
     exporterPostCode: string;
     exporterCountryCode: string;
 
+    isSellerSameAsExporter: boolean;
+    sellerEORI: string;
+    sellerName: string;
+    sellerStreetName: string;
+    sellerStreetNumber: string;
+    sellerCity: string;
+    sellerPostCode: string;
+    sellerCountryCode: string;
+
     traderReference: string;
     isTransportingInContainers: boolean;
 
     // "Delivery terms" - the INCOTERM and whether the UN/LOCODE is known, on one
-    // screen; then the country and the place.
+    // screen. Yes takes the code on one screen; no asks for the country and the place.
     incoterm: string;
     isKnownUnlocode: boolean;
+    unlocode: UnlocodeCode;
     deliveryCountryCode: string;
     deliveryPlaceUnlocode: UnlocodeCode;
 
@@ -144,6 +140,10 @@ export interface FfdStandaloneConsignmentData {
 
     methodOfPayment: string;
     invoiceCurrency: string;
+    usePostponedVat: boolean;
+    warehouseType?: string;
+    warehouseIdentifier?: string;
+    supervisingCustomsOffice?: string;
 
     /**
      * Consignment-overview tabs, each a list of records. Empty by default so a
@@ -166,8 +166,7 @@ const defaults: Omit<FfdStandaloneConsignmentData, 'transportDocumentNumber'> = 
     imoNumber: IMO_NUMBER,
     nationalityOfMeansOfTransport: COUNTRY_CODE.UNITED_KINGDOM,
 
-    inlandModeOfTransport: INLAND_MODE_OF_TRANSPORT.ROLL_ON_ROLL_OFF,
-    portOfArrival: PORT_OF_ARRIVAL.BELFAST_PORT,
+    portOfArrival: PORT_OF_ARRIVAL.BELFAST_GVMS_PORT,
     placeOfLoading: 'Liverpool',
 
     // Buyer profile. A registered EORI means the app does not ask for the address,
@@ -181,10 +180,10 @@ const defaults: Omit<FfdStandaloneConsignmentData, 'transportDocumentNumber'> = 
     buyerPostCode: 'SW1A 1AA',
     buyerCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
-    // Free circulation is the plain path: exporter and seller, no warehouse.
-    declarationProcedure: DECLARATION_PROCEDURE.FREE_CIRCULATION,
+    declarationProcedure: DECLARATION_PROCEDURE.H1_FREE_CIRCULATION,
 
     goodsDomesticStatus: CONSIGNMENT_GOODS_DOMESTIC_STATUS.NIDOM,
+    inlandModeOfTransport: INLAND_MODE_OF_TRANSPORT.ROAD_TRANSPORT,
 
     // Exporter profile.
     exporterEORI: EXPORTER_EORI,
@@ -195,43 +194,47 @@ const defaults: Omit<FfdStandaloneConsignmentData, 'transportDocumentNumber'> = 
     exporterPostCode: 'EC1A 1BB',
     exporterCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
+    isSellerSameAsExporter: false,
+    sellerEORI: SELLER_EORI,
+    sellerName: 'GB Test Seller Ltd',
+    sellerStreetName: 'Market Street',
+    sellerStreetNumber: '20',
+    sellerCity: 'Manchester',
+    sellerPostCode: 'M1 1AA',
+    sellerCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
+
     traderReference: 'STD-AUTO-001',
     isTransportingInContainers: false,
 
     incoterm: INCOTERM.COST_INSURANCE_AND_FREIGHT,
-    // The trader does not know the UN/LOCODE, so the app asks for the country and the
-    // place instead of a code.
-    isKnownUnlocode: false,
+    isKnownUnlocode: true,
+    unlocode: UNLOCODE.BELFAST,
     deliveryCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
     // A UN/LOCODE from the delivery country's list - the options depend on the country.
     deliveryPlaceUnlocode: UNLOCODE.BELFAST,
 
-    isSameNatureOfGoods: true,
+    isSameNatureOfGoods: false,
     natureOfGoods: NATURE_OF_GOODS.OUTRIGHT_PURCHASE_SALE,
 
     methodOfPayment: METHOD_OF_PAYMENT.TRADERS_OWN_DDA,
     invoiceCurrency: ITEM_CURRENCY.POUNDS_STERLING,
+    usePostponedVat: true,
 
-    headerPreviousDocuments: [],
+    headerPreviousDocuments: [
+        previousDocument({
+            documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355,
+            documentReference: 'CSPUCN123',
+        }),
+    ],
     holdersOfAuthorisation: [],
 };
 
 /**
- * The customs-warehousing tail, for a test that opts into it. NOT yet verified
- * end-to-end: only the free-circulation tail has been run against the app.
- */
-export const CUSTOMS_WAREHOUSING = {
-    declarationProcedure: DECLARATION_PROCEDURE.CUSTOMS_WAREHOUSING,
-    warehouseType: WAREHOUSE_TYPE.PRIVATE_CUSTOMS_WAREHOUSE,
-    // No warehouseIdentifier: the factory derives one from the type above, so the two
-    // cannot disagree. State it here only to pin a specific authorisation number.
-} as const;
-
-/**
  * Pre-lodged is the default; an arrived movement is the same data with
- * `isPreLodged: false`, which also drops the arrival date/time screen.
+ * `isPreLodged: false`, so the two variants stay one factory. Method of
+ * payment: Trader DDA.
  */
-export const ffdStandaloneConsignment = (
+export const ffdH1StandaloneConsignment = (
     overrides?: Partial<FfdStandaloneConsignmentData>
 ): FfdStandaloneConsignmentData => {
     const data = {
@@ -242,17 +245,326 @@ export const ffdStandaloneConsignment = (
 
     return {
         ...data,
-        // Derived AFTER the overrides are applied, because the identifier CARRIES the
-        // warehouse type letter (U + 1234567 + GB). Computing it any earlier would let a
-        // spec change the type and be left with an identifier still naming the old one -
-        // two screens of the same declaration contradicting each other, which the form
-        // would likely accept and no assertion here would catch.
-        //
-        // Undefined when no warehouse tail was chosen: every other declaration procedure
-        // never reaches the warehouse screens.
-        warehouseIdentifier: data.warehouseIdentifier
-            ?? (data.warehouseType
-                ? generateRandomWarehouseIdentifier(data.warehouseType)
-                : undefined),
+        arrivalDateTime: data.arrivalDateTime
+            ?? (data.isPreLodged ? generateValidArrivalDate() : generatePastArrivalDate()),
     };
 };
+
+/**
+ * H2 (customs warehousing) defaults. The H2 wizard diverges from H1 at the
+ * declaration-procedure fork: it shows warehouse identifier and supervising
+ * customs office screens, and skips buyer, exporter, seller, delivery terms,
+ * method of payment and invoice currency entirely.
+ *
+ * Only the fields the H2 tail actually reads are given H2 values here; the H1
+ * fields (buyer, exporter, …) carry over from `defaults` but the flow ignores them.
+ */
+export const ffdH2StandaloneConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH1StandaloneConsignment({
+    declarationProcedure: DECLARATION_PROCEDURE.H2_CUSTOMS_WAREHOUSING,
+    warehouseType: WAREHOUSE_TYPE.PRIVATE_CUSTOMS_WAREHOUSE,
+    warehouseIdentifier: generateRandomWarehouseIdentifier(WAREHOUSE_TYPE.PRIVATE_CUSTOMS_WAREHOUSE),
+    supervisingCustomsOffice: SUPERVISING_CUSTOMS_OFFICE.GBBEL001,
+    isSameNatureOfGoods: true,
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.PRIVATE_CUSTOMS_WAREHOUSE_CWP }),
+    ],
+    ...overrides,
+});
+
+/**
+ * H3 (temporary admission) defaults. The H3 wizard diverges from H1 at the
+ * declaration-procedure fork: it skips buyer and seller screens and has no
+ * invoice currency at the end. The supervising customs office moves from the
+ * consignment wizard to the goods-item wizard (unlike H2, where it stays at
+ * consignment level). Method of payment: Trader DDA. TSS DDA
+ * (CARD_PAYMENT_THROUGH_TSS) is not available for H3.
+ *
+ * Only the fields the H3 tail actually reads are given H3 values here; the H1
+ * fields that are ignored (buyer, seller, warehouse, …) carry over from `defaults`.
+ */
+export const ffdH3StandaloneConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH1StandaloneConsignment({
+    declarationProcedure: DECLARATION_PROCEDURE.H3_TEMPORARY_ADMISSION,
+    headerPreviousDocuments: [],
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.TEMPORARY_ADMISSION_TEA }),
+    ],
+    ...overrides,
+});
+
+export const ffdH3FiscalHoldConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH3StandaloneConsignment({
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.TEMPORARY_ADMISSION_TEA, roleId: FISCAL_HOLD_EORI }),
+    ],
+    ...overrides,
+});
+
+/**
+ * H4 (inward processing) defaults. The H4 wizard diverges from H1 at the
+ * declaration-procedure fork: it skips buyer and seller screens, shows the
+ * warehouse identifier and inland mode screens but accepts both blank, and
+ * keeps the supervising customs office at consignment level (like H2). Method
+ * of payment: Trader DDA.
+ *
+ * Only the fields the H4 tail actually reads are given H4 values here; the H1
+ * fields that are ignored (buyer, seller, …) carry over from `defaults`.
+ */
+export const ffdH4StandaloneConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH1StandaloneConsignment({
+    declarationProcedure: DECLARATION_PROCEDURE.H4_INWARD_PROCESSING,
+    supervisingCustomsOffice: SUPERVISING_CUSTOMS_OFFICE.GBBEL001,
+    isSameNatureOfGoods: true,
+    natureOfGoods: NATURE_OF_GOODS.TRANSFER_OF_OWNERSHIP_FOR_COMPENSATION,
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU }),
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.DEFERMENT_OF_PAYMENT_DPO }),
+    ],
+    headerPreviousDocuments: [
+        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: 'CSPUCN123' }),
+    ],
+    ...overrides,
+});
+
+export const ffdH4FiscalHoldConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH4StandaloneConsignment({
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO, roleId: FISCAL_HOLD_EORI }),
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU, roleId: FISCAL_HOLD_EORI }),
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.DEFERMENT_OF_PAYMENT_DPO, roleId: FISCAL_HOLD_EORI }),
+    ],
+    ...overrides,
+});
+
+/**
+ * MOP presets for FFD standalone — one entry per valid method of payment.
+ * Spread into any ffdH_StandaloneConsignment override to set the MOP without
+ * repeating the constant. Use named factory wrappers (see below) rather than
+ * spreading these directly in a test, so the intent stays visible and the
+ * call happens at runtime (keeping arrivalDateTime and transportDocumentNumber
+ * fresh on every run).
+ *
+ * H2 has no MOP (the wizard skips it entirely) and is therefore absent.
+ * TSS DDA (CARD_PAYMENT_THROUGH_TSS) is not available for H3.
+ */
+export const FFD_MOP = {
+    TRADER_DDA: {
+        methodOfPayment: METHOD_OF_PAYMENT.TRADERS_OWN_DDA,
+    },
+    ELECTRONIC_TRANSFER: {
+        methodOfPayment: METHOD_OF_PAYMENT.IMMEDIATE_PAYMENT_BY_ELECTRONIC_TRANSFER,
+    },
+    TRADER_CASH_ACCOUNT: {
+        methodOfPayment: METHOD_OF_PAYMENT.TRADERS_CDS_CASH_ACCOUNT,
+    },
+} satisfies Record<string, Partial<FfdStandaloneConsignmentData>>;
+
+/**
+ * Named H+MOP factory combinations. Add one entry per test-worthy combination;
+ * each thin wrapper keeps the H-type defaults and layers the MOP on top.
+ * Tests call these with transport/prelodge overrides only — H and MOP are fixed
+ * by the factory name, not by the caller.
+ *
+ * ffdH1StandaloneConsignment  →  H1 + Trader DDA  (the base factory IS this combination)
+ * ffdH2StandaloneConsignment  →  H2 (no MOP)       (the base factory IS this combination)
+ * ffdH3StandaloneConsignment  →  H3 + Trader DDA  (the base factory IS this combination)
+ */
+export const ffdH3ElectronicTransferConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH3StandaloneConsignment({
+    ...FFD_MOP.ELECTRONIC_TRANSFER,
+    ...overrides,
+});
+
+export const ffdH4ElectronicTransferConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH4StandaloneConsignment({
+    ...FFD_MOP.ELECTRONIC_TRANSFER,
+    ...overrides,
+});
+
+export const ffdH4ImmediatePaymentConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH4ElectronicTransferConsignment({
+    holdersOfAuthorisation: [],
+    ...overrides,
+});
+
+export const ffdH4TraderCashAccountConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH4StandaloneConsignment({
+    ...FFD_MOP.TRADER_CASH_ACCOUNT,
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU }),
+    ],
+    ...overrides,
+});
+
+const ffdH1WarrenpointArrivedConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH1StandaloneConsignment({
+    isPreLodged: false,
+    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+    portOfArrival: PORT_OF_ARRIVAL.WARRENPOINT_GVMS_PORT,
+    inlandModeOfTransport: INLAND_MODE_OF_TRANSPORT.MARITIME_SEA_TRANSPORT,
+    unlocode: UNLOCODE.WARRENPOINT,
+    deliveryPlaceUnlocode: UNLOCODE.WARRENPOINT,
+    isSameNatureOfGoods: true,
+    natureOfGoods: NATURE_OF_GOODS.TRANSFER_OF_OWNERSHIP_FOR_COMPENSATION,
+    ...overrides,
+});
+
+const gbNiEntrySummaryDeclaration = () => previousDocument({
+    documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355,
+    documentReference: '23GB34F7Y1O2CX8PT4',
+});
+
+export const ffdH1GbNiRiskArrivedConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH1WarrenpointArrivedConsignment({
+    vehicleRegistration: 'IMO12345',
+    goodsDomesticStatus: CONSIGNMENT_GOODS_DOMESTIC_STATUS.NIDOM,
+    natureOfGoods: NATURE_OF_GOODS.OTHER_TRANSACTIONS,
+    headerPreviousDocuments: [gbNiEntrySummaryDeclaration()],
+    ...overrides,
+});
+
+export const ffdH1GbNiSubsidyAppliedArrivedConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH1WarrenpointArrivedConsignment({
+    goodsDomesticStatus: CONSIGNMENT_GOODS_DOMESTIC_STATUS.NIDOM,
+    headerPreviousDocuments: [gbNiEntrySummaryDeclaration()],
+    ...overrides,
+});
+
+export const ffdH1StandardFrontierArrivedConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH1WarrenpointArrivedConsignment({
+    headerPreviousDocuments: [
+        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: '4GB553202734852-12345' }),
+        gbNiEntrySummaryDeclaration(),
+    ],
+    ...overrides,
+});
+
+export const ffdH1StandardFrontierMultipleGoodsArrivedConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH1WarrenpointArrivedConsignment({
+    headerPreviousDocuments: [
+        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: '1GB553202734852-12345' }),
+    ],
+    ...overrides,
+});
+
+export const ffdH2ReimportAfterTemporaryExportConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH2StandaloneConsignment({
+    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+    supervisingCustomsOffice: SUPERVISING_CUSTOMS_OFFICE.GBLBA001,
+    natureOfGoods: NATURE_OF_GOODS.OTHER_TRANSACTIONS_NOT_CLASSIFIED,
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU }),
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.OUTWARD_PROCESSING_OPO }),
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.PRIVATE_CUSTOMS_WAREHOUSE_CWP }),
+    ],
+    headerPreviousDocuments: [
+        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '21GB34F7Y1O2CX8PT4' }),
+        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.MRN, documentReference: '21GBCDS123456789B1' }),
+    ],
+    ...overrides,
+});
+
+const temporaryStorageDeclaration = (documentReference: string) => previousDocument({
+    documentCategory: PREVIOUS_DOCUMENT_CATEGORY.X,
+    documentType: PREVIOUS_DOCUMENT_TYPE.TEMPORARY_STORAGE_DECLARATION_337,
+    documentReference,
+});
+
+export const ffdH3TemporaryAdmissionOfPackingsConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH3StandaloneConsignment({
+    isPreLodged: false,
+    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+    inlandModeOfTransport: INLAND_MODE_OF_TRANSPORT.FIXED_TRANSPORT_INSTALLATIONS,
+    isSameNatureOfGoods: true,
+    natureOfGoods: NATURE_OF_GOODS.OTHER_TRANSACTIONS,
+    headerPreviousDocuments: [
+        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: 'CSPUCN123' }),
+        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.TEMPORARY_STORAGE_DECLARATION_337, documentReference: '22GBTSD123456789U3-1' }),
+    ],
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.TEMPORARY_ADMISSION_TEA }),
+    ],
+    ...overrides,
+});
+
+export const ffdH3ProfessionalEquipmentConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH3StandaloneConsignment({
+    isPreLodged: false,
+    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+    inlandModeOfTransport: INLAND_MODE_OF_TRANSPORT.FIXED_TRANSPORT_INSTALLATIONS,
+    isSameNatureOfGoods: true,
+    natureOfGoods: NATURE_OF_GOODS.OTHER_TRANSACTIONS,
+    headerPreviousDocuments: [temporaryStorageDeclaration('CSPUCN123')],
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.TEMPORARY_ADMISSION_TEA }),
+    ],
+    ...overrides,
+});
+
+export const ffdH3MedicalEquipmentWithoutC516Consignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH3StandaloneConsignment({
+    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+    isSameNatureOfGoods: true,
+    natureOfGoods: NATURE_OF_GOODS.OTHER_TRANSACTIONS,
+    headerPreviousDocuments: [temporaryStorageDeclaration('CSPUCN12')],
+    holdersOfAuthorisation: [],
+    ...overrides,
+});
+
+export const ffdH4AuthorisationByDeclarationConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH4StandaloneConsignment({
+    isPreLodged: false,
+    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+    supervisingCustomsOffice: SUPERVISING_CUSTOMS_OFFICE.GBIPS001,
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.DEFERMENT_OF_PAYMENT_DPO }),
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU }),
+    ],
+    headerPreviousDocuments: [
+        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: 'CSPUCN123' }),
+    ],
+    ...overrides,
+});
+
+const CUSTOMS_WAREHOUSE_IDENTIFIER = 'U8887776GB';
+
+export const ffdH4FromCustomsWarehouseConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH4AuthorisationByDeclarationConsignment({
+    warehouseType: WAREHOUSE_TYPE.PRIVATE_CUSTOMS_WAREHOUSE,
+    warehouseIdentifier: CUSTOMS_WAREHOUSE_IDENTIFIER,
+    locationOfGoods: locationOfGoodsOfOther(`CWP${CUSTOMS_WAREHOUSE_IDENTIFIER}`),
+    exporterEORI: '',
+    exporterName: 'US Trading Commodities Inc.',
+    exporterStreetName: 'Trade Street',
+    exporterStreetNumber: '1',
+    exporterCity: 'New York',
+    exporterPostCode: 'NY1 234',
+    exporterCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.PRIVATE_CUSTOMS_WAREHOUSE_CWP }),
+    ],
+    ...overrides,
+});

@@ -1,5 +1,6 @@
 import { TestInfo, expect } from '@playwright/test';
 import { BasePage } from '../../page-object/base-page';
+import { GoodsCsvUploadPage } from '../../page-object/goods-csv-upload-page';
 import { PortalPage } from '../../page-object/portal-page';
 import { DeclarationOverviewPage } from '../../page-object/declaration-overview-page';
 import { SupplementaryDeclarationOverviewPage } from '../../page-object/supplementary-declaration-overview-page';
@@ -15,7 +16,14 @@ import { documentReference } from '../../test-data/document-reference-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../constant/additional-procedure-codes-constant';
 import {
     isDeclarationStatus, submittedSupplementaryStatusKeys, verifySubmittedWithoutErrors, describeRefusal,
+    waitForSupplementaryDeclarationStatus, verifyDeclarationStatus,
 } from '../../helper/declaration-status-helper';
+import { DECLARATION_STATUS } from '../../constant/trader-api/declaration-status-constant';
+import { DeclarationIdentity } from '../../test-data/payload/cds-notification-payload';
+import { PaymentCardData } from '../../test-data/payment-card-data';
+import { CompletePaymentFlow } from '../payment/complete-payment-flow';
+import { BASE_URL } from '../../../config/environment';
+import { SUPPLEMENTARY_DECLARATION_ROUTE } from '../../constant/endpoints-constant';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
@@ -79,6 +87,8 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
         // that picked the replayed session, so the report never names another account.
         private readonly authAccount: UserCredentials | null,
         private readonly supplementaryDeclarationService: SupplementaryDeclarationService,
+        private readonly goodsCsvUploadPage: GoodsCsvUploadPage,
+        private readonly completePaymentFlow: CompletePaymentFlow,
     ) { }
 
     /**
@@ -91,6 +101,24 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
         const input = supplementaryDeclaration(options.overrides);
         const reference = await this.declare(options, input);
 
+        await this.submitAndSettle(input, reference, options.expectedStatusKeys);
+
+        return reference;
+    }
+
+    async completeSupplementaryDeclarationWithGoodsCsv(
+        options: CompleteSupplementaryDeclarationOptions,
+        csvFile: string,
+    ): Promise<string> {
+        const input = supplementaryDeclaration(options.overrides);
+        reportTestAccount(this.authAccount, 'completeSupplementaryDeclarationWithGoodsCsv');
+
+        const reference = await this.openSupplementaryDeclarationFor(options);
+        await this.completeConsignmentHeader(input);
+        await this.chooseMethodOfPayment(input);
+        await this.removeHoldersOfAuthorisation(input);
+        await this.uploadGoodsFromCsv(csvFile);
+        await this.completeGoodsRecord(input, options);
         await this.submitAndSettle(input, reference, options.expectedStatusKeys);
 
         return reference;
@@ -135,6 +163,66 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
             await checkpoint?.('Supplementary declaration - confirm unauthorised related parties');
             await this.overviewPage.confirmUnauthorisedParties();
             ReportLog.setParameter('Unauthorised related parties', 'confirmed at submission');
+        });
+    }
+
+    async paySupplementaryDeclaration(reference: string, card?: PaymentCardData): Promise<DeclarationIdentity> {
+        await ReportLog.step('Start the payment from the supplementary declaration overview', async () => {
+            await this.openOverview(reference);
+            await this.overviewPage.startPayment();
+        });
+
+        await this.completePaymentFlow.makeListedPendingPayment({ lrn: reference, card });
+
+        await ReportLog.step('Return to supplementary declaration overview', async () => {
+            await this.openOverview(reference);
+        });
+
+        return ReportLog.step(
+            `Wait for the service to record the payment (${DECLARATION_STATUS.PAYMENT_RECEIVED})`,
+            async () => {
+                const paid = await waitForSupplementaryDeclarationStatus(
+                    this.supplementaryDeclarationService, reference, DECLARATION_STATUS.PAYMENT_RECEIVED
+                );
+                expect(paid.movementReferenceNumber,
+                    `Supplementary declaration ${reference} MRN once paid (expects one)`).not.toBe('');
+                return { lrn: reference, mrn: paid.movementReferenceNumber };
+            }
+        );
+    }
+
+    async recallSupplementaryDeclarationToDraft(reference: string): Promise<void> {
+        await ReportLog.step('Recall the supplementary declaration to draft instead of paying', async () => {
+            await this.openOverview(reference);
+            await this.overviewPage.recallToDraft();
+        });
+
+        await ReportLog.step(`Wait for the supplementary declaration to read "${this.t('status.draft')}"`, async () => {
+            const shown = await this.overviewPage.waitForStatus('status.draft');
+            verifyDeclarationStatus(shown, this.t('status.draft'),
+                `Supplementary declaration ${reference} status on screen once recalled from payment`);
+        });
+    }
+
+    async resubmitSupplementaryDeclaration(
+        reference: string,
+        overrides?: Partial<SupplementaryDeclarationData>
+    ): Promise<void> {
+        await this.openOverview(reference);
+        await this.submitAndSettle(supplementaryDeclaration(overrides), reference);
+    }
+
+    private async openOverview(reference: string): Promise<void> {
+        await this.overviewPage.returnTo(`${BASE_URL}${SUPPLEMENTARY_DECLARATION_ROUTE.overviewPath(reference)}`);
+    }
+
+    private async uploadGoodsFromCsv(csvFile: string): Promise<void> {
+        await ReportLog.step('Upload goods records from CSV', async () => {
+            await this.overviewPage.openGoodsCsvUpload();
+            await this.goodsCsvUploadPage.openUploadForm();
+            const errors = await this.goodsCsvUploadPage.uploadFile(csvFile);
+            expect(errors, 'SD goods CSV upload - errors').toEqual([]);
+            await this.goodsCsvUploadPage.confirmRecords();
         });
     }
 

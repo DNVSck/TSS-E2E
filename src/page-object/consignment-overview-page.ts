@@ -9,12 +9,13 @@ import {
     readErrorSummary,
 } from '../helper/element-helper';
 import { isTraderInputRequiredStatus } from '../helper/declaration-status-helper';
-import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
+import { LOCAL_REFERENCE, CONSIGNMENT_REFERENCE_PREFIXES } from '../constant/local-reference-constants';
 import { CONSIGNMENT_ACTION } from '../constant/consignment-action-constant';
 import { StringUtil } from '../core/util/string-util';
 import { CONSIGNMENT_TAB_ROUTE } from '../constant/overview-tab-route-constant';
 import { CancellationScreen } from './components/cancellation-screen';
 import { ReclassificationScreen } from './components/reclassification-screen';
+import { DutyCalculationScreen } from './components/duty-calculation-screen';
 import { RECLASSIFICATION_ROUTE } from '../constant/endpoints-constant';
 import { GOVUK } from './components/govuk-selectors';
 import {
@@ -26,6 +27,8 @@ import {
 const SUBMIT_STATUS_POLL_TIMEOUT = 60_000;
 
 const CANCEL_SETTLE_TIMEOUT = 20_000;
+
+const DUTY_CALCULATION_TIMEOUT = 300_000;
 
 export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
 
@@ -45,6 +48,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     private readonly cancelButton: Locator;
     private readonly cancellationScreen: CancellationScreen;
     private readonly reclassificationScreen: ReclassificationScreen;
+    private readonly dutyCalculationScreen: DutyCalculationScreen;
     private readonly recordOverviewLink: Locator;
     private readonly consignmentBreadcrumbLink: Locator;
     private readonly openTabRecords: Locator;
@@ -69,8 +73,11 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         this.status = this.summaryList.valueOf(this.t!('common.status'));
 
         // ENS consignments reference starts "DEC"; standalone consignments use a
-        // "GLR" reference - match either so the breadcrumb works for both.
-        this.consignmentBreadcrumbLink = page.locator("//nav[contains(@class,'breadcrumb')]//a[starts-with(normalize-space(.),'DEC') or starts-with(normalize-space(.),'GLR')]");
+        // "GLR" reference, and FFD standalone an "FFD" one - match any so the
+        // breadcrumb works for all.
+        this.consignmentBreadcrumbLink = page.locator(GOVUK.BREADCRUMBS.LINK).filter({
+            hasText: new RegExp(CONSIGNMENT_REFERENCE_PREFIXES.map(prefix => prefix.source).join('|')),
+        });
         this.goodsRecordTab = page.locator(`//a[contains(@href, '/overview${CONSIGNMENT_TAB_ROUTE.GOODS_RECORDS}#overview-tab')]`);
         this.headerPreviousDocumentTab = page.locator(`//a[contains(@href, '/overview${CONSIGNMENT_TAB_ROUTE.HEADER_PREVIOUS_DOCUMENTS}#overview-tab')]`);
         this.guaranteeTypeTab = page.locator(`//a[contains(@href, '/overview${CONSIGNMENT_TAB_ROUTE.GUARANTEE_TYPE}#overview-tab')]`);
@@ -93,6 +100,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         this.cancelButton = page.locator(`button[value='${CONSIGNMENT_ACTION.CANCEL}']`);
         this.cancellationScreen = new CancellationScreen(page);
         this.reclassificationScreen = new ReclassificationScreen(page);
+        this.dutyCalculationScreen = new DutyCalculationScreen(page);
         this.recordOverviewLink = page.locator("main a[href$='/overview']");
     }
 
@@ -109,6 +117,14 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         return this.reclassificationScreen.confirm(RECLASSIFICATION_ROUTE.SUPPLEMENTARY_DECLARATION_SEGMENT);
     }
 
+    async waitForDutyCalculation(): Promise<string> {
+        return this.waitForSubmittedStatus('status.pendingConfirmation', DUTY_CALCULATION_TIMEOUT);
+    }
+
+    async confirmDutyCalculation(): Promise<void> {
+        await this.dutyCalculationScreen.open();
+        await this.dutyCalculationScreen.confirm();
+    }
 
     /** Open the "New previous document" wizard from the Header previous documents tab. */
     async openNewHeaderPreviousDocument(): Promise<void> {
@@ -129,7 +145,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     }
 
     /**
-     * Return to the consignment overview via the "DEC…" breadcrumb, and wait until
+     * Return to the consignment overview via the consignment-reference breadcrumb, and wait until
      * the page has actually landed there. These overview routes are server
      * sub-routes, so the active page is reflected in the URL — waiting on it is a
      * more reliable "we're on the overview" signal than a bare click, which races
@@ -386,7 +402,10 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     }
 
 
-    async waitForSubmittedStatus(expectedStatusKey: TranslationKey): Promise<string> {
+    async waitForSubmittedStatus(
+        expectedStatusKey: TranslationKey,
+        timeout: number = SUBMIT_STATUS_POLL_TIMEOUT
+    ): Promise<string> {
         const expected = this.t!(expectedStatusKey);
         let status = '';
         await expect(async () => {
@@ -405,7 +424,7 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
             await this.page.reload();
             expect(status, 'Consignment status').toBe(expected);
         })
-            .toPass({ timeout: SUBMIT_STATUS_POLL_TIMEOUT, intervals: [2_000, 3_000, 5_000] })
+            .toPass({ timeout, intervals: [2_000, 3_000, 5_000] })
             .catch(() => { /* the caller asserts; this only decides how long to wait */ });
 
         return status;

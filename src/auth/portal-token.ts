@@ -1,4 +1,4 @@
-import { request } from '@playwright/test';
+import { APIResponse, request } from '@playwright/test';
 import { freshTotpCode } from './totp-state';
 import { UserCredentials, accountEnvKey } from './credentials';
 import {
@@ -15,20 +15,36 @@ const TOKEN_SCOPE = 'openid roles';
  * The expiry is reported rather than assumed: it is the server that decides how long
  * a token lives, and a caller reusing one has to know when to stop.
  */
-export interface PortalToken {
+export interface AccessToken {
     accessToken: string;
     /** Epoch milliseconds. Already past when the server did not say. */
     expiresAt: number;
 }
 
-interface TokenResponse {
+export interface TokenResponse {
     access_token?: string;
     expires_in?: number;
     error?: string;
     error_description?: string;
 }
 
-export async function portalToken(account: UserCredentials): Promise<PortalToken> {
+export function issuedToken(response: APIResponse, body: TokenResponse): AccessToken | undefined {
+    if (!response.ok() || !body.access_token) {
+        return undefined;
+    }
+
+    return {
+        accessToken: body.access_token,
+        expiresAt: Date.now() + (body.expires_in ?? 0) * 1_000,
+    };
+}
+
+export function tokenRefusal(response: APIResponse, body: TokenResponse): string {
+    const detail = body.error_description ? `: ${body.error_description}` : '';
+    return `${response.status()} ${body.error ?? response.statusText()}${detail}`;
+}
+
+export async function portalToken(account: UserCredentials): Promise<AccessToken> {
     assertClientConfigured();
     assertTotpSecretPresent(account);
 
@@ -46,13 +62,11 @@ export async function portalToken(account: UserCredentials): Promise<PortalToken
             body = await response.json();
         }
 
-        if (!response.ok() || !body.access_token) {
-            const detail = body.error_description ? `: ${body.error_description}` : '';
-
+        const token = issuedToken(response, body);
+        if (!token) {
             throw new Error(
                 `Portal token: could not get one for ${account.username} on "${ENV}" - `
-                + `${response.status()} ${body.error ?? response.statusText()}`
-                + `${detail}. `
+                + `${tokenRefusal(response, body)}. `
                 + `"unauthorized_client" means TRADER_API_CLIENT_ID / TRADER_API_CLIENT_SECRET `
                 + `do not match a client with direct access grants; "invalid_grant" means the `
                 + `account's own credentials were refused - check `
@@ -60,10 +74,7 @@ export async function portalToken(account: UserCredentials): Promise<PortalToken
             );
         }
 
-        return {
-            accessToken: body.access_token,
-            expiresAt: Date.now() + (body.expires_in ?? 0) * 1_000,
-        };
+        return token;
     } finally {
         await context.dispose();
     }

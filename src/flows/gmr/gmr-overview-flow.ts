@@ -3,6 +3,7 @@ import { MovementOverviewPage } from '../../page-object/movement-overview-page';
 import { GmrDeclarePage } from '../../page-object/gmr-declare-page';
 import { GmrDetailsPage } from '../../page-object/gmr-details-page';
 import { ExternalContactDeclarePage } from '../../page-object/external-contact-declare-page';
+import { GmrBarcodePage } from '../../page-object/gmr-barcode-page';
 import { InspectionLocation } from '../../test-data/payload/gvms-notification-payload';
 import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
@@ -10,6 +11,7 @@ import { ReportLog } from '../../core/report/report-log';
 import { verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
 import { AccessibilityAudit } from '../accessibility-audit-flow';
 import { AUDIT_CONTACT_EMAIL } from '../../test-data/gmr-data';
+import { GmrMovement } from '../../test-data/gmr-journey-data';
 
 export class GmrOverviewFlow {
     constructor(
@@ -17,6 +19,7 @@ export class GmrOverviewFlow {
         private readonly gmrDeclarePage: GmrDeclarePage,
         private readonly gmrDetailsPage: GmrDetailsPage,
         private readonly externalContactDeclarePage: ExternalContactDeclarePage,
+        private readonly gmrBarcodePage: GmrBarcodePage,
         private readonly t: TFunction,
     ) { }
 
@@ -216,6 +219,31 @@ export class GmrOverviewFlow {
             identity.isTrailerUnaccompanied,
             'GMR "Is trailer unaccompanied?"'
         ).toBe(this.t(isTrailerUnaccompanied ? 'common.yes' : 'common.no'));
+    }
+
+    async verifyGmrBarcode(plannedRoute: string, movement: GmrMovement): Promise<void> {
+        await ReportLog.step('Generate the GMR barcode and validate its planned route and registration', async () => {
+            if (!await this.openRecord('GMR detail opened to generate the barcode')) {
+                return;
+            }
+
+            await this.gmrDetailsPage.generateBarcode();
+            const barcode = await this.gmrBarcodePage.readBarcode();
+
+            const which = movement.isTrailerUnaccompanied ? 'trailer' : 'vehicle';
+            const registration = movement.isTrailerUnaccompanied
+                ? barcode.trailerRegistrationNumber
+                : barcode.vehicleRegistrationNumber;
+
+            expect.soft(barcode.plannedRoute, 'GMR barcode planned route (the route chosen on the GMR)')
+                .toBe(plannedRoute);
+            expect.soft(
+                registration,
+                `GMR barcode ${which} registration number (the one declared on the ${movement.name.toLowerCase()} movement)`
+            ).toBe(movement.registrationNumber);
+
+            await this.openRecord('GMR detail reopened after the barcode');
+        });
     }
 
     /**

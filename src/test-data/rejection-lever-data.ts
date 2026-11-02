@@ -14,6 +14,7 @@ import { immiStandaloneGoodsItem } from './immi-standalone-goods-item-data';
 import { sfdStandaloneGoodsItem } from './sfd-standalone-goods-item-data';
 import { DeclareStandaloneOptions } from '../flows/common-flows/trader-api/declare-standalone-through-api-flow';
 import { SfdStandaloneDeclarationOptions } from '../flows/common-flows/create-draft-sfd-standalone-flow';
+import { CreateDraftFfdH1StandaloneFlow } from '../flows/common-flows/create-draft-ffd-h1-standalone-flow';
 
 
 export const rejectedByIcs2 = (): Partial<ConsignmentData> => ({
@@ -53,6 +54,9 @@ export const immiStandaloneRejectedByCds = (): Partial<GoodsData> => ({
 export const sfdStandaloneRejectedByCds = (): HolderOfAuthorisationData =>
     holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW });
 
+export const ffdH1StandaloneRejectedByCds = (): HolderOfAuthorisationData =>
+    sfdStandaloneRejectedByCds();
+
 export const rejectedImmiStandaloneForImporter = (): DeclareStandaloneOptions<ImmiStandaloneConsignmentData> => ({
     consignmentOverrides: {
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
@@ -75,4 +79,15 @@ export const rejectedSfdStandaloneForImporter = (testInfo: TestInfo): SfdStandal
         holdersOfAuthorisation: [sfdStandaloneRejectedByCds()],
     },
     goodsItemOverrides: sfdStandaloneGoodsItem(),
+});
+
+export const rejectedFfdH1StandaloneForImporter = (
+    testInfo: TestInfo
+): Parameters<CreateDraftFfdH1StandaloneFlow['createDraftFfdH1Standalone']>[0] => ({
+    testInfo,
+    url: BASE_URL,
+    consignmentOverrides: {
+        representationType: REPRESENTATION_TYPE.DIRECT,
+        holdersOfAuthorisation: [ffdH1StandaloneRejectedByCds()],
+    },
 });

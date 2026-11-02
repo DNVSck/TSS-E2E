@@ -16,4 +16,5 @@ export const DECLARATION_STATUS = {
     ARRIVED: 'Arrived',
     AUTHORISED: 'Authorised',
     TRADER_INPUT_REQUIRED: 'Trader Input Required',
+    PAYMENT_RECEIVED: 'Payment Received',
 } as const;

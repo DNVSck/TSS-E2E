@@ -17,6 +17,7 @@ import { LocaleFixtureType } from './locale-fixture';
 import { ConsignmentOverviewPage } from '../page-object/consignment-overview-page';
 import { GoodsOverviewPage } from '../page-object/goods-overview-page';
 import { GmrDetailsPage } from '../page-object/gmr-details-page';
+import { GmrBarcodePage } from '../page-object/gmr-barcode-page';
 import { GmrDeclarePage } from '../page-object/gmr-declare-page';
 import { PreviousDocumentDeclarePage } from '../page-object/header-previous-documents-declare-page';
 import { HolderOfAuthorisationDeclarePage } from '../page-object/holder-of-authorisation-declare-page';
@@ -40,6 +41,8 @@ import { Wizard } from '../page-object/components/wizard';
 import { SupplementaryDeclarationStep } from '../constant/supplementary-declaration-step-constant';
 import { PhaseBanner } from '../page-object/components/phase-banner';
 import { FeedbackPage } from '../page-object/feedback-page';
+import { ScpPaymentPage } from '../page-object/scp-payment-page';
+import { PaymentsPage } from '../page-object/payments-page';
 
 
 export type PageFixtureType = {
@@ -64,6 +67,7 @@ export type PageFixtureType = {
     goodsOverviewPage: GoodsOverviewPage;
     gmrDeclarePage: GmrDeclarePage;
     gmrDetailsPage: GmrDetailsPage;
+    gmrBarcodePage: GmrBarcodePage;
     previousDocumentDeclarePage: PreviousDocumentDeclarePage;
     holderOfAuthorisationDeclarePage: HolderOfAuthorisationDeclarePage;
     documentReferenceDeclarePage: DocumentReferenceDeclarePage;
@@ -87,6 +91,8 @@ export type PageFixtureType = {
     supplementaryDeclarationWizard: Wizard<SupplementaryDeclarationStep>;
     phaseBanner: PhaseBanner;
     feedbackPage: FeedbackPage;
+    scpPaymentPage: ScpPaymentPage;
+    paymentsPage: PaymentsPage;
 }
 
 type ExtendParams = Parameters<typeof test.extend<PageFixtureType & LocaleFixtureType>>;
@@ -176,6 +182,10 @@ export const pageFixture: ExtendParams[0] = {
         await use(new GmrDetailsPage(page, t));
     },
 
+    gmrBarcodePage: async ({ page, t }, use) => {
+        await use(new GmrBarcodePage(page, t));
+    },
+
     previousDocumentDeclarePage: async ({ page }, use) => {
         await use(new PreviousDocumentDeclarePage(page));
     },
@@ -246,5 +256,13 @@ export const pageFixture: ExtendParams[0] = {
 
     feedbackPage: async ({ page }, use) => {
         await use(new FeedbackPage(page));
+    },
+
+    scpPaymentPage: async ({ page, t }, use) => {
+        await use(new ScpPaymentPage(page, t));
+    },
+
+    paymentsPage: async ({ page, t }, use) => {
+        await use(new PaymentsPage(page, t));
     },
 };

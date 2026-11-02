@@ -2,7 +2,7 @@ import { CdsNotificationFlow } from '../cds-notification-flow';
 import { MovementOverviewFlow } from '../movement/movement-overview-flow';
 import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import { CDS_RESPONSE, DeclarationIdentity } from '../../test-data/payload/cds-notification-payload';
-import { TranslationKey } from '../../fixtures/locale-fixture';
+import { TFunction, TranslationKey } from '../../fixtures/locale-fixture';
 import {
     CancelSupplementaryDeclarationFlow, LinkedSupplementaryDeclaration,
 } from './cancel-supplementary-declaration-flow';
@@ -10,6 +10,12 @@ import {
     SimplifiedFrontierDeclarationService,
 } from '../../api-service/trader-api/simplified-frontier-declaration-service';
 import { ReportLog } from '../../core/report/report-log';
+import { ArrivalNotificationService } from '../../api-service/hmrc/arrival-notification-service';
+import {
+    SupplementaryDeclarationOverviewPage,
+} from '../../page-object/supplementary-declaration-overview-page';
+import { verifyDeclarationStatus } from '../../helper/declaration-status-helper';
+import { DeclarationAccessFlow } from '../declaration-access-flow';
 
 
 export class TriggerFinalStatusThroughCdsFlow {
@@ -19,7 +25,22 @@ export class TriggerFinalStatusThroughCdsFlow {
         private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
         private readonly cancelSupplementaryDeclarationFlow: CancelSupplementaryDeclarationFlow,
         private readonly simplifiedFrontierDeclarationService: SimplifiedFrontierDeclarationService,
+        private readonly arrivalNotificationService: ArrivalNotificationService,
+        private readonly supplementaryDeclarationOverviewPage: SupplementaryDeclarationOverviewPage,
+        private readonly declarationAccessFlow: DeclarationAccessFlow,
+        private readonly t: TFunction,
     ) { }
+
+    async closeSupplementaryDeclaration(sd: DeclarationIdentity): Promise<void> {
+        await this.cdsNotificationFlow.sendResponse(CDS_RESPONSE.DMSCLE_09, sd);
+
+        await ReportLog.step('Verify the supplementary declaration is closed on its overview', async () => {
+            await this.declarationAccessFlow.openDeclarationFromSearch(sd.lrn);
+            const shown = await this.supplementaryDeclarationOverviewPage.waitForStatus('status.closed');
+            verifyDeclarationStatus(shown, this.t('status.closed'),
+                `Supplementary declaration ${sd.lrn} status after CDS sent ${CDS_RESPONSE.DMSCLE_09.name}`);
+        });
+    }
 
     async acceptSupplementaryDeclarationCancellationThroughCds(
         declaration: LinkedSupplementaryDeclaration
@@ -75,6 +96,55 @@ export class TriggerFinalStatusThroughCdsFlow {
     /** The IMMI counterpart of {@link arriveStandaloneSfd}. */
     async closeStandaloneImmi(immi: DeclarationIdentity | undefined): Promise<void> {
         await this.settleWhereItStands(immi, 'status.closed');
+    }
+
+    async arriveAndCloseStandaloneFfd(
+        ffd: DeclarationIdentity | undefined,
+        arrivedStatusKey: TranslationKey = 'status.arrived',
+    ): Promise<void> {
+        if (!ffd) {
+            throw new Error('FFD arrival notification requires a declaration identity');
+        }
+        await ReportLog.step(`Send the HMRC arrival notification for ${ffd.lrn}`, async () => {
+            await this.arrivalNotificationService.sendArrivalNotification(ffd);
+        });
+        await this.consignmentOverviewFlow.verifyConsignmentStatus(arrivedStatusKey);
+
+        await this.closeStandaloneFfd(ffd);
+    }
+
+    async settleStandaloneFfd(ffd: DeclarationIdentity | undefined, isPreLodged: boolean): Promise<void> {
+        if (isPreLodged) {
+            await ReportLog.step('Arrive and close the FFD standalone through HMRC and CDS', () =>
+                this.arriveAndCloseStandaloneFfd(ffd)
+            );
+            return;
+        }
+        await ReportLog.step('Close the FFD standalone through CDS', () => this.closeStandaloneFfd(ffd));
+    }
+
+    async closeStandaloneFfd(ffd: DeclarationIdentity | undefined): Promise<void> {
+        await this.cdsNotificationFlow.sendResponse(CDS_RESPONSE.DMSCLE_09, ffd);
+        await this.consignmentOverviewFlow.verifyConsignmentStatus('status.closed');
+    }
+
+    async triggerFiscalHold(ffd: DeclarationIdentity | undefined): Promise<void> {
+        if (!ffd) {
+            throw new Error('Fiscal hold requires a declaration identity');
+        }
+        await this.cdsNotificationFlow.sendResponse(CDS_RESPONSE.DMSCPI, ffd);
+        await this.consignmentOverviewFlow.verifyConsignmentStatus('status.fiscalHold');
+    }
+
+    async arriveAndTriggerFiscalHold(ffd: DeclarationIdentity | undefined): Promise<void> {
+        if (!ffd) {
+            throw new Error('FFD arrival notification requires a declaration identity');
+        }
+        await ReportLog.step(`Send the HMRC arrival notification for ${ffd.lrn}`, async () => {
+            await this.arrivalNotificationService.sendArrivalNotification(ffd);
+        });
+        await this.consignmentOverviewFlow.verifyConsignmentStatus('status.arrived');
+        await this.triggerFiscalHold(ffd);
     }
 
     private async settleWhereItStands(

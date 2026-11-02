@@ -22,6 +22,8 @@ export const RECORD_TAB = {
     EXTERNAL_CONTACTS: 'external-contacts',
     EIDR_CONSIGNMENTS: 'eidr-consignments',
     GMR_DETAILS: 'gmr-details',
+    ADDITIONS_DEDUCTIONS: 'additions-deductions',
+    DUTY_LINES: 'duty-lines',
 } as const;
 
 /**
@@ -152,6 +154,23 @@ export const SUPPLEMENTARY_DECLARATION_TABS = {
 export const IMMI_EIDR_DECLARATION_TABS = {
     consignment: CONSIGNMENT_TABS,
     goodsItem: IMMI_EIDR_GOODS_ITEM_TABS,
+};
+
+const tabNamed = (tabs: readonly RecordTab[], name: string): RecordTab =>
+    tabs.find(tab => tab.name === name)!;
+
+export const FFD_DECLARATION_TABS = {
+    consignment: [
+        tabNamed(CONSIGNMENT_TABS, RECORD_TAB.LINKED_GOODS_RECORDS),
+        { name: RECORD_TAB.ADDITIONS_DEDUCTIONS, create: NEW_RECORD_ACTION.RECORD },
+        tabNamed(CONSIGNMENT_TABS, RECORD_TAB.PREVIOUS_DOCUMENTS),
+        tabNamed(CONSIGNMENT_TABS, RECORD_TAB.HOLDER_OF_AUTHORISATION),
+        tabNamed(CONSIGNMENT_TABS, RECORD_TAB.GUARANTEE_TYPE),
+        tabNamed(CONSIGNMENT_TABS, RECORD_TAB.DOCUMENTS),
+    ] as readonly RecordTab[],
+    goodsItem: GOODS_ITEM_TABS.flatMap(tab => tab.name === RECORD_TAB.ADDITIONAL_INFORMATION
+        ? [tab, { name: RECORD_TAB.DUTY_LINES, create: NEW_RECORD_ACTION.NONE }]
+        : [tab]) as readonly RecordTab[],
 };
 
 /**

@@ -1,8 +1,8 @@
-import { APIRequestContext, request, test } from '@playwright/test';
+import { APIRequestContext, Browser, TestInfo, request, test } from '@playwright/test';
 import {
   RMQ_HOST, RMQ_USERNAME, RMQ_PWD,
   CDS_MOCK_HOST, CDS_TOKEN, CASE_MANAGEMENT_HOST, TRADER_API_BASE_URL, PORTAL_API_BASE_URL,
-  GVMS_PUSH_SECRET,
+  OTT_API_BASE_URL, GVMS_PUSH_SECRET, HMRC_API_URL,
 } from '../../config/environment';
 import { WorkerAuthFixtureType } from './worker-auth-fixture';
 import { ReportFixtureType } from './report-fixture';
@@ -19,8 +19,10 @@ import {
 import {
   SimplifiedFrontierDeclarationService,
 } from '../api-service/trader-api/simplified-frontier-declaration-service';
-import { portalToken, PortalToken } from '../auth/portal-token';
+import { portalToken, AccessToken } from '../auth/portal-token';
+import { hmrcToken } from '../auth/hmrc-token';
 import { PortalApiClient } from '../api-client/portal-api-client';
+import { OttApiClient } from '../api-client/ott-api-client';
 import {
   CompanyPermissionService,
 } from '../api-service/portal-api/company-permission-service';
@@ -28,6 +30,7 @@ import {
   CompanyProfileService,
 } from '../api-service/portal-api/company-profile-service';
 import { TariffService } from '../api-service/portal-api/tariff-service';
+import { OttService } from '../api-service/ott/ott-service';
 import { GmrService } from '../api-service/portal-api/gmr-service';
 import {
   TraderGoodsProfileService,
@@ -35,6 +38,8 @@ import {
 import { UserCredentials } from '../auth/credentials';
 import { StringUtil } from '../core/util/string-util';
 import { CdsMockApiClient } from '../api-client/cds-mock-api-client';
+import { HmrcApiClient } from '../api-client/hmrc-api-client';
+import { ArrivalNotificationService } from '../api-service/hmrc/arrival-notification-service';
 import { GvmsMockApiClient } from '../api-client/gvms-mock-api-client';
 import { Ics2MockApiClient } from '../api-client/ics2-mock-api-client';
 import { CaseManagementApiClient } from '../api-client/case-management-api-client';
@@ -79,6 +84,9 @@ export type APIFixtureType = {
   rmqApiRequest: APIRequestContext;
   cdsMockApiRequest: APIRequestContext;
   cdsMockApiClient: CdsMockApiClient;
+  hmrcApiRequest: APIRequestContext;
+  hmrcApiClient: HmrcApiClient;
+  arrivalNotificationService: ArrivalNotificationService;
   gvmsMockApiRequest: APIRequestContext;
   gvmsMockApiClient: GvmsMockApiClient;
   ics2MockApiClient: Ics2MockApiClient;
@@ -98,10 +106,13 @@ export type APIFixtureType = {
   traderApiClient: TraderApiClient;
   portalApiRequest: APIRequestContext;
   portalApiClient: PortalApiClient;
+  ottApiRequest: APIRequestContext;
+  ottApiClient: OttApiClient;
   companyPermissionService: CompanyPermissionService;
   companyProfileService: CompanyProfileService;
   traderGoodsProfileService: TraderGoodsProfileService;
   tariffService: TariffService;
+  ottService: OttService;
   gmrService: GmrService;
   movementService: MovementService;
   consignmentService: ConsignmentService;
@@ -148,6 +159,25 @@ export const apiFixture: ExtendParams[0] = {
 
   cdsMockApiClient: async ({ cdsMockApiRequest, serviceErrors }, use) => {
     await use(new CdsMockApiClient(cdsMockApiRequest, serviceErrors));
+  },
+
+  hmrcApiRequest: async ({}, // NOSONAR typescript:S3799
+     use) => {
+    const ctx = await request.newContext({
+      baseURL: serviceBase(HMRC_API_URL),
+      storageState: NO_BROWSER_SESSION,
+    });
+
+    await use(ctx);
+    await ctx.dispose();
+  },
+
+  hmrcApiClient: async ({ hmrcApiRequest, serviceErrors }, use) => {
+    await use(new HmrcApiClient(hmrcApiRequest, serviceErrors));
+  },
+
+  arrivalNotificationService: async ({ hmrcApiClient, browser }, use, testInfo) => {
+    await use(new ArrivalNotificationService(hmrcApiClient, () => hmrcAccessToken(browser, testInfo)));
   },
 
   gvmsMockApiRequest: async ({}, // NOSONAR typescript:S3799
@@ -197,7 +227,7 @@ export const apiFixture: ExtendParams[0] = {
 
     // The token has to outlast the test that is about to use it, so this test's own
     // timeout is the margin - no number to keep in step with a server setting.
-    if (cached && testInfo.timeout > 0 && cached.expiresAt - Date.now() > testInfo.timeout) {
+    if (cached && outlastsTest(cached, testInfo)) {
       await use(cached.accessToken);
       return;
     }
@@ -240,12 +270,33 @@ export const apiFixture: ExtendParams[0] = {
     await use(new PortalApiClient(portalApiRequest, serviceErrors));
   },
 
+  ottApiRequest: async ({ portalAccessToken }, use) => {
+    const ctx = await request.newContext({
+      baseURL: serviceBase(OTT_API_BASE_URL),
+      storageState: NO_BROWSER_SESSION,
+      extraHTTPHeaders: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${portalAccessToken}`,
+      },
+    });
+    await use(ctx);
+    await ctx.dispose();
+  },
+
+  ottApiClient: async ({ ottApiRequest, serviceErrors }, use) => {
+    await use(new OttApiClient(ottApiRequest, serviceErrors));
+  },
+
   gmrService: async ({ portalApiClient }, use) => {
     await use(new GmrService(portalApiClient));
   },
 
   tariffService: async ({ portalApiClient }, use) => {
     await use(new TariffService(portalApiClient));
+  },
+
+  ottService: async ({ ottApiClient }, use) => {
+    await use(new OttService(ottApiClient));
   },
 
   companyPermissionService: async ({ portalApiClient }, use) => {
@@ -297,7 +348,20 @@ export const apiFixture: ExtendParams[0] = {
  * and minting one costs a code from the authenticator, which is spendable once every
  * thirty seconds.
  */
-const mintedTokens = new Map<string, PortalToken>();
+const mintedTokens = new Map<string, AccessToken>();
+
+let grantedHmrcToken: AccessToken | undefined;
+
+function outlastsTest(token: AccessToken, testInfo: TestInfo): boolean {
+  return testInfo.timeout > 0 && token.expiresAt - Date.now() > testInfo.timeout;
+}
+
+async function hmrcAccessToken(browser: Browser, testInfo: TestInfo): Promise<string> {
+  if (!grantedHmrcToken || !outlastsTest(grantedHmrcToken, testInfo)) {
+    grantedHmrcToken = await hmrcToken(browser);
+  }
+  return grantedHmrcToken.accessToken;
+}
 
 /**
  * These APIs act as whoever the token was minted for, so it must be the same account

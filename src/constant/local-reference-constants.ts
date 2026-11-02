@@ -14,6 +14,12 @@ export const LOCAL_REFERENCE = {
     FFD_PREFIX: /^FFD/,
 } as const;
 
+export const CONSIGNMENT_REFERENCE_PREFIXES = [
+    LOCAL_REFERENCE.DEC_PREFIX,
+    LOCAL_REFERENCE.GLR_PREFIX,
+    LOCAL_REFERENCE.FFD_PREFIX,
+] as const;
+
 /**
  * The country code that opens a Movement Reference Number, by consignment type.
  * An ENS (safety & security) MRN uses "XI"; a Customs (SFD) or IMMI MRN uses
@@ -23,6 +29,7 @@ export const MRN_COUNTRY_CODE = {
     ENS: 'XI',
     SFD: 'GB',
     IMMI: 'GB',
+    FFD: 'GB',
 } as const;
 
 export type MrnCountryCode = (typeof MRN_COUNTRY_CODE)[keyof typeof MRN_COUNTRY_CODE];

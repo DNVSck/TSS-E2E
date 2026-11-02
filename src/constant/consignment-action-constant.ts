@@ -29,3 +29,8 @@ export const CONSIGNMENT_ACTION = {
      */
     EDIT_PREFIX: 'edit',
 } as const;
+
+export const PAYMENT_INTENT = {
+    PAY: 'pay',
+    RECALL: 'recall',
+} as const;

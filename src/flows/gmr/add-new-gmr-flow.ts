@@ -9,6 +9,11 @@ import { TFunction } from '../../fixtures/locale-fixture';
 import { LOCAL_REFERENCE } from '../../constant/local-reference-constants';
 import { AccessibilityCheckpoint } from '../accessibility-audit-flow';
 
+export interface DeclaredGmr {
+    localReferenceNumber: string;
+    routeLabel: string;
+}
+
 export class AddNewGMRFlow {
 
     constructor(
@@ -23,25 +28,39 @@ export class AddNewGMRFlow {
         input: GmrData,
         checkpoint?: AccessibilityCheckpoint
     ): Promise<string> {
-        const localReferenceNumber = await this.addNewGmrDraft(input, checkpoint);
+        return (await this.declareAndSubmitGmr(input, checkpoint)).localReferenceNumber;
+    }
+
+    async declareAndSubmitGmr(
+        input: GmrData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<DeclaredGmr> {
+        const declared = await this.declareDraftGmr(input, checkpoint);
         await this.submitGmrAndVerifyOpen();
 
-        return localReferenceNumber;
+        return declared;
     }
 
     async addNewGmrDraft(
         input: GmrData,
         checkpoint?: AccessibilityCheckpoint
     ): Promise<string> {
+        return (await this.declareDraftGmr(input, checkpoint)).localReferenceNumber;
+    }
+
+    private async declareDraftGmr(
+        input: GmrData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<DeclaredGmr> {
         await this.returnToMovementOverview();
         await this.goToCreateNewGMR();
         await checkpoint?.('GMR - route', { probeErrors: true });
-        await this.chooseRouteId(input);
+        const routeLabel = await this.chooseRouteId(input);
         await checkpoint?.('GMR - check your answers');
         await this.finishGMRCreation();
         await this.gmrOverviewFlow.declareExternalContacts(input.external_contacts_list);
 
-        return this.verifyDraftGmr();
+        return { localReferenceNumber: await this.verifyDraftGmr(), routeLabel };
     }
 
     async submitGmrAndVerifyOpen(): Promise<void> {
@@ -66,10 +85,12 @@ export class AddNewGMRFlow {
         });
     }
 
-    private async chooseRouteId(input: GmrData): Promise<void> {
-        await ReportLog.step(`Select Route ID "${input.route_id}" for GMR Details`, async () => {
-            await this.gmrDeclarePage.selectRouteId(input.route_id);
+    private async chooseRouteId(input: GmrData): Promise<string> {
+        return ReportLog.step(`Select Route ID "${input.route_id}" for GMR Details`, async () => {
+            const routeLabel = await this.gmrDeclarePage.selectRouteId(input.route_id);
             ReportLog.setParameter('GMR route', input.route_id);
+
+            return routeLabel;
         });
     }
 

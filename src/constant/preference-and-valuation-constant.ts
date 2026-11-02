@@ -13,11 +13,13 @@ export const PREFERENCE_CODE = {
      * so the standard rate applies. The plain case, and the service's own default.
      */
     NORMAL_THIRD_COUNTRY_TARIFF: '100',
+    PREFERENCE_WITHOUT_CONDITIONS_OR_LIMITS: '300',
 } as const;
 
 export const VALUATION_METHOD = {
     /** "Valuation Method 1 - Transaction value": the price actually paid. */
     TRANSACTION_VALUE: '1',
+    TRANSACTION_VALUE_OF_SIMILAR_GOODS: '3',
     THE_FALLBACK_METHOD: '6',
 } as const;
 

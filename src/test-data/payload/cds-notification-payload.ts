@@ -1,4 +1,4 @@
-import { faker } from '@faker-js/faker';
+﻿import { faker } from '@faker-js/faker';
 import { StringUtil } from '../../core/util/string-util';
 
 /**
@@ -178,6 +178,43 @@ function buildDmsCle09(declaration: DeclarationIdentity, issuedAt: Date): string
         + '</md:MetaData>';
 }
 
+function buildDmsCpi(declaration: DeclarationIdentity, issuedAt: Date): string {
+    const wcoNamespace = 'xmlns:_2_2="urn:wco:datamodel:WCO:Response_DS:DMS:2"';
+
+    return '<_2:MetaData xmlns:_2="urn:wco:datamodel:WCO:DocumentMetaData-DMS:2">'
+        + '<_2:WCODataModelVersionCode>3.6</_2:WCODataModelVersionCode>'
+        + '<_2:WCOTypeName>RES</_2:WCOTypeName>'
+        + '<_2:ResponsibleCountryCode/>'
+        + '<_2:ResponsibleAgencyName/>'
+        + '<_2:AgencyAssignedCustomizationCode/>'
+        + '<_2:AgencyAssignedCustomizationVersionCode/>'
+        + '<_2_1:Response xmlns:_2_1="urn:wco:datamodel:WCO:RES-DMS:2">'
+        + '<_2_1:FunctionCode>14</_2_1:FunctionCode>'
+        + `<_2_1:FunctionalReferenceID>${messageReference()}</_2_1:FunctionalReferenceID>`
+        + '<_2_1:IssueDateTime>'
+        + `<_2_2:DateTimeString formatCode="304" ${wcoNamespace}>${wcoDateTime(issuedAt)}</_2_2:DateTimeString>`
+        + '</_2_1:IssueDateTime>'
+        + '<_2_1:Bank>'
+        + '<_2_1:ReferenceID>BARCGB22</_2_1:ReferenceID>'
+        + '<_2_1:ID>GB16BARC20051723372545</_2_1:ID>'
+        + '</_2_1:Bank>'
+        + '<_2_1:Declaration>'
+        + `<_2_1:FunctionalReferenceID>${declaration.lrn}</_2_1:FunctionalReferenceID>`
+        + `<_2_1:ID>${declaration.mrn}</_2_1:ID>`
+        + '<_2_1:VersionID>1</_2_1:VersionID>'
+        + '<_2_1:DutyTaxFee>'
+        + '<_2_1:Payment>'
+        + `<_2_1:PaymentAmount currencyID="GBP">1048.55</_2_1:PaymentAmount>`
+        + '<_2_1:ObligationGuarantee>'
+        + '<_2_1:ReferenceID>1909242</_2_1:ReferenceID>'
+        + '</_2_1:ObligationGuarantee>'
+        + '</_2_1:Payment>'
+        + '</_2_1:DutyTaxFee>'
+        + '</_2_1:Declaration>'
+        + '</_2_1:Response>'
+        + '</_2:MetaData>';
+}
+
 function buildDmsInv(declaration: DeclarationIdentity, issuedAt: Date): string {
     return '<?xml version="1.0" encoding="UTF-8"?>'
         + '<md:MetaData xmlns:md="urn:wco:datamodel:WCO:DocumentMetaData-DMS:2"'
@@ -217,6 +254,7 @@ export const CDS_RESPONSE = {
     DMSACC_01: { name: 'DMSACC-01', buildMessage: buildDmsAcc01 },
     DMSCLE_09: { name: 'DMSCLE-09', buildMessage: buildDmsCle09 },
     DMSINV: { name: 'DMSINV', buildMessage: buildDmsInv },
+    DMSCPI: { name: 'DMSFIH-14', buildMessage: buildDmsCpi },
 } as const satisfies Record<string, CdsResponseMessage>;
 
 /**

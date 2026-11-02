@@ -33,6 +33,7 @@ export const COMPANY_PROFILE = {
     AGENT_B: 'AGENT_B',
 
     TSS_DDA: 'TSS_DDA',
+    FISCAL_HOLD: 'FISCAL_HOLD',
 } as const;
 
 /**
@@ -99,6 +100,7 @@ const DEFAULT_AUTH_PROFILES: CompanyProfile[] = [
 const ON_DEMAND_PROFILES: ReadonlySet<CompanyProfile> = new Set([
     COMPANY_PROFILE.AGENT_B,
     COMPANY_PROFILE.TSS_DDA,
+    COMPANY_PROFILE.FISCAL_HOLD,
 ]);
 
 /** True when this profile is signed in on first use rather than in globalSetup. */

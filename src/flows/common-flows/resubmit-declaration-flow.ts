@@ -19,6 +19,7 @@ interface Correction {
     on: CorrectionTarget;
     apply: () => Promise<void>;
     acceptedStatusKey?: TranslationKey;
+    postResubmit?: () => Promise<void>;
 }
 
 export class ResubmitDeclarationFlow {
@@ -58,6 +59,16 @@ export class ResubmitDeclarationFlow {
         });
     }
 
+    async removeAuthorisationAndResubmitStandaloneFfdH1(typeCode: string): Promise<void> {
+        await this.correctAndResubmit({
+            step: 'Remove the authorisation CDS refused and resubmit the standalone FFD H1',
+            locate: () => this.declarationAccessFlow.locateRecordsHere(),
+            on: 'consignment',
+            apply: () => this.consignmentOverviewFlow.removeHolderOfAuthorisation(typeCode),
+            postResubmit: () => this.consignmentOverviewFlow.confirmDutyCalculation(),
+        });
+    }
+
     async declareDocumentAndResubmitStandaloneImmi(document: DocumentReferenceData): Promise<void> {
         await this.correctAndResubmit({
             step: 'Declare the document CDS refused the standalone IMMI for and resubmit it',
@@ -94,6 +105,7 @@ export class ResubmitDeclarationFlow {
 
             await this.consignmentOverviewFlow.goToConsignmentOverview();
             await this.consignmentOverviewFlow.resubmitConsignment();
+            await correction.postResubmit?.();
 
             await this.declarationAccessFlow
                 .verifyCorrectionAcceptedByCds(records.consignment, correction.acceptedStatusKey ?? CORRECTION_ACCEPTED);

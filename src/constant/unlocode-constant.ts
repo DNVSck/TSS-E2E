@@ -42,6 +42,7 @@ export const UNLOCODE = {
     CASTLEDERG: 'GBZST',
     CASTLEWELLAN: 'GBCWX',
     CHURCH_BAY_RATHLIN_ISLAND: 'GBCUB',
+    WARRENPOINT: 'GBWPT',
 
     // Ports and harbours.
     ABERDEEN: 'GBABD',

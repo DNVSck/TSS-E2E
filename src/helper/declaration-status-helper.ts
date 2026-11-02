@@ -5,6 +5,9 @@ import { DECLARATION_STATUS } from '../constant/trader-api/declaration-status-co
 import {
     InternalMarketMovementService, InternalMarketMovementSummary,
 } from '../api-service/trader-api/internal-market-movement-service';
+import {
+    SupplementaryDeclarationService, SupplementaryDeclarationSummary,
+} from '../api-service/trader-api/supplementary-declaration-service';
 
 /**
  * What status a declaration is expected to settle on, and when it has stopped moving.
@@ -242,5 +245,21 @@ export function waitForImmiStatus(
         timeout: IMMI_SETTLES_TIMEOUT,
         unread: { reference: immiNumber, status: '', errorMessage: '', movementReferenceNumber: '' },
         read: () => immiService.readByReference(immiNumber),
+    });
+}
+
+const SUPPLEMENTARY_DECLARATION_SETTLES_TIMEOUT = 180_000;
+
+export function waitForSupplementaryDeclarationStatus(
+    service: SupplementaryDeclarationService,
+    reference: string,
+    expected: string
+): Promise<SupplementaryDeclarationSummary> {
+    return waitForDeclarationStatus({
+        what: `Supplementary declaration ${reference}`,
+        expected,
+        timeout: SUPPLEMENTARY_DECLARATION_SETTLES_TIMEOUT,
+        unread: { reference, status: '', movementReferenceNumber: '' },
+        read: () => service.readByReference(reference),
     });
 }

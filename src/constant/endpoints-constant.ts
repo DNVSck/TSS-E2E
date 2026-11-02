@@ -43,10 +43,24 @@ export const CANCELLATION_ROUTE = {
 
 export const SUPPLEMENTARY_DECLARATION_ROUTE = {
     UNAUTHORISED_PARTIES_SEGMENT: 'unauthorised-parties',
+    overviewPath: (lrn: string) => `supplementary-declaration/${lrn}/overview`,
+} as const;
+
+export const DUTY_CALCULATION_ROUTE = {
+    CONFIRM_SEGMENT: 'confirm-payment',
 } as const;
 
 export const RECLASSIFICATION_ROUTE = {
     CONFIRM_SEGMENT: 'reclassification-confirm',
     IMMI_POST_MOVEMENT_SEGMENT: 'immi-post-movement',
     SUPPLEMENTARY_DECLARATION_SEGMENT: 'supplementary-declaration',
+} as const;
+
+export const STANDALONE_DECLARATION_ROUTE = {
+    overviewPath: (lrn: string) => `consignment/standard-declaration/${lrn}/overview`,
+};
+
+export const PAYMENT_ROUTE = {
+    PENDING: '/payments/pending-payments',
+    COMPLETED: '/payments/completed-payments',
 } as const;

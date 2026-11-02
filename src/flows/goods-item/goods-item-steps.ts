@@ -253,6 +253,12 @@ export class GoodsItemSteps {
         });
     }
 
+    async enterSupplementaryUnitsScreen(value: string): Promise<void> {
+        await ReportLog.step('Fill Supplementary Units', async () => {
+            await this.goodsDeclarePage.enterSupplementaryUnits(value);
+        });
+    }
+
     /** The ENS packaging screen, which also asks for the number of pieces. */
     async enterPackagingDetails(input: GoodsData): Promise<void> {
         await ReportLog.step('Fill Packaging Information', async () => {
@@ -334,6 +340,48 @@ export class GoodsItemSteps {
     async enterItemPrice(input: GoodsData): Promise<void> {
         await ReportLog.step('Fill Invoice Details', async () => {
             await this.goodsDeclarePage.enterItemPrice(input.itemPriceAmount);
+        });
+    }
+
+    async enterInvoiceDetails(input: Pick<GoodsData, 'itemPriceAmount' | 'invoiceNumber'>): Promise<void> {
+        await ReportLog.step('Fill Invoice Details', async () => {
+            await this.goodsDeclarePage.enterInvoiceDetails(input.itemPriceAmount, input.invoiceNumber);
+        });
+    }
+
+    async enterInvoiceNumber(input: Pick<GoodsData, 'invoiceNumber'>): Promise<void> {
+        await ReportLog.step('Fill Invoice Details', async () => {
+            await this.goodsDeclarePage.enterInvoiceNumber(input.invoiceNumber ?? '');
+        });
+    }
+
+    async selectAdditionalRiskStatus(input: { additionalRiskStatus: string }): Promise<void> {
+        await ReportLog.step('Select the additional risk status', async () => {
+            await this.goodsDeclarePage.selectAdditionalRiskStatus(input.additionalRiskStatus);
+        });
+    }
+
+    async enterPreference(input: { preference: string; countryOfPreferentialOrigin?: string }): Promise<void> {
+        await ReportLog.step('Enter the preference', async () => {
+            await this.goodsDeclarePage.enterPreference(input.preference, input.countryOfPreferentialOrigin);
+        });
+    }
+
+    async enterCusCode(input: Pick<GoodsData, 'cusCode'>): Promise<void> {
+        await ReportLog.step('Enter the CUS code', async () => {
+            await this.goodsDeclarePage.enterCusCode(input.cusCode);
+        });
+    }
+
+    async selectNatureOfGoods(input: { natureOfGoods: string }): Promise<void> {
+        await ReportLog.step('Select the nature of the goods', async () => {
+            await this.goodsDeclarePage.selectNatureOfGoods(input.natureOfGoods);
+        });
+    }
+
+    async selectValuationMethod(input: { valuationMethod: string }): Promise<void> {
+        await ReportLog.step('Select the valuation method', async () => {
+            await this.goodsDeclarePage.selectValuationMethod(input.valuationMethod);
         });
     }
 

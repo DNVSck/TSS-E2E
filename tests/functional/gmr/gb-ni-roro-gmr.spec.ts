@@ -102,7 +102,7 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
     );
   });
 
-  test('Verify a GMR on an ENS-IMMI RoRo (Accompanied) movement declared through the Trader API is carried through to completed', { tag: ['@regression', '@happyPath', '@smoke'] }, async ({ raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
+  test('Verify a GMR on an ENS-IMMI RoRo (Accompanied) movement declared through the Trader API is carried through to completed', { tag: ['@regression', '@happyPath', '@smoke'] }, async ({ raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, gmrOverviewFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
     await ReportLog.setStory('GMR - GB to NI RoRo Accompanied - raised on an ENS-IMMI movement declared through the Trader API');
     reportTestCaseLink(GMR_ENS_IMMI);
     // ENS-IMMI wizard skipped here - covered by
@@ -112,21 +112,23 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
     await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
 
-    const gmrReference = await ReportLog.step('Create and submit the GMR', () =>
-      createAndSubmitGmrFlow.addNewGmrAndSubmit(
-        gmrData({ 
+    const gmr = await ReportLog.step('Create and submit the GMR', () =>
+      createAndSubmitGmrFlow.declareAndSubmitGmr(
+        gmrData({
           route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_LARNE_FERRIES,
-          external_contacts_list: ['adam1.taylor@nifreight.co.uk', 'ledt1@nifreight.co.uk'], 
+          external_contacts_list: ['adam1.taylor@nifreight.co.uk', 'ledt1@nifreight.co.uk'],
         })
       )
     );
 
+    await gmrOverviewFlow.verifyGmrBarcode(gmr.routeLabel, GMR_MOVEMENT.ACCOMPANIED);
+
     await triggerGmrStatusThroughGvmsFlow.carryGmrToCompleted(
-      gmrReference, GMR_MOVEMENT.ACCOMPANIED
+      gmr.localReferenceNumber, GMR_MOVEMENT.ACCOMPANIED
     );
   });
 
-  test('Verify a GMR on an ENS-EIDR RoRo (Unaccompanied) movement declared through the Trader API is carried through to completed', { tag: ['@regression', '@happyPath'] }, async ({ raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
+  test('Verify a GMR on an ENS-EIDR RoRo (Unaccompanied) movement declared through the Trader API is carried through to completed', { tag: ['@regression', '@happyPath'] }, async ({ raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, gmrOverviewFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
     await ReportLog.setStory('GMR - GB to NI RoRo Unaccompanied - raised on an ENS-EIDR movement declared through the Trader API');
     reportTestCaseLink(GMR_ENS_EIDR);
     // ENS-EIDR wizard skipped here - covered by
@@ -136,18 +138,20 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
     await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
 
-    const gmrReference = await ReportLog.step('Create and submit the GMR', () =>
-      createAndSubmitGmrFlow.addNewGmrAndSubmit(
+    const gmr = await ReportLog.step('Create and submit the GMR', () =>
+      createAndSubmitGmrFlow.declareAndSubmitGmr(
         gmrData({ route_id: ROUTE_ID_CONSTANT.GB_TO_NI.HEYSHAM_BELFAST_STENA_LINE })
       )
     );
 
+    await gmrOverviewFlow.verifyGmrBarcode(gmr.routeLabel, GMR_MOVEMENT.UNACCOMPANIED);
+
     await triggerGmrStatusThroughGvmsFlow.carryGmrToCompleted(
-      gmrReference, GMR_MOVEMENT.UNACCOMPANIED
+      gmr.localReferenceNumber, GMR_MOVEMENT.UNACCOMPANIED
     );
   });
 
-  test('Verify a GMR on an ENS-SFD RoRo (Unaccompanied) movement declared through the Trader API is carried through to completed', { tag: ['@regression', '@happyPath'] }, async ({ raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
+  test('Verify a GMR on an ENS-SFD RoRo (Unaccompanied) movement declared through the Trader API is carried through to completed', { tag: ['@regression', '@happyPath'] }, async ({ raiseMovementForGmrThroughApiFlow, declarationAccessFlow, createAndSubmitGmrFlow, gmrOverviewFlow, triggerGmrStatusThroughGvmsFlow }, testInfo) => {
     await ReportLog.setStory('GMR - GB to NI RoRo Unaccompanied - raised on an ENS-SFD movement declared through the Trader API');
     reportTestCaseLink(GMR_ENS_SFD);
     // ENS-SFD wizard skipped here - covered by
@@ -157,17 +161,19 @@ test.describe('GB to NI RoRo GMR - Agent Represents Trader', () => {
 
     await declarationAccessFlow.openDeclarationInPortal(BASE_URL, testInfo, consignmentReference);
 
-    const gmrReference = await ReportLog.step('Create and submit the GMR', () =>
-      createAndSubmitGmrFlow.addNewGmrAndSubmit(
-        gmrData({ 
+    const gmr = await ReportLog.step('Create and submit the GMR', () =>
+      createAndSubmitGmrFlow.declareAndSubmitGmr(
+        gmrData({
           route_id: ROUTE_ID_CONSTANT.GB_TO_NI.CAIRNRYAN_BELFAST_STENA_LINE,
           external_contacts_list: ['adam3.taylor@nifreight.co.uk'],
          })
       )
     );
 
+    await gmrOverviewFlow.verifyGmrBarcode(gmr.routeLabel, GMR_MOVEMENT.UNACCOMPANIED);
+
     await triggerGmrStatusThroughGvmsFlow.carryGmrToCompleted(
-      gmrReference, GMR_MOVEMENT.UNACCOMPANIED
+      gmr.localReferenceNumber, GMR_MOVEMENT.UNACCOMPANIED
     );
   });
 

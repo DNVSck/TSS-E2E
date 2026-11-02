@@ -1,7 +1,12 @@
 import { GoodsData } from './goods-data';
 import { documentReference } from './document-reference-data';
+import { additionalInformation } from './additional-information-data';
 import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
+import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
+import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
+import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
+import { IMPORTER_EXW } from '../../config/environment';
 
 /**
  * The goods item an SFD standalone consignment declares.
@@ -46,5 +51,20 @@ export const sfdStandaloneGoodsItem = (
         }),
     ],
 
+    ...overrides,
+});
+
+export const sfdStandaloneExciseGoodsItem = (
+    overrides?: Partial<GoodsData>
+): Partial<GoodsData> => ({
+    procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
+    additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
+    documentReferences: [
+        documentReference({ documentCode: DOCUMENT_CODE.C672, documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054037-0054047' }),
+        documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined, documentReference: IMPORTER_EXW }),
+    ],
+    additionalInformations: [
+        additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.ECONR, description: 'Reg No. 1234567890' }),
+    ],
     ...overrides,
 });

@@ -4,7 +4,7 @@ import { Page, Locator, expect } from '@playwright/test';
 import { TFunction, TranslationKey } from '../fixtures/locale-fixture';
 import {
     readFieldWhenVisible, readFieldIfPresent, switchToTabAndClickNew, newRecordButton,
-    clickLinkAndEnterWizard, clickLinkAndWaitForRoute,
+    clickLinkAndEnterWizard, clickLinkAndWaitForRoute, clickToLeaveScreen,
 } from '../helper/element-helper';
 import { LOCAL_REFERENCE } from '../constant/local-reference-constants';
 import { MOVEMENT_ROUTE } from '../constant/endpoints-constant';
@@ -130,7 +130,7 @@ export class GmrDetailsPage extends BasePage {
     }
 
     async generateBarcode(): Promise<void> {
-        await this.generateBarcodeButton.click();
+        await clickToLeaveScreen(this.page, this.generateBarcodeButton);
     }
 
     async clickExternalContactsTab(): Promise<void> {

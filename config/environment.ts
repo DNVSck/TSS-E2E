@@ -1,7 +1,7 @@
 import { LOCALES_CONSTANT } from '../src/constant/locales-constant';
 import {
   TSS_DOMAIN, CASE_MANAGEMENT_SUBDOMAIN, AUTH_SUBDOMAIN, TRADER_API_BASE_PATH,
-  PORTAL_API_BASE_PATH, KEYCLOAK_TOKEN_PATH,
+  PORTAL_API_BASE_PATH, OTT_API_BASE_PATH, KEYCLOAK_TOKEN_PATH,
 } from '../src/constant/tss-host-constant';
 
 export type Locale = 'all' | 'en' | 'cy';
@@ -107,6 +107,10 @@ export const HAULIER_COMPANY_NAME = process.env.HAULIER_COMPANY_NAME ?? '';
 export const IMPORTER_COMPANY_NAME = process.env.IMPORTER_COMPANY_NAME ?? '';
 export const TSS_DDA_COMPANY_NAME = process.env.TSS_DDA_COMPANY_NAME?.trim() ?? '';
 export const TSS_DDA_EORI = process.env.TSS_DDA_EORI?.trim() ?? '';
+export const FISCAL_HOLD_COMPANY_NAME = process.env.FISCAL_HOLD_COMPANY_NAME?.trim() ?? '';
+export const FISCAL_HOLD_EORI = process.env.FISCAL_HOLD_EORI?.trim() ?? '';
+export const FISCAL_HOLD_TEA = process.env.FISCAL_HOLD_TEA?.trim() ?? '';
+export const FISCAL_HOLD_IPO = process.env.FISCAL_HOLD_IPO?.trim() ?? '';
 
 /**
  * The importer's EORI and the authorisations it holds.
@@ -129,6 +133,7 @@ export const IMPORTER_NIRMS = required('IMPORTER_NIRMS');
 export const IMPORTER_SDE = required('IMPORTER_SDE');
 /** Private Customs Warehouse authorisation — cited on the C517 document. */
 export const IMPORTER_CWP = required('IMPORTER_CWP');
+export const IMPORTER_OPO = required('IMPORTER_OPO');
 /** Excise Warehouse authorisation. */
 export const IMPORTER_EXW = required('IMPORTER_EXW');
 export const IMPORTER_CGU = required('IMPORTER_CGU');
@@ -190,6 +195,15 @@ export const GVMS_PUSH_SECRET = process.env.GVMS_PUSH_SECRET?.trim() ?? '';
 
 export const IS_GVMS_MOCK_AVAILABLE = GVMS_PUSH_SECRET !== '';
 
+export const HMRC_API_URL = process.env.HMRC_API_URL?.trim() ?? '';
+export const HMRC_AUTHORIZE_URL = process.env.HMRC_AUTHORIZE_URL?.trim() ?? '';
+export const HMRC_CLIENT_ID = process.env.HMRC_CLIENT_ID?.trim() ?? '';
+export const HMRC_CLIENT_SECRET = process.env.HMRC_CLIENT_SECRET?.trim() ?? '';
+export const HMRC_REDIRECT_URI = process.env.HMRC_REDIRECT_URI?.trim() ?? '';
+export const HMRC_SCOPE = process.env.HMRC_SCOPE?.trim() ?? '';
+export const HMRC_TEST_USER_ID = process.env.HMRC_TEST_USER_ID?.trim() ?? '';
+export const HMRC_TEST_USER_PASSWORD = process.env.HMRC_TEST_USER_PASSWORD?.trim() ?? '';
+
 export const CASE_MANAGEMENT_HOST = tssOrigin(CASE_MANAGEMENT_SUBDOMAIN, ENV);
 export const CASE_MANAGEMENT_USER_NAME = process.env.CASE_MANAGEMENT_USER_NAME?.trim() ?? '';
 export const CASE_MANAGEMENT_PASSWORD = process.env.CASE_MANAGEMENT_PASSWORD?.trim() ?? '';
@@ -200,4 +214,5 @@ export const TRADER_API_CLIENT_ID = process.env.TRADER_API_CLIENT_ID?.trim() ?? 
 export const TRADER_API_CLIENT_SECRET = process.env.TRADER_API_CLIENT_SECRET?.trim() ?? '';
 
 export const PORTAL_API_BASE_URL = `${tssOrigin(ENV)}${PORTAL_API_BASE_PATH}`;
+export const OTT_API_BASE_URL = `${tssOrigin(ENV)}${OTT_API_BASE_PATH}`;
 

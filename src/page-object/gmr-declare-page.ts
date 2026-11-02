@@ -1,6 +1,6 @@
 import { BasePage } from "./base-page";
 import { Page, Locator } from '@playwright/test';
-import { selectDropdownValue } from '../helper/element-helper';
+import { readSelectedOptionLabel, selectDropdownValue } from '../helper/element-helper';
 
 export class GmrDeclarePage extends BasePage {
     private readonly routeIdDropdown: Locator;
@@ -10,9 +10,12 @@ export class GmrDeclarePage extends BasePage {
         this.routeIdDropdown = page.locator("select#routeId");
     }
 
-    async selectRouteId(routeId: string): Promise<void> {
+    async selectRouteId(routeId: string): Promise<string> {
         await selectDropdownValue(this.routeIdDropdown, routeId);
+        const routeLabel = await readSelectedOptionLabel(this.routeIdDropdown);
         await this.clickContinueButton();
+
+        return routeLabel;
     }
 
     

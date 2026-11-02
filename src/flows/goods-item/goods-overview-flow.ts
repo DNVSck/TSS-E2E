@@ -236,11 +236,12 @@ export class GoodsOverviewFlow {
 
     private async ensureDescriptionReachedTheRecord(item: AdditionalInformationData): Promise<void> {
         let summary: string[] = [];
+        const expectedInSummary = item.description === '' ? 'Not provided' : item.description;
 
         for (let attempt = 1; attempt <= DESCRIPTION_ATTEMPTS; attempt++) {
             summary = await this.additionalInformationDeclarePage.listSummaryValues();
 
-            if (summary.includes(item.description)) {
+            if (summary.includes(expectedInSummary)) {
                 return;
             }
 
@@ -264,7 +265,7 @@ export class GoodsOverviewFlow {
             `additional information "${item.code}" should carry its description after `
             + `${DESCRIPTION_ATTEMPTS} attempts - values shown on Check your answers `
             + `(a dropped field reads "Not provided")`
-        ).toContain(item.description);
+        ).toContain(expectedInSummary);
     }
 
     /**

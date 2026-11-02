@@ -3,7 +3,7 @@ import { GOVUK } from './components/govuk-selectors';
 import { Page, Locator } from '@playwright/test';
 import { clickLinkAndWaitForNavigation, clickLinkAndWaitForRoute } from '../helper/element-helper';
 import { NavigationBanner } from './components/navigation-banner';
-import { ROUTES } from '../constant/endpoints-constant';
+import { ROUTES, PAYMENT_ROUTE } from '../constant/endpoints-constant';
 
 const PORTAL_RENDER_TIMEOUT = 90_000;
 const HOME_STALL_TIMEOUT = 30_000;
@@ -48,7 +48,7 @@ export class PortalPage extends BasePage {
         );
         this.companyProfileLink = page.locator(`main a[href$='${ROUTES.PORTAL.COMPANY_PROFILE}']`);
         this.manageUsersLink = page.locator(`main a[href$='${ROUTES.PORTAL.USERS}']`);
-        this.makePaymentLink = page.locator("main a[href$='/payments/pending-payments']");
+        this.makePaymentLink = page.locator(`main a[href$='${PAYMENT_ROUTE.PENDING}']`);
     }
 
 

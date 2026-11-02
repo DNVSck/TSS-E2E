@@ -16,10 +16,14 @@ import { PreviousDocumentDeclarePage } from '../page-object/header-previous-docu
 import { HolderOfAuthorisationDeclarePage } from '../page-object/holder-of-authorisation-declare-page';
 import { ConsignmentSteps } from '../flows/consignment/consignment-steps';
 import { ConsignmentOverviewFlow } from '../flows/consignment/consignment-overview-flow';
+import { CompletePaymentFlow } from '../flows/payment/complete-payment-flow';
+import { ScpPaymentPage } from '../page-object/scp-payment-page';
+import { PaymentsPage } from '../page-object/payments-page';
 import { GoodsOverviewFlow } from '../flows/goods-item/goods-overview-flow';
 import { GmrOverviewFlow } from '../flows/gmr/gmr-overview-flow';
 import { GmrDeclarePage } from '../page-object/gmr-declare-page';
 import { GmrDetailsPage } from '../page-object/gmr-details-page';
+import { GmrBarcodePage } from '../page-object/gmr-barcode-page';
 import { ExternalContactDeclarePage } from '../page-object/external-contact-declare-page';
 import { GoodsOverviewPage } from '../page-object/goods-overview-page';
 import { DocumentReferenceDeclarePage } from '../page-object/document-reference-declare-page';
@@ -39,6 +43,7 @@ import { SupplementaryDeclarationGoodsRecordPage } from '../page-object/suppleme
 import { MovementDeclarePage } from '../page-object/movement-declare-page';
 import { CommercialTermsDeclarePage } from '../page-object/commercial-terms-declare-page';
 import { GoodsDeclarePage } from '../page-object/goods-declare-page';
+import { GoodsCsvUploadPage } from '../page-object/goods-csv-upload-page';
 import { SupplementaryDeclarationSteps } from '../flows/supplementary-declaration/supplementary-declaration-steps';
 import { CompleteAndSubmitSupplementaryDeclarationFlow } from '../flows/common-flows/complete-and-submit-supplementary-declaration-flow';
 import { SupplementaryDeclarationService } from '../api-service/trader-api/supplementary-declaration-service';
@@ -86,6 +91,8 @@ export interface CompanySession {
     readonly gmr: GmrOverviewFlow;
 
     readonly supplementaryDeclaration: CompleteAndSubmitSupplementaryDeclarationFlow;
+
+    readonly payment: CompletePaymentFlow;
 
     /**
      * Close this company's window as soon as it has done its part.
@@ -142,6 +149,10 @@ function buildCompanySession(
         new ConsignmentSteps(movement, new ConsignmentDeclarePage(page)),
         t
     );
+    const payment = new CompletePaymentFlow(
+        new ScpPaymentPage(page, t),
+        new PaymentsPage(page, t),
+    );
 
     return {
         consignment,
@@ -153,6 +164,7 @@ function buildCompanySession(
             new GmrDeclarePage(page),
             new GmrDetailsPage(page, t),
             new ExternalContactDeclarePage(page),
+            new GmrBarcodePage(page, t),
             t,
         ),
         supplementaryDeclaration: new CompleteAndSubmitSupplementaryDeclarationFlow(
@@ -163,7 +175,8 @@ function buildCompanySession(
                 new Wizard<SupplementaryDeclarationStep>(page), new MovementDeclarePage(page),
                 new ConsignmentDeclarePage(page), new CommercialTermsDeclarePage(page), new GoodsDeclarePage(page)
             ),
-            consignment, t, account, supplementaryDeclarationService
+            consignment, t, account, supplementaryDeclarationService,
+            new GoodsCsvUploadPage(page), payment
         ),
         goods: new GoodsOverviewFlow(
             new GoodsOverviewPage(page, t),
@@ -175,6 +188,7 @@ function buildCompanySession(
             new NationalAdditionalCodeDeclarePage(page),
             t,
         ),
+        payment,
     };
 }
 

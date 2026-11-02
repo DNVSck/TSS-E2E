@@ -40,8 +40,13 @@ export class CreateAndSubmitImmiStandaloneFlow {
          * that says nothing new.
          */
         expectedStatusKey?: TranslationKey;
+        changeRepresentationTypeAfterGoods?: string;
     }): Promise<DeclarationIdentity> {
         const draft = await this.createDraftImmiStandaloneFlow.createDraftImmiStandalone(options);
+
+        if (options.changeRepresentationTypeAfterGoods) {
+            await this.consignmentOverviewFlow.declareRepresentationType(options.changeRepresentationTypeAfterGoods);
+        }
 
         return this.submitDraft(draft, options.expectedStatusKey);
     }

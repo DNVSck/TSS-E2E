@@ -18,6 +18,10 @@ export async function selectDropdownValue(
     await expect(dropdown).toHaveValue(value);
 }
 
+export async function readSelectedOptionLabel(dropdown: Locator): Promise<string> {
+    return (await dropdown.locator('option:checked').innerText()).trim();
+}
+
 /** How long a filled value gets to survive before the fill is tried again. */
 const VALUE_STICKS_TIMEOUT = 1_000;
 /** How long to keep re-filling a field the page keeps clearing. */

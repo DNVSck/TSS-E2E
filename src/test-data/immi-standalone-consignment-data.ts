@@ -5,7 +5,9 @@ import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { REPRESENTATION_TYPE } from '../constant/representation-type-constant';
 import { PreviousDocumentData, previousDocument } from './previous-document-data';
 import { generateValidArrivalDate, generatePastArrivalDate } from '../helper/data-generate-helper';
-import { HolderOfAuthorisationData } from './holder-of-authorisation-data';
+import { HolderOfAuthorisationData, holderOfAuthorisation } from './holder-of-authorisation-data';
+import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
+import { inwardProcessingLocationOfGoods } from '../helper/location-of-goods-helper';
 
 /**
  * The IMMI standalone consignment ("Internal Market Movement Information").
@@ -125,3 +127,15 @@ export const IMMI_STANDALONE_MAX_SCREEN_COVERAGE: Partial<ImmiStandaloneConsignm
     representationType: REPRESENTATION_TYPE.DIRECT,
     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
 };
+
+export const inwardProcessingConsignmentOverrides = (
+    importerIpo: string
+): Partial<ImmiStandaloneConsignmentData> => ({
+    isPreLodged: false,
+    typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
+    representationType: undefined,
+    locationOfGoods: inwardProcessingLocationOfGoods(importerIpo),
+    holdersOfAuthorisation: [
+        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
+    ],
+});
