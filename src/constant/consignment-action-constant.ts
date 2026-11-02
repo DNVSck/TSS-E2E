@@ -14,6 +14,7 @@
  */
 export const CONSIGNMENT_ACTION = {
     SUBMIT: 'submit-consignment',
+    CONFIRM: 'confirm-consignment',
     CANCEL: 'cancel-with-confirmation',
     UPLOAD_GOODS_CSV: 'upload-csv',
     /**

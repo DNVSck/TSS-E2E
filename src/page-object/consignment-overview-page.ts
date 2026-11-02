@@ -40,6 +40,8 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
     private readonly newPreviousDocumentBtn: Locator;
     private readonly newHolderOfAuthorisationBtn: Locator;
     private readonly confirmAndSubmitButton: Locator;
+    private readonly confirmConsignmentButton: Locator;
+    private readonly confirmationPanel: Locator;
     private readonly cancelButton: Locator;
     private readonly cancellationScreen: CancellationScreen;
     private readonly reclassificationScreen: ReclassificationScreen;
@@ -86,6 +88,8 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
         this.openTabRecords = page.locator(OPEN_TAB_RECORD);
         this.documentTab = page.locator(`//a[contains(@href, '/overview${CONSIGNMENT_TAB_ROUTE.DOCUMENTS}#overview-tab')]`);
         this.confirmAndSubmitButton = page.locator(`button[value='${CONSIGNMENT_ACTION.SUBMIT}']`);
+        this.confirmConsignmentButton = page.locator(`button[value='${CONSIGNMENT_ACTION.CONFIRM}']`);
+        this.confirmationPanel = page.locator(`main ${GOVUK.PANEL.CONFIRMATION}`);
         this.cancelButton = page.locator(`button[value='${CONSIGNMENT_ACTION.CANCEL}']`);
         this.cancellationScreen = new CancellationScreen(page);
         this.reclassificationScreen = new ReclassificationScreen(page);
@@ -174,6 +178,20 @@ export class ConsignmentOverviewPage extends ConsignmentSummaryPage {
 
     async confirmAndSubmit(): Promise<string[]> {
         return submitAndReadErrors(this.page, this.confirmAndSubmitButton);
+    }
+
+    async confirmConsignment(): Promise<string[]> {
+        await this.confirmConsignmentButton.click();
+        await this.confirmationPanel.or(this.page.locator(GOVUK.ERROR_SUMMARY.LIST)).first()
+            .waitFor({ state: 'visible' }).catch(() => undefined);
+        return readErrorSummary(this.page);
+    }
+
+    async readConfirmationPanel(): Promise<{ title: string; body: string }> {
+        return {
+            title: await readFieldIfPresent(this.confirmationPanel.locator(GOVUK.PANEL.TITLE)),
+            body: await readFieldIfPresent(this.confirmationPanel.locator(GOVUK.PANEL.BODY)),
+        };
     }
 
     async confirmAndResubmit(): Promise<string[]> {

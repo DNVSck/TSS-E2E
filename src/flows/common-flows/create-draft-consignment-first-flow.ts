@@ -2,6 +2,7 @@ import { PortalAccessFlow } from '../portal-access-flow';
 import { InitialFormDeclarationFlow } from '../initial-form-declaration-flow';
 import { MovementOverviewFlow } from '../movement/movement-overview-flow';
 import { AddNewEnsConsignmentFlow } from '../consignment/add-new-ens-consignment-flow';
+import { ConsignmentOverviewFlow } from '../consignment/consignment-overview-flow';
 import {
     CreateDraftEnsDeclarationFlow, DraftEnsDeclaration, EnsDeclarationOptions,
 } from './create-draft-ens-declaration-flow';
@@ -18,6 +19,7 @@ export class CreateDraftConsignmentFirstFlow {
         private readonly routeFlow: InitialFormDeclarationFlow,
         private readonly createDraftEnsDeclarationFlow: CreateDraftEnsDeclarationFlow,
         private readonly addNewEnsConsignmentFlow: AddNewEnsConsignmentFlow,
+        private readonly consignmentOverviewFlow: ConsignmentOverviewFlow,
         private readonly movementOverviewFlow: MovementOverviewFlow,
         private readonly authAccount: UserCredentials | null,
     ) { }
@@ -44,6 +46,7 @@ export class CreateDraftConsignmentFirstFlow {
             ),
             checkpoint
         );
+        await this.consignmentOverviewFlow.confirmConsignment();
 
         const movementLrn = await this.createDraftEnsDeclarationFlow.createDraftMovement(
             {

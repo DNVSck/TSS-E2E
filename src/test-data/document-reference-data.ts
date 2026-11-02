@@ -61,7 +61,7 @@ export const ensSfdGoodsDocuments = (): DocumentReferenceData[] => [
 export function importerUkimsDocument(ukims: string = IMPORTER_UKIMS) {
     return documentReference({
         documentCode: DOCUMENT_CODE['1UKI'],
-        documentStatus: DOCUMENT_STATUS.AC,
+        documentStatus: '',
         documentReference: ukims,
     });
 }

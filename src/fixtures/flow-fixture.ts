@@ -398,6 +398,7 @@ export const flowFixture: ExtendParams[0] = {
         initialFormDeclarationFlow,
         createDraftEnsDeclarationFlow,
         addNewEnsConsignmentFlow,
+        consignmentOverviewFlow,
         movementOverviewFlow,
         authAccount
     }, use) => {
@@ -406,6 +407,7 @@ export const flowFixture: ExtendParams[0] = {
             initialFormDeclarationFlow,
             createDraftEnsDeclarationFlow,
             addNewEnsConsignmentFlow,
+            consignmentOverviewFlow,
             movementOverviewFlow,
             authAccount
         ));

@@ -96,7 +96,6 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
           commodityCode: '63062900',
           // "1UKI" is inputted by user, checking the code list and input manually step.
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
             documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW}),
           ],
           supplementaryUnits: '1',
@@ -142,7 +141,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
           // Without TGP the trader quotes their own UKIMS authorisation - the TGP tests
           // never declare it because the service copies it into the generated IMMI.
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
+            documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: '', documentReference: IMPORTER_UKIMS }),
           ]
         },
       })
@@ -179,7 +178,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
           commodityCode: '630629',
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
+            documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: '', documentReference: IMPORTER_UKIMS }),
           ]
         },
       })

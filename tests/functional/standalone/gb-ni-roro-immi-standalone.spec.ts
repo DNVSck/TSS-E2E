@@ -282,7 +282,6 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
             documentReference({ documentCode: DOCUMENT_CODE.N760, documentStatus: DOCUMENT_STATUS.AC,   documentReference: '0054039' }),
             documentReference({ documentCode: DOCUMENT_CODE.C517, documentStatus: undefined,   documentReference: IMPORTER_CWP }),
             documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,   documentReference: IMPORTER_EXW}),
-            documentReference({ documentCode: DOCUMENT_CODE.Y923, documentStatus: undefined,   documentReference: 'Excluded product', documentReason: 'Excluded product' }),
           ],
   
           additionalInformations: [
@@ -374,7 +373,6 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EL,
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: DOCUMENT_STATUS.AC, documentReference: IMPORTER_UKIMS }),
             documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW }),
             documentReference({ documentCode: DOCUMENT_CODE.N730, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
           ],

@@ -16,6 +16,11 @@ export const GOVUK = {
     NOTIFICATION_BANNER: {
         SUCCESS: '.govuk-notification-banner--success',
     },
+    PANEL: {
+        CONFIRMATION: '.govuk-panel--confirmation',
+        TITLE: '.govuk-panel__title',
+        BODY: '.govuk-panel__body',
+    },
     PHASE_BANNER: {
         ROOT: '.govuk-phase-banner',
     },

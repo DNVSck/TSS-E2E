@@ -81,5 +81,9 @@
   "linkConsignment": {
     "lrnNotFound": "Enter a valid LRN. The consignment was not found.",
     "alreadyLinked": "This consignment is already linked to a movement."
+  },
+  "consignmentConfirmation": {
+    "title": "Consignment confirmed",
+    "body": "We have emailed the relevant contacts that it is ready to be added to a movement."
   }
 }

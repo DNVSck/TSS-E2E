@@ -72,7 +72,7 @@ export const ENS_AUDIT_JOURNEYS: EnsAuditJourney[] = [
             documentReferences: [
                 documentReference({
                     documentCode: DOCUMENT_CODE['1UKI'],
-                    documentStatus: DOCUMENT_STATUS.AC,
+                    documentStatus: '',
                     documentReference: IMPORTER_UKIMS,
                 }),
             ],

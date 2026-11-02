@@ -218,6 +218,18 @@ export class ConsignmentOverviewFlow {
         });
     }
 
+    async confirmConsignment(): Promise<void> {
+        await ReportLog.step('Confirm consignment', async () => {
+            await this.consignmentOverviewPage.goToConsignmentOverview();
+            verifySubmittedWithoutErrors(await this.consignmentOverviewPage.confirmConsignment(), 'the consignment confirmation');
+            const panel = await this.consignmentOverviewPage.readConfirmationPanel();
+            expect(panel.title, 'Panel shown after Confirm consignment - title')
+                .toBe(this.t('consignmentConfirmation.title'));
+            expect(panel.body, 'Panel shown after Confirm consignment - body')
+                .toBe(this.t('consignmentConfirmation.body'));
+        });
+    }
+
     async submitConsignmentAndReadOutcome(): Promise<string[]> {
         return ReportLog.step('Submit consignment', async () => this.submitAndReadOutcome());
     }

@@ -112,7 +112,7 @@ export const ensImmiDeclaration = (
         documentReferences: [
             documentReference({
                 documentCode: DOCUMENT_CODE['1UKI'],
-                documentStatus: DOCUMENT_STATUS.AC,
+                documentStatus: '',
                 documentReference: IMPORTER_UKIMS,
             }),
         ],
