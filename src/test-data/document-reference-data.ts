@@ -28,9 +28,9 @@ export interface DocumentReferenceData {
 }
 
 const defaults: DocumentReferenceData = {
-    documentCode: DOCUMENT_CODE['1421'],
-    documentStatus: DOCUMENT_STATUS.GE,
-    documentReference: '20394857',
+    documentCode: '',
+    documentStatus: '',
+    documentReference: '',
     documentPartReference: '',
     documentReason: '',
     documentFilePath: '',

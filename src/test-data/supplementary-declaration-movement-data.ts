@@ -108,7 +108,7 @@ export const onwardSupplyReliefSupplementaryDeclarationMovement = (): Supplement
         controlledGoodsType: CONTROLLED_GOODS_TYPE.PLANT_BASED,
         documentReferences: [
             documentReference({ documentCode: DOCUMENT_CODE.C679, documentStatus: DOCUMENT_STATUS.XB, documentReference: '0054037-0054047' }),
-            documentReference({ documentCode: DOCUMENT_CODE.Y922, documentStatus: undefined, documentReference: 'No cat or dog fur', documentReason: WAIVER_REASON }),
+            documentReference({ documentCode: DOCUMENT_CODE.Y922, documentStatus: undefined, documentReference: '', documentReason: WAIVER_REASON }),
             documentReference({ documentCode: DOCUMENT_CODE.N760, documentStatus: DOCUMENT_STATUS.AC, documentReference: '056789/202 21.01.2025' }),
             documentReference({ documentCode: DOCUMENT_CODE['9120'], documentStatus: DOCUMENT_STATUS.XX, documentReference: 'GBAHC1234', documentReason: WAIVER_REASON }),
         ],
@@ -226,7 +226,7 @@ export const inwardProcessingSfdSupplementaryDeclarationMovement = (
             documentReference({
                 documentCode: DOCUMENT_CODE.Y922,
                 documentStatus: undefined,
-                documentReference: 'EXEMPT',
+                documentReference: '',
                 documentReason: 'EXEMPT',
             }),
             documentReference({
@@ -243,7 +243,7 @@ export const inwardProcessingSfdSupplementaryDeclarationMovement = (
             documentReference({
                 documentCode: DOCUMENT_CODE.Y900,
                 documentStatus: undefined,
-                documentReference: 'EXEMPT',
+                documentReference: '',
                 documentReason: 'EXEMPT',
             }),
             documentReference({

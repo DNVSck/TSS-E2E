@@ -9,11 +9,11 @@ import { StringUtil } from '../../core/util/string-util';
  * opens no connection and decides nothing. The client sends it; the flow decides when.
  *
  * Each CDS message is its own builder rather than one template with the function code
- * pulled out as a knob. DMSACC-01 and DMSCLE-09 disagree about the XML prolog, the
- * namespace style (prefixed `_2_1:` versus a default namespace), which MetaData
- * children appear, and whether there is an AcceptanceDateTime or an
- * AdditionalInformation block - so a shared template would be a switch statement
- * wearing a template's clothes.
+ * pulled out as a knob. DMSINV disagrees with the others about the XML prolog, the
+ * namespace style (a default namespace versus prefixed `_2_1:`) and which MetaData
+ * children appear, and every message has its own blocks around the Declaration
+ * (AcceptanceDateTime, AdditionalInformation, Bank, CancellationDateTime) - so a
+ * shared template would be a switch statement wearing a template's clothes.
  *
  * Adding a message (DMSREJ, DMSCTL, ...) means writing its builder and adding one row
  * to CDS_RESPONSE. Nothing in the client or the flow changes.
@@ -109,7 +109,7 @@ function messageReference(): string {
  * DMSACC-01.
  *
  * Every RES element carries an explicit `_2_1:` prefix here, and MetaData lists four
- * empty children the other message omits. Reproduced verbatim, prefixes included: the
+ * empty children DMSINV omits. Reproduced verbatim, prefixes included: the
  * receiving parser matches on them, so "tidying" this into the other message's shape
  * would change what is on the wire.
  */
@@ -145,37 +145,39 @@ function buildDmsAcc01(declaration: DeclarationIdentity, issuedAt: Date): string
 /**
  * DMSCLE-09.
  *
- * A different document, not DMSACC-01 with another number in it: it opens with an XML
- * prolog, puts RES in the DEFAULT namespace so its elements are unprefixed, drops the
- * four empty MetaData children and the AcceptanceDateTime, and adds an
- * AdditionalInformation block.
+ * The same prefixed shape as DMSACC-01, four empty MetaData children included, but
+ * with no AcceptanceDateTime and an AdditionalInformation block in its place.
  *
- * A2 / AFB are held fixed because the recorded exchange held them fixed. If either
+ * A2 / AFB are held fixed because the reference payload holds them fixed. If either
  * turns out to vary per case it becomes an argument, not another message.
  */
 function buildDmsCle09(declaration: DeclarationIdentity, issuedAt: Date): string {
-    return '<?xml version="1.0" encoding="UTF-8"?>'
-        + '<md:MetaData xmlns:md="urn:wco:datamodel:WCO:DocumentMetaData-DMS:2"'
-        + ' xmlns="urn:wco:datamodel:WCO:RES-DMS:2">'
-        + '<md:WCODataModelVersionCode>3.6</md:WCODataModelVersionCode>'
-        + '<md:WCOTypeName>RES</md:WCOTypeName>'
-        + '<Response>'
-        + '<FunctionCode>09</FunctionCode>'
-        + `<FunctionalReferenceID>${messageReference()}</FunctionalReferenceID>`
-        + '<IssueDateTime>'
-        + `<DateTimeString formatCode="304">${wcoDateTime(issuedAt)}</DateTimeString>`
-        + '</IssueDateTime>'
-        + '<AdditionalInformation>'
-        + '<StatementCode>A2</StatementCode>'
-        + '<StatementTypeCode>AFB</StatementTypeCode>'
-        + '</AdditionalInformation>'
-        + '<Declaration>'
-        + `<FunctionalReferenceID>${declaration.lrn}</FunctionalReferenceID>`
-        + `<ID>${declaration.mrn}</ID>`
-        + `<VersionID>${DECLARATION_VERSION}</VersionID>`
-        + '</Declaration>'
-        + '</Response>'
-        + '</md:MetaData>';
+    const wcoNamespace = 'xmlns:_2_2="urn:wco:datamodel:WCO:Response_DS:DMS:2"';
+
+    return '<_2:MetaData xmlns:_2="urn:wco:datamodel:WCO:DocumentMetaData-DMS:2">'
+        + '<_2:WCODataModelVersionCode>3.6</_2:WCODataModelVersionCode>'
+        + '<_2:WCOTypeName>RES</_2:WCOTypeName>'
+        + '<_2:ResponsibleCountryCode/>'
+        + '<_2:ResponsibleAgencyName/>'
+        + '<_2:AgencyAssignedCustomizationCode/>'
+        + '<_2:AgencyAssignedCustomizationVersionCode/>'
+        + '<_2_1:Response xmlns:_2_1="urn:wco:datamodel:WCO:RES-DMS:2">'
+        + '<_2_1:FunctionCode>09</_2_1:FunctionCode>'
+        + `<_2_1:FunctionalReferenceID>${messageReference()}</_2_1:FunctionalReferenceID>`
+        + '<_2_1:IssueDateTime>'
+        + `<_2_2:DateTimeString formatCode="304" ${wcoNamespace}>${wcoDateTime(issuedAt)}</_2_2:DateTimeString>`
+        + '</_2_1:IssueDateTime>'
+        + '<_2_1:AdditionalInformation>'
+        + '<_2_1:StatementCode>A2</_2_1:StatementCode>'
+        + '<_2_1:StatementTypeCode>AFB</_2_1:StatementTypeCode>'
+        + '</_2_1:AdditionalInformation>'
+        + '<_2_1:Declaration>'
+        + `<_2_1:FunctionalReferenceID>${declaration.lrn}</_2_1:FunctionalReferenceID>`
+        + `<_2_1:ID>${declaration.mrn}</_2_1:ID>`
+        + `<_2_1:VersionID>${DECLARATION_VERSION}</_2_1:VersionID>`
+        + '</_2_1:Declaration>'
+        + '</_2_1:Response>'
+        + '</_2:MetaData>';
 }
 
 function buildDmsCpi(declaration: DeclarationIdentity, issuedAt: Date): string {

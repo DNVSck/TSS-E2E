@@ -27,7 +27,7 @@ const traderDdaDocument = () => documentReference({
 
 const organicRegulationExemptionDocument = () => documentReference({
     documentCode: DOCUMENT_CODE.Y929,
-    documentReference: 'Excluded from Reg 834/2007',
+    documentReference: '',
     documentStatus: '',
     documentReason: 'Reason for Waiver',
 });
@@ -109,7 +109,7 @@ export const ffdH3StandaloneGoodsItem = (overrides?: Partial<FfdH3GoodsData>): F
     documentReferences: [
         documentReference({
             documentCode: DOCUMENT_CODE.C516,
-            documentStatus: DOCUMENT_STATUS.AE,
+            documentStatus: '',
             documentReference: IMPORTER_TEA,
         }),
     ],
@@ -132,7 +132,7 @@ export const ffdH3TraderDdaGoodsItem = (overrides?: Partial<FfdH3GoodsData>): Ff
         documentReferences: [
             documentReference({
                 documentCode: DOCUMENT_CODE.C516,
-                documentStatus: DOCUMENT_STATUS.AE,
+                documentStatus: '',
                 documentReference: IMPORTER_TEA,
             }),
             traderDdaDocument(),
@@ -145,7 +145,7 @@ export const ffdH3FiscalHoldGoodsItem = (overrides?: Partial<FfdH3GoodsData>): F
         documentReferences: [
             documentReference({
                 documentCode: DOCUMENT_CODE.C516,
-                documentStatus: DOCUMENT_STATUS.AE,
+                documentStatus: '',
                 documentReference: FISCAL_HOLD_TEA,
             }),
             traderDdaDocument(),
@@ -431,7 +431,7 @@ export const ffdH1NidomGoodsItem = (overrides?: Partial<FfdH1GoodsData>): FfdH1G
         documentReferences: [
             traderDdaDocument(),
             documentReference({ documentCode: DOCUMENT_CODE.N935, documentStatus: DOCUMENT_STATUS.AC, documentReference: '12345/09.01.2022' }),
-            documentReference({ documentCode: DOCUMENT_CODE['9WKS'], documentStatus: DOCUMENT_STATUS.AE, documentReference: 'GB553202734852', documentReason: 'See attached Worksheet1247-11012022' }),
+            documentReference({ documentCode: DOCUMENT_CODE['9WKS'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'GB553202734852', documentReason: '' }),
         ],
         additionalInformations: [
             additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.NIREM, description: '' }),
@@ -590,8 +590,8 @@ export const ffdH3TemporaryAdmissionOfPackingsGoodsItem = (overrides?: Partial<F
         typeOfPackages: TYPE_OF_PACKAGES.CASE,
         documentReferences: [
             traderDdaDocument(),
-            documentReference({ documentCode: DOCUMENT_CODE.Y900, documentStatus: '', documentReason: 'CITES Permits not required' }),
-            documentReference({ documentCode: DOCUMENT_CODE.C516, documentStatus: DOCUMENT_STATUS.AE, documentReference: IMPORTER_TEA }),
+            documentReference({ documentCode: DOCUMENT_CODE.Y900, documentStatus: '', documentReason: 'CITES Permits not required', documentReference:'' }),
+            documentReference({ documentCode: DOCUMENT_CODE.C516, documentStatus: '', documentReference: IMPORTER_TEA }),
         ],
         additionalInformations: [
             additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00500, description: 'IMPORTER' }),
@@ -618,12 +618,12 @@ export const ffdH3ProfessionalEquipmentMultipleGoodsItems = (): FfdH3GoodsData[]
             additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN31, description: 'Les McQueen New York US 1 Main Street NY1 234 sales invoices in name of' }),
         ],
     };
-    const citesNotRequired = documentReference({ documentCode: DOCUMENT_CODE.Y900, documentStatus: '', documentReason: 'CITES Permits not required' });
+    const citesNotRequired = documentReference({ documentCode: DOCUMENT_CODE.Y900, documentStatus: '', documentReason: 'CITES Permits not required', documentReference:'' });
     const temporaryAdmission = documentReference({
         documentCode: DOCUMENT_CODE.C516,
-        documentStatus: DOCUMENT_STATUS.AE,
+        documentStatus: '',
         documentReference: IMPORTER_TEA,
-        documentReason: 'Authorisation by declaration',
+        documentReason: '',
     });
     return [
         ffdH3StandaloneGoodsItem({
@@ -688,7 +688,7 @@ export const ffdH3MedicalEquipmentWithoutC516GoodsItem = (overrides?: Partial<Ff
             documentReference({
                 documentCode: DOCUMENT_CODE.Y160,
                 documentStatus: '',
-                documentReference: 'Not concerned with Reg 2024/573',
+                documentReference: '',
                 documentReason: 'Not concerned with Reg 2024/573',
             }),
         ],
