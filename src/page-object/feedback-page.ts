@@ -4,7 +4,7 @@ import { FeedbackData } from '../test-data/feedback-data';
 import { FEEDBACK } from '../constant/feedback-constant';
 import { BooleanValue } from '../constant/radio-value-constant';
 import { ROUTES } from '../constant/endpoints-constant';
-import { checkRadioByValue, fillInputValue } from '../helper/element-helper';
+import { checkRadioByValue, clickToLeaveScreen, fillInputValue } from '../helper/element-helper';
 
 const FEEDBACK_FORM_TIMEOUT = 30_000;
 
@@ -18,6 +18,7 @@ export class FeedbackPage extends BasePage {
     private readonly taskEaseReason: Locator;
     private readonly satisfactionScore: Locator;
     private readonly isPageUsefulRadios: Locator;
+    private readonly checkedIsPageUsefulRadio: Locator;
     private readonly commentInput: Locator;
     private readonly isPageUsefulError: Locator;
 
@@ -29,6 +30,7 @@ export class FeedbackPage extends BasePage {
         this.taskEaseReason = page.locator('#taskEaseReason');
         this.satisfactionScore = page.locator("input[name='satisfactionScore']");
         this.isPageUsefulRadios = page.locator(`input[name="${FEEDBACK.FIELD.IS_PAGE_USEFUL}"]`);
+        this.checkedIsPageUsefulRadio = page.locator(`input[name="${FEEDBACK.FIELD.IS_PAGE_USEFUL}"]:checked`);
         this.commentInput = page.locator(`textarea#${FEEDBACK.FIELD.COMMENT}`);
         this.isPageUsefulError = page.locator(`#${FEEDBACK.FIELD.IS_PAGE_USEFUL}-error`);
     }
@@ -63,6 +65,25 @@ export class FeedbackPage extends BasePage {
 
     async enterComment(comment: string): Promise<void> {
         await fillInputValue(this.commentInput, comment);
+    }
+
+    /** Continue to "Check your answers". */
+    async continueToCheckAnswers(): Promise<void> {
+        await clickToLeaveScreen(this.page, this.commonContinueButton);
+    }
+
+    /** The radio currently ticked ('' when none), as its posted value. */
+    async readIsPageUseful(): Promise<string> {
+        if (await this.checkedIsPageUsefulRadio.count() === 0) {
+            return '';
+        }
+        return await this.checkedIsPageUsefulRadio.getAttribute('value') ?? '';
+    }
+
+    /** The label the form shows beside the ticked radio, as the user read it. */
+    async readSelectedLabel(): Promise<string> {
+        const id = await this.checkedIsPageUsefulRadio.getAttribute('id');
+        return (await this.page.locator(`label[for="${id}"]`).innerText()).trim();
     }
 
     async isInlineErrorShown(): Promise<boolean> {

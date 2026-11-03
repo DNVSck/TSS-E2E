@@ -7,11 +7,9 @@ import { feedbackData } from '../../../src/test-data/feedback-data';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { FEEDBACK } from '../../../src/constant/feedback-constant';
 import { BOOLEAN } from '../../../src/constant/radio-value-constant';
-import { ROUTES } from '../../../src/constant/endpoints-constant';
 
 const { FROM_URL } = FEEDBACK;
 const PER_PAGE_FEEDBACK = '3055';
-const CONFIRMATION = new RegExp(`${ROUTES.PORTAL.FEEDBACK_CONFIRMATION}$`);
 
 test.describe('Per-page feedback - feedback submitted from the Beta banner while declaring', () => {
   test.use({ authProfile: COMPANY_PROFILE.AGENT });
@@ -30,9 +28,15 @@ test.describe('Per-page feedback - feedback submitted from the Beta banner while
     const fromUrl = await feedbackFlow.openFeedbackForm();
     expect(fromUrl).toBe(FROM_URL.DIRECTION_OF_DECLARATION);
 
-    await feedbackFlow.answerFeedbackForm(data);
-    await feedbackFlow.submitFeedback();
-    await expect.poll(() => new URL(basePage.getCurrentUrl()).pathname).toMatch(CONFIRMATION);
+    const answerShown = await feedbackFlow.answerFeedbackForm(data);
+    await feedbackFlow.continueToCheckAnswers();
+    expect(await feedbackFlow.readCheckedAnswers()).toEqual({
+      isPageUseful: answerShown,
+      comment: data.comment,
+    });
+
+    await feedbackFlow.saveFeedback();
+    await expect.poll(() => new URL(basePage.getCurrentUrl()).pathname).toMatch(new RegExp(`${fromUrl}$`));
   });
 
   test('Verify feedback can be submitted from a later page of the declaration', { tag: ['@regression', '@feedback', '@happyPath'] }, async ({ feedbackFlow, initialFormDeclaraPage, basePage }) => {
@@ -47,9 +51,15 @@ test.describe('Per-page feedback - feedback submitted from the Beta banner while
     const fromUrl = await feedbackFlow.openFeedbackForm();
     expect(fromUrl).toBe(FROM_URL.GB_NI_PROCESS);
 
-    await feedbackFlow.answerFeedbackForm(data);
-    await feedbackFlow.submitFeedback();
-    await expect.poll(() => new URL(basePage.getCurrentUrl()).pathname).toMatch(CONFIRMATION);
+    const answerShown = await feedbackFlow.answerFeedbackForm(data);
+    await feedbackFlow.continueToCheckAnswers();
+    expect(await feedbackFlow.readCheckedAnswers()).toEqual({
+      isPageUseful: answerShown,
+      comment: data.comment,
+    });
+
+    await feedbackFlow.saveFeedback();
+    await expect.poll(() => new URL(basePage.getCurrentUrl()).pathname).toMatch(new RegExp(`${fromUrl}$`));
   });
 
   test('Verify the comment is optional', { tag: ['@regression', '@feedback'] }, async ({ feedbackFlow, basePage }) => {
@@ -57,10 +67,15 @@ test.describe('Per-page feedback - feedback submitted from the Beta banner while
     reportTestCaseLink(PER_PAGE_FEEDBACK);
     const data = feedbackData({ isPageUseful: BOOLEAN.YES, comment: '' });
 
-    await feedbackFlow.openFeedbackForm();
-    await feedbackFlow.answerFeedbackForm(data);
-    await feedbackFlow.submitFeedback();
-    await expect.poll(() => new URL(basePage.getCurrentUrl()).pathname).toMatch(CONFIRMATION);
+    const fromUrl = await feedbackFlow.openFeedbackForm();
+    const answerShown = await feedbackFlow.answerFeedbackForm(data);
+    await feedbackFlow.continueToCheckAnswers();
+
+    const answers = await feedbackFlow.readCheckedAnswers();
+    expect(answers.isPageUseful).toBe(answerShown);
+
+    await feedbackFlow.saveFeedback();
+    await expect.poll(() => new URL(basePage.getCurrentUrl()).pathname).toMatch(new RegExp(`${fromUrl}$`));
   });
 
   test('Verify the user must say whether the page is useful', { tag: ['@regression', '@feedback', '@negative'] }, async ({ feedbackFlow }) => {
@@ -72,5 +87,25 @@ test.describe('Per-page feedback - feedback submitted from the Beta banner while
 
     expect(errors).toHaveLength(1);
     expect(inlineErrorShown).toBe(true);
+  });
+
+  test('Verify an answer can be changed before the feedback is saved', { tag: ['@regression', '@feedback'] }, async ({ feedbackFlow, basePage }) => {
+    await ReportLog.setStory('Feedback - change an answer on Check your answers');
+    reportTestCaseLink(PER_PAGE_FEEDBACK);
+    const data = feedbackData({ isPageUseful: BOOLEAN.YES });
+
+    const fromUrl = await feedbackFlow.openFeedbackForm();
+    await feedbackFlow.answerFeedbackForm(data);
+    await feedbackFlow.continueToCheckAnswers();
+
+    const { prefilled, label } = await feedbackFlow.changeIsPageUseful(BOOLEAN.NO);
+    expect(prefilled).toBe(BOOLEAN.YES);
+    expect(await feedbackFlow.readCheckedAnswers()).toEqual({
+      isPageUseful: label,
+      comment: data.comment,
+    });
+
+    await feedbackFlow.saveFeedback();
+    await expect.poll(() => new URL(basePage.getCurrentUrl()).pathname).toMatch(new RegExp(`${fromUrl}$`));
   });
 });

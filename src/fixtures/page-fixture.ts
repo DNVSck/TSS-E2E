@@ -41,6 +41,7 @@ import { Wizard } from '../page-object/components/wizard';
 import { SupplementaryDeclarationStep } from '../constant/supplementary-declaration-step-constant';
 import { PhaseBanner } from '../page-object/components/phase-banner';
 import { FeedbackPage } from '../page-object/feedback-page';
+import { FeedbackCheckAnswersPage } from '../page-object/feedback-check-answers-page';
 import { ScpPaymentPage } from '../page-object/scp-payment-page';
 import { PaymentsPage } from '../page-object/payments-page';
 
@@ -91,6 +92,7 @@ export type PageFixtureType = {
     supplementaryDeclarationWizard: Wizard<SupplementaryDeclarationStep>;
     phaseBanner: PhaseBanner;
     feedbackPage: FeedbackPage;
+    feedbackCheckAnswersPage: FeedbackCheckAnswersPage;
     scpPaymentPage: ScpPaymentPage;
     paymentsPage: PaymentsPage;
 }
@@ -256,6 +258,10 @@ export const pageFixture: ExtendParams[0] = {
 
     feedbackPage: async ({ page }, use) => {
         await use(new FeedbackPage(page));
+    },
+
+    feedbackCheckAnswersPage: async ({ page }, use) => {
+        await use(new FeedbackCheckAnswersPage(page));
     },
 
     scpPaymentPage: async ({ page, t }, use) => {

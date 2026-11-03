@@ -19,7 +19,6 @@ export const ROUTES = {
         COMPANY_INFORMATION_CHECK_ANSWERS: '/company-profile/company-information/edit/check-your-answer!',
         FEEDBACK_PER_PAGE_START: '/feedback/per-page/start',
         FEEDBACK_END_OF_JOURNEY: '/feedback/end-of-journey/',
-        FEEDBACK_CONFIRMATION: '/feedback/confirmation',
     }
 } as const;
 
