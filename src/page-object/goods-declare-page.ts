@@ -39,6 +39,8 @@ export class GoodsDeclarePage extends BasePage {
     private readonly tgpNumberInput: Locator;
     private readonly tgpNumberOptions: Locator;
 
+    private readonly controlledGoodsRadios: Locator;
+
     private readonly dangerousGoodsRadios: Locator;
     private readonly dangerousGoodsCodesInput: Locator;
 
@@ -97,6 +99,10 @@ export class GoodsDeclarePage extends BasePage {
 
         // Goods domestic status and additional risk status have no goods-item screens
         // — the app carries them over from the consignment — so no locators here.
+
+        // "Are these goods controlled?"
+        // "Do these goods require licences, certificates or other forms of control?"
+        this.controlledGoodsRadios = page.locator("input[name='isControlledGoods']");
 
         // "Dangerous goods"
         this.dangerousGoodsRadios = page.locator("input[name='isDangerousGoods']");
@@ -195,6 +201,16 @@ export class GoodsDeclarePage extends BasePage {
             this.tgpNumberOptions.filter({ hasText: recordId }).first(),
             lookup
         );
+        await this.clickContinueButton();
+    }
+
+    async selectGoodsControlledYes(): Promise<void> {
+        await checkRadioByValue(this.controlledGoodsRadios, BOOLEAN.YES);
+        await this.clickContinueButton();
+    }
+
+    async selectGoodsControlledNo(): Promise<void> {
+        await checkRadioByValue(this.controlledGoodsRadios, BOOLEAN.NO);
         await this.clickContinueButton();
     }
 

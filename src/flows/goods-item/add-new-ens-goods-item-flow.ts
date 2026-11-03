@@ -15,7 +15,8 @@ import { ENV } from '../../../config/environment';
  * consignment answers, because the goods flow branches on consignment-level facts
  * (see the goods BPMN): the domestic status and risk status are auto-filled from
  * the consignment and never shown here; ENS-only skips the procedure codes; the
- * TGP screen only shows on IMMI; the per-item container screen only
+ * controlled-goods question only shows when the consignment declared controlled
+ * goods; the TGP screen only shows on IMMI; the per-item container screen only
  * shows when the consignment declared goods in different containers; and the goods
  * invoice screen only shows (asking the item price alone) when the consignment
  * already captured an invoice currency.
@@ -40,6 +41,11 @@ export interface GoodsJourneyContext {
  * standalone wizards beside this file; the order and the conditions are not, which
  * is why each journey keeps its own spine.
  */
+function asksDangerousGoods(input: GoodsData, journey: GoodsJourneyContext): boolean {
+    return journey.hasDangerousGoods
+        && (!journey.isControlledGoods || input.areGoodsControlled);
+}
+
 export class AddNewEnsGoodsItemFlow {
     constructor(
         private readonly steps: GoodsItemSteps,
@@ -85,7 +91,14 @@ export class AddNewEnsGoodsItemFlow {
                 await this.steps.enterWarehouseIdentifierIfAsked(input, checkpoint);
             }
 
-            if (journey.hasDangerousGoods) {
+            // The goods-level "are the goods controlled?" question only appears when
+            // the consignment itself declared controlled goods.
+            if (journey.isControlledGoods) {
+                await checkpoint?.('Goods item - controlled goods', { probeErrors: true });
+                await this.steps.declareControlledGoods(input);
+            }
+
+            if (asksDangerousGoods(input, journey)) {
                 await this.steps.declareDangerousGoodsWithCodes(input, checkpoint);
             }
 

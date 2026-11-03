@@ -24,8 +24,8 @@ export interface SfdStandaloneGoodsJourney {
  * rather than one list with conditionals. Trying to express this as flags produced a
  * body nobody could read against the real wizard.
  *
- * Controlled consignment: dangerous -> country of origin -> commodity -> packaging
- * -> weight -> item price.
+ * Controlled consignment: controlled -> dangerous (if controlled) -> country of
+ * origin -> commodity -> packaging -> weight -> item price.
  *
  * Otherwise (the SFD-EIDR branch): commodity -> packaging -> weight, and nothing
  * else - the service does not ask this branch for country of origin or item price.
@@ -53,7 +53,7 @@ export class AddNewSfdStandaloneGoodsItemFlow {
             await this.steps.enterWarehouseIdentifierIfAsked(input, checkpoint);
 
             if (journey.isControlledConsignment) {
-                await this.steps.declareDangerousGoodsWithCodes(input, checkpoint);
+                await this.steps.declareControlledAndDangerousGoods(input, checkpoint);
                 await checkpoint?.('Goods item - country of origin', { probeErrors: true });
                 await this.steps.enterCountryOfOrigin(input);
                 await checkpoint?.('Goods item - commodity', { probeErrors: true });
