@@ -4,7 +4,7 @@ import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { IMPORTER_COMPANY_NAME, BASE_URL, FISCAL_HOLD_EORI } from '../../../config/environment';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { ffdH4TraderDdaGoodsItem, ffdH4ImmediatePaymentGoodsItem, ffdH4AuthorisationByDeclarationWithoutC601GoodsItem, ffdH4FromCustomsWarehouseWithoutC601GoodsItem, ffdH4FiscalHoldGoodsItem, ffdH4CashAccountGoodsItem } from '../../../src/test-data/ffd-standalone-goods-item-data';
-import { ffdH4ImmediatePaymentConsignment, ffdH4AuthorisationByDeclarationConsignment, ffdH4FromCustomsWarehouseConsignment, ffdH4FiscalHoldConsignment, ffdH4TraderCashAccountConsignment } from '../../../src/test-data/ffd-standalone-consignment-data';
+import { ffdH4ImmediatePaymentConsignment, ffdH4AuthorisationByDeclarationConsignment, ffdH4FromCustomsWarehouseConsignment, ffdH4FiscalHoldConsignment, ffdH4TraderCashAccountConsignment, ffdH4AgentCashAccountConsignment } from '../../../src/test-data/ffd-standalone-consignment-data';
 import { METHOD_OF_PAYMENT } from '../../../src/constant/method-of-payment-constant';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 
@@ -137,10 +137,9 @@ test.describe('GB to NI RoRo FFD H4 Standalone Declaration Process - Agent Cash 
     await createAndSubmitFfdH4StandaloneFlow.declareAndClose({
       testInfo,
       url: BASE_URL,
-      consignmentOverrides: {
+      consignmentOverrides: ffdH4AgentCashAccountConsignment({
         typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
-        methodOfPayment: METHOD_OF_PAYMENT.AGENTS_CDS_CASH_ACCOUNT,
-      },
+      }),
       goodsItemOverrides: ffdH4CashAccountGoodsItem(),
     });
   });

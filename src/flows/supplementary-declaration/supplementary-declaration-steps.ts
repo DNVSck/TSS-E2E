@@ -124,6 +124,25 @@ export class SupplementaryDeclarationSteps {
         );
     }
 
+    async declareBuyerSameAsImporterIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
+        return this.answerIfAsked(
+            STEP.BUYER_SAME_AS_IMPORTER,
+            'Answer "Is the buyer also the importer?"',
+            async () => {
+                if (input.isBuyerSameAsImporter) {
+                    await this.consignmentPage.selectBuyerSameAsImporterYes();
+                } else {
+                    await this.consignmentPage.selectBuyerSameAsImporterNo();
+                }
+                await this.consignmentPage.clickContinueButton();
+            },
+            checkpoint
+        );
+    }
+
     async enterBuyerProfileIfAsked(
         input: SupplementaryDeclarationData,
         checkpoint?: AccessibilityCheckpoint
@@ -160,6 +179,25 @@ export class SupplementaryDeclarationSteps {
             STEP.EXPORTER_PROFILE,
             `Name the exporter as "${input.exporterName}"`,
             () => this.consignmentPage.enterExporterProfile(toPartyAddress('exporter', input)),
+            checkpoint
+        );
+    }
+
+    async declareSellerSameAsExporterIfAsked(
+        input: SupplementaryDeclarationData,
+        checkpoint?: AccessibilityCheckpoint
+    ): Promise<boolean> {
+        return this.answerIfAsked(
+            STEP.SELLER_SAME_AS_EXPORTER,
+            'Answer "Is the seller also the exporter?"',
+            async () => {
+                if (input.isSellerSameAsExporter) {
+                    await this.consignmentPage.selectSellerSameAsExporterYes();
+                } else {
+                    await this.consignmentPage.selectSellerSameAsExporterNo();
+                }
+                await this.consignmentPage.clickContinueButton();
+            },
             checkpoint
         );
     }

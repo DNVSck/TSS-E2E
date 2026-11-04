@@ -84,7 +84,7 @@
     "heading": "Contact support to update your EORI number"
   },
   "linkConsignment": {
-    "lrnNotFound": "Rhowch LRN dilys. Ni chanfuwyd y llwyth.",
+    "lrnNotFound": "Rhowch LRN dilys. Ni chanfuwyd y llwyth",
     "alreadyLinked": "Mae'r llwyth hwn eisoes wedi'i gysylltu â symudiad."
   },
   "scp": {
@@ -102,6 +102,6 @@
   },
   "consignmentConfirmation": {
     "title": "Llwyth wedi'i gadarnhau",
-    "body": "Rydym wedi anfon e-bost at y cysylltiadau perthnasol i ddweud ei fod yn barod i gael ei ychwanegu at symudiad."
+    "body": "Rydym wedi anfon e-bost at y cysylltiadau perthnasol i ddweud ei fod yn barod i gael ei ychwanegu at symudiad"
   }
 }

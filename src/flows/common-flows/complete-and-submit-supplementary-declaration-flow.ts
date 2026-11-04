@@ -313,9 +313,11 @@ export class CompleteAndSubmitSupplementaryDeclarationFlow {
             await this.steps.selectMethodOfPaymentIfAsked(input, checkpoint);
 
             await this.steps.enterMeansOfTransportDetailsIfAsked(input, checkpoint);
+            await this.steps.declareBuyerSameAsImporterIfAsked(input, checkpoint);
             await this.steps.enterBuyerProfileIfAsked(input, checkpoint);
             await this.steps.enterTransportAndDestinationIfAsked(input, checkpoint);
             await this.steps.enterExporterProfileIfAsked(input, checkpoint);
+            await this.steps.declareSellerSameAsExporterIfAsked(input, checkpoint);
             await this.steps.enterSellerProfileIfAsked(input, checkpoint);
             await this.steps.enterDeliveryTermsIfAsked(input, checkpoint);
 

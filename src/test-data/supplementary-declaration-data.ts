@@ -31,9 +31,9 @@ import { VEHICLE_REGISTRATION_NUMBER } from './movements-data';
  * questions this declaration still has no answer to, so which screens appear depends
  * on what the frontier declaration already carried:
  *
- *   header   vehicle or trailer details -> buyer profile
+ *   header   vehicle or trailer details -> buyer same as importer -> buyer profile
  *            -> transport and destination -> exporter profile
- *            -> seller profile -> delivery terms
+ *            -> seller same as exporter -> seller profile -> delivery terms
  *            -> either the UN/LOCODE, or the delivery country then the delivery place
  *            -> invoice currency
  *   goods    additional risk status -> country of origin -> commodity information
@@ -68,6 +68,7 @@ export interface SupplementaryDeclarationData {
      */
     nationalityMeansOfTransport: string;
 
+    isBuyerSameAsImporter: boolean;
     buyerName: string;
     buyerStreetName: string;
     buyerStreetNumber: string;
@@ -87,6 +88,7 @@ export interface SupplementaryDeclarationData {
     exporterPostCode: string;
     exporterCountryCode: string;
 
+    isSellerSameAsExporter: boolean;
     sellerName: string;
     sellerStreetName: string;
     sellerStreetNumber: string;
@@ -206,6 +208,7 @@ const defaults: SupplementaryDeclarationData = {
     meansOfTransportRegistration: VEHICLE_REGISTRATION_NUMBER,
     nationalityMeansOfTransport: COUNTRY_CODE.UNITED_KINGDOM,
 
+    isBuyerSameAsImporter: true,
     buyerName: 'AUTOMATION BUYER LTD',
     buyerStreetName: 'DONEGALL SQUARE',
     buyerStreetNumber: '2',
@@ -223,6 +226,7 @@ const defaults: SupplementaryDeclarationData = {
     exporterPostCode: 'BT1 1AA',
     exporterCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
 
+    isSellerSameAsExporter: true,
     sellerName: 'AUTOMATION SELLER LTD',
     sellerStreetName: 'DONEGALL SQUARE',
     sellerStreetNumber: '3',

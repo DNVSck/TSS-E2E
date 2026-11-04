@@ -18,6 +18,8 @@ const RESULTS_TIMEOUT = 20_000;
  */
 const SUPPLEMENTARY_APPEARS_TIMEOUT = 120_000;
 
+const SEARCH_NAVIGATION_TIMEOUT = 120_000;
+
 /** The reference is the third path segment: /supplementary-declaration/<LRN>/overview */
 function supplementaryReferenceFrom(href: string): string {
     return href.split('/').filter(Boolean)[2] ?? '';
@@ -106,7 +108,7 @@ export class DeclarationOverviewPage extends BasePage {
     async searchByReference(reference: string): Promise<void> {
         const listUrl = new URL(this.page.url());
         listUrl.searchParams.set('searchQuery', reference);
-        await this.page.goto(listUrl.toString(), { waitUntil: 'domcontentloaded' });
+        await this.page.goto(listUrl.toString(), { waitUntil: 'domcontentloaded', timeout: SEARCH_NAVIGATION_TIMEOUT });
     }
 
     /**

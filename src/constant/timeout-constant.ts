@@ -24,3 +24,5 @@ export const RENDER_TIMEOUT = {
 } as const;
 
 export const ACCESSIBILITY_JOURNEY_TIMEOUT = 2_400_000;
+
+export const MULTIPLE_GOODS_JOURNEY_TIMEOUT = 1_800_000;

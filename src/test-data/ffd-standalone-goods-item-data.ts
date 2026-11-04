@@ -305,11 +305,13 @@ export const ffdH4CashAccountGoodsItem = (overrides?: Partial<FfdH4GoodsData>): 
                 documentCode: DOCUMENT_CODE.C601,
                 documentStatus: '',
                 documentReference: IMPORTER_IPO,
+                documentReason: '',
             }),
             documentReference({
                 documentCode: DOCUMENT_CODE.C505,
                 documentStatus: DOCUMENT_STATUS.CC,
                 documentReference: IMPORTER_CGU,
+                documentReason: '',
             }),
         ],
         ...overrides,

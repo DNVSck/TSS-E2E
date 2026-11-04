@@ -9,9 +9,11 @@ export const SUPPLEMENTARY_DECLARATION_STEP = {
     VEHICLE_DETAILS: 'supplementary-vehicle-details-roro-accompanied',
     /** RoRo unaccompanied: a trailer registration. The twin of the screen above. */
     TRAILER_DETAILS: 'supplementary-vehicle-details-roro-unaccompanied',
+    BUYER_SAME_AS_IMPORTER: 'importer-buyer-same',
     BUYER_PROFILE: 'buyer-profile',
     TRANSPORT_AND_DESTINATION: 'sfd-transport-and-destination-details',
     EXPORTER_PROFILE: 'exporter-profile',
+    SELLER_SAME_AS_EXPORTER: 'exporter-seller-same',
     SELLER_PROFILE: 'seller-profile',
     DELIVERY_TERMS: 'delivery-terms',
     /** Answering "yes, I know the UN/LOCODE" - one screen taking the code outright. */

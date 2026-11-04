@@ -364,6 +364,9 @@ export const FFD_MOP = {
     TRADER_CASH_ACCOUNT: {
         methodOfPayment: METHOD_OF_PAYMENT.TRADERS_CDS_CASH_ACCOUNT,
     },
+    AGENT_CASH_ACCOUNT: {
+        methodOfPayment: METHOD_OF_PAYMENT.AGENTS_CDS_CASH_ACCOUNT,
+    },
 } satisfies Record<string, Partial<FfdStandaloneConsignmentData>>;
 
 /**
@@ -405,6 +408,13 @@ export const ffdH4TraderCashAccountConsignment = (
         holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
         holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU }),
     ],
+    ...overrides,
+});
+
+export const ffdH4AgentCashAccountConsignment = (
+    overrides?: Partial<FfdStandaloneConsignmentData>
+): FfdStandaloneConsignmentData => ffdH4TraderCashAccountConsignment({
+    ...FFD_MOP.AGENT_CASH_ACCOUNT,
     ...overrides,
 });
 

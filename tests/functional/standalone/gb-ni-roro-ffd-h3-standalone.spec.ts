@@ -7,6 +7,7 @@ import { ffdH3TraderDdaGoodsItem, ffdH3FiscalHoldGoodsItem, ffdH3TemporaryAdmiss
 import { ffdH3FiscalHoldConsignment, ffdH3TemporaryAdmissionOfPackingsConsignment, ffdH3ProfessionalEquipmentConsignment, ffdH3MedicalEquipmentWithoutC516Consignment } from '../../../src/test-data/ffd-standalone-consignment-data';
 import { METHOD_OF_PAYMENT } from '../../../src/constant/method-of-payment-constant';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
+import { MULTIPLE_GOODS_JOURNEY_TIMEOUT } from '../../../src/constant/timeout-constant';
 
 const FFD_H3_TEMPORARY_ADMISSION_OF_PACKINGS_ARRIVED = '6173';
 const FFD_H3_PROFESSIONAL_EQUIPMENT_MULTIPLE_GOODS_ARRIVED = '6172';
@@ -246,6 +247,7 @@ test.describe('GB to NI RoRo FFD H3 Standalone - Temporary Admission of Packings
 
 test.describe('GB to NI RoRo FFD H3 Standalone - Temporary Admission of Multiple Goods Items - Importer Declare by themself', () => {
   test.use({ authProfile: COMPANY_PROFILE.IMPORTER });
+  test.describe.configure({ timeout: MULTIPLE_GOODS_JOURNEY_TIMEOUT });
 
   test.beforeEach(async () => {
     await ReportLog.setFeature('GB to NI FFD H3 Standalone Declaration Process');
