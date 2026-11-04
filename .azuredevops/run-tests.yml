@@ -28,20 +28,22 @@ parameters:
   - name: workers
     displayName: 'Parallel Playwright workers'
     type: number
-    default: 4
+    default: 5
     values:
       - 1
       - 2
       - 3
       - 4
+      - 5
 
   - name: shards
     displayName: 'Agents to split the run across (each runs the workers above, on its own accounts)'
     type: number
-    default: 2
+    default: 3
     values:
       - 1
       - 2
+      - 3
 
   - name: runAccessibilityTests
     displayName: 'Run Accessibility Tests'
