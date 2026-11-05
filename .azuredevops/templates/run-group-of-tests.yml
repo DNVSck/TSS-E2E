@@ -28,7 +28,6 @@ parameters:
       - 2
       - 3
       - 4
-      - 5
 
   - name: runAccessibilityTests
     type: boolean
@@ -84,8 +83,8 @@ steps:
         exit 1
       fi
 
-      if ! [[ "$WORKER_COUNT" =~ ^[1-5]$ ]]; then
-        echo "ERROR: workers must be between 1 and 5."
+      if ! [[ "$WORKER_COUNT" =~ ^[1-4]$ ]]; then
+        echo "ERROR: workers must be between 1 and 4."
         exit 1
       fi
 

@@ -34,7 +34,6 @@ parameters:
       - 2
       - 3
       - 4
-      - 5
 
   - name: shards
     displayName: 'Agents to split the run across (each runs the workers above, on its own accounts)'
