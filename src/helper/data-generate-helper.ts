@@ -18,8 +18,8 @@ import { WarehouseTypeCode } from '../constant/warehouse-type-constant';
 const ARRIVAL_LEAD_MS = 3 * 60 * 1000;
 const ARRIVAL_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 
-export function generateValidArrivalDate(): string {
-    const arrival = new Date(Date.now() + ARRIVAL_LEAD_MS);
+export function generateValidArrivalDate(leadMs: number = ARRIVAL_LEAD_MS): string {
+    const arrival = new Date(Date.now() + leadMs);
     return DateTimeUtil.formatUtcDateTimeLocal(arrival);
 }
 

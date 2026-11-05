@@ -29,6 +29,8 @@ import {
     holderTEA,
 } from './holder-of-authorisation-data';
 
+const FFD_ARRIVAL_LEAD_MS = 5 * 60 * 1000;
+
 /**
  * The FFD standalone consignment (the app's "Standard Declaration").
  *
@@ -247,7 +249,7 @@ export const ffdH1StandaloneConsignment = (
     return {
         ...data,
         arrivalDateTime: data.arrivalDateTime
-            ?? (data.isPreLodged ? generateValidArrivalDate() : generatePastArrivalDate()),
+            ?? (data.isPreLodged ? generateValidArrivalDate(FFD_ARRIVAL_LEAD_MS) : generatePastArrivalDate()),
     };
 };
 
