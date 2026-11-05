@@ -2,7 +2,6 @@ import { EnsDeclarationOptions } from '../flows/common-flows/create-draft-ens-de
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
-import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { document1UKI, ensSfdGoodsDocuments } from './document-reference-data';
 import { holderUKIM } from './holder-of-authorisation-data';
 import { previousDocumentDCR } from './previous-document-data';
@@ -74,7 +73,7 @@ function immiDeclaration(typeOfMovement: string): GmrDeclarationOverrides {
             additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
             commodityCode: IMMI_COMMODITY_CODE,
             documentReferences: [
-                document1UKI({ documentStatus: DOCUMENT_STATUS.AC }),
+                document1UKI(),
             ],
         },
     };
