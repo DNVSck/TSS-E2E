@@ -28,7 +28,7 @@ parameters:
   - name: workers
     displayName: 'Parallel Playwright workers'
     type: number
-    default: 5
+    default: 4
     values:
       - 1
       - 2

@@ -22,7 +22,7 @@ jobs:
       variableGroup: TSS-E2E-TEST
       testScope: regression
       testFilter: none
-      workers: 5
+      workers: 4
       shards: 3
 
   - template: templates/sharded-test-jobs.yml
@@ -33,5 +33,5 @@ jobs:
       variableGroup: TSS-E2E-SIT
       testScope: regression
       testFilter: none
-      workers: 5
+      workers: 4
       shards: 3
