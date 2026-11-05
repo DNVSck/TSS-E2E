@@ -38,7 +38,7 @@ test.describe('GB to NI RoRo ENS Goods CSV Upload - Agent Represents Trader', ()
     );
   });
 
-  test('Verify ENS-SFD - RoRo (Accompanied) with goods uploaded by CSV is created and submitted successfully (4000-000)', { tag: ['@csvUpload', '@regression', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
+  test('Verify ENS-SFD - RoRo (Accompanied) with goods uploaded by CSV is created and submitted successfully (4000-000)', { tag: ['@smoke', '@csvUpload', '@regression', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('ENS SFD - goods records uploaded by CSV');
     reportTestCaseLink(CSV_ENS_SFD);
     await ReportLog.step('Create and submit the ENS declaration with goods from CSV', () =>

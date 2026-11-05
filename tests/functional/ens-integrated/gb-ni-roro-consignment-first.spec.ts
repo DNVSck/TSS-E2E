@@ -29,7 +29,7 @@ test.describe('GB to NI RoRo Consignment First Declaration Process - Agent decla
     );
   });
 
-  test('Verify an ENS-SFD consignment declared first can be linked to a movement and submitted (4000-000)', { tag: ['@regression', '@consignmentFirst', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
+  test('Verify an ENS-SFD consignment declared first can be linked to a movement and submitted (4000-000)', { tag: ['@smoke', '@regression', '@consignmentFirst', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow }, testInfo) => {
     await ReportLog.setStory('Consignment first - ENS-SFD consignment linked to a RoRo Accompanied movement');
     reportTestCaseLink(CONSIGNMENT_FIRST_ENS_SFD);
     await ReportLog.step('Create the consignment, link it to a movement and submit', () =>

@@ -22,7 +22,7 @@ test.describe('GB to NI RoRo FFD H3 Standalone Declaration Process - Agent Repre
     await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
   });
 
-  test('Verify FFD H3 Standalone - Prelodged - RoRo (Accompanied) - Trader DDA is created and submitted successfully (4000-000)', { tag: ['@ffd', '@regression', '@happyPath'] }, async ({ createAndSubmitFfdH3StandaloneFlow }, testInfo) => {
+  test('Verify FFD H3 Standalone - Prelodged - RoRo (Accompanied) - Trader DDA is created and submitted successfully (4000-000)', { tag: ['@smoke', '@ffd', '@regression', '@happyPath'] }, async ({ createAndSubmitFfdH3StandaloneFlow }, testInfo) => {
     await ReportLog.setStory('FFD H3 Standalone - Prelodged - RoRo (Accompanied) - Trader DDA');
     await createAndSubmitFfdH3StandaloneFlow.declareAndClose({
       testInfo,

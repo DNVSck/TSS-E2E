@@ -20,7 +20,7 @@ test.describe('GB to NI RoRo FFD H4 Standalone Declaration Process - Agent Repre
     await representTraderFlow.representTrader(IMPORTER_COMPANY_NAME);
   });
 
-  test('Verify FFD H4 Standalone - Arrived - RoRo (Unaccompanied) - Trader DDA is created and submitted successfully (4000-000)', { tag: ['@ffd', '@regression', '@happyPath'] }, async ({ createAndSubmitFfdH4StandaloneFlow }, testInfo) => {
+  test('Verify FFD H4 Standalone - Arrived - RoRo (Unaccompanied) - Trader DDA is created and submitted successfully (4000-000)', { tag: ['@smoke', '@ffd', '@regression', '@happyPath'] }, async ({ createAndSubmitFfdH4StandaloneFlow }, testInfo) => {
     await ReportLog.setStory('FFD H4 Standalone - Arrived - RoRo (Unaccompanied) - Trader DDA');
     await createAndSubmitFfdH4StandaloneFlow.declareAndClose({
       testInfo,

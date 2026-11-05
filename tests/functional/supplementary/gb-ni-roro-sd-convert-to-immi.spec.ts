@@ -42,7 +42,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - converted to an IMMI de
 
     test(
         'Verify a supplementary declaration from an SFD in "Draft" is converted to an IMMI declaration, completed and submitted (4000-1SG)',
-        { tag: ['@regression', '@conversion'] },
+        { tag: ['@smoke', '@regression', '@conversion'] },
         async ({
             generateSdDraftThroughApiFlow,
             completeAndSubmitSupplementaryDeclarationFlow,

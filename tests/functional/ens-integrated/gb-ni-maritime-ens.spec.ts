@@ -42,7 +42,7 @@ for (const declarant of DECLARANTS) {
       );
     });
 
-    test('Verify ENS-SFD - Maritime is created and submitted successfully (4000-000)', { tag: ['@maritime', '@regression', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
+    test('Verify ENS-SFD - Maritime is created and submitted successfully (4000-000)', { tag: ['@smoke', '@maritime', '@regression', '@happyPath'] }, async ({ createAndSubmitEnsDeclarationFlow, triggerFinalStatusThroughCdsFlow }, testInfo) => {
       await ReportLog.setStory(`ENS SFD - GB to NI Maritime Simplified Customs Declaration - ${declarant.who}`);
       linkCase(declarant.ensSfd);
       const { generatedConsignment: sfd } = await ReportLog.step('Create and submit the ENS declaration', () =>

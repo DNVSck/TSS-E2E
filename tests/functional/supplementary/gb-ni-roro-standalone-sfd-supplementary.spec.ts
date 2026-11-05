@@ -45,7 +45,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - from SFD Standalone - A
 
     test(
         'Verify the supplementary declaration raised by an SFD standalone movement is completed and submitted successfully (4000-000) - Trader DDA - Agent Represents Trader',
-        { tag: ['@regression', '@happyPath'] },
+        { tag: ['@smoke', '@regression', '@happyPath'] },
         async ({
             generateSdDraftFromSfdStandaloneFlow,
             completeAndSubmitSupplementaryDeclarationFlow,

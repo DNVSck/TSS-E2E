@@ -77,7 +77,7 @@ const DEFAULT_AUTH_PROFILES: CompanyProfile[] = [
  * Which company profiles this run signs in.
  *
  * AUTH_PROFILES NARROWS the default above for a targeted run whose specs need
- * fewer companies - a @smoke run selects no IMPORTER spec, so:
+ * fewer companies - a @consignmentFirst run selects only AGENT specs, so:
  *
  *     AUTH_PROFILES=AGENT
  *

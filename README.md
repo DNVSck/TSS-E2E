@@ -317,10 +317,10 @@ OTP_ENABLED=true                         # environment enforces the TOTP step
 
 By default a run signs in every profile the suite uses — today `AGENT,IMPORTER` — so the
 usual command needs nothing extra. `AUTH_PROFILES` **narrows** that when a targeted run
-needs fewer companies (a `@smoke` run selects no `IMPORTER` spec, so it can skip that login):
+needs fewer companies (a `@consignmentFirst` run selects only `AGENT` specs, so it can skip the other logins):
 
 ```powershell
-$env:AUTH_PROFILES="AGENT"; pnpm test ... --grep @smoke
+$env:AUTH_PROFILES="AGENT"; pnpm test ... --grep @consignmentFirst
 ```
 
 A spec asking for a profile the run did not sign in fails immediately, naming the value to
