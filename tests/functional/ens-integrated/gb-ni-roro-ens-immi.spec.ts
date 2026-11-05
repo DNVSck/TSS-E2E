@@ -1,20 +1,16 @@
-﻿import { ADDITIONAL_INFORMATION_CODE } from '../../../src/constant/additional-information-constant';
-import { reportTestCaseLink } from '../../../src/helper/report-helper';
+﻿import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { ReportLog } from '../../../src/core/report/report-log';
 import { test } from '../../base-test';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
-import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
-import { documentReference, importerUkimsDocument } from '../../../src/test-data/document-reference-data';
-import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
-import { previousDocument } from '../../../src/test-data/previous-document-data';
-import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
-import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
+import { document1UKI, documentC676 } from '../../../src/test-data/document-reference-data';
+import { holderEXW, holderUKIM } from '../../../src/test-data/holder-of-authorisation-data';
+import { previousDocumentDCR } from '../../../src/test-data/previous-document-data';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
-import { IMPORTER_UKIMS, IMPORTER_EXW, BASE_URL } from '../../../config/environment';
+import { BASE_URL } from '../../../config/environment';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
 import { TGP_RECORD } from '../../../src/test-data/tgp-record-data';
-import { additionalInformation } from '../../../src/test-data/additional-information-data';
+import { informationECONR } from '../../../src/test-data/additional-information-data';
 import { immiRejectedByCds } from '../../../src/test-data/rejection-lever-data';
 import { ensImmiDeclaration } from '../../../src/test-data/ens-declaration-data';
 import { CANCELLATION_REASON } from '../../../src/test-data/consignment-data';
@@ -48,10 +44,10 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
         consignmentOverrides: {
           useIMMI: true,
           headerPreviousDocuments: [
-              previousDocument({ documentReference: '4GBXI553202734852-20240501' })
+              previousDocumentDCR()
           ],
           holdersOfAuthorisation: [
-              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM })
+              holderUKIM()
           ],
         },
         goodsItemOverrides: {
@@ -82,11 +78,11 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
         consignmentOverrides: {
           useIMMI: true,
           headerPreviousDocuments: [
-              previousDocument({ documentReference: '4GBXI553202734852-20240501' })
+              previousDocumentDCR()
           ],
           holdersOfAuthorisation: [
-              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM }),
-              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })
+              holderUKIM(),
+              holderEXW()
           ],
         },
         goodsItemOverrides: {
@@ -96,11 +92,11 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
           commodityCode: '63062900',
           // "1UKI" is inputted by user, checking the code list and input manually step.
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW}),
+            documentC676(),
           ],
           supplementaryUnits: '1',
           additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.ECONR, description: 'Reg No. 1234567890' }),
+            informationECONR(),
           ],
           additionalProcedureCodes: [
             ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
@@ -127,10 +123,10 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
         consignmentOverrides: {
           useIMMI: true,
           headerPreviousDocuments: [
-              previousDocument({ documentReference: '4GBXI553202734852-20240501' })
+              previousDocumentDCR()
           ],
           holdersOfAuthorisation: [
-              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM })
+              holderUKIM()
           ],
         },
         goodsItemOverrides: {
@@ -141,7 +137,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
           // Without TGP the trader quotes their own UKIMS authorisation - the TGP tests
           // never declare it because the service copies it into the generated IMMI.
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: '', documentReference: IMPORTER_UKIMS }),
+            document1UKI(),
           ]
         },
       })
@@ -165,10 +161,10 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
         consignmentOverrides: {
           useIMMI: true,
           headerPreviousDocuments: [
-              previousDocument({ documentReference: '4GBXI553202734852-20240501' })
+              previousDocumentDCR()
           ],
           holdersOfAuthorisation: [
-              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM })
+              holderUKIM()
           ],
         },
         goodsItemOverrides: {
@@ -178,7 +174,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
           commodityCode: '630629',
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE['1UKI'], documentStatus: '', documentReference: IMPORTER_UKIMS }),
+            document1UKI(),
           ]
         },
       })
@@ -203,10 +199,10 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Agent Represents Trader', () =>
         consignmentOverrides: {
           useIMMI: true,
           headerPreviousDocuments: [
-              previousDocument({ documentReference: '4GBXI553202734852-20240501' })
+              previousDocumentDCR()
           ],
           holdersOfAuthorisation: [
-              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM })
+              holderUKIM()
           ],
         },
         goodsItemOverrides: {
@@ -244,7 +240,7 @@ test.describe('GB to NI RoRo IMMI Pre-movement - Resubmission after CDS refuses 
     await createAndSubmitEnsDeclarationFlow.submitEnsDeclarationExpectingRejection(
       ensImmiDeclaration(testInfo, immiRejectedByCds()), 'IMMI'
     );
-    await resubmitDeclarationFlow.correctUkimsDocumentAndResubmitImmi(importerUkimsDocument());
+    await resubmitDeclarationFlow.correctUkimsDocumentAndResubmitImmi(document1UKI());
   });
 });
 

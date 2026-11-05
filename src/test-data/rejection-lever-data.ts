@@ -1,9 +1,8 @@
 import { HAULIER_EORI, IMPORTER_EORI, IMPORTER_UKIMS, BASE_URL  } from '../../config/environment';
-import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
 import { ConsignmentData } from './consignment-data';
 import { GoodsData } from './goods-data';
-import { holderOfAuthorisation, HolderOfAuthorisationData } from './holder-of-authorisation-data';
-import { importerUkimsDocument } from './document-reference-data';
+import { HolderOfAuthorisationData, holderEXW, holderSDE } from './holder-of-authorisation-data';
+import { document1UKI } from './document-reference-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
 import { TestInfo } from '@playwright/test';
 import { COMPANY_PROFILE, companyIdOf } from '../auth/credentials';
@@ -25,7 +24,7 @@ export const rejectedByIcs2 = (): Partial<ConsignmentData> => ({
 
 
 export const rejectedByCds = (): Partial<ConsignmentData> => ({
-    holdersOfAuthorisation: [holderOfAuthorisation({ roleId: HAULIER_EORI })],
+    holdersOfAuthorisation: [holderSDE({ roleId: HAULIER_EORI })],
     useImporterSde: false,
 });
 
@@ -36,7 +35,7 @@ const ukimsOfAnotherParty = IMPORTER_UKIMS.replace(
 );
 
 export const immiRejectedByCds = (): Partial<GoodsData> => ({
-    documentReferences: [importerUkimsDocument(ukimsOfAnotherParty)],
+    documentReferences: [document1UKI({ documentReference: ukimsOfAnotherParty })],
 });
 
 
@@ -52,7 +51,7 @@ export const immiStandaloneRejectedByCds = (): Partial<GoodsData> => ({
 
 
 export const sfdStandaloneRejectedByCds = (): HolderOfAuthorisationData =>
-    holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW });
+    holderEXW();
 
 export const ffdH1StandaloneRejectedByCds = (): HolderOfAuthorisationData =>
     sfdStandaloneRejectedByCds();

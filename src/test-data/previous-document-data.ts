@@ -18,14 +18,41 @@ export interface PreviousDocumentData {
     goodsItemIdentifier?: string;
 }
 
-const defaults: PreviousDocumentData = {
+type PreviousDocumentOverrides = Partial<Omit<PreviousDocumentData, 'documentType'>>;
+
+const citedPreviousDocument = (fixed: PreviousDocumentData) =>
+    (overrides?: PreviousDocumentOverrides): PreviousDocumentData => ({ goodsItemIdentifier: '', ...fixed, ...overrides });
+
+export const previousDocument337 = citedPreviousDocument({
+    documentCategory: PREVIOUS_DOCUMENT_CATEGORY.Z,
+    documentType: PREVIOUS_DOCUMENT_TYPE.TEMPORARY_STORAGE_DECLARATION_337,
+    documentReference: '22GBTSD123456789U3-1',
+});
+
+export const previousDocument355 = citedPreviousDocument({
+    documentCategory: PREVIOUS_DOCUMENT_CATEGORY.Z,
+    documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355,
+    documentReference: '24GB34F7Y1O2CX8PT4',
+});
+
+export const previousDocumentDCR = citedPreviousDocument({
     documentCategory: PREVIOUS_DOCUMENT_CATEGORY.Z,
     documentType: PREVIOUS_DOCUMENT_TYPE.DCR,
     documentReference: '4GBXI553202734852-20240501',
-    goodsItemIdentifier: '',
-};
+});
 
-export const previousDocument = (overrides?: Partial<PreviousDocumentData>): PreviousDocumentData => ({
-    ...defaults,
-    ...overrides,
+export const previousDocumentDCS = citedPreviousDocument({
+    documentCategory: PREVIOUS_DOCUMENT_CATEGORY.Z,
+    documentType: PREVIOUS_DOCUMENT_TYPE.DCS,
+    documentReference: 'DEF',
+});
+
+export const previousDocumentMRN = citedPreviousDocument({
+    documentCategory: PREVIOUS_DOCUMENT_CATEGORY.Z,
+    documentType: PREVIOUS_DOCUMENT_TYPE.MRN,
+    documentReference: '21GBCDS123456789B1',
+});
+
+export const ensHeaderPreviousDocument = (): PreviousDocumentData => previousDocumentDCR({
+    documentReference: '3XI352196303000-12345',
 });

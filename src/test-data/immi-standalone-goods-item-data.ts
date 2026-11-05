@@ -1,28 +1,12 @@
 import { GoodsData } from './goods-data';
-import { documentReference } from './document-reference-data';
-import { previousDocument } from './previous-document-data';
-import { additionalInformation } from './additional-information-data';
-import { DOCUMENT_CODE } from '../constant/document-code-constant';
+import { documentC601, documentC669, documentC670, documentN730 } from './document-reference-data';
+import { previousDocument355 } from './previous-document-data';
+import {
+    information00100, information10200, informationABDOU, informationGEN45,
+} from './additional-information-data';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
-import { PREVIOUS_DOCUMENT_TYPE } from '../constant/previous-document-type-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
-import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
 import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
-
-/**
- * The transport document an IMMI standalone goods item must carry (N730, a road
- * consignment note).
- *
- * Exported because two callers need the SAME record: the journey below declares it,
- * and the authority spec removes it to make CDS refuse the declaration and then
- * declares it again to correct that. Written once, so the correction cannot drift
- * from the thing it is correcting.
- */
-export const immiStandaloneTransportDocument = () => documentReference({
-    documentCode: DOCUMENT_CODE.N730,
-    documentStatus: DOCUMENT_STATUS.AE,
-    documentReference: '0054047',
-});
 
 export const IMMI_STANDALONE_COMMODITY_CODE = {
     SIX_DIGIT: '630629',
@@ -41,14 +25,14 @@ export const immiStandaloneInwardProcessingGoodsItem = (
     additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EN,
     commodityCode: IMMI_STANDALONE_COMMODITY_CODE.EIGHT_DIGIT,
     documentReferences: [
-        documentReference({ documentCode: DOCUMENT_CODE.N730, documentStatus: DOCUMENT_STATUS.AC,  documentReference: '0054039' }),
-        documentReference({ documentCode: DOCUMENT_CODE.C601, documentStatus: undefined,           documentReference: importerIpo }),
-        documentReference({ documentCode: DOCUMENT_CODE.C669, documentStatus: DOCUMENT_STATUS.AC,  documentReference: '0054037' }),
-        documentReference({ documentCode: DOCUMENT_CODE.C670, documentStatus: DOCUMENT_STATUS.AC,  documentReference: 'GBIWP12345' }),
+        documentN730({ documentStatus: DOCUMENT_STATUS.AC, documentReference: '0054039' }),
+        documentC601({ documentReference: importerIpo }),
+        documentC669(),
+        documentC670(),
     ],
     additionalInformations: [
-        additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.INWARD_PROCESSING_AUTHORISATION_10200, description: `IP${importerIpo}` }),
-        additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN45, description: '12345' }),
+        information10200({ description: `IP${importerIpo}` }),
+        informationGEN45(),
     ],
     additionalProcedureCodes: [
         ADDITIONAL_PROCEDURE_CODES.SPIMM_SPECIAL_PROCEDURE_1SP,
@@ -68,8 +52,8 @@ export const immiStandaloneInwardProcessingAbdGoodsItem = (
         ...base,
         additionalInformations: [
             ...(base.additionalInformations ?? []),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00100, description: 'Simplified authorisation' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.AUTHORISATION_BY_DECLARATION_ABDOU, description: '' }),
+            information00100(),
+            informationABDOU(),
         ],
     };
 };
@@ -86,18 +70,11 @@ export const immiStandaloneGoodsItem = (
     useTGP: false,
     commodityCode: IMMI_STANDALONE_COMMODITY_CODE.SIX_DIGIT,
     documentReferences: [
-        documentReference({
-            documentCode: DOCUMENT_CODE.N730,
-            documentStatus: DOCUMENT_STATUS.AE,
-            documentReference: '0054047',
-        }),
+        documentN730(),
     ],
 
     previousDocuments: [
-        previousDocument({
-            documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355,
-            documentReference: '24GB34F7Y1O2CX8PT4',
-        }),
+        previousDocument355(),
     ],
 
     ...overrides,

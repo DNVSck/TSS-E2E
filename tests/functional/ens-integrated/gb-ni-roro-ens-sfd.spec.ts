@@ -7,7 +7,7 @@ import {
     ensSfdGoodsDocuments,
 } from '../../../src/test-data/document-reference-data';
 import { BASE_URL } from '../../../config/environment';
-import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
+import { holderSDE } from '../../../src/test-data/holder-of-authorisation-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { NIRMS_COMMODITY, nirmsGoodsItem } from '../../../src/test-data/nirms-data';
 import { rejectedByCds } from '../../../src/test-data/rejection-lever-data';
@@ -144,7 +144,7 @@ test.describe('GB to NI RoRo Simplified Customs Declaration Process - Resubmissi
     await createAndSubmitEnsDeclarationFlow.submitEnsDeclarationExpectingRejection(
       ensSfdDeclaration(testInfo, rejectedByCds()), 'SFD'
     );
-    await resubmitDeclarationFlow.correctHolderOfAuthorisationAndResubmitSfd(holderOfAuthorisation());
+    await resubmitDeclarationFlow.correctHolderOfAuthorisationAndResubmitSfd(holderSDE());
   });
 });
 

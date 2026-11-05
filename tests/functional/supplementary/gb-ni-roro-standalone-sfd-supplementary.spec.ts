@@ -9,8 +9,7 @@ import {
     exciseGoodsSupplementaryDeclaration,
 } from '../../../src/test-data/supplementary-declaration-data';
 import { sfdStandaloneExciseGoodsItem } from '../../../src/test-data/sfd-standalone-goods-item-data';
-import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
-import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
+import { holderEXW } from '../../../src/test-data/holder-of-authorisation-data';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 import { GOODS_CSV } from '../../../src/test-data/goods-csv-data';
 
@@ -158,7 +157,7 @@ test.describe('GB to NI RoRo Supplementary Declaration - from SFD Standalone - I
                     url: BASE_URL,
                     consignmentOverrides: {
                         isControlledGoods: true,
-                        holdersOfAuthorisation: [holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })],
+                        holdersOfAuthorisation: [holderEXW()],
                     },
                     goodsItemOverrides: sfdStandaloneExciseGoodsItem(),
                 })

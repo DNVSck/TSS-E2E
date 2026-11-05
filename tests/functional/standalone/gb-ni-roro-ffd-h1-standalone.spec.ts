@@ -15,8 +15,7 @@ import { GOODS_CSV } from '../../../src/test-data/goods-csv-data';
 import { PORT_OF_ARRIVAL } from '../../../src/constant/port-of-arrival-constant';
 import { UNLOCODE } from '../../../src/constant/unlocode-constant';
 import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../../../src/constant/consignment-goods-domestic-status-constant';
-import { previousDocument } from '../../../src/test-data/previous-document-data';
-import { PREVIOUS_DOCUMENT_TYPE } from '../../../src/constant/previous-document-type-constant';
+import { previousDocument355, previousDocumentDCR } from '../../../src/test-data/previous-document-data';
 import { NATURE_OF_GOODS } from '../../../src/constant/nature-of-goods-constant';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 
@@ -472,8 +471,8 @@ test.describe("GB to NI RoRo FFD H1 Standalone - GB-NI 'At Risk' and EU CAP Safe
         unlocode: UNLOCODE.WARRENPOINT,
         deliveryPlaceUnlocode: UNLOCODE.WARRENPOINT,
         headerPreviousDocuments: [
-          previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: 'CSPUCN123' }),
-          previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: 'CSPUCN123' }),
+          previousDocument355({ documentReference: 'CSPUCN123' }),
+          previousDocumentDCR({ documentReference: 'CSPUCN123' }),
         ],
       },
       goodsItemOverrides: ffdH1AtRiskEuCapGoodsItem(),
@@ -504,8 +503,8 @@ test.describe("GB to NI RoRo FFD H1 Standalone - Import Pre-lodged Declaration (
         isSameNatureOfGoods: true,
         natureOfGoods: NATURE_OF_GOODS.TRANSFER_OF_OWNERSHIP_FOR_COMPENSATION,
         headerPreviousDocuments: [
-          previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '24GB34F7Y1O2CX8PT4' }),
-          previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: '4GB553202734852-12345' }),
+          previousDocument355(),
+          previousDocumentDCR({ documentReference: '4GB553202734852-12345' }),
         ],
       },
       goodsItemOverrides: ffdH1NidomGoodsItem(),

@@ -4,7 +4,7 @@
 import {
     BASE_URL, IMPORTER_COMPANY_NAME, HAULIER_COMPANY_NAME, IS_ISC2_MOCK,
 } from '../../../config/environment';
-import { importerUkimsDocument } from '../../../src/test-data/document-reference-data';
+import { document1UKI } from '../../../src/test-data/document-reference-data';
 import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
 import { sfdStandaloneGoodsItem } from '../../../src/test-data/sfd-standalone-goods-item-data';
 import { ReportLog } from '../../../src/core/report/report-log';
@@ -36,7 +36,7 @@ import {
     GMR_MOVEMENT, eidrGmrJourney, sfdGmrJourney, withHaulierAsCarrier,
 } from '../../../src/test-data/gmr-journey-data';
 import { haulierAsCarrier } from '../../../src/test-data/movements-data';
-import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
+import { holderSDE } from '../../../src/test-data/holder-of-authorisation-data';
 import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
 import { checkOnceRepresentationEnds } from '../../../src/flows/authority-check-flow';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
@@ -256,7 +256,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
 
             // Name the party the authorisation really belongs to - the importer being
             // declared for - which is exactly what CDS said it did not.
-            await consignmentOverviewFlow.correctHolderOfAuthorisation(holderOfAuthorisation());
+            await consignmentOverviewFlow.correctHolderOfAuthorisation(holderSDE());
 
             // The wizard ends on the record's own tab, where submit is rendered disabled
             await consignmentOverviewFlow.goToConsignmentOverview();
@@ -313,7 +313,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
 
             // Name the party the authorisation really belongs to - the importer being
             // declared for - which is exactly what CDS said it did not.
-            await importer!.consignment.correctHolderOfAuthorisation(holderOfAuthorisation());
+            await importer!.consignment.correctHolderOfAuthorisation(holderSDE());
 
             // Back up to the consignment in the IMPORTER's browser: the wizard ends on the
             // record's own tab, where submit is rendered disabled.
@@ -389,7 +389,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             // the importer's own UKIMS number. The reads left the browser on the goods
             // item, which is where that record lives.
             await declarationAccessFlow.openRecord(immi.goodsItem!); // NOSONAR - strictNullChecks makes this required; Sonar analyses without our tsconfig.
-            await goodsOverviewFlow.correctDocumentReference(importerUkimsDocument());
+            await goodsOverviewFlow.correctDocumentReference(document1UKI());
 
             await consignmentOverviewFlow.goToConsignmentOverview();
             await consignmentOverviewFlow.submitConsignment();
@@ -444,7 +444,7 @@ test.describe('ENS Integrated declaration authority - Agent declares as itself',
             // The correction undoes the lever exactly: the goods item's 1UKI goes back to
             // the importer's own UKIMS number.
             await importer!.declarations.openRecord(immi.goodsItem!); // NOSONAR - strictNullChecks makes this required; Sonar analyses without our tsconfig.
-            await importer!.goods.correctDocumentReference(importerUkimsDocument());
+            await importer!.goods.correctDocumentReference(document1UKI());
 
             await importer!.consignment.goToConsignmentOverview();
             await importer!.consignment.submitConsignment();

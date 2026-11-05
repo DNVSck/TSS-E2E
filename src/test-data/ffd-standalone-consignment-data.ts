@@ -13,17 +13,21 @@ import { DECLARATION_PROCEDURE } from '../constant/declaration-procedure-constan
 import { NATURE_OF_GOODS } from '../constant/nature-of-goods-constant';
 import { WAREHOUSE_TYPE } from '../constant/warehouse-type-constant';
 import { SUPERVISING_CUSTOMS_OFFICE } from '../constant/supervising-customs-office-constant';
-import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
 import { BUYER_EORI, EXPORTER_EORI, SELLER_EORI, FISCAL_HOLD_EORI } from '../../config/environment';
 import {
     generateRandomTransportDocumentNumber, generateValidArrivalDate, generatePastArrivalDate,
     generateRandomWarehouseIdentifier,
 } from '../helper/data-generate-helper';
-import { PreviousDocumentData, previousDocument } from './previous-document-data';
-import { PREVIOUS_DOCUMENT_TYPE } from '../constant/previous-document-type-constant';
+import {
+    PreviousDocumentData, previousDocument337, previousDocument355, previousDocumentDCR,
+    previousDocumentMRN,
+} from './previous-document-data';
 import { PREVIOUS_DOCUMENT_CATEGORY } from '../constant/previous-document-category-constant';
 import { locationOfGoodsOfOther } from '../helper/location-of-goods-helper';
-import { holderOfAuthorisation, HolderOfAuthorisationData } from './holder-of-authorisation-data';
+import {
+    HolderOfAuthorisationData, holderCGU, holderCWP, holderDPO, holderIPO, holderOPO,
+    holderTEA,
+} from './holder-of-authorisation-data';
 
 /**
  * The FFD standalone consignment (the app's "Standard Declaration").
@@ -221,10 +225,7 @@ const defaults: Omit<FfdStandaloneConsignmentData, 'transportDocumentNumber'> = 
     usePostponedVat: true,
 
     headerPreviousDocuments: [
-        previousDocument({
-            documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355,
-            documentReference: 'CSPUCN123',
-        }),
+        previousDocument355({ documentReference: 'CSPUCN123' }),
     ],
     holdersOfAuthorisation: [],
 };
@@ -268,7 +269,7 @@ export const ffdH2StandaloneConsignment = (
     supervisingCustomsOffice: SUPERVISING_CUSTOMS_OFFICE.GBBEL001,
     isSameNatureOfGoods: true,
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.PRIVATE_CUSTOMS_WAREHOUSE_CWP }),
+        holderCWP(),
     ],
     ...overrides,
 });
@@ -290,7 +291,7 @@ export const ffdH3StandaloneConsignment = (
     declarationProcedure: DECLARATION_PROCEDURE.H3_TEMPORARY_ADMISSION,
     headerPreviousDocuments: [],
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.TEMPORARY_ADMISSION_TEA }),
+        holderTEA(),
     ],
     ...overrides,
 });
@@ -299,7 +300,7 @@ export const ffdH3FiscalHoldConsignment = (
     overrides?: Partial<FfdStandaloneConsignmentData>
 ): FfdStandaloneConsignmentData => ffdH3StandaloneConsignment({
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.TEMPORARY_ADMISSION_TEA, roleId: FISCAL_HOLD_EORI }),
+        holderTEA({ roleId: FISCAL_HOLD_EORI }),
     ],
     ...overrides,
 });
@@ -322,12 +323,12 @@ export const ffdH4StandaloneConsignment = (
     isSameNatureOfGoods: true,
     natureOfGoods: NATURE_OF_GOODS.TRANSFER_OF_OWNERSHIP_FOR_COMPENSATION,
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU }),
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.DEFERMENT_OF_PAYMENT_DPO }),
+        holderIPO(),
+        holderCGU(),
+        holderDPO(),
     ],
     headerPreviousDocuments: [
-        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: 'CSPUCN123' }),
+        previousDocumentDCR({ documentReference: 'CSPUCN123' }),
     ],
     ...overrides,
 });
@@ -336,9 +337,9 @@ export const ffdH4FiscalHoldConsignment = (
     overrides?: Partial<FfdStandaloneConsignmentData>
 ): FfdStandaloneConsignmentData => ffdH4StandaloneConsignment({
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO, roleId: FISCAL_HOLD_EORI }),
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU, roleId: FISCAL_HOLD_EORI }),
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.DEFERMENT_OF_PAYMENT_DPO, roleId: FISCAL_HOLD_EORI }),
+        holderIPO({ roleId: FISCAL_HOLD_EORI }),
+        holderCGU({ roleId: FISCAL_HOLD_EORI }),
+        holderDPO({ roleId: FISCAL_HOLD_EORI }),
     ],
     ...overrides,
 });
@@ -405,8 +406,8 @@ export const ffdH4TraderCashAccountConsignment = (
 ): FfdStandaloneConsignmentData => ffdH4StandaloneConsignment({
     ...FFD_MOP.TRADER_CASH_ACCOUNT,
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU }),
+        holderIPO(),
+        holderCGU(),
     ],
     ...overrides,
 });
@@ -432,10 +433,7 @@ const ffdH1WarrenpointArrivedConsignment = (
     ...overrides,
 });
 
-const gbNiEntrySummaryDeclaration = () => previousDocument({
-    documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355,
-    documentReference: '23GB34F7Y1O2CX8PT4',
-});
+const gbNiEntrySummaryDeclaration = () => previousDocument355({ documentReference: '23GB34F7Y1O2CX8PT4' });
 
 export const ffdH1GbNiRiskArrivedConsignment = (
     overrides?: Partial<FfdStandaloneConsignmentData>
@@ -459,7 +457,7 @@ export const ffdH1StandardFrontierArrivedConsignment = (
     overrides?: Partial<FfdStandaloneConsignmentData>
 ): FfdStandaloneConsignmentData => ffdH1WarrenpointArrivedConsignment({
     headerPreviousDocuments: [
-        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: '4GB553202734852-12345' }),
+        previousDocumentDCR({ documentReference: '4GB553202734852-12345' }),
         gbNiEntrySummaryDeclaration(),
     ],
     ...overrides,
@@ -469,7 +467,7 @@ export const ffdH1StandardFrontierMultipleGoodsArrivedConsignment = (
     overrides?: Partial<FfdStandaloneConsignmentData>
 ): FfdStandaloneConsignmentData => ffdH1WarrenpointArrivedConsignment({
     headerPreviousDocuments: [
-        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: '1GB553202734852-12345' }),
+        previousDocumentDCR({ documentReference: '1GB553202734852-12345' }),
     ],
     ...overrides,
 });
@@ -481,22 +479,18 @@ export const ffdH2ReimportAfterTemporaryExportConsignment = (
     supervisingCustomsOffice: SUPERVISING_CUSTOMS_OFFICE.GBLBA001,
     natureOfGoods: NATURE_OF_GOODS.OTHER_TRANSACTIONS_NOT_CLASSIFIED,
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU }),
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.OUTWARD_PROCESSING_OPO }),
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.PRIVATE_CUSTOMS_WAREHOUSE_CWP }),
+        holderCGU(),
+        holderOPO(),
+        holderCWP(),
     ],
     headerPreviousDocuments: [
-        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '21GB34F7Y1O2CX8PT4' }),
-        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.MRN, documentReference: '21GBCDS123456789B1' }),
+        previousDocument355({ documentReference: '21GB34F7Y1O2CX8PT4' }),
+        previousDocumentMRN(),
     ],
     ...overrides,
 });
 
-const temporaryStorageDeclaration = (documentReference: string) => previousDocument({
-    documentCategory: PREVIOUS_DOCUMENT_CATEGORY.X,
-    documentType: PREVIOUS_DOCUMENT_TYPE.TEMPORARY_STORAGE_DECLARATION_337,
-    documentReference,
-});
+const temporaryStorageDeclaration = (documentReference: string) => previousDocument337({ documentCategory: PREVIOUS_DOCUMENT_CATEGORY.X, documentReference });
 
 export const ffdH3TemporaryAdmissionOfPackingsConsignment = (
     overrides?: Partial<FfdStandaloneConsignmentData>
@@ -507,11 +501,11 @@ export const ffdH3TemporaryAdmissionOfPackingsConsignment = (
     isSameNatureOfGoods: true,
     natureOfGoods: NATURE_OF_GOODS.OTHER_TRANSACTIONS,
     headerPreviousDocuments: [
-        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: 'CSPUCN123' }),
-        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.TEMPORARY_STORAGE_DECLARATION_337, documentReference: '22GBTSD123456789U3-1' }),
+        previousDocumentDCR({ documentReference: 'CSPUCN123' }),
+        previousDocument337(),
     ],
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.TEMPORARY_ADMISSION_TEA }),
+        holderTEA(),
     ],
     ...overrides,
 });
@@ -526,7 +520,7 @@ export const ffdH3ProfessionalEquipmentConsignment = (
     natureOfGoods: NATURE_OF_GOODS.OTHER_TRANSACTIONS,
     headerPreviousDocuments: [temporaryStorageDeclaration('CSPUCN123')],
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.TEMPORARY_ADMISSION_TEA }),
+        holderTEA(),
     ],
     ...overrides,
 });
@@ -549,11 +543,11 @@ export const ffdH4AuthorisationByDeclarationConsignment = (
     typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
     supervisingCustomsOffice: SUPERVISING_CUSTOMS_OFFICE.GBIPS001,
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.DEFERMENT_OF_PAYMENT_DPO }),
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU }),
+        holderDPO(),
+        holderCGU(),
     ],
     headerPreviousDocuments: [
-        previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: 'CSPUCN123' }),
+        previousDocument355({ documentReference: 'CSPUCN123' }),
     ],
     ...overrides,
 });
@@ -574,7 +568,7 @@ export const ffdH4FromCustomsWarehouseConsignment = (
     exporterPostCode: 'NY1 234',
     exporterCountryCode: COUNTRY_CODE.UNITED_KINGDOM,
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.PRIVATE_CUSTOMS_WAREHOUSE_CWP }),
+        holderCWP(),
     ],
     ...overrides,
 });

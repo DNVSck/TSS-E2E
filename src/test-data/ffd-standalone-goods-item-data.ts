@@ -1,40 +1,31 @@
 import { GoodsData, goods } from './goods-data';
-import { documentReference } from './document-reference-data';
-import { additionalInformation } from './additional-information-data';
-import { previousDocument } from './previous-document-data';
-import { PREVIOUS_DOCUMENT_TYPE } from '../constant/previous-document-type-constant';
+import {
+    document1207, document9028, document9120, document9WKS, documentC019, documentC505,
+    documentC516, documentC517, documentC601, documentC644, documentN853, documentN935,
+    documentU045, documentY160, documentY900, documentY922, documentY929,
+} from './document-reference-data';
+import {
+    information00100, information00500, informationABDIN, informationABDOU, informationGEN28,
+    informationGEN30, informationGEN31, informationGEN33, informationGEN45, informationNIIMP,
+    informationNIREM,
+} from './additional-information-data';
+import { previousDocument355, previousDocumentDCR } from './previous-document-data';
 import { ADDITIONAL_RISK_STATUS } from '../constant/additional-risk-status-constant';
-import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
 import { NATURE_OF_GOODS } from '../constant/nature-of-goods-constant';
 import { PREFERENCE_CODE, VALUATION_METHOD } from '../constant/preference-and-valuation-constant';
 import { TYPE_OF_PACKAGES } from '../constant/type-of-packages-constant';
-import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
 import { SUPERVISING_CUSTOMS_OFFICE } from '../constant/supervising-customs-office-constant';
 import { NATIONAL_ADDITIONAL_CODE } from '../constant/national-additional-code-constant';
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
-import { defermentAccountNumber } from '../helper/authorisation-helper';
 import { generateRandomInvoiceNumber } from '../helper/data-generate-helper';
-import { IMPORTER_DPO, IMPORTER_CWP, IMPORTER_TEA, IMPORTER_IPO, IMPORTER_CGU, IMPORTER_OPO, FISCAL_HOLD_TEA, FISCAL_HOLD_IPO } from '../../config/environment';
-
-const traderDdaDocument = () => documentReference({
-    documentCode: DOCUMENT_CODE['1207'],
-    documentStatus: DOCUMENT_STATUS.AG,
-    documentReference: defermentAccountNumber(IMPORTER_DPO),
-});
-
-const organicRegulationExemptionDocument = () => documentReference({
-    documentCode: DOCUMENT_CODE.Y929,
-    documentReference: '',
-    documentStatus: '',
-    documentReason: 'Reason for Waiver',
-});
+import { FISCAL_HOLD_TEA, FISCAL_HOLD_IPO } from '../../config/environment';
 
 const authorisationByDeclarationInformations = () => [
-    additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00100, description: 'Simplified Authorisation' }),
-    additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.AUTHORISATION_BY_DECLARATION_ABDIN, description: 'Authorisation by Declaration' }),
+    information00100({ description: 'Simplified Authorisation' }),
+    informationABDIN(),
 ];
 
 /**
@@ -71,7 +62,7 @@ export const ffdH1StandaloneGoodsItem = (overrides?: Partial<FfdH1GoodsData>): F
 export const ffdH1TraderDdaGoodsItem = (overrides?: Partial<FfdH1GoodsData>): FfdH1GoodsData =>
     ffdH1StandaloneGoodsItem({
         documentReferences: [
-            traderDdaDocument(),
+            document1207(),
         ],
         ...overrides,
     });
@@ -107,22 +98,15 @@ export const ffdH3StandaloneGoodsItem = (overrides?: Partial<FfdH3GoodsData>): F
     invoiceNumber: generateRandomInvoiceNumber(),
     itemPriceAmount: '500',
     documentReferences: [
-        documentReference({
-            documentCode: DOCUMENT_CODE.C516,
-            documentStatus: '',
-            documentReference: IMPORTER_TEA,
-        }),
+        documentC516(),
     ],
     additionalInformations: [
-        additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.NIREM, description: '' }),
-        additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN45, description: '12345' }),
-        additionalInformation({
-            code: ADDITIONAL_INFORMATION_CODE.GEN33,
-            description: 'Test Holder. 1 Main Street, Belfast BT1 1AA. Re-export date - 01/01/2027',
-        }),
+        informationNIREM(),
+        informationGEN45(),
+        informationGEN33(),
     ],
     previousDocuments: [
-        previousDocument(),
+        previousDocumentDCR(),
     ],
     ...overrides,
 });
@@ -130,12 +114,8 @@ export const ffdH3StandaloneGoodsItem = (overrides?: Partial<FfdH3GoodsData>): F
 export const ffdH3TraderDdaGoodsItem = (overrides?: Partial<FfdH3GoodsData>): FfdH3GoodsData =>
     ffdH3StandaloneGoodsItem({
         documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.C516,
-                documentStatus: '',
-                documentReference: IMPORTER_TEA,
-            }),
-            traderDdaDocument(),
+            documentC516(),
+            document1207(),
         ],
         ...overrides,
     });
@@ -143,12 +123,8 @@ export const ffdH3TraderDdaGoodsItem = (overrides?: Partial<FfdH3GoodsData>): Ff
 export const ffdH3FiscalHoldGoodsItem = (overrides?: Partial<FfdH3GoodsData>): FfdH3GoodsData =>
     ffdH3StandaloneGoodsItem({
         documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.C516,
-                documentStatus: '',
-                documentReference: FISCAL_HOLD_TEA,
-            }),
-            traderDdaDocument(),
+            documentC516({ documentReference: FISCAL_HOLD_TEA }),
+            document1207(),
         ],
         ...overrides,
     });
@@ -181,17 +157,8 @@ export const ffdH2StandaloneGoodsItem = (overrides?: Partial<FfdH2GoodsData>): F
     netMass: '100',
     invoiceNumber: generateRandomInvoiceNumber(),
     documentReferences: [
-        documentReference({
-            documentCode: DOCUMENT_CODE.C644,
-            documentStatus: DOCUMENT_STATUS.GE,
-            documentReference: 'COI.XI.2025.AUTO001',
-        }),
-        documentReference({
-            documentCode: DOCUMENT_CODE.C517,
-            documentStatus: undefined,
-            documentReference: IMPORTER_CWP,
-            documentReason: '',
-        }),
+        documentC644({ documentStatus: DOCUMENT_STATUS.GE }),
+        documentC517(),
     ],
     ...overrides,
 });
@@ -231,16 +198,8 @@ export const ffdH4StandaloneGoodsItem = (overrides?: Partial<FfdH4GoodsData>): F
         invoiceNumber,
         itemPriceAmount: '2000',
         documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.N935,
-                documentStatus: DOCUMENT_STATUS.AC,
-                documentReference: invoiceNumber,
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.C601,
-                documentStatus: '',
-                documentReference: IMPORTER_IPO,
-            }),
+            documentN935({ documentReference: invoiceNumber }),
+            documentC601(),
         ],
         ...overrides,
     };
@@ -251,20 +210,12 @@ export const ffdH4ImmediatePaymentGoodsItem = (overrides?: Partial<FfdH4GoodsDat
     return ffdH4StandaloneGoodsItem({
         invoiceNumber,
         documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.N935,
-                documentStatus: DOCUMENT_STATUS.AC,
-                documentReference: invoiceNumber,
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.C644,
-                documentStatus: DOCUMENT_STATUS.AE,
-                documentReference: 'COI.XI.2026.3367889',
-            }),
+            documentN935({ documentReference: invoiceNumber }),
+            documentC644({ documentReference: 'COI.XI.2026.3367889' }),
         ],
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00100, description: 'Simplified authorisation' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.AUTHORISATION_BY_DECLARATION_ABDIN, description: 'Authorisation by Declaration' }),
+            information00100(),
+            informationABDIN(),
         ],
         ...overrides,
     });
@@ -275,17 +226,9 @@ export const ffdH4TraderDdaGoodsItem = (overrides?: Partial<FfdH4GoodsData>): Ff
     return ffdH4StandaloneGoodsItem({
         invoiceNumber,
         documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.N935,
-                documentStatus: DOCUMENT_STATUS.AC,
-                documentReference: invoiceNumber,
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.C601,
-                documentStatus: '',
-                documentReference: IMPORTER_IPO,
-            }),
-            traderDdaDocument(),
+            documentN935({ documentReference: invoiceNumber }),
+            documentC601(),
+            document1207(),
         ],
         ...overrides,
     });
@@ -296,23 +239,9 @@ export const ffdH4CashAccountGoodsItem = (overrides?: Partial<FfdH4GoodsData>): 
     return ffdH4StandaloneGoodsItem({
         invoiceNumber,
         documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.N935,
-                documentStatus: DOCUMENT_STATUS.AC,
-                documentReference: invoiceNumber,
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.C601,
-                documentStatus: '',
-                documentReference: IMPORTER_IPO,
-                documentReason: '',
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.C505,
-                documentStatus: DOCUMENT_STATUS.CC,
-                documentReference: IMPORTER_CGU,
-                documentReason: '',
-            }),
+            documentN935({ documentReference: invoiceNumber }),
+            documentC601(),
+            documentC505(),
         ],
         ...overrides,
     });
@@ -323,17 +252,9 @@ export const ffdH4FiscalHoldGoodsItem = (overrides?: Partial<FfdH4GoodsData>): F
     return ffdH4StandaloneGoodsItem({
         invoiceNumber,
         documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.N935,
-                documentStatus: DOCUMENT_STATUS.AC,
-                documentReference: invoiceNumber,
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.C601,
-                documentStatus: '',
-                documentReference: FISCAL_HOLD_IPO,
-            }),
-            traderDdaDocument(),
+            documentN935({ documentReference: invoiceNumber }),
+            documentC601({ documentReference: FISCAL_HOLD_IPO }),
+            document1207(),
         ],
         ...overrides,
     });
@@ -358,8 +279,8 @@ export const ffdH1InwardProcessingAbdGoodsItem = (
         ...base,
         additionalInformations: [
             ...(base.additionalInformations ?? []),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00100, description: 'Simplified authorisation' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.AUTHORISATION_BY_DECLARATION_ABDOU, description: '' }),
+            information00100(),
+            informationABDOU(),
         ],
     };
 };
@@ -378,27 +299,14 @@ export const ffdH1AtRiskEuCapGoodsItem = (overrides?: Partial<FfdH1GoodsData>): 
         commodityCode: '0207141000',
         invoiceNumber,
         documentReferences: [
-             traderDdaDocument(),
-            documentReference({
-                documentCode: DOCUMENT_CODE.N853,
-                documentStatus: DOCUMENT_STATUS.XW,
-                documentReference: 'GBCHD2025.001234',
-                documentReason: 'Waiver claimed as licence not reqd',
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE['9120'],
-                documentStatus: DOCUMENT_STATUS.AE,
-                documentReference: 'GBAHC1234',
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.N935,
-                documentStatus: DOCUMENT_STATUS.AC,
-                documentReference: invoiceNumber,
-            }),
-            organicRegulationExemptionDocument(),
+             document1207(),
+            documentN853(),
+            document9120(),
+            documentN935({ documentReference: invoiceNumber }),
+            documentY929(),
         ],
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00500, description: 'D' }),
+            information00500({ description: 'D' }),
         ],
         nationalAdditionalCodes: [NATIONAL_ADDITIONAL_CODE.VATZ],
         ...overrides,
@@ -408,8 +316,8 @@ export const ffdH1AtRiskEuCapGoodsItem = (overrides?: Partial<FfdH1GoodsData>): 
 export const ffdH1AtRiskEuCapArrivedGoodsItem = (overrides?: Partial<FfdH1GoodsData>): FfdH1GoodsData =>
     ffdH1AtRiskEuCapGoodsItem({
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.NIIMP, description: '' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00500, description: 'A' }),
+            informationNIIMP(),
+            information00500({ description: 'A' }),
         ],
         ...overrides,
     });
@@ -431,12 +339,12 @@ export const ffdH1NidomGoodsItem = (overrides?: Partial<FfdH1GoodsData>): FfdH1G
         typeOfPackages: TYPE_OF_PACKAGES.BOX,
         valuationMethod: VALUATION_METHOD.TRANSACTION_VALUE,
         documentReferences: [
-            traderDdaDocument(),
-            documentReference({ documentCode: DOCUMENT_CODE.N935, documentStatus: DOCUMENT_STATUS.AC, documentReference: '12345/09.01.2022' }),
-            documentReference({ documentCode: DOCUMENT_CODE['9WKS'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'GB553202734852', documentReason: '' }),
+            document1207(),
+            documentN935({ documentReference: '12345/09.01.2022' }),
+            document9WKS({ documentReference: 'GB553202734852' }),
         ],
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.NIREM, description: '' }),
+            informationNIREM(),
         ],
         nationalAdditionalCodes: [NATIONAL_ADDITIONAL_CODE.VATZ],
         ...overrides,
@@ -458,13 +366,13 @@ export const ffdH1NotAtRiskGoodsItem = (overrides?: Partial<FfdH1GoodsData>): Ff
         preference: PREFERENCE_CODE.NORMAL_THIRD_COUNTRY_TARIFF,
         valuationMethod: VALUATION_METHOD.TRANSACTION_VALUE,
         documentReferences: [
-            traderDdaDocument(),
-            organicRegulationExemptionDocument(),
-            documentReference({ documentCode: DOCUMENT_CODE.N935, documentStatus: DOCUMENT_STATUS.AC, documentReference: '12345/31.07.2023' }),
+            document1207(),
+            documentY929(),
+            documentN935({ documentReference: '12345/31.07.2023' }),
         ],
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00500, description: 'IMPORTER' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.NIREM, description: '' }),
+            information00500(),
+            informationNIREM(),
         ],
         nationalAdditionalCodes: [NATIONAL_ADDITIONAL_CODE.VATZ],
         ...overrides,
@@ -473,7 +381,7 @@ export const ffdH1NotAtRiskGoodsItem = (overrides?: Partial<FfdH1GoodsData>): Ff
 export const ffdH1AtRiskGoodsItem = (overrides?: Partial<FfdH1GoodsData>): FfdH1GoodsData =>
     ffdH1NotAtRiskGoodsItem({
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00500, description: 'IMPORTER' }),
+            information00500(),
         ],
         ...overrides,
     });
@@ -484,20 +392,12 @@ export const ffdH1AtRiskSubsidyAppliedGoodsItem = (overrides?: Partial<FfdH1Good
         preference: PREFERENCE_CODE.PREFERENCE_WITHOUT_CONDITIONS_OR_LIMITS,
         countryOfPreferentialOrigin: COUNTRY_CODE.UNITED_KINGDOM,
         documentReferences: [
-            traderDdaDocument(),
-            documentReference({ documentCode: DOCUMENT_CODE.C505, documentStatus: DOCUMENT_STATUS.CC, documentReference: 'GBCGUGuaranteenotrequired' }),
-            organicRegulationExemptionDocument(),
-            documentReference({
-                documentCode: DOCUMENT_CODE.C644,
-                documentStatus: DOCUMENT_STATUS.GE,
-                documentReference: 'COI.XI.2025.AUTO001',
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.U045,
-                documentStatus: DOCUMENT_STATUS.AP,
-                documentReference: 'U045-0054047',
-            }),
-            documentReference({ documentCode: DOCUMENT_CODE.N935, documentStatus: DOCUMENT_STATUS.AC, documentReference: '12345/23.04.2024' }),
+            document1207(),
+            documentC505({ documentReference: 'GBCGUGuaranteenotrequired' }),
+            documentY929(),
+            documentC644({ documentStatus: DOCUMENT_STATUS.GE }),
+            documentU045(),
+            documentN935({ documentReference: '12345/23.04.2024' }),
         ],
         ...overrides,
     });
@@ -518,8 +418,8 @@ export const ffdH1StandardFrontierGoodsItem = (overrides?: Partial<FfdH1GoodsDat
         preference: PREFERENCE_CODE.NORMAL_THIRD_COUNTRY_TARIFF,
         valuationMethod: VALUATION_METHOD.TRANSACTION_VALUE,
         documentReferences: [
-            traderDdaDocument(),
-            documentReference({ documentCode: DOCUMENT_CODE.N935, documentStatus: DOCUMENT_STATUS.AC, documentReference: '12345/23.04.2024' }),
+            document1207(),
+            documentN935({ documentReference: '12345/23.04.2024' }),
         ],
         ...overrides,
     });
@@ -528,12 +428,12 @@ export const ffdH1StandardFrontierMultipleGoodsItems = (): FfdH1GoodsData[] => {
     const shared: Partial<FfdH1GoodsData> = {
         shippingMarks: 'BX-1234228/35',
         documentReferences: [
-            traderDdaDocument(),
-            documentReference({ documentCode: DOCUMENT_CODE.C505, documentStatus: DOCUMENT_STATUS.CC, documentReference: 'GBCGUGuaranteenotrequired' }),
-            documentReference({ documentCode: DOCUMENT_CODE.N935, documentStatus: DOCUMENT_STATUS.AC, documentReference: '12345/19.01.2021' }),
+            document1207(),
+            documentC505({ documentReference: 'GBCGUGuaranteenotrequired' }),
+            documentN935({ documentReference: '12345/19.01.2021' }),
         ],
         previousDocuments: [
-            previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355, documentReference: '21GB34F7Y1O2CX8PT4' }),
+            previousDocument355({ documentReference: '21GB34F7Y1O2CX8PT4' }),
         ],
     };
     const smallItem: Partial<FfdH1GoodsData> = {
@@ -563,13 +463,13 @@ export const ffdH2ReimportAfterTemporaryExportGoodsItem = (overrides?: Partial<F
         numberOfPackages: '50',
         typeOfPackages: TYPE_OF_PACKAGES.BOX,
         documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE.C019, documentStatus: undefined, documentReference: IMPORTER_OPO, documentReason: '' }),
-            documentReference({ documentCode: DOCUMENT_CODE.C505, documentStatus: DOCUMENT_STATUS.CC, documentReference: IMPORTER_CGU }),
-            documentReference({ documentCode: DOCUMENT_CODE.C517, documentStatus: undefined, documentReference: IMPORTER_CWP, documentReason: '' }),
+            documentC019(),
+            documentC505(),
+            documentC517(),
         ],
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00500, description: 'IMPORTER' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN45, description: 'Handbag defect repair invoice 123456' }),
+            information00500(),
+            informationGEN45({ description: 'Handbag defect repair invoice 123456' }),
         ],
         ...overrides,
     });
@@ -591,13 +491,13 @@ export const ffdH3TemporaryAdmissionOfPackingsGoodsItem = (overrides?: Partial<F
         numberOfPackages: '30',
         typeOfPackages: TYPE_OF_PACKAGES.CASE,
         documentReferences: [
-            traderDdaDocument(),
-            documentReference({ documentCode: DOCUMENT_CODE.Y900, documentStatus: '', documentReason: 'CITES Permits not required', documentReference:'' }),
-            documentReference({ documentCode: DOCUMENT_CODE.C516, documentStatus: '', documentReference: IMPORTER_TEA }),
+            document1207(),
+            documentY900(),
+            documentC516(),
         ],
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00500, description: 'IMPORTER' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN28, description: '28 days duration to be re exported on 30112021' }),
+            information00500(),
+            informationGEN28(),
         ],
         ...overrides,
     });
@@ -613,20 +513,15 @@ export const ffdH3ProfessionalEquipmentMultipleGoodsItems = (): FfdH3GoodsData[]
         numberOfPackages: '1',
         typeOfPackages: TYPE_OF_PACKAGES.CASE,
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00100, description: 'Simplified Authorisation' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.AUTHORISATION_BY_DECLARATION_ABDIN, description: 'Authorisation by declaration' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN28, description: '28 days duration to be re exported on 30112021' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN30, description: 'Instruments for tour band playing at London Arena' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN31, description: 'Les McQueen New York US 1 Main Street NY1 234 sales invoices in name of' }),
+            information00100({ description: 'Simplified Authorisation' }),
+            informationABDIN({ description: 'Authorisation by declaration' }),
+            informationGEN28(),
+            informationGEN30({ description: 'Instruments for tour band playing at London Arena' }),
+            informationGEN31({ description: 'Les McQueen New York US 1 Main Street NY1 234 sales invoices in name of' }),
         ],
     };
-    const citesNotRequired = documentReference({ documentCode: DOCUMENT_CODE.Y900, documentStatus: '', documentReason: 'CITES Permits not required', documentReference:'' });
-    const temporaryAdmission = documentReference({
-        documentCode: DOCUMENT_CODE.C516,
-        documentStatus: '',
-        documentReference: IMPORTER_TEA,
-        documentReason: '',
-    });
+    const citesNotRequired = documentY900();
+    const temporaryAdmission = documentC516();
     return [
         ffdH3StandaloneGoodsItem({
             ...shared,
@@ -637,7 +532,7 @@ export const ffdH3ProfessionalEquipmentMultipleGoodsItems = (): FfdH3GoodsData[]
             supplementaryUnits: '1',
             invoiceNumber: '1000',
             shippingMarks: 'CS-1234228/34',
-            documentReferences: [traderDdaDocument(), citesNotRequired, temporaryAdmission],
+            documentReferences: [document1207(), citesNotRequired, temporaryAdmission],
         }),
         ffdH3StandaloneGoodsItem({
             ...shared,
@@ -648,11 +543,11 @@ export const ffdH3ProfessionalEquipmentMultipleGoodsItems = (): FfdH3GoodsData[]
             invoiceNumber: '2000',
             shippingMarks: 'CS-1234228/35',
             documentReferences: [
-                traderDdaDocument(),
+                document1207(),
                 citesNotRequired,
-                documentReference({ documentCode: DOCUMENT_CODE.Y922, documentStatus: '', documentReason: 'No cat or dog fur' }),
+                documentY922({ documentReason: 'No cat or dog fur' }),
                 temporaryAdmission,
-                documentReference({ documentCode: DOCUMENT_CODE['9028'], documentStatus: DOCUMENT_STATUS.AC, documentReference: 'DEFRAIV 0054037-0054047' }),
+                document9028(),
             ],
         }),
         ffdH3StandaloneGoodsItem({
@@ -664,7 +559,7 @@ export const ffdH3ProfessionalEquipmentMultipleGoodsItems = (): FfdH3GoodsData[]
             supplementaryUnits: '1',
             invoiceNumber: '3000',
             shippingMarks: 'CS-1234228/36',
-            documentReferences: [traderDdaDocument(), temporaryAdmission],
+            documentReferences: [document1207(), temporaryAdmission],
         }),
     ];
 };
@@ -686,19 +581,14 @@ export const ffdH3MedicalEquipmentWithoutC516GoodsItem = (overrides?: Partial<Ff
         numberOfPackages: '30',
         typeOfPackages: TYPE_OF_PACKAGES.CASE,
         documentReferences: [
-            traderDdaDocument(),
-            documentReference({
-                documentCode: DOCUMENT_CODE.Y160,
-                documentStatus: '',
-                documentReference: '',
-                documentReason: 'Not concerned with Reg 2024/573',
-            }),
+            document1207(),
+            documentY160(),
         ],
         additionalInformations: [
             ...authorisationByDeclarationInformations(),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN28, description: '15 days duration to be re exported on 29022024' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN30, description: '30 days duration to be re exported on 29022024' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00500, description: 'IMPORTER' }),
+            informationGEN28({ description: '15 days duration to be re exported on 29022024' }),
+            informationGEN30({ description: '30 days duration to be re exported on 29022024' }),
+            information00500(),
         ],
         nationalAdditionalCodes: [NATIONAL_ADDITIONAL_CODE.VATZ],
         ...overrides,
@@ -720,12 +610,12 @@ export const ffdH4AuthorisationByDeclarationWithoutC601GoodsItem = (overrides?: 
         numberOfPackages: '100',
         typeOfPackages: TYPE_OF_PACKAGES.BOX,
         documentReferences: [
-            traderDdaDocument(),
-            documentReference({ documentCode: DOCUMENT_CODE.C644, documentStatus: DOCUMENT_STATUS.AE, documentReference: 'COI.XI.2025.AUTO001' }),
+            document1207(),
+            documentC644(),
         ],
         additionalInformations: [
             ...authorisationByDeclarationInformations(),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.SIMPLIFIED_AUTHORISATION_00500, description: 'Simplified Authorisation' }),
+            information00500({ description: 'Simplified Authorisation' }),
         ],
         nationalAdditionalCodes: [NATIONAL_ADDITIONAL_CODE.VATZ],
         ...overrides,
@@ -735,9 +625,9 @@ export const ffdH4FromCustomsWarehouseWithoutC601GoodsItem = (overrides?: Partia
     ffdH4AuthorisationByDeclarationWithoutC601GoodsItem({
         procedureCode: PROCEDURE_CODES.ENTRY_TO_IP_FROM_CW_5171,
         documentReferences: [
-            traderDdaDocument(),
-            documentReference({ documentCode: DOCUMENT_CODE.C517, documentStatus: undefined, documentReference: IMPORTER_CWP, documentReason: '' }),
-            documentReference({ documentCode: DOCUMENT_CODE.C644, documentStatus: DOCUMENT_STATUS.AE, documentReference: 'COI.XI.2025.AUTO001' }),
+            document1207(),
+            documentC517(),
+            documentC644(),
         ],
         ...overrides,
     });

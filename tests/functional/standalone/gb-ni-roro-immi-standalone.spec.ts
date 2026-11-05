@@ -1,26 +1,26 @@
-import { ADDITIONAL_INFORMATION_CODE } from '../../../src/constant/additional-information-constant';
 import { ReportLog } from '../../../src/core/report/report-log';
 import { test } from '../../base-test';
 import { COMPANY_PROFILE } from '../../../src/auth/credentials';
-import { IMPORTER_COMPANY_NAME, IMPORTER_IPO, IMPORTER_CWP, IMPORTER_EXW, IMPORTER_UKIMS, BASE_URL } from '../../../config/environment';
+import { IMPORTER_COMPANY_NAME, IMPORTER_IPO, IMPORTER_CWP, BASE_URL } from '../../../config/environment';
 import {
-  immiStandaloneGoodsItem, immiStandaloneTransportDocument, IMMI_STANDALONE_COMMODITY_CODE,
+  immiStandaloneGoodsItem, IMMI_STANDALONE_COMMODITY_CODE,
   immiStandaloneInwardProcessingGoodsItem, immiStandaloneInwardProcessingAbdGoodsItem,
 } from '../../../src/test-data/immi-standalone-goods-item-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-procedure-codes-constant';
 import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
 import { TGP_RECORD } from '../../../src/test-data/tgp-record-data';
-import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
-import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
+import { holderCWP, holderEXW, holderIPO } from '../../../src/test-data/holder-of-authorisation-data';
 import { PROCEDURE_CODES } from '../../../src/constant/procedure-codes-constant';
-import { documentReference } from '../../../src/test-data/document-reference-data';
-import { DOCUMENT_CODE } from '../../../src/constant/document-code-constant';
-import { DOCUMENT_STATUS } from '../../../src/constant/document-status-constant';
-import { additionalInformation } from '../../../src/test-data/additional-information-data';
-import { inwardProcessingAuthorisationNumber } from '../../../src/helper/authorisation-helper';
-import { previousDocument } from '../../../src/test-data/previous-document-data';
-import { PREVIOUS_DOCUMENT_TYPE } from '../../../src/constant/previous-document-type-constant';
+import {
+    documentC517, documentC601, documentC676, documentN730, documentN760,
+} from '../../../src/test-data/document-reference-data';
+import {
+    information10200, informationECONR, informationGEN45,
+} from '../../../src/test-data/additional-information-data';
+import {
+    previousDocumentDCR, previousDocumentDCS, previousDocumentMRN,
+} from '../../../src/test-data/previous-document-data';
 import { CANCELLATION_REASON } from '../../../src/test-data/consignment-data';
 import { immiStandaloneRejectedByCds } from '../../../src/test-data/rejection-lever-data';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
@@ -63,7 +63,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
           representationType: REPRESENTATION_TYPE.DIRECT,
           holdersOfAuthorisation: [
-              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })
+              holderEXW()
           ],
         },
         goodsItemOverrides: immiStandaloneGoodsItem(
@@ -72,11 +72,11 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
             additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EL,
             commodityCode: IMMI_STANDALONE_COMMODITY_CODE.EIGHT_DIGIT,
             documentReferences: [
-              documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,          documentReference: IMPORTER_EXW}),
-              documentReference({ documentCode: DOCUMENT_CODE.N730, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
+              documentC676(),
+              documentN730(),
             ],
             additionalInformations: [
-              additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.ECONR, description: 'Reg No. 1234567890' }),
+              informationECONR(),
             ],
             additionalProcedureCodes: [
               ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
@@ -133,7 +133,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_NON_EXCISE_1LG,
           commodityCode: IMMI_STANDALONE_COMMODITY_CODE.EIGHT_DIGIT,
           additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN45, description: '12345' }),
+            informationGEN45(),
           ],
         })
       })
@@ -157,8 +157,8 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
           representationType: REPRESENTATION_TYPE.INDIRECT,
           locationOfGoods: locationOfGoodsOfOther(IMPORTER_IPO),
           holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW }),
+            holderIPO(),
+            holderEXW(),
           ],
         },
   
@@ -168,18 +168,15 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Agent Represe
           commodityCode: IMMI_STANDALONE_COMMODITY_CODE.EIGHT_DIGIT,
           supplementaryUnits: '12',
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE.N760, documentStatus: DOCUMENT_STATUS.AC,   documentReference: '0054039' }),
-            documentReference({ documentCode: DOCUMENT_CODE.C601, documentStatus: undefined,            documentReference: IMPORTER_IPO }),
-            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW}),
+            documentN760(),
+            documentC601(),
+            documentC676(),
           ],
           additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.ECONR, description: 'Reg No. 1234567890' }),
+            informationECONR(),
             // 10200 restates the IP authorisation the C601 above cites, without the
             // country the document keeps - see inwardProcessingAuthorisationNumber.
-            additionalInformation({
-              code: ADDITIONAL_INFORMATION_CODE.INWARD_PROCESSING_AUTHORISATION_10200,
-              description: inwardProcessingAuthorisationNumber(IMPORTER_IPO),
-            }),
+            information10200(),
           ],
   
           // Declared on the "Additional procedure codes" tab, on TOP of the 1EN chosen
@@ -270,8 +267,8 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           representationType: undefined,
           locationOfGoods: locationOfGoodsOfOther(IMPORTER_CWP),
           holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW }),
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.PRIVATE_CUSTOMS_WAREHOUSE_CWP }),
+            holderEXW(),
+            holderCWP(),
           ],
         },
   
@@ -281,13 +278,13 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           commodityCode: IMMI_STANDALONE_COMMODITY_CODE.EIGHT_DIGIT,
           supplementaryUnits: '2',
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE.N760, documentStatus: DOCUMENT_STATUS.AC,   documentReference: '0054039' }),
-            documentReference({ documentCode: DOCUMENT_CODE.C517, documentStatus: undefined,   documentReference: IMPORTER_CWP }),
-            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,   documentReference: IMPORTER_EXW}),
+            documentN760(),
+            documentC517(),
+            documentC676(),
           ],
   
           additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.ECONR, description: 'Reg No. 1234567890' })
+            informationECONR()
           ],
           additionalProcedureCodes: [
             ADDITIONAL_PROCEDURE_CODES.SPIMM_SPECIAL_PROCEDURE_1SP,
@@ -365,7 +362,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_UNACCOMPANIED,
           representationType: undefined,
           holdersOfAuthorisation: [
-              holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })
+              holderEXW()
           ],
         },
 
@@ -375,11 +372,11 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           procedureCode: PROCEDURE_CODES.FREE_CIRC_WITH_EXCISE_WAREHOUSE_0700,
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_EXCISE_1EL,
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined,            documentReference: IMPORTER_EXW }),
-            documentReference({ documentCode: DOCUMENT_CODE.N730, documentStatus: DOCUMENT_STATUS.AE, documentReference: '0054047' }),
+            documentC676(),
+            documentN730(),
           ],
            additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.ECONR, description: 'Reg No. 1234567890' })
+            informationECONR()
           ],
           additionalProcedureCodes: [
             ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
@@ -440,12 +437,12 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           representationType: undefined,
           locationOfGoods: locationOfGoodsOfOther(IMPORTER_CWP),
           headerPreviousDocuments: [
-            previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCR, documentReference: '4GBXI896458895015-0611EC04' }),
-            previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.DCS, documentReference: 'DEF' }),
-            previousDocument({ documentType: PREVIOUS_DOCUMENT_TYPE.MRN, documentReference: '25GBCDS123456789B1' }),
+            previousDocumentDCR({ documentReference: '4GBXI896458895015-0611EC04' }),
+            previousDocumentDCS(),
+            previousDocumentMRN({ documentReference: '25GBCDS123456789B1' }),
           ],
           holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.PRIVATE_CUSTOMS_WAREHOUSE_CWP }),
+            holderCWP(),
           ],
         },
   
@@ -456,8 +453,8 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Importer Decl
           additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_CATEGORY_2_NON_EXCISE_1LG,
           warehouseType: WAREHOUSE_TYPE.PRIVATE_CUSTOMS_WAREHOUSE,
           documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE.N760, documentStatus: DOCUMENT_STATUS.AC,   documentReference: '0054039' }),
-            documentReference({ documentCode: DOCUMENT_CODE.C517, documentStatus: undefined,            documentReference: IMPORTER_CWP }),
+            documentN760(),
+            documentC517(),
           ],
   
           additionalProcedureCodes: [
@@ -651,7 +648,7 @@ test.describe('GB to NI RoRo IMMI Standalone Declaration Process - Resubmission 
     );
 
     await resubmitDeclarationFlow.declareDocumentAndResubmitStandaloneImmi(
-      immiStandaloneTransportDocument()
+      documentN730()
     );
   });
 });

@@ -1,21 +1,16 @@
 import { TestInfo } from '@playwright/test';
-import { BASE_URL, IMPORTER_EXW, IMPORTER_UKIMS } from '../../config/environment';
-import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
+import { BASE_URL } from '../../config/environment';
 import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
-import { PREVIOUS_DOCUMENT_TYPE } from '../constant/previous-document-type-constant';
 import { ConsignmentData, ensOnlyConsignment } from './consignment-data';
 import { MovementData } from './movements-data';
 import { MARITIME_NON_ILP_PORT } from '../constant/maritime-non-ilp-port-constant';
 import { EnsDeclarationOptions } from '../flows/common-flows/create-draft-ens-declaration-flow';
-import { previousDocument } from './previous-document-data';
-import { documentReference, ensSfdGoodsDocuments } from './document-reference-data';
-import { holderOfAuthorisation } from './holder-of-authorisation-data';
-import { DOCUMENT_CODE } from '../constant/document-code-constant';
-import { DOCUMENT_STATUS } from '../constant/document-status-constant';
+import { previousDocument355, previousDocumentDCR, ensHeaderPreviousDocument } from './previous-document-data';
+import { document1UKI, documentC676, ensSfdGoodsDocuments } from './document-reference-data';
+import { holderEXW, holderUKIM } from './holder-of-authorisation-data';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
-import { additionalInformation } from './additional-information-data';
-import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
+import { informationECONR } from './additional-information-data';
 import { generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
 
 
@@ -30,7 +25,7 @@ export const ensSfdDeclaration = (
     },
     consignmentOverrides: {
         headerPreviousDocuments: [
-            previousDocument({ documentReference: '3XI352196303000-12345' })
+            ensHeaderPreviousDocument()
         ],
         ...consignmentOverrides,
     },
@@ -42,7 +37,7 @@ export const ensSfdDeclaration = (
 export const exciseWarehouseDeclaration = (): Pick<EnsDeclarationOptions, 'consignmentOverrides' | 'goodsItemOverrides'> => ({
     consignmentOverrides: {
         holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW }),
+            holderEXW(),
         ],
     },
     goodsItemOverrides: {
@@ -50,10 +45,10 @@ export const exciseWarehouseDeclaration = (): Pick<EnsDeclarationOptions, 'consi
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.EXCISE_MOVEMENT_DUTY_SUSPENSION_F06,
         documentReferences: [
             ...ensSfdGoodsDocuments(),
-            documentReference({ documentCode: DOCUMENT_CODE.C676, documentStatus: undefined, documentReference: IMPORTER_EXW }),
+            documentC676(),
         ],
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.ECONR, description: 'Reg No. 1234567890' }),
+            informationECONR(),
         ],
     },
 });
@@ -75,7 +70,7 @@ export const ensOnlyDeclaration = (
     },
     consignmentOverrides: ensOnlyConsignment({
         headerPreviousDocuments: [
-            previousDocument({ documentReference: '3XI352196303000-12345' })
+            ensHeaderPreviousDocument()
         ],
         ...consignmentOverrides,
     }),
@@ -98,7 +93,7 @@ export const ensImmiDeclaration = (
     consignmentOverrides: {
         useIMMI: true,
         headerPreviousDocuments: [
-            previousDocument({ documentReference: '4GBXI553202734852-20240501' })
+            previousDocumentDCR()
         ],
         // Valid, so the only thing wrong with a rejected IMMI is what the lever changed.
         holdersOfAuthorisation: [immiAuthorisation()],
@@ -110,17 +105,10 @@ export const ensImmiDeclaration = (
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
         commodityCode: '630629',
         documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE['1UKI'],
-                documentStatus: '',
-                documentReference: IMPORTER_UKIMS,
-            }),
+            document1UKI(),
         ],
         previousDocuments: [
-            previousDocument({
-                documentType: PREVIOUS_DOCUMENT_TYPE.ENTRY_SUMMARY_DECLARATION_355,
-                documentReference: '24GB34F7Y1O2CX8PT4',
-            }),
+            previousDocument355(),
         ],
         supplementaryUnits: '1',
         ...goodsItemOverrides,
@@ -129,10 +117,7 @@ export const ensImmiDeclaration = (
 
 
 const immiAuthorisation = (roleId?: string) =>
-    holderOfAuthorisation({
-        typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM,
-        ...(roleId ? { roleId } : {}),
-    });
+    holderUKIM(roleId ? { roleId } : {});
 
 
 export const ensEidrDeclaration = (
@@ -147,7 +132,7 @@ export const ensEidrDeclaration = (
     consignmentOverrides: {
         isControlledGoods: false,
         headerPreviousDocuments: [
-            previousDocument({ documentReference: '3XI352196303000-12345' })
+            ensHeaderPreviousDocument()
         ],
         ...consignmentOverrides,
     },

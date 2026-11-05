@@ -4,8 +4,7 @@ import { COMPANY_PROFILE } from '../../../src/auth/credentials';
 import { IMPORTER_COMPANY_NAME, BASE_URL } from '../../../config/environment';
 import { REPRESENTATION_TYPE } from '../../../src/constant/representation-type-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../../../src/constant/type-of-movement-code-constant';
-import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
-import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
+import { holderEXW } from '../../../src/test-data/holder-of-authorisation-data';
 import { GOODS_CSV } from '../../../src/test-data/goods-csv-data';
 import { reportTestCaseLink } from '../../../src/helper/report-helper';
 
@@ -63,7 +62,7 @@ test.describe('GB to NI RoRo Standalone Goods CSV Upload - Agent Represents Trad
           typeOfMovement: TYPE_OF_MOVEMENT_OPTION_CODE.RORO_ACCOMPANIED,
           representationType: REPRESENTATION_TYPE.DIRECT,
           holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })
+            holderEXW()
           ],
         },
       }, GOODS_CSV.IMMI_STANDALONE)

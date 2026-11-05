@@ -12,17 +12,15 @@ import { DocumentReferenceData, documentReference } from "../../test-data/docume
 import {
     AdditionalInformationData, additionalInformation,
 } from "../../test-data/additional-information-data";
-import { PreviousDocumentData, previousDocument } from "../../test-data/previous-document-data";
+import { PreviousDocumentData, previousDocumentDCR } from "../../test-data/previous-document-data";
 import { TgpRecordData } from "../../test-data/tgp-record-data";
 import { hidesSupplementaryUnit } from "../../helper/procedure-code-helper";
-import { nirmsDocumentCitations } from '../../test-data/nirms-data';
+import { nirmsDocumentCitations, immiNirmsDocumentCitation } from '../../test-data/nirms-data';
 import { AUDIT_RECORD_SAMPLE } from '../../test-data/goods-data';
 import { ADDITIONAL_PROCEDURE_CODES } from '../../constant/additional-procedure-codes-constant';
 import { NATIONAL_ADDITIONAL_CODE } from '../../constant/national-additional-code-constant';
 import { AccessibilityAudit } from '../accessibility-audit-flow';
 import { verifySubmittedWithoutErrors } from '../../helper/declaration-status-helper';
-import { DOCUMENT_CODE } from '../../constant/document-code-constant';
-import { IMPORTER_NIRMS } from '../../../config/environment';
 
 const DESCRIPTION_ATTEMPTS = 3;
 
@@ -127,7 +125,7 @@ export class GoodsOverviewFlow {
         await audit.verifyWizard({
             testInfo, record, name: 'previous document',
             open: () => this.goodsOverviewPage.declareNewPreviousDocument(),
-            steps: () => this.previousDocumentDeclarePage.steps(previousDocument()),
+            steps: () => this.previousDocumentDeclarePage.steps(previousDocumentDCR()),
         });
 
         await audit.verifyWizard({
@@ -288,14 +286,7 @@ export class GoodsOverviewFlow {
     }
 
     async verifyImmiNirmsDocumentReference(): Promise<void> {
-        await this.verifyDocumentReferences([
-            documentReference({
-                documentCode: DOCUMENT_CODE['1RMS'],
-                documentReference: IMPORTER_NIRMS,
-                documentStatus: undefined,
-                documentReason: undefined,
-            }),
-        ], 'IMMI');
+        await this.verifyDocumentReferences([immiNirmsDocumentCitation()], 'IMMI');
     }
 
     async removeAdditionalProcedureCode(code: string): Promise<void> {

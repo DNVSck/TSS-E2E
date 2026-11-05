@@ -6,12 +6,11 @@ import { ADDITIONAL_RISK_STATUS } from '../constant/additional-risk-status-const
 import { METHOD_OF_PAYMENT, MethodOfPaymentCode } from '../constant/method-of-payment-constant';
 import { PREFERENCE_CODE, VALUATION_METHOD } from '../constant/preference-and-valuation-constant';
 import { UNLOCODE, UnlocodeCode } from '../constant/unlocode-constant';
-import { DocumentReferenceData, documentReference, goodsDocumentsWithoutSde } from './document-reference-data';
+import {
+    DocumentReferenceData, document1207, document9WKS, goodsDocumentsWithoutSde,
+} from './document-reference-data';
 import { DOCUMENT_CODE } from '../constant/document-code-constant';
-import { DOCUMENT_STATUS } from '../constant/document-status-constant';
 import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
-import { defermentAccountNumber } from '../helper/authorisation-helper';
-import { IMPORTER_DPO } from '../../config/environment';
 import { generateRandomInvoiceNumber, generateRandomTransportDocumentNumber } from '../helper/data-generate-helper';
 import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
 import { VEHICLE_REGISTRATION_NUMBER } from './movements-data';
@@ -315,11 +314,7 @@ export const traderDefermentSupplementaryDeclaration = (
 ): SupplementaryDeclarationData => supplementaryDeclaration({
     methodOfPayment: METHOD_OF_PAYMENT.TRADERS_OWN_DDA,
     documentReferences: [
-        documentReference({
-            documentCode: DOCUMENT_CODE['1207'],
-            documentStatus: DOCUMENT_STATUS.AG,
-            documentReference: defermentAccountNumber(IMPORTER_DPO),
-        }),
+        document1207(),
     ],
     ...overrides,
 });
@@ -376,11 +371,7 @@ export const tempAdmissionSupplementaryDeclaration = (
     ],
     documentReferencesToRemove: [DOCUMENT_CODE.C506, DOCUMENT_CODE.C505],
     documentReferences: [
-        documentReference({
-            documentCode: DOCUMENT_CODE['9WKS'],
-            documentStatus: DOCUMENT_STATUS.AC,
-            documentReference: '9WKS-TAVAL0001',
-        }),
+        document9WKS({ documentReference: '9WKS-TAVAL0001' }),
     ],
     ...overrides,
 });

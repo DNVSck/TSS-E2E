@@ -1,6 +1,8 @@
 import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
-import { DocumentReferenceData, documentReference } from './document-reference-data';
+import {
+    DocumentReferenceData, documentC640, documentC644, documentY942,
+} from './document-reference-data';
 import { GoodsData } from './goods-data';
 import { IMPORTER_NIRMS } from '../../config/environment';
 
@@ -18,6 +20,8 @@ export interface NirmsCommodity {
     supportingDocuments: readonly DocumentReferenceData[];
 }
 
+const coiDocument = (): DocumentReferenceData => documentC644({ documentReference: 'COI.XI.2025.1234567' });
+
 export const NIRMS_COMMODITY = {
 
     LIVE_CARP: {
@@ -25,11 +29,7 @@ export const NIRMS_COMMODITY = {
         goodsDescription: 'Live carp',
         documentCode: DOCUMENT_CODE.N853,
         supportingDocuments: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.C644,
-                documentStatus: DOCUMENT_STATUS.AE,
-                documentReference: 'COI.XI.2025.1234567',
-            }),
+            coiDocument(),
         ],
     },
     
@@ -38,22 +38,9 @@ export const NIRMS_COMMODITY = {
         goodsDescription: 'Live trout',
         documentCode: DOCUMENT_CODE.C673,
         supportingDocuments: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.C644,
-                documentStatus: DOCUMENT_STATUS.AE,
-                documentReference: 'COI.XI.2025.1234567',
-            }),
-             documentReference({
-                documentCode: DOCUMENT_CODE.C640,
-                documentStatus: DOCUMENT_STATUS.AE,
-                documentReference: 'GBCHD12345',
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.Y942,
-                documentStatus: undefined,
-                documentReason: 'Reg 2016/1141 exempt',
-                documentReference: undefined,
-            }),
+            coiDocument(),
+             documentC640(),
+            documentY942(),
         ],
     },
 
@@ -62,11 +49,7 @@ export const NIRMS_COMMODITY = {
         goodsDescription: 'Fresh carrots',
         documentCode: DOCUMENT_CODE.C085,
         supportingDocuments: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.C644,
-                documentStatus: DOCUMENT_STATUS.AE,
-                documentReference: 'COI.XI.2025.1234567',
-            }),
+            coiDocument(),
         ],
     },
 } as const satisfies Record<string, NirmsCommodity>;
@@ -81,24 +64,26 @@ export const nirmsGoodsItem = (commodity: NirmsCommodity): Partial<GoodsData> =>
 const chedNirmsReference = (year: number): string => `GBCHD${year}.NIRMS`;
 
 
-const chedNirmsDocument = (code: string, year: number): DocumentReferenceData =>
-    documentReference({
-        documentCode: code,
-        documentReference: chedNirmsReference(year),
-        documentStatus: DOCUMENT_STATUS.XW,
-        documentReason: IMPORTER_NIRMS,
-    });
+const chedNirmsDocument = (code: string, year: number): DocumentReferenceData => ({
+    documentCode: code,
+    documentReference: chedNirmsReference(year),
+    documentStatus: DOCUMENT_STATUS.XW,
+    documentReason: IMPORTER_NIRMS,
+});
 
 const NIRMS_DOCUMENT_REFERENCE: Record<string, (year: number) => DocumentReferenceData> = {
     [DOCUMENT_CODE.N853]: year => chedNirmsDocument(DOCUMENT_CODE.N853, year),
     [DOCUMENT_CODE.C085]: year => chedNirmsDocument(DOCUMENT_CODE.C085, year),
-    [DOCUMENT_CODE.C673]: () => documentReference({
+    [DOCUMENT_CODE.C673]: () => ({
         documentCode: DOCUMENT_CODE.C673,
         documentReference: 'GBIUUNIRMS',
-        documentStatus: undefined,
-        documentReason: undefined,
     }),
 };
+
+export const immiNirmsDocumentCitation = (): DocumentReferenceData => ({
+    documentCode: DOCUMENT_CODE['1RMS'],
+    documentReference: IMPORTER_NIRMS,
+});
 
 export function nirmsDocumentCitations(codes: string[], year: number): DocumentReferenceData[] {
     return codes.map(code => {

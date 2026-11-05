@@ -4,9 +4,9 @@ import { ConsignmentOverviewPage } from "../../page-object/consignment-overview-
 import { PreviousDocumentDeclarePage } from "../../page-object/header-previous-documents-declare-page";
 import { HolderOfAuthorisationDeclarePage } from "../../page-object/holder-of-authorisation-declare-page";
 import { ConsignmentDetailPage } from '../../page-object/consignment-detail-page';
-import { PreviousDocumentData, previousDocument } from "../../test-data/previous-document-data";
+import { PreviousDocumentData, previousDocumentDCR } from "../../test-data/previous-document-data";
 import {
-    HolderOfAuthorisationData, holderOfAuthorisation,
+    HolderOfAuthorisationData, holderSDE,
 } from "../../test-data/holder-of-authorisation-data";
 import { TranslationKey, TFunction } from '../../fixtures/locale-fixture';
 import {
@@ -316,7 +316,7 @@ export class ConsignmentOverviewFlow {
             record: 'Consignment',
             name: 'previous document',
             open: () => this.consignmentOverviewPage.openNewHeaderPreviousDocument(),
-            steps: () => this.previousDocumentDeclarePage.steps(previousDocument()),
+            steps: () => this.previousDocumentDeclarePage.steps(previousDocumentDCR()),
         });
 
         await audit?.verifyWizard({
@@ -324,7 +324,7 @@ export class ConsignmentOverviewFlow {
             record: 'Consignment',
             name: 'holder of authorisation',
             open: () => this.consignmentOverviewPage.openNewHolderOfAuthorisation(),
-            steps: () => this.holderOfAuthorisationDeclarePage.steps(holderOfAuthorisation()),
+            steps: () => this.holderOfAuthorisationDeclarePage.steps(holderSDE()),
         });
     }
 

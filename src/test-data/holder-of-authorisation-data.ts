@@ -13,14 +13,52 @@ export interface HolderOfAuthorisationData {
     roleId: string;
 }
 
-const defaults: HolderOfAuthorisationData = {
-    typeCode: AUTHORISATION_TYPE_CODE.SIMPLIFIED_DECLARATION_PROCEDURE_SDE,
-    // The authorisation is held by the importer being declared for, so its EORI is
-    // environment data - see IMPORTER_EORI.
-    roleId: IMPORTER_EORI,
-};
+type HolderOverrides = Partial<Omit<HolderOfAuthorisationData, 'typeCode'>>;
 
-export const holderOfAuthorisation = (overrides?: Partial<HolderOfAuthorisationData>): HolderOfAuthorisationData => ({
-    ...defaults,
-    ...overrides,
+const citedHolder = (fixed: HolderOfAuthorisationData) =>
+    (overrides?: HolderOverrides): HolderOfAuthorisationData => ({ ...fixed, ...overrides });
+
+export const holderCGU = citedHolder({
+    typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU,
+    roleId: IMPORTER_EORI,
+});
+
+export const holderCWP = citedHolder({
+    typeCode: AUTHORISATION_TYPE_CODE.PRIVATE_CUSTOMS_WAREHOUSE_CWP,
+    roleId: IMPORTER_EORI,
+});
+
+export const holderDPO = citedHolder({
+    typeCode: AUTHORISATION_TYPE_CODE.DEFERMENT_OF_PAYMENT_DPO,
+    roleId: IMPORTER_EORI,
+});
+
+export const holderEXW = citedHolder({
+    typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW,
+    roleId: IMPORTER_EORI,
+});
+
+export const holderIPO = citedHolder({
+    typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO,
+    roleId: IMPORTER_EORI,
+});
+
+export const holderOPO = citedHolder({
+    typeCode: AUTHORISATION_TYPE_CODE.OUTWARD_PROCESSING_OPO,
+    roleId: IMPORTER_EORI,
+});
+
+export const holderSDE = citedHolder({
+    typeCode: AUTHORISATION_TYPE_CODE.SIMPLIFIED_DECLARATION_PROCEDURE_SDE,
+    roleId: IMPORTER_EORI,
+});
+
+export const holderTEA = citedHolder({
+    typeCode: AUTHORISATION_TYPE_CODE.TEMPORARY_ADMISSION_TEA,
+    roleId: IMPORTER_EORI,
+});
+
+export const holderUKIM = citedHolder({
+    typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM,
+    roleId: IMPORTER_EORI,
 });

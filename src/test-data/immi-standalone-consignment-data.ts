@@ -3,10 +3,9 @@ import { ITEM_CURRENCY } from '../constant/item-currency-constant';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
 import { PORT_OF_ARRIVAL } from '../constant/port-of-arrival-constant';
 import { REPRESENTATION_TYPE } from '../constant/representation-type-constant';
-import { PreviousDocumentData, previousDocument } from './previous-document-data';
+import { PreviousDocumentData, previousDocumentDCR } from './previous-document-data';
 import { generateValidArrivalDate, generatePastArrivalDate } from '../helper/data-generate-helper';
-import { HolderOfAuthorisationData, holderOfAuthorisation } from './holder-of-authorisation-data';
-import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
+import { HolderOfAuthorisationData, holderIPO } from './holder-of-authorisation-data';
 import { inwardProcessingLocationOfGoods } from '../helper/location-of-goods-helper';
 
 /**
@@ -98,7 +97,7 @@ const defaults: ImmiStandaloneConsignmentData = {
     invoiceCurrency: ITEM_CURRENCY.POUNDS_STERLING,
 
     headerPreviousDocuments: [
-        previousDocument({ documentReference: '4GBXI553202734852-20240501' }),
+        previousDocumentDCR(),
     ],
     holdersOfAuthorisation: [],
 };
@@ -136,6 +135,6 @@ export const inwardProcessingConsignmentOverrides = (
     representationType: undefined,
     locationOfGoods: inwardProcessingLocationOfGoods(importerIpo),
     holdersOfAuthorisation: [
-        holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO }),
+        holderIPO(),
     ],
 });

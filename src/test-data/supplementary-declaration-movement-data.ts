@@ -2,21 +2,21 @@ import { MovementData } from './movements-data';
 import { ConsignmentData } from './consignment-data';
 import { GoodsData } from './goods-data';
 import { exciseWarehouseDeclaration } from './ens-declaration-data';
-import { previousDocument } from './previous-document-data';
+import { previousDocumentDCR, ensHeaderPreviousDocument } from './previous-document-data';
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
-import { documentReference, ensSfdGoodsDocuments, goodsDocumentsWithoutSde } from './document-reference-data';
-import { holderOfAuthorisation } from './holder-of-authorisation-data';
+import {
+    document9120, documentC505, documentC512, documentC516, documentC601, documentC672,
+    documentC679, documentN760, documentY824, documentY900, documentY922,
+    ensSfdGoodsDocuments, goodsDocumentsWithoutSde,
+} from './document-reference-data';
+import { holderCGU, holderIPO, holderSDE, holderTEA } from './holder-of-authorisation-data';
 import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
-import { DOCUMENT_CODE } from '../constant/document-code-constant';
 import { DOCUMENT_STATUS } from '../constant/document-status-constant';
-import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
-import { additionalInformation } from './additional-information-data';
-import { ADDITIONAL_INFORMATION_CODE } from '../constant/additional-information-constant';
 import {
-    HAULIER_EORI, IMPORTER_CGU, IMPORTER_IPO, IMPORTER_SDE, IMPORTER_TEA, IMPORTER_VAT,
-    TSS_DDA_COMPANY_NAME, TSS_DDA_EORI, assertEnvSet,
-} from '../../config/environment';
+    informationGEN28, informationGEN30, informationGEN31, informationNIIMP, informationOSR42,
+} from './additional-information-data';
+import { HAULIER_EORI, IMPORTER_VAT, TSS_DDA_COMPANY_NAME, TSS_DDA_EORI, assertEnvSet } from '../../config/environment';
 import { COUNTRY_CODE } from '../constant/country-code-dropdown-constant';
 import { CONSIGNMENT_GOODS_DOMESTIC_STATUS } from '../constant/consignment-goods-domestic-status-constant';
 import { ADDITIONAL_PARTY_ROLE, CONTROLLED_GOODS_TYPE } from '../constant/trader-api/trader-api-request-constant';
@@ -45,7 +45,7 @@ const defaults: SupplementaryDeclarationMovementData = {
     },
     consignmentOverrides: {
         headerPreviousDocuments: [
-            previousDocument({ documentReference: '3XI352196303000-12345' })
+            ensHeaderPreviousDocument()
         ],
     },
     goodsItemOverrides: {
@@ -107,14 +107,14 @@ export const onwardSupplyReliefSupplementaryDeclarationMovement = (): Supplement
         supplementaryUnits: '200',
         controlledGoodsType: CONTROLLED_GOODS_TYPE.PLANT_BASED,
         documentReferences: [
-            documentReference({ documentCode: DOCUMENT_CODE.C679, documentStatus: DOCUMENT_STATUS.XB, documentReference: '0054037-0054047' }),
-            documentReference({ documentCode: DOCUMENT_CODE.Y922, documentStatus: undefined, documentReference: '', documentReason: WAIVER_REASON }),
-            documentReference({ documentCode: DOCUMENT_CODE.N760, documentStatus: DOCUMENT_STATUS.AC, documentReference: '056789/202 21.01.2025' }),
-            documentReference({ documentCode: DOCUMENT_CODE['9120'], documentStatus: DOCUMENT_STATUS.XX, documentReference: 'GBAHC1234', documentReason: WAIVER_REASON }),
+            documentC679(),
+            documentY922({ documentReason: WAIVER_REASON }),
+            documentN760({ documentReference: '056789/202 21.01.2025' }),
+            document9120({ documentStatus: DOCUMENT_STATUS.XX, documentReason: WAIVER_REASON }),
         ],
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.NIIMP, description: '' }),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.OSR42, description: 'French Clothing Co, 1 Rue de Vetements, Paris P12 345-FR' }),
+            informationNIIMP(),
+            informationOSR42(),
         ],
         additionalParties: [
             { roleId: `${COUNTRY_CODE.UNITED_KINGDOM}${IMPORTER_VAT}`, roleCode: ADDITIONAL_PARTY_ROLE.IMPORTER_VAT_FR1 },
@@ -151,10 +151,10 @@ export const tempAdmissionSupplementaryDeclarationMovement = (
     },
     consignmentOverrides: {
         headerPreviousDocuments: [
-            previousDocument({ documentReference: '5GB553202734852-09042025' })
+            previousDocumentDCR({ documentReference: '5GB553202734852-09042025' })
         ],
         holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.TEMPORARY_ADMISSION_TEA })
+            holderTEA()
         ],
         ...overrides?.consignmentOverrides,
     },
@@ -166,21 +166,13 @@ export const tempAdmissionSupplementaryDeclarationMovement = (
         additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.PROFESSIONAL_EQUIPMENT_D12,
         supplementaryUnits: '12',
         documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.C672,
-                documentStatus: DOCUMENT_STATUS.AC,
-                documentReference: '0054037-0054047',
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.C516,
-                documentStatus: undefined,
-                documentReference: IMPORTER_TEA,
-            }),
+            documentC672(),
+            documentC516(),
         ],
         additionalInformations: [
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN28, description: 'Duration of intended usage followed by intended date of re-export'}),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN30, description: 'The use to which the Temporary Admission goods will be put'}),
-            additionalInformation({ code: ADDITIONAL_INFORMATION_CODE.GEN31, description: 'Name and address of the non-Union owner, plus the type of ownership evidence held'})
+            informationGEN28({ description: 'Duration of intended usage followed by intended date of re-export' }),
+            informationGEN30(),
+            informationGEN31()
         ],
         ...overrides?.goodsItemOverrides,
     },
@@ -208,12 +200,11 @@ export const inwardProcessingSfdSupplementaryDeclarationMovement = (
         isSellerSameAsExporter: true,
         goodsDomesticStatus: CONSIGNMENT_GOODS_DOMESTIC_STATUS.NIIMP,
         headerPreviousDocuments: [
-            previousDocument({ documentReference: '5GB553202734852-09042025' })
+            previousDocumentDCR({ documentReference: '5GB553202734852-09042025' })
         ],
         holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.INWARD_PROCESSING_IPO
-             }),
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.CUSTOMS_COMPREHENSIVE_GUARANTEE_CGU }),
+            holderIPO(),
+            holderCGU(),
         ],
         ...overrides?.consignmentOverrides,
     },
@@ -223,39 +214,12 @@ export const inwardProcessingSfdSupplementaryDeclarationMovement = (
         commodityCode: '7209169000',
         goodsDescription: 'Cold-rolled steel sheets for manufacturing',
         documentReferences: [
-            documentReference({
-                documentCode: DOCUMENT_CODE.Y922,
-                documentStatus: undefined,
-                documentReference: '',
-                documentReason: 'EXEMPT',
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.Y824,
-                documentStatus: undefined,
-                documentReference: 'ORIGIN CERTIFIED',
-                documentReason: 'ORIGIN CERTIFIED',
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.C601,
-                documentStatus: '',
-                documentReference: IMPORTER_IPO,
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.Y900,
-                documentStatus: undefined,
-                documentReference: '',
-                documentReason: 'EXEMPT',
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.C505,
-                documentStatus: DOCUMENT_STATUS.AC,
-                documentReference: IMPORTER_CGU,
-            }),
-            documentReference({
-                documentCode: DOCUMENT_CODE.C512,
-                documentStatus: undefined,
-                documentReference: IMPORTER_SDE,
-            }),
+            documentY922({ documentReason: 'EXEMPT' }),
+            documentY824(),
+            documentC601(),
+            documentY900({ documentReason: 'EXEMPT' }),
+            documentC505({ documentStatus: DOCUMENT_STATUS.AC }),
+            documentC512(),
         ],
         ...overrides?.goodsItemOverrides,
     },
@@ -312,10 +276,10 @@ export const scdpRoRoAccompaniedSupplementaryDeclarationMovement = (
     },
     consignmentOverrides: {
         headerPreviousDocuments: [
-            previousDocument({ documentReference: '3XI352196303000-12345' })
+            ensHeaderPreviousDocument()
         ],
         holdersOfAuthorisation: [
-            holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.SIMPLIFIED_DECLARATION_PROCEDURE_SDE })
+            holderSDE()
         ],
         ...overrides?.consignmentOverrides,
     },

@@ -11,7 +11,7 @@ import { ADDITIONAL_PROCEDURE_CODES } from '../../../src/constant/additional-pro
 import { CANCELLATION_REASON } from '../../../src/test-data/consignment-data';
 import { sfdStandaloneRejectedByCds } from '../../../src/test-data/rejection-lever-data';
 import { AUTHORISATION_TYPE_CODE } from '../../../src/constant/authorisation-type-code-constant';
-import { holderOfAuthorisation } from '../../../src/test-data/holder-of-authorisation-data';
+import { holderEXW } from '../../../src/test-data/holder-of-authorisation-data';
 
 const SFD_STANDALONE = '4440';
 const SFD_NIRMS_N853 = '4929';
@@ -166,7 +166,7 @@ test.describe('GB to NI RoRo SFD Standalone Declaration Process - Importer Decla
         url: BASE_URL,
         consignmentOverrides: {
           isControlledGoods: true,
-          holdersOfAuthorisation: [holderOfAuthorisation({ typeCode: AUTHORISATION_TYPE_CODE.EXCISE_WAREHOUSE_EXW })],
+          holdersOfAuthorisation: [holderEXW()],
         },
         goodsItemOverrides: sfdStandaloneExciseGoodsItem(),
       })

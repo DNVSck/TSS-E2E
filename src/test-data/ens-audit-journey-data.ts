@@ -1,13 +1,9 @@
 import { TYPE_OF_MOVEMENT_OPTION_CODE } from '../constant/type-of-movement-code-constant';
-import { AUTHORISATION_TYPE_CODE } from '../constant/authorisation-type-code-constant';
 import { PROCEDURE_CODES } from '../constant/procedure-codes-constant';
 import { ADDITIONAL_PROCEDURE_CODES } from '../constant/additional-procedure-codes-constant';
-import { DOCUMENT_CODE } from '../constant/document-code-constant';
-import { DOCUMENT_STATUS } from '../constant/document-status-constant';
-import { IMPORTER_UKIMS } from '../../config/environment';
-import { documentReference, ensSfdGoodsDocuments } from './document-reference-data';
-import { previousDocument } from './previous-document-data';
-import { holderOfAuthorisation } from './holder-of-authorisation-data';
+import { document1UKI, ensSfdGoodsDocuments } from './document-reference-data';
+import { previousDocumentDCR } from './previous-document-data';
+import { holderUKIM } from './holder-of-authorisation-data';
 import { MovementData, MOVEMENT_MAX_SCREEN_COVERAGE } from './movements-data';
 import { ConsignmentData, CONSIGNMENT_MAX_SCREEN_COVERAGE, ensOnlyConsignment } from './consignment-data';
 import { GoodsData } from './goods-data';
@@ -56,12 +52,10 @@ export const ENS_AUDIT_JOURNEYS: EnsAuditJourney[] = [
             ...CONSIGNMENT_MAX_SCREEN_COVERAGE,
             useIMMI: true,
             headerPreviousDocuments: [
-                previousDocument({ documentReference: '4GBXI553202734852-20240501' }),
+                previousDocumentDCR(),
             ],
             holdersOfAuthorisation: [
-                holderOfAuthorisation({
-                    typeCode: AUTHORISATION_TYPE_CODE.UK_INTERNAL_MARKET_SCHEME_UKIM,
-                }),
+                holderUKIM(),
             ],
         },
         goodsItemOverrides: {
@@ -70,11 +64,7 @@ export const ENS_AUDIT_JOURNEYS: EnsAuditJourney[] = [
             additionalProcedureCode: ADDITIONAL_PROCEDURE_CODES.SPIMM_STANDARD_GOODS_1SG,
             commodityCode: '630629',
             documentReferences: [
-                documentReference({
-                    documentCode: DOCUMENT_CODE['1UKI'],
-                    documentStatus: '',
-                    documentReference: IMPORTER_UKIMS,
-                }),
+                document1UKI(),
             ],
         },
     },
