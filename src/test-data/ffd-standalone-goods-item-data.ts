@@ -24,7 +24,7 @@ import { generateRandomInvoiceNumber } from '../helper/data-generate-helper';
 import { FISCAL_HOLD_TEA, FISCAL_HOLD_IPO } from '../../config/environment';
 
 const authorisationByDeclarationInformations = () => [
-    information00100({ description: 'Simplified Authorisation' }),
+    information00100(),
     informationABDIN(),
 ];
 
@@ -513,8 +513,8 @@ export const ffdH3ProfessionalEquipmentMultipleGoodsItems = (): FfdH3GoodsData[]
         numberOfPackages: '1',
         typeOfPackages: TYPE_OF_PACKAGES.CASE,
         additionalInformations: [
-            information00100({ description: 'Simplified Authorisation' }),
-            informationABDIN({ description: 'Authorisation by declaration' }),
+            information00100(),
+            informationABDIN(),
             informationGEN28(),
             informationGEN30({ description: 'Instruments for tour band playing at London Arena' }),
             informationGEN31({ description: 'Les McQueen New York US 1 Main Street NY1 234 sales invoices in name of' }),
